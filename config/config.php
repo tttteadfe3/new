@@ -27,7 +27,7 @@ date_default_timezone_set('Asia/Seoul');
 
 // 2. 경로 및 URL 상수
 define('BASE_URL', 'https://wonsil.kr/s/n4');
-define('BASE_ASSETS_URL', '');
+define('BASE_ASSETS_URL', '/s/n4');
 define('ROOT_PATH', dirname(__DIR__));
 
 // 3. 데이터베이스 설정
@@ -89,13 +89,36 @@ spl_autoload_register(function ($class_name) {
 });
 
 
-// 8. 전역 함수 로드
-require_once ROOT_PATH . '/app/Views/layouts/functions.php';
+// 8. 전역 헬퍼 함수 로드
+require_once ROOT_PATH . '/app/Core/helpers.php';
 
 
 // 9. 세션 시작 및 관리
 App\Core\SessionManager::start();
 App\Core\SessionManager::regenerate();
 
-// 10. The logic for setting common page variables has been moved to BaseController::render()
-// to ensure it runs within the correct context and after authentication is fully established.
+// 10. 공통 페이지 변수 설정 (메뉴, 브레드크럼 등)
+// 이 로직은 모든 페이지 컨트롤러가 실행되기 전에 한 번만 실행되어야 합니다.
+use App\Repositories\MenuRepository;
+use App\Repositories\UserRepository;
+use App\Core\SessionManager;
+
+$user_id = SessionManager::get('user')['id'] ?? 0;
+$userPermissions = [];
+if ($user_id) {
+    $userPermissions = array_column(UserRepository::getPermissions($user_id), 'key');
+}
+
+$currentUrlPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+// BASE_ASSETS_URL (e.g., '/s/n4') is the prefix for all app routes. 
+// We remove it to get the application-level path.
+if (BASE_ASSETS_URL !== '/') {
+    $currentUrlPath = str_replace(BASE_ASSETS_URL, '', $currentUrlPath);
+}
+
+
+$currentTopMenuId = MenuRepository::getCurrentTopMenuId($userPermissions, $currentUrlPath);
+$sideMenuItems = [];
+if ($currentTopMenuId) {
+    $sideMenuItems = MenuRepository::getSubMenus($currentTopMenuId, $userPermissions, $currentUrlPath);
+}

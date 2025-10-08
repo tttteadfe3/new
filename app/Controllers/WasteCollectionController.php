@@ -37,7 +37,7 @@ class WasteCollectionController extends BaseController
         ];
 
         $pageTitle = "대형폐기물 수거";
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         return $this->render('pages/waste/collection', [
             'pageCss' => $pageCss,
@@ -68,7 +68,7 @@ class WasteCollectionController extends BaseController
         ];
         
         $pageTitle = "대형폐기물 관리";
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         return $this->render('pages/waste/admin', [
             'pageCss' => $pageCss,

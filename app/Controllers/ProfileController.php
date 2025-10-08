@@ -24,7 +24,7 @@ class ProfileController extends BaseController
         $this->requireAuth();
         
         $pageTitle = "내 프로필";
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         return $this->render('pages/profile/index', [
             'pageTitle' => $pageTitle

@@ -23,7 +23,7 @@ class LitteringController extends BaseController
         $this->requireAuth('littering_manage');
         
         $pageTitle = "부적정배출 확인";
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         $pageCss = [
             BASE_ASSETS_URL . "/assets/css/pages/split-layout.css"
@@ -49,7 +49,7 @@ class LitteringController extends BaseController
         $this->requireAuth('littering_process');
         
         $pageTitle = "부적정배출 등록";
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         $pageCss = [
             BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css",
@@ -78,7 +78,7 @@ class LitteringController extends BaseController
         $this->requireAuth('littering_view');
         
         $pageTitle = "무단투기 처리 내역";
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         $pageCss = [
             BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css",
@@ -107,7 +107,7 @@ class LitteringController extends BaseController
         $this->requireAuth('littering_admin');
         
         $pageTitle = "삭제된 부적정배출";
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         $pageCss = [];
         

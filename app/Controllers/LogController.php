@@ -27,7 +27,7 @@ class LogController extends BaseController
         $pageJs = [
             BASE_ASSETS_URL . '/assets/js/pages/log_viewer.js'
         ];
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         return $this->render('pages/logs/index', [
             'pageTitle' => $pageTitle,

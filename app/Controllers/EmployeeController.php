@@ -29,7 +29,7 @@ class EmployeeController extends BaseController
         ];
         
         // Log menu access
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
         return $this->render('pages/employees/index', [
             'pageTitle' => $pageTitle,

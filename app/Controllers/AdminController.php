@@ -36,7 +36,7 @@ class AdminController extends BaseController
         ];
         
         // Log menu access
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
         return $this->render('pages/admin/organization', [
             'pageTitle' => $pageTitle,
@@ -57,7 +57,7 @@ class AdminController extends BaseController
         ];
         
         // Log menu access
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
         return $this->render('pages/admin/role-permissions', [
             'pageTitle' => $pageTitle,
@@ -78,7 +78,7 @@ class AdminController extends BaseController
         ];
         
         // Log menu access
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
         return $this->render('pages/admin/users', [
             'pageTitle' => $pageTitle,
@@ -96,7 +96,7 @@ class AdminController extends BaseController
         $pageTitle = "메뉴 관리";
         
         // Log menu access
-        log_menu_access($pageTitle);
+        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
         return $this->render('pages/admin/menus', [
             'pageTitle' => $pageTitle
