@@ -2,6 +2,7 @@
 
 // All web application routes are defined here.
 return [
+    '' => 'AuthController@login',
     // Authentication routes
     'login' => 'AuthController@login',
     'auth/kakao/callback' => 'AuthController@kakaoCallback',

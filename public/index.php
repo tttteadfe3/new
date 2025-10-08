@@ -23,7 +23,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Load routes and direct the request
 try {
-    App\Core\Router::load(
+    echo App\Core\Router::load(
         __DIR__ . '/../config/routes.php',
         __DIR__ . '/../config/api_routes.php'
     )->direct(App\Core\Request::uri());

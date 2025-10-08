@@ -16,10 +16,10 @@ class Permission
 
         $sql = "
             SELECT COUNT(*)
-            FROM role_permissions rp
-            JOIN roles r ON rp.role_id = r.id
-            JOIN permissions p ON rp.permission_id = p.id
-            WHERE r.name = ? AND p.name = ?
+            FROM sys_role_permissions rp
+            JOIN sys_roles r ON rp.role_id = r.id
+            JOIN sys_permissions p ON rp.permission_id = p.id
+            WHERE r.name = ? AND p.key = ?
         ";
 
         $stmt = $pdo->prepare($sql);
