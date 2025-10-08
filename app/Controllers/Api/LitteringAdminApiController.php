@@ -11,6 +11,7 @@ class LitteringAdminApiController extends BaseApiController
 
     public function __construct()
     {
+        parent::__construct();
         $this->litteringService = new LitteringService();
     }
 

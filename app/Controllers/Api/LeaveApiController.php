@@ -12,6 +12,7 @@ class LeaveApiController extends BaseApiController
 
     public function __construct()
     {
+        parent::__construct();
         $this->leaveService = new LeaveService();
     }
 
