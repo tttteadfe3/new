@@ -4,8 +4,7 @@ namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
 use App\Core\JsonResponse;
-use App\Services\AuthManager;
-use App\Models\Permission;
+use App\Core\AuthManager;
 
 abstract class BaseApiController extends BaseController
 {
@@ -43,9 +42,9 @@ abstract class BaseApiController extends BaseController
 
         if ($permission !== null) {
             $user = AuthManager::user();
-            $userRole = $user['role'] ?? 'guest';
+            $userPermissions = $user['permissions'] ?? [];
             
-            if (!Permission::hasPermission($userRole, $permission)) {
+            if (!in_array($permission, $userPermissions)) {
                 $this->apiError('Access denied. Insufficient permissions.', 'FORBIDDEN', 403);
             }
         }
