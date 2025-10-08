@@ -4,13 +4,16 @@ namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
 use App\Core\JsonResponse;
-use App\Core\AuthManager;
+use App\Services\AuthService;
 
 abstract class BaseApiController extends BaseController
 {
+    protected AuthService $authService;
+
     public function __construct()
     {
         parent::__construct();
+        $this->authService = new AuthService();
         
         // Ensure all API requests are AJAX requests
         if (!$this->isAjaxRequest()) {
@@ -36,15 +39,12 @@ abstract class BaseApiController extends BaseController
      */
     protected function requireAuth(string $permission = null): void
     {
-        if (!AuthManager::isLoggedIn()) {
+        if (!$this->authService->isLoggedIn()) {
             $this->apiError('Authentication required', 'UNAUTHORIZED', 401);
         }
 
         if ($permission !== null) {
-            $user = AuthManager::user();
-            $userPermissions = $user['permissions'] ?? [];
-            
-            if (!in_array($permission, $userPermissions)) {
+            if (!$this->authService->check($permission)) {
                 $this->apiError('Access denied. Insufficient permissions.', 'FORBIDDEN', 403);
             }
         }
@@ -126,7 +126,7 @@ abstract class BaseApiController extends BaseController
      */
     protected function getCurrentEmployeeId(): ?int
     {
-        $user = AuthManager::user();
+        $user = $this->authService->user();
         if (!$user) {
             return null;
         }

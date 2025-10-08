@@ -40,15 +40,8 @@ class AuthService {
             throw new Exception("Blocked accounts cannot log in.");
         }
 
-        // Fetch and enrich user data with roles and permissions for the session
-        $user['roles'] = RoleRepository::getUserRoles($user['id']);
-        $permissions = UserRepository::getPermissions($user['id']);
-        $user['permissions'] = array_column($permissions, 'key');
-
-        SessionManager::set('user', $user);
-
-        // Cache the timestamp
-        SessionManager::set('permissions_cached_at', time());
+        // Refresh roles and permissions and store them in the session
+        $this->_refreshSessionPermissions($user);
 
         LogRepository::insert([
             ':user_id' => $user['id'],
@@ -93,9 +86,9 @@ class AuthService {
         $global_permissions_last_updated = file_exists($permissions_last_updated_file) ? (int)file_get_contents($permissions_last_updated_file) : 0;
         $user_permissions_cached_at = SessionManager::get('permissions_cached_at', 0);
 
-        // If cache is old, refresh it by re-logging in the session data
+        // If cache is old, refresh permissions without creating a new login log.
         if ($user_permissions_cached_at < $global_permissions_last_updated) {
-            $this->login($this->user());
+            $this->_refreshSessionPermissions($this->user());
         }
 
         $permissions = $this->user()['permissions'] ?? [];
@@ -147,5 +140,22 @@ class AuthService {
         }
 
         return $currentUser['status'];
+    }
+
+    /**
+     * Refreshes the user's roles and permissions in the session.
+     * This is a private method to avoid logging "Login Success" on every permission refresh.
+     */
+    private function _refreshSessionPermissions(array $user): void {
+        // Fetch and enrich user data with roles and permissions
+        $user['roles'] = RoleRepository::getUserRoles($user['id']);
+        $permissions = UserRepository::getPermissions($user['id']);
+        $user['permissions'] = array_column($permissions, 'key');
+
+        // Update the session with the new data
+        SessionManager::set('user', $user);
+
+        // Update the cache timestamp
+        SessionManager::set('permissions_cached_at', time());
     }
 }
