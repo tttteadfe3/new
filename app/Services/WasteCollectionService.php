@@ -57,7 +57,12 @@ class WasteCollectionService extends BaseService
             ];
 
             $collection = WasteCollection::make($collectionData);
-            $this->validateModel($collection);
+
+            // Use the model's own validation method, which now aligns with BaseModel.
+            if (!$collection->validate()) {
+                // Throw an exception with the validation errors for the controller to catch.
+                throw new Exception(implode(', ', $collection->getErrors()), 400);
+            }
 
             // Save collection
             $collectionId = WasteCollectionRepository::createCollection($collection->toArray());

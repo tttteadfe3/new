@@ -2,7 +2,7 @@
 
 namespace App\Middleware;
 
-use App\Core\AuthManager;
+use App\Services\AuthService;
 
 class PermissionMiddleware extends BaseMiddleware
 {
@@ -18,8 +18,10 @@ class PermissionMiddleware extends BaseMiddleware
             throw new \InvalidArgumentException('Permission parameter is required for PermissionMiddleware');
         }
 
-        $user = AuthManager::user();
-        if (!$user) {
+        $authService = new AuthService();
+
+        // The AuthMiddleware should run first, but as a safeguard:
+        if (!$authService->isLoggedIn()) {
             if ($this->isApiRequest()) {
                 $this->jsonResponse([
                     'success' => false,
@@ -32,9 +34,8 @@ class PermissionMiddleware extends BaseMiddleware
             return;
         }
 
-        $userPermissions = $user['permissions'] ?? [];
-        
-        if (!in_array($permission, $userPermissions)) {
+        // Use the centralized check method from AuthService
+        if (!$authService->check($permission)) {
             if ($this->isApiRequest()) {
                 $this->jsonResponse([
                     'success' => false,

@@ -5,14 +5,17 @@ namespace App\Controllers;
 use App\Core\AuthManager;
 use App\Core\View;
 use App\Core\Request;
+use App\Services\ViewDataService;
 
 abstract class BaseController
 {
     protected Request $request;
+    protected AuthService $authService;
 
     public function __construct()
     {
         $this->request = new Request();
+        $this->authService = new AuthService();
     }
 
     /**
@@ -24,17 +27,14 @@ abstract class BaseController
      */
     protected function requireAuth(string $permission = null): void
     {
-        if (!AuthManager::isLoggedIn()) {
+        if (!$this->authService->isLoggedIn()) {
             $this->redirect('/login');
             exit;
         }
 
         if ($permission !== null) {
-            $user = AuthManager::user();
-            $userPermissions = $user['permissions'] ?? [];
-
-            if (!in_array($permission, $userPermissions)) {
-                // For web, redirect or show an error view instead of JSON
+            // Use the new centralized permission checker
+            if (!$this->authService->check($permission)) {
                 View::render('errors/403', ['message' => 'Access denied. Insufficient permissions.']);
                 exit;
             }
@@ -53,26 +53,9 @@ abstract class BaseController
     {
         // Prepare common data for all views that use a layout
         $commonData = [];
-        if ($layout !== null) {
-            $user = $this->user();
-            $userPermissions = $user['permissions'] ?? [];
-
-            $currentUrlPath = \App\Core\Request::uri();
-
-            // This logic is moved from config.php to ensure it's available to all views
-            $currentTopMenuId = \App\Repositories\MenuRepository::getCurrentTopMenuId($userPermissions, $currentUrlPath);
-            $sideMenuItems = [];
-            if ($currentTopMenuId) {
-                $sideMenuItems = \App\Repositories\MenuRepository::getSubMenus($currentTopMenuId, $userPermissions, $currentUrlPath);
-            }
-
-            $commonData = [
-                'userPermissions' => $userPermissions,
-                'currentUrlPath' => $currentUrlPath,
-                'topLevelMenus' => \App\Repositories\MenuRepository::getTopLevelMenus($userPermissions),
-                'sideMenuItems' => $sideMenuItems,
-                'currentTopMenuId' => $currentTopMenuId,
-            ];
+        if ($layout !== null && $this->isAuthenticated()) {
+            // Decouple controller from data-fetching logic by using the dedicated service.
+            $commonData = ViewDataService::getCommonData();
         }
 
         // Merge controller-specific data with common data
@@ -99,7 +82,7 @@ abstract class BaseController
      */
     protected function user(): ?array
     {
-        return AuthManager::user();
+        return $this->authService->user();
     }
 
     /**
@@ -109,6 +92,6 @@ abstract class BaseController
      */
     protected function isAuthenticated(): bool
     {
-        return AuthManager::isLoggedIn();
+        return $this->authService->isLoggedIn();
     }
 }

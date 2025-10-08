@@ -4,7 +4,6 @@ namespace App\Controllers\Api;
 
 use App\Services\LeaveService;
 use App\Repositories\LeaveRepository;
-use App\Core\AuthManager;
 use Exception;
 
 class LeaveAdminApiController extends BaseApiController
@@ -44,7 +43,7 @@ class LeaveAdminApiController extends BaseApiController
     public function approveRequest(int $id): void
     {
         $this->requireAuth('leave_admin');
-        $adminId = AuthManager::user()['id'];
+        $adminId = $this->user()['id'];
 
         try {
             [$success, $message] = $this->leaveService->approveRequest($id, $adminId);
@@ -65,7 +64,7 @@ class LeaveAdminApiController extends BaseApiController
     public function rejectRequest(int $id): void
     {
         $this->requireAuth('leave_admin');
-        $adminId = AuthManager::user()['id'];
+        $adminId = $this->user()['id'];
         $reason = $this->request->input('reason');
 
         if (empty($reason)) {
@@ -92,7 +91,7 @@ class LeaveAdminApiController extends BaseApiController
     public function approveCancellation(int $id): void
     {
         $this->requireAuth('leave_admin');
-        $adminId = AuthManager::user()['id'];
+        $adminId = $this->user()['id'];
 
         try {
             [$success, $message] = $this->leaveService->approveCancellation($id, $adminId);
@@ -113,7 +112,7 @@ class LeaveAdminApiController extends BaseApiController
     public function rejectCancellation(int $id): void
     {
         $this->requireAuth('leave_admin');
-        $adminId = AuthManager::user()['id'];
+        $adminId = $this->user()['id'];
         $reason = $this->request->input('reason');
         
         if (empty($reason)) {
@@ -203,7 +202,7 @@ class LeaveAdminApiController extends BaseApiController
     public function manualAdjustment(): void
     {
         $this->requireAuth('leave_admin');
-        $adminId = AuthManager::user()['id'];
+        $adminId = $this->user()['id'];
         
         $data = $this->request->all();
         $employeeId = (int)($data['employee_id'] ?? 0);

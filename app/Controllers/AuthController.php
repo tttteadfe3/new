@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Services\KakaoAuthService;
 use App\Core\AuthManager;
 use App\Core\View;
-use App\Models\User;
+use App\Repositories\UserRepository;
 
 class AuthController extends BaseController
 {
@@ -38,11 +38,11 @@ class AuthController extends BaseController
             $token = $kakaoAuthService->getAccessToken($code);
             $kakaoUserInfo = $kakaoAuthService->getUserProfile($token['access_token']);
 
-            // Find or create the user in the database
-            $user = User::findOrCreateFromKakao($kakaoUserInfo);
+            // Find or create the user in the database using the repository
+            $user = UserRepository::findOrCreateFromKakao($kakaoUserInfo);
 
-            // Log the user in
-            AuthManager::login($user);
+            // Log the user in using the AuthService instance
+            $this->authService->login($user);
 
             // Redirect based on user status
             if ($user['status'] === 'pending') {
@@ -58,7 +58,7 @@ class AuthController extends BaseController
 
     public function logout()
     {
-        AuthManager::logout();
-        $this->redirect('/login');
+        // The logout method in AuthService now handles session destruction and redirection.
+        $this->authService->logout();
     }
 }

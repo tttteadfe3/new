@@ -235,4 +235,25 @@ class UserRepository {
         return Database::execute($sql, [':id' => $userId]);
     }
 
+    /**
+     * Finds a user by their Kakao ID or creates a new one.
+     * This encapsulates the logic that was previously in the User model,
+     * and uses the standardized Database helper.
+     */
+    public static function findOrCreateFromKakao(array $kakaoUser): array
+    {
+        // 1. Find user by Kakao ID
+        $user = self::findByKakaoId($kakaoUser['id']);
+
+        if ($user) {
+            // User exists, return their data
+            return $user;
+        }
+
+        // 2. User does not exist, create a new one using the existing create method
+        $newUserId = self::create($kakaoUser);
+
+        // 3. Return the newly created user's data
+        return self::findById((int)$newUserId);
+    }
 }

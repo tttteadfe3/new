@@ -4,7 +4,6 @@ namespace App\Controllers\Api;
 
 use App\Services\LeaveService;
 use App\Repositories\LeaveRepository;
-use App\Core\AuthManager;
 use Exception;
 
 class LeaveApiController extends BaseApiController
@@ -24,7 +23,7 @@ class LeaveApiController extends BaseApiController
     {
         $this->requireAuth('leave_view');
         
-        $employeeId = AuthManager::user()['employee_id'] ?? null;
+        $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {
             $this->error('연결된 직원 정보가 없습니다.', [], 400);
             return;
@@ -53,7 +52,7 @@ class LeaveApiController extends BaseApiController
     {
         $this->requireAuth('leave_request');
         
-        $employeeId = AuthManager::user()['employee_id'] ?? null;
+        $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {
             $this->error('연결된 직원 정보가 없습니다.', [], 400);
             return;
@@ -86,7 +85,7 @@ class LeaveApiController extends BaseApiController
     {
         $this->requireAuth('leave_request');
         
-        $employeeId = AuthManager::user()['employee_id'] ?? null;
+        $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {
             $this->error('연결된 직원 정보가 없습니다.', [], 400);
             return;
@@ -115,7 +114,7 @@ class LeaveApiController extends BaseApiController
     {
         $this->requireAuth('leave_request');
         
-        $employeeId = AuthManager::user()['employee_id'] ?? null;
+        $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {
             $this->error('연결된 직원 정보가 없습니다.', [], 400);
             return;

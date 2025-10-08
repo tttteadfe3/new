@@ -5,7 +5,7 @@ class WasteCollection extends BaseModel
 {
     protected array $fillable = [
         'latitude',
-        'longitude', 
+        'longitude',
         'address',
         'photo_path',
         'user_id',
@@ -23,75 +23,22 @@ class WasteCollection extends BaseModel
 
     protected array $hidden = [];
 
+    /**
+     * Validation rules that are compatible with the BaseModel's validator.
+     * The custom validate() method that threw exceptions has been removed
+     * to ensure consistency across all models.
+     */
     protected array $rules = [
         'latitude' => 'required|numeric',
         'longitude' => 'required|numeric',
         'address' => 'required|string|max:500',
         'user_id' => 'required|integer',
-        'issue_date' => 'required|datetime',
+        'issue_date' => 'required|date',
         'type' => 'required|in:field,online',
-        'fee' => 'integer|min:0'
+        'status' => 'in:unprocessed,processed',
+        'fee' => 'numeric|min:0',
+        'submitter_phone' => 'string|max:20'
     ];
-
-    /**
-     * Validate waste collection data
-     */
-    public function validate(): bool
-    {
-        $errors = [];
-
-        // Required fields validation
-        if (empty($this->attributes['latitude'])) {
-            $errors[] = '위도가 필요합니다.';
-        } elseif (!is_numeric($this->attributes['latitude'])) {
-            $errors[] = '위도는 숫자여야 합니다.';
-        }
-
-        if (empty($this->attributes['longitude'])) {
-            $errors[] = '경도가 필요합니다.';
-        } elseif (!is_numeric($this->attributes['longitude'])) {
-            $errors[] = '경도는 숫자여야 합니다.';
-        }
-
-        if (empty($this->attributes['address'])) {
-            $errors[] = '주소가 필요합니다.';
-        } elseif (strlen($this->attributes['address']) > 500) {
-            $errors[] = '주소는 500자를 초과할 수 없습니다.';
-        }
-
-        if (empty($this->attributes['user_id'])) {
-            $errors[] = '사용자 ID가 필요합니다.';
-        } elseif (!is_numeric($this->attributes['user_id'])) {
-            $errors[] = '사용자 ID는 숫자여야 합니다.';
-        }
-
-        if (empty($this->attributes['issue_date'])) {
-            $errors[] = '발생일시가 필요합니다.';
-        }
-
-        if (empty($this->attributes['type'])) {
-            $errors[] = '타입이 필요합니다.';
-        } elseif (!in_array($this->attributes['type'], ['field', 'online'])) {
-            $errors[] = '타입은 field 또는 online이어야 합니다.';
-        }
-
-        // Optional field validation
-        if (isset($this->attributes['fee']) && (!is_numeric($this->attributes['fee']) || $this->attributes['fee'] < 0)) {
-            $errors[] = '수수료는 0 이상의 숫자여야 합니다.';
-        }
-
-        if (isset($this->attributes['submitter_phone']) && !empty($this->attributes['submitter_phone'])) {
-            if (!preg_match('/^[0-9-]+$/', $this->attributes['submitter_phone'])) {
-                $errors[] = '전화번호 형식이 올바르지 않습니다.';
-            }
-        }
-
-        if (!empty($errors)) {
-            throw new \Exception(implode(' ', $errors));
-        }
-
-        return true;
-    }
 
     /**
      * Get formatted address
@@ -143,7 +90,8 @@ class WasteCollection extends BaseModel
             return null;
         }
         
-        return BASE_ASSETS_URL . '/uploads/' . $this->attributes['photo_path'];
+        $baseUrl = defined('BASE_ASSETS_URL') ? BASE_ASSETS_URL : '';
+        return $baseUrl . '/uploads/' . $this->attributes['photo_path'];
     }
 
     /**
