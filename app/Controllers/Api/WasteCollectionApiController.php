@@ -3,7 +3,6 @@
 namespace App\Controllers\Api;
 
 use App\Services\WasteCollectionService;
-use App\Core\AuthManager;
 use Exception;
 
 class WasteCollectionApiController extends BaseApiController
@@ -37,7 +36,7 @@ class WasteCollectionApiController extends BaseApiController
     public function store(): void
     {
         $this->requireAuth();
-        $user = AuthManager::user();
+        $user = $this->user();
         try {
             $result = $this->wasteCollectionService->registerCollection($_POST, $_FILES, $user['id'], $user['employee_id'] ?? null);
             $this->success($result, '폐기물 수거 정보가 성공적으로 등록되었습니다.');
@@ -134,7 +133,7 @@ class WasteCollectionApiController extends BaseApiController
     public function batchRegister(): void
     {
         $this->requireAuth('waste_admin');
-        $userId = AuthManager::user()['id'];
+        $userId = $this->user()['id'];
         $collections = $this->request->input('collections', []);
         if (empty($collections)) {
             $this->error('등록할 데이터가 없습니다.', [], 400);

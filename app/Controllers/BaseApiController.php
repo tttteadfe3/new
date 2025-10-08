@@ -2,8 +2,8 @@
 
 namespace App\Controllers;
 
-use App\Core\AuthManager;
 use App\Core\Request;
+use App\Services\AuthService;
 
 /**
  * Base API Controller for handling API requests.
@@ -11,10 +11,12 @@ use App\Core\Request;
 abstract class BaseApiController
 {
     protected Request $request;
+    protected AuthService $authService;
 
     public function __construct()
     {
         $this->request = new Request();
+        $this->authService = new AuthService();
         
         // Set JSON content type for all API responses
         header('Content-Type: application/json');
@@ -56,7 +58,7 @@ abstract class BaseApiController
      */
     protected function user(): ?array
     {
-        return AuthManager::user();
+        return $this->authService->user();
     }
 
     /**
@@ -66,7 +68,7 @@ abstract class BaseApiController
      */
     protected function isAuthenticated(): bool
     {
-        return AuthManager::isLoggedIn();
+        return $this->authService->isLoggedIn();
     }
 
     /**
@@ -86,10 +88,8 @@ abstract class BaseApiController
         }
 
         if ($permission !== null) {
-            $user = $this->user();
-            $userRole = $user['role'] ?? 'guest';
-            
-            if (!\App\Models\Permission::hasPermission($userRole, $permission)) {
+            // Use the new centralized permission checker from the AuthService instance.
+            if (!$this->authService->check($permission)) {
                 $this->json([
                     'success' => false,
                     'message' => 'Access denied. Insufficient permissions.',

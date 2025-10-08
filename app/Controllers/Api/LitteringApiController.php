@@ -2,17 +2,16 @@
 
 namespace App\Controllers\Api;
 
-use App\Services\LitteringManager;
-use App\Core\AuthManager;
+use App\Services\LitteringService;
 use Exception;
 
 class LitteringApiController extends BaseApiController
 {
-    private LitteringManager $litteringManager;
+    private LitteringService $litteringService;
 
     public function __construct()
     {
-        $this->litteringManager = new LitteringManager();
+        $this->litteringService = new LitteringService();
     }
 
     /**
@@ -26,9 +25,9 @@ class LitteringApiController extends BaseApiController
 
         try {
             if ($status === 'active') {
-                $data = $this->litteringManager->getActiveLittering();
+                $data = $this->litteringService->getActiveLittering();
             } elseif ($status === 'processed') {
-                $data = $this->litteringManager->getProcessedLittering();
+                $data = $this->litteringService->getProcessedLittering();
             } else {
                 $this->error('Invalid status value.', [], 400);
                 return;
@@ -47,7 +46,7 @@ class LitteringApiController extends BaseApiController
     {
         $this->requireAuth('littering_process');
 
-        $user = AuthManager::user();
+        $user = $this->user();
         if (!$user) {
             $this->error('로그인이 필요합니다.', [], 401);
             return;
@@ -59,7 +58,7 @@ class LitteringApiController extends BaseApiController
         try {
             // Note: File uploads are not part of the request body, so we access $_FILES directly.
             // This is a common practice even in modern frameworks when dealing with multipart/form-data.
-            $result = $this->litteringManager->registerLittering(
+            $result = $this->litteringService->registerLittering(
                 $this->request->all(),
                 $_FILES,
                 $userId,
@@ -84,7 +83,7 @@ class LitteringApiController extends BaseApiController
             $data['id'] = $id; // Ensure the ID from URL is used
 
             // Note: Accessing $_FILES for file uploads.
-            $result = $this->litteringManager->processLittering($data, $_FILES);
+            $result = $this->litteringService->processLittering($data, $_FILES);
             $this->success($result, '처리 상태가 성공적으로 업데이트되었습니다.');
         } catch (Exception $e) {
             $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);

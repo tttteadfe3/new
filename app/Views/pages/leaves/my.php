@@ -4,7 +4,7 @@
             <div class="card-header align-items-center d-flex">
                 <h4 class="card-title mb-0 flex-grow-1">나의 연차 현황</h4>
                 <div class="flex-shrink-0">
-                    <button id="request-leave-btn" class="btn btn-primary" <?= !\App\Services\AuthManager::check('leave_request') ? 'disabled' : '' ?>>
+                    <button id="request-leave-btn" class="btn btn-primary" <?= !$can_request_leave ? 'disabled' : '' ?>>
                         <i class="bx bx-plus"></i> 연차 신청하기
                     </button>
                 </div>

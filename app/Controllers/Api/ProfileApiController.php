@@ -3,7 +3,6 @@
 namespace App\Controllers\Api;
 
 use App\Services\ProfileService;
-use App\Core\AuthManager;
 use Exception;
 
 class ProfileApiController extends BaseApiController
@@ -24,7 +23,7 @@ class ProfileApiController extends BaseApiController
         $this->requireAuth();
         
         try {
-            $userId = AuthManager::user()['id'];
+            $userId = $this->user()['id'];
             $profile = $this->profileService->getUserProfile($userId);
             $this->success($profile);
         } catch (Exception $e) {
@@ -41,7 +40,7 @@ class ProfileApiController extends BaseApiController
         $this->requireAuth();
         
         try {
-            $userId = AuthManager::user()['id'];
+            $userId = $this->user()['id'];
             $input = $this->request->all();
 
             $result = $this->profileService->requestProfileUpdate($userId, $input);

@@ -3,20 +3,19 @@
 namespace App\Controllers;
 
 use App\Services\LeaveService;
-use App\Services\EmployeeManager;
-use App\Repositories\EmployeeRepository;
+use App\Services\EmployeeService;
 use Exception;
 
 class LeaveController extends BaseController
 {
     private LeaveService $leaveService;
-    private EmployeeManager $employeeManager;
+    private EmployeeService $employeeService;
 
     public function __construct()
     {
         parent::__construct();
         $this->leaveService = new LeaveService();
-        $this->employeeManager = new EmployeeManager();
+        $this->employeeService = new EmployeeService();
     }
 
     /**
@@ -46,7 +45,10 @@ class LeaveController extends BaseController
             BASE_ASSETS_URL . '/assets/js/pages/my_leave.js'
         ];
 
-        return $this->render('pages/leaves/my', compact('pageTitle', 'pageCss', 'pageJs'));
+        // Check permission in the controller, not in the view.
+        $can_request_leave = $this->authService->check('leave_request');
+
+        return $this->render('pages/leaves/my', compact('pageTitle', 'pageCss', 'pageJs', 'can_request_leave'));
     }
 
     /**
@@ -91,8 +93,8 @@ class LeaveController extends BaseController
             BASE_ASSETS_URL . '/assets/js/pages/leave_history_admin.js'
         ];
 
-        // Get all employees for the dropdown
-        $employees = EmployeeRepository::findAllActive();
+        // Get all employees for the dropdown via the service layer
+        $employees = $this->employeeService->getActiveEmployees();
 
         return $this->render('pages/leaves/history', compact('pageTitle', 'pageJs', 'employees'));
     }

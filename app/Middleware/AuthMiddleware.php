@@ -2,7 +2,7 @@
 
 namespace App\Middleware;
 
-use App\Core\AuthManager;
+use App\Services\AuthService;
 
 class AuthMiddleware extends BaseMiddleware
 {
@@ -12,7 +12,8 @@ class AuthMiddleware extends BaseMiddleware
      */
     public function handle($parameter = null): void
     {
-        if (!AuthManager::isLoggedIn()) {
+        $authService = new AuthService();
+        if (!$authService->isLoggedIn()) {
             if ($this->isApiRequest()) {
                 $this->jsonResponse([
                     'success' => false,

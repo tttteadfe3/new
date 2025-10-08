@@ -2,17 +2,16 @@
 
 namespace App\Controllers\Api;
 
-use App\Services\LitteringManager;
-use App\Core\AuthManager;
+use App\Services\LitteringService;
 use Exception;
 
 class LitteringAdminApiController extends BaseApiController
 {
-    private LitteringManager $litteringManager;
+    private LitteringService $litteringService;
 
     public function __construct()
     {
-        $this->litteringManager = new LitteringManager();
+        $this->litteringService = new LitteringService();
     }
 
     /**
@@ -26,9 +25,9 @@ class LitteringAdminApiController extends BaseApiController
 
         try {
             if ($status === 'pending') {
-                $data = $this->litteringManager->getPendingLittering();
+                $data = $this->litteringService->getPendingLittering();
             } elseif ($status === 'deleted') {
-                $data = $this->litteringManager->getDeletedLittering();
+                $data = $this->litteringService->getDeletedLittering();
             } else {
                 $this->error('Invalid status value.', [], 400);
                 return;
@@ -46,13 +45,13 @@ class LitteringAdminApiController extends BaseApiController
     public function confirm(int $id): void
     {
         $this->requireAuth('littering_manage');
-        $adminId = AuthManager::user()['id'];
+        $adminId = $this->user()['id'];
         
         try {
             $data = $this->request->all();
             $data['id'] = $id; // Ensure ID from URL is used
 
-            $result = $this->litteringManager->confirmLittering($data, $adminId);
+            $result = $this->litteringService->confirmLittering($data, $adminId);
             $this->success($result, '민원 정보가 성공적으로 확인되었습니다.');
         } catch (Exception $e) {
             $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
@@ -66,13 +65,13 @@ class LitteringAdminApiController extends BaseApiController
     public function destroy(int $id): void
     {
         $this->requireAuth('littering_manage');
-        $adminId = AuthManager::user()['id'];
+        $adminId = $this->user()['id'];
 
         try {
             $data = $this->request->all();
             $data['id'] = $id;
 
-            $result = $this->litteringManager->deleteLittering($data, $adminId);
+            $result = $this->litteringService->deleteLittering($data, $adminId);
             $this->success($result, '민원 정보가 성공적으로 삭제되었습니다.');
         } catch (Exception $e) {
             $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
@@ -89,7 +88,7 @@ class LitteringAdminApiController extends BaseApiController
         
         try {
             $data = ['id' => $id];
-            $result = $this->litteringManager->restoreLittering($data);
+            $result = $this->litteringService->restoreLittering($data);
             $this->success($result, '민원 정보가 성공적으로 복원되었습니다.');
         } catch (Exception $e) {
             $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
@@ -106,7 +105,7 @@ class LitteringAdminApiController extends BaseApiController
 
         try {
             $data = ['id' => $id];
-            $result = $this->litteringManager->permanentlyDeleteLittering($data);
+            $result = $this->litteringService->permanentlyDeleteLittering($data);
             $this->success($result, '민원 정보가 영구적으로 삭제되었습니다.');
         } catch (Exception $e) {
             $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
