@@ -13,9 +13,10 @@ class DashboardController extends BaseController
 
         $user = $this->user();
 
-        // For now, just a simple welcome message.
-        // In the future, this will render a full dashboard view.
-        echo "<h1>Welcome, " . htmlspecialchars($user['properties']['nickname'] ?? 'User') . "!</h1>";
-        echo '<a href="/logout">Logout</a>';
+        // Render the dashboard view within the main application layout.
+        $this->render('pages/dashboard', [
+            'pageTitle' => 'Dashboard',
+            'nickname' => $user['properties']['nickname'] ?? 'User'
+        ], 'layouts/app');
     }
 }

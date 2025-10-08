@@ -56,7 +56,8 @@ class View
      */
     private static function renderWithLayout(string $content, string $layout, array $data = []): string
     {
-        $layoutPath = ROOT_PATH . '/app/Views/layouts/' . str_replace('.', '/', $layout) . '.php';
+        // Path should be relative to the /app/Views/ directory, same as regular views.
+        $layoutPath = ROOT_PATH . '/app/Views/' . str_replace('.', '/', $layout) . '.php';
 
         if (!file_exists($layoutPath)) {
             throw new \Exception("Layout not found: {$layoutPath}");
