@@ -10,6 +10,7 @@ class WasteCollectionController extends BaseController
 
     public function __construct()
     {
+        parent::__construct();
         $this->wasteCollectionService = new WasteCollectionService();
     }
 

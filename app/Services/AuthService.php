@@ -141,7 +141,7 @@ class AuthService {
 
         return $currentUser['status'];
     }
-    
+
     /**
      * Refreshes the user's roles and permissions in the session.
      * This is a private method to avoid logging "Login Success" on every permission refresh.
