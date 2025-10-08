@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\AuthManager;
 use App\Core\View;
 use App\Core\Request;
+use App\Services\AuthService;
 use App\Services\ViewDataService;
 
 abstract class BaseController

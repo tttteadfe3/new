@@ -110,6 +110,10 @@ class UserApiController extends BaseApiController
         
         try {
             if ($this->userService->updateUser($userId, $input)) {
+                // Invalidate permission cache for all users since roles may have changed
+                $timestamp_file = ROOT_PATH . '/storage/permissions_last_updated.txt';
+                file_put_contents($timestamp_file, time());
+                
                 $this->success(null, '사용자 정보가 저장되었습니다.');
             } else {
                 $this->error('저장 중 오류가 발생했습니다.', [], 500);

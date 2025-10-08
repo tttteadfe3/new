@@ -48,22 +48,12 @@ return [
     'GET waste' => 'WasteCollectionController@index',
     'GET waste/collection' => 'WasteCollectionController@collection',
     'GET waste/admin' => 'WasteCollectionController@admin',
-    
-    // Legacy page routes for waste (for menu compatibility)
-    'GET pages/waste_collection.php' => 'WasteCollectionController@index',
-    'GET pages/waste_admin.php' => 'WasteCollectionController@admin',
 
     // Admin routes
     'GET admin/organization' => 'AdminController@organization',
     'GET admin/role-permissions' => 'AdminController@rolePermissions',
     'GET admin/users' => 'AdminController@users',
     'GET admin/menus' => 'AdminController@menus',
-    
-    // Legacy admin routes (for backward compatibility)
-    'GET pages/organization_admin.php' => 'AdminController@organization',
-    'GET pages/role_permission_admin.php' => 'AdminController@rolePermissions',
-    'GET pages/user_list.php' => 'AdminController@users',
-    'GET pages/menu_admin.php' => 'AdminController@menus',
 
     // Profile and logs
     'GET profile' => 'ProfileController@index',
