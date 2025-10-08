@@ -8,7 +8,7 @@ use App\Core\FileUploader;
 use App\Core\Validator;
 use Exception;
 
-class WasteCollectionService extends BaseService
+class WasteCollectionService
 {
     /**
      * Get all waste collections for user view
