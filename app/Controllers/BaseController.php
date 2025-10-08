@@ -32,13 +32,10 @@ abstract class BaseController
         if ($permission !== null) {
             $user = AuthManager::user();
             $userPermissions = $user['permissions'] ?? [];
-            
+
             if (!in_array($permission, $userPermissions)) {
-                $this->json([
-                    'success' => false,
-                    'message' => 'Access denied. Insufficient permissions.',
-                    'errors' => ['permission' => 'You do not have permission to access this resource.']
-                ], 403);
+                // For web, redirect or show an error view instead of JSON
+                View::render('errors/403', ['message' => 'Access denied. Insufficient permissions.']);
                 exit;
             }
         }
@@ -54,37 +51,34 @@ abstract class BaseController
      */
     protected function render(string $view, array $data = [], ?string $layout = null): string
     {
-        return View::render($view, $data, $layout);
-    }
+        // Prepare common data for all views that use a layout
+        $commonData = [];
+        if ($layout !== null) {
+            $user = $this->user();
+            $userPermissions = $user['permissions'] ?? [];
 
-    /**
-     * Return a JSON response.
-     * 
-     * @param array $data The data to return
-     * @param int $status HTTP status code
-     */
-    protected function json(array $data, int $status = 200): void
-    {
-        http_response_code($status);
-        header('Content-Type: application/json');
-        
-        // Ensure consistent JSON response format
-        $response = [
-            'success' => $status >= 200 && $status < 300,
-            'data' => $data['data'] ?? null,
-            'message' => $data['message'] ?? '',
-            'errors' => $data['errors'] ?? []
-        ];
-        
-        // If data is passed directly without the standard format, use it as data
-        if (!isset($data['success']) && !isset($data['message']) && !isset($data['errors'])) {
-            $response['data'] = $data;
-        } else {
-            // Merge with provided structure
-            $response = array_merge($response, $data);
+            $currentUrlPath = \App\Core\Request::uri();
+
+            // This logic is moved from config.php to ensure it's available to all views
+            $currentTopMenuId = \App\Repositories\MenuRepository::getCurrentTopMenuId($userPermissions, $currentUrlPath);
+            $sideMenuItems = [];
+            if ($currentTopMenuId) {
+                $sideMenuItems = \App\Repositories\MenuRepository::getSubMenus($currentTopMenuId, $userPermissions, $currentUrlPath);
+            }
+
+            $commonData = [
+                'userPermissions' => $userPermissions,
+                'currentUrlPath' => $currentUrlPath,
+                'topLevelMenus' => \App\Repositories\MenuRepository::getTopLevelMenus($userPermissions),
+                'sideMenuItems' => $sideMenuItems,
+                'currentTopMenuId' => $currentTopMenuId,
+            ];
         }
-        
-        echo json_encode($response);
+
+        // Merge controller-specific data with common data
+        $viewData = array_merge($data, $commonData);
+
+        return View::render($view, $viewData, $layout);
     }
 
     /**

@@ -3,7 +3,8 @@
 namespace App\Controllers\Api;
 
 use App\Services\LitteringManager;
-use App\Repositories\UserRepository;
+use App\Core\AuthManager;
+use Exception;
 
 class LitteringApiController extends BaseApiController
 {
@@ -11,109 +12,82 @@ class LitteringApiController extends BaseApiController
 
     public function __construct()
     {
-        parent::__construct();
         $this->litteringManager = new LitteringManager();
     }
 
     /**
-     * Handle all littering API requests based on action parameter
+     * Get littering reports based on status.
+     * Corresponds to GET /api/littering
      */
     public function index(): void
     {
-        $action = $this->getAction();
-        
+        $this->requireAuth('littering_view');
+        $status = $this->request->input('status', 'active'); // 'active', 'processed'
+
         try {
-            switch ($action) {
-                case 'get_active_littering':
-                    $this->getActiveLittering();
-                    break;
-                case 'get_pending_littering':
-                    $this->getPendingLittering();
-                    break;
-                case 'get_processed_littering':
-                    $this->getProcessedLittering();
-                    break;
-                case 'register_littering':
-                    $this->registerLittering();
-                    break;
-                case 'process_littering':
-                    $this->processLittering();
-                    break;
-                default:
-                    $this->apiBadRequest('Invalid action');
+            if ($status === 'active') {
+                $data = $this->litteringManager->getActiveLittering();
+            } elseif ($status === 'processed') {
+                $data = $this->litteringManager->getProcessedLittering();
+            } else {
+                $this->error('Invalid status value.', [], 400);
+                return;
             }
-        } catch (\Exception $e) {
-            $this->handleException($e);
+            $this->success($data);
+        } catch (Exception $e) {
+            $this->error('목록을 불러오는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Get all active littering reports for map display
+     * Register a new littering report.
+     * Corresponds to POST /api/littering
      */
-    private function getActiveLittering(): void
+    public function store(): void
     {
-        $data = $this->litteringManager->getActiveLittering();
-        $this->apiSuccess($data, '활성 무단투기 목록 조회 성공');
-    }
+        $this->requireAuth('littering_process');
 
-    /**
-     * Get pending littering reports for admin review
-     */
-    private function getPendingLittering(): void
-    {
-        $data = $this->litteringManager->getPendingLittering();
-        $this->apiSuccess($data, '대기 중인 무단투기 목록 조회 성공');
-    }
-
-    /**
-     * Get processed littering reports
-     */
-    private function getProcessedLittering(): void
-    {
-        $data = $this->litteringManager->getProcessedLittering();
-        $this->apiSuccess($data, '처리 완료된 무단투기 목록 조회 성공');
-    }
-
-    /**
-     * Register a new littering report
-     */
-    private function registerLittering(): void
-    {
-        // Get current user and employee information
-        $user = $this->user();
+        $user = AuthManager::user();
         if (!$user) {
-            $this->apiError('로그인이 필요합니다.', 'UNAUTHORIZED', 401);
+            $this->error('로그인이 필요합니다.', [], 401);
             return;
         }
         
         $userId = $user['id'];
+        $employeeId = $user['employee_id'] ?? null;
         
-        // Get user details and employee ID
-        $userDetails = UserRepository::findById($userId);
-        if (!$userDetails) {
-            $this->apiError('사용자 정보를 찾을 수 없습니다.', 'USER_NOT_FOUND', 404);
-            return;
+        try {
+            // Note: File uploads are not part of the request body, so we access $_FILES directly.
+            // This is a common practice even in modern frameworks when dealing with multipart/form-data.
+            $result = $this->litteringManager->registerLittering(
+                $this->request->all(),
+                $_FILES,
+                $userId,
+                $employeeId
+            );
+            $this->success($result, '부적정배출 정보가 성공적으로 등록되었습니다.');
+        } catch (Exception $e) {
+            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
         }
-        
-        $employeeId = $userDetails['employee_id'] ?? null;
-        
-        $result = $this->litteringManager->registerLittering($_POST, $_FILES, $userId, $employeeId);
-        $this->apiSuccess($result, '무단투기 정보가 성공적으로 등록되었습니다. 관리자 확인 후 지도에 표시됩니다.');
     }
 
     /**
-     * Process a littering report (admin action)
+     * Process a littering report (collection).
+     * Corresponds to POST /api/littering/{id}/process
      */
-    private function processLittering(): void
+    public function process(int $id): void
     {
-        $caseId = $_POST['id'] ?? null;
+        $this->requireAuth('littering_process');
         
-        if (!$caseId) {
-            $this->apiBadRequest('처리할 민원의 ID가 필요합니다.');
-            return;
+        try {
+            $data = $this->request->all();
+            $data['id'] = $id; // Ensure the ID from URL is used
+
+            // Note: Accessing $_FILES for file uploads.
+            $result = $this->litteringManager->processLittering($data, $_FILES);
+            $this->success($result, '처리 상태가 성공적으로 업데이트되었습니다.');
+        } catch (Exception $e) {
+            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
         }
-        
-        $result = $this->litteringManager->processLittering($_POST, $_FILES);
-        $this->apiSuccess($result, '처리 상태가 성공적으로 업데이트되었습니다.');
     }
 }

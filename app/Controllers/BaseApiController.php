@@ -2,18 +2,71 @@
 
 namespace App\Controllers;
 
+use App\Core\AuthManager;
+use App\Core\Request;
+
 /**
  * Base API Controller for handling API requests.
- * Extends BaseController with API-specific functionality.
  */
-abstract class BaseApiController extends BaseController
+abstract class BaseApiController
 {
+    protected Request $request;
+
     public function __construct()
     {
-        parent::__construct();
+        $this->request = new Request();
         
         // Set JSON content type for all API responses
         header('Content-Type: application/json');
+    }
+
+    /**
+     * Return a JSON response.
+     *
+     * @param array $data The data to return
+     * @param int $status HTTP status code
+     */
+    protected function json(array $data, int $status = 200): void
+    {
+        http_response_code($status);
+
+        // Ensure consistent JSON response format
+        $response = [
+            'success' => $status >= 200 && $status < 300,
+            'data' => $data['data'] ?? null,
+            'message' => $data['message'] ?? '',
+            'errors' => $data['errors'] ?? []
+        ];
+
+        // If data is passed directly without the standard format, use it as data
+        if (!isset($data['success']) && !isset($data['message']) && !isset($data['errors'])) {
+            $response['data'] = $data;
+        } else {
+            // Merge with provided structure
+            $response = array_merge($response, $data);
+        }
+
+        echo json_encode($response);
+    }
+
+    /**
+     * Get the current authenticated user.
+     *
+     * @return array|null The user data or null if not authenticated
+     */
+    protected function user(): ?array
+    {
+        return AuthManager::user();
+    }
+
+    /**
+     * Check if the current user is authenticated.
+     *
+     * @return bool True if authenticated, false otherwise
+     */
+    protected function isAuthenticated(): bool
+    {
+        return AuthManager::isLoggedIn();
     }
 
     /**

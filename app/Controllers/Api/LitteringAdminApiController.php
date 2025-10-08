@@ -3,7 +3,8 @@
 namespace App\Controllers\Api;
 
 use App\Services\LitteringManager;
-use App\Core\SessionManager;
+use App\Core\AuthManager;
+use Exception;
 
 class LitteringAdminApiController extends BaseApiController
 {
@@ -11,133 +12,104 @@ class LitteringAdminApiController extends BaseApiController
 
     public function __construct()
     {
-        parent::__construct();
         $this->litteringManager = new LitteringManager();
     }
 
     /**
-     * Handle all littering admin API requests based on action parameter
+     * Get littering reports for admin based on status.
+     * Corresponds to GET /api/littering_admin/reports
      */
-    public function index(): void
+    public function listReports(): void
     {
         $this->requireAuth('littering_manage');
-        
-        $action = $this->getAction();
-        
-        if (!$action) {
-            $this->apiBadRequest('API action이 지정되지 않았습니다.');
-            return;
+        $status = $this->request->input('status', 'pending'); // 'pending', 'deleted'
+
+        try {
+            if ($status === 'pending') {
+                $data = $this->litteringManager->getPendingLittering();
+            } elseif ($status === 'deleted') {
+                $data = $this->litteringManager->getDeletedLittering();
+            } else {
+                $this->error('Invalid status value.', [], 400);
+                return;
+            }
+            $this->success($data);
+        } catch (Exception $e) {
+            $this->error('목록을 불러오는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Confirm a littering report.
+     * Corresponds to POST /api/littering_admin/reports/{id}/confirm
+     */
+    public function confirm(int $id): void
+    {
+        $this->requireAuth('littering_manage');
+        $adminId = AuthManager::user()['id'];
         
         try {
-            switch ($action) {
-                case 'get_pending_littering':
-                    $this->getPendingLittering();
-                    break;
-                case 'confirm_littering':
-                    $this->confirmLittering();
-                    break;
-                case 'delete_littering':
-                    $this->deleteLittering();
-                    break;
-                case 'get_deleted_littering':
-                    $this->getDeletedLittering();
-                    break;
-                case 'permanently_delete_littering':
-                    $this->permanentlyDeleteLittering();
-                    break;
-                case 'restore_littering':
-                    $this->restoreLittering();
-                    break;
-                default:
-                    $this->apiNotFound('요청한 관리자 API를 찾을 수 없습니다.');
-            }
-        } catch (\Exception $e) {
-            $this->handleException($e);
+            $data = $this->request->all();
+            $data['id'] = $id; // Ensure ID from URL is used
+
+            $result = $this->litteringManager->confirmLittering($data, $adminId);
+            $this->success($result, '민원 정보가 성공적으로 확인되었습니다.');
+        } catch (Exception $e) {
+            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
         }
     }
 
     /**
-     * Get pending littering reports for admin review
+     * Delete (soft delete) a littering report.
+     * Corresponds to DELETE /api/littering_admin/reports/{id}
      */
-    private function getPendingLittering(): void
+    public function destroy(int $id): void
     {
-        $data = $this->litteringManager->getPendingLittering();
-        $this->apiSuccess($data, '확인 대기 목록 조회 성공');
-    }
+        $this->requireAuth('littering_manage');
+        $adminId = AuthManager::user()['id'];
 
-    /**
-     * Confirm a littering report
-     */
-    private function confirmLittering(): void
-    {
-        $input = $this->getJsonInput();
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->apiBadRequest('잘못된 JSON 형식입니다.');
-            return;
+        try {
+            $data = $this->request->all();
+            $data['id'] = $id;
+
+            $result = $this->litteringManager->deleteLittering($data, $adminId);
+            $this->success($result, '민원 정보가 성공적으로 삭제되었습니다.');
+        } catch (Exception $e) {
+            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
         }
-        
-        $adminId = SessionManager::get('user')['id'];
-        $result = $this->litteringManager->confirmLittering($input, $adminId);
-        $this->apiSuccess($result, '민원 정보가 성공적으로 확인 및 업데이트되었습니다.');
     }
 
     /**
-     * Delete a littering report
+     * Restore a deleted littering report.
+     * Corresponds to POST /api/littering_admin/reports/{id}/restore
      */
-    private function deleteLittering(): void
+    public function restore(int $id): void
     {
-        $input = $this->getJsonInput();
+        $this->requireAuth('littering_admin');
         
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->apiBadRequest('잘못된 JSON 형식입니다.');
-            return;
+        try {
+            $data = ['id' => $id];
+            $result = $this->litteringManager->restoreLittering($data);
+            $this->success($result, '민원 정보가 성공적으로 복원되었습니다.');
+        } catch (Exception $e) {
+            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
         }
-        
-        $adminId = SessionManager::get('user')['id'];
-        $result = $this->litteringManager->deleteLittering($input, $adminId);
-        $this->apiSuccess($result, '민원 정보가 성공적으로 삭제되었습니다.');
     }
 
     /**
-     * Get deleted littering reports
+     * Permanently delete a littering report.
+     * Corresponds to DELETE /api/littering_admin/reports/{id}/permanent
      */
-    private function getDeletedLittering(): void
+    public function permanentlyDelete(int $id): void
     {
-        $data = $this->litteringManager->getDeletedLittering();
-        $this->apiSuccess($data, '삭제된 목록 조회 성공');
-    }
+        $this->requireAuth('littering_admin'); // Or a higher permission if needed
 
-    /**
-     * Permanently delete a littering report
-     */
-    private function permanentlyDeleteLittering(): void
-    {
-        $input = $this->getJsonInput();
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->apiBadRequest('잘못된 JSON 형식입니다.');
-            return;
+        try {
+            $data = ['id' => $id];
+            $result = $this->litteringManager->permanentlyDeleteLittering($data);
+            $this->success($result, '민원 정보가 영구적으로 삭제되었습니다.');
+        } catch (Exception $e) {
+            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
         }
-        
-        $result = $this->litteringManager->permanentlyDeleteLittering($input);
-        $this->apiSuccess($result, '민원 정보가 성공적으로 영구 삭제되었습니다.');
-    }
-
-    /**
-     * Restore a deleted littering report
-     */
-    private function restoreLittering(): void
-    {
-        $input = $this->getJsonInput();
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->apiBadRequest('잘못된 JSON 형식입니다.');
-            return;
-        }
-        
-        $result = $this->litteringManager->restoreLittering($input);
-        $this->apiSuccess($result, '민원 정보가 성공적으로 복원되었습니다.');
     }
 }

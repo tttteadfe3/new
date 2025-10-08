@@ -1,8 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Note: This implementation assumes that Bootstrap's JS for modal is already loaded
-    // and that Flatpickr and SweetAlert2 are available globally.
     const holidayModalEl = document.getElementById('holidayModal');
     const holidayModal = new bootstrap.Modal(holidayModalEl);
+    const API_URL = '/api/holidays';
 
     flatpickr("#holidayDate", { dateFormat: "Y-m-d" });
 
@@ -22,11 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function escapeHtml(text) {
         if (text === null || typeof text === 'undefined') return '';
         const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
         };
         return text.toString().replace(/[&<>"']/g, m => map[m]);
     }
@@ -41,6 +36,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function populateTable(holidays) {
         tableBody.innerHTML = '';
+        if (!holidays || holidays.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center">등록된 휴일이 없습니다.</td></tr>';
+            return;
+        }
         holidays.forEach(h => {
             const row = `
                 <tr>
@@ -60,7 +59,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function populateDepartmentSelect(departments) {
-        // Remove old options except the first one
         while (departmentIdInput.options.length > 1) {
             departmentIdInput.remove(1);
         }
@@ -72,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function loadData() {
         try {
-            const response = await fetch('../api/holidays.php?action=list', fetchOptions());
+            const response = await fetch(API_URL, fetchOptions());
             const result = await response.json();
             if (!result.success) throw new Error(result.message);
             populateTable(result.data.holidays);
@@ -92,10 +90,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     tableBody.addEventListener('click', async (event) => {
         const target = event.target;
+        const id = target.dataset.id;
+        if (!id) return;
+
         if (target.classList.contains('edit-btn')) {
-            const id = target.dataset.id;
             try {
-                const response = await fetch(`../api/holidays.php?action=get&id=${id}`, fetchOptions());
+                const response = await fetch(`${API_URL}/${id}`, fetchOptions());
                 const result = await response.json();
                 if (!result.success) throw new Error(result.message);
                 const holiday = result.data;
@@ -112,28 +112,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error(error);
             }
         } else if (target.classList.contains('delete-btn')) {
-            const id = target.dataset.id;
             const result = await Confirm.fire('삭제 확인', '정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
             if (result.isConfirmed) {
                 try {
-                    const response = await fetch('../api/holidays.php?action=delete', fetchOptions({
-                        method: 'POST',
-                        body: JSON.stringify({ id: parseInt(id) })
-                    }));
+                    const response = await fetch(`${API_URL}/${id}`, fetchOptions({ method: 'DELETE' }));
                     const result = await response.json();
                     if (!result.success) throw new Error(result.message);
                     Toast.success(result.message);
                     loadData();
                 } catch (error) {
-                    Toast.error(error.message);
+                    Toast.error(error.message || '삭제에 실패했습니다.');
                 }
             }
         }
     });
 
     saveHolidayBtn.addEventListener('click', async () => {
+        const id = holidayIdInput.value;
         const holidayData = {
-            id: holidayIdInput.value ? parseInt(holidayIdInput.value) : null,
             name: holidayNameInput.value,
             date: holidayDateInput.value,
             type: holidayTypeInput.value,
@@ -141,13 +137,23 @@ document.addEventListener('DOMContentLoaded', function () {
             deduct_leave: deductLeaveInput.checked
         };
 
+        const url = id ? `${API_URL}/${id}` : API_URL;
+        const method = id ? 'PUT' : 'POST';
+
         try {
-            const response = await fetch('../api/holidays.php?action=save', fetchOptions({
-                method: 'POST',
+            const response = await fetch(url, fetchOptions({
+                method: method,
                 body: JSON.stringify(holidayData)
             }));
             const result = await response.json();
-            if (!result.success) throw new Error(result.message);
+            if (!result.success) {
+                // Handle validation errors
+                if (result.errors) {
+                    const errorMessages = Object.values(result.errors).join('\n');
+                    throw new Error(errorMessages);
+                }
+                throw new Error(result.message);
+            }
             holidayModal.hide();
             Toast.success(result.message);
             loadData();
@@ -156,6 +162,5 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Initial load
     loadData();
 });

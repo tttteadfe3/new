@@ -26,7 +26,7 @@ try {
     echo App\Core\Router::load(
         __DIR__ . '/../config/routes.php',
         __DIR__ . '/../config/api_routes.php'
-    )->direct(App\Core\Request::uri());
+    )->direct(App\Core\Request::uri(), App\Core\Request::method());
 } catch (Exception $e) {
     // Basic error handling
     // In a real application, you would log this and show a proper error page

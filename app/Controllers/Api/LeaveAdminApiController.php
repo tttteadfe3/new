@@ -4,8 +4,8 @@ namespace App\Controllers\Api;
 
 use App\Services\LeaveService;
 use App\Repositories\LeaveRepository;
-use App\Repositories\EmployeeRepository;
-use App\Core\SessionManager;
+use App\Core\AuthManager;
+use Exception;
 
 class LeaveAdminApiController extends BaseApiController
 {
@@ -13,127 +13,266 @@ class LeaveAdminApiController extends BaseApiController
 
     public function __construct()
     {
-        parent::__construct();
         $this->leaveService = new LeaveService();
     }
 
     /**
-     * Handle all leave admin API requests based on action parameter
+     * List leave requests by status.
+     * Corresponds to GET /api/leaves_admin/requests
      */
-    public function index(): void
+    public function listRequests(): void
+    {
+        $this->requireAuth('leave_admin');
+        $status = $this->request->input('status', 'pending');
+
+        try {
+            if ($status === 'cancellation') {
+                $data = LeaveRepository::getAll(['status' => 'cancellation_requested']);
+            } else {
+                $data = LeaveRepository::getAll(['status' => $status]);
+            }
+            $this->success($data);
+        } catch (Exception $e) {
+            $this->error('요청 목록을 불러오는 중 오류 발생', ['exception' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Approve a leave request.
+     * Corresponds to POST /api/leaves_admin/requests/{id}/approve
+     */
+    public function approveRequest(int $id): void
+    {
+        $this->requireAuth('leave_admin');
+        $adminId = AuthManager::user()['id'];
+
+        try {
+            [$success, $message] = $this->leaveService->approveRequest($id, $adminId);
+            if ($success) {
+                $this->success(null, $message);
+            } else {
+                $this->error($message);
+            }
+        } catch (Exception $e) {
+            $this->error('승인 처리 중 오류 발생', ['exception' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reject a leave request.
+     * Corresponds to POST /api/leaves_admin/requests/{id}/reject
+     */
+    public function rejectRequest(int $id): void
+    {
+        $this->requireAuth('leave_admin');
+        $adminId = AuthManager::user()['id'];
+        $reason = $this->request->input('reason');
+
+        if (empty($reason)) {
+            $this->validationError(['reason' => '반려 사유는 필수입니다.'], '반려 사유가 필요합니다.');
+            return;
+        }
+
+        try {
+            [$success, $message] = $this->leaveService->rejectRequest($id, $adminId, $reason);
+            if ($success) {
+                $this->success(null, $message);
+            } else {
+                $this->error($message);
+            }
+        } catch (Exception $e) {
+            $this->error('반려 처리 중 오류 발생', ['exception' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Approve a leave cancellation request.
+     * Corresponds to POST /api/leaves_admin/cancellations/{id}/approve
+     */
+    public function approveCancellation(int $id): void
+    {
+        $this->requireAuth('leave_admin');
+        $adminId = AuthManager::user()['id'];
+
+        try {
+            [$success, $message] = $this->leaveService->approveCancellation($id, $adminId);
+            if ($success) {
+                $this->success(null, $message);
+            } else {
+                $this->error($message);
+            }
+        } catch (Exception $e) {
+            $this->error('취소 승인 처리 중 오류 발생', ['exception' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reject a leave cancellation request.
+     * Corresponds to POST /api/leaves_admin/cancellations/{id}/reject
+     */
+    public function rejectCancellation(int $id): void
+    {
+        $this->requireAuth('leave_admin');
+        $adminId = AuthManager::user()['id'];
+        $reason = $this->request->input('reason');
+        
+        if (empty($reason)) {
+            $this->validationError(['reason' => '반려 사유는 필수입니다.'], '반려 사유가 필요합니다.');
+            return;
+        }
+
+        try {
+            [$success, $message] = $this->leaveService->rejectCancellation($id, $adminId, $reason);
+            if ($success) {
+                $this->success(null, $message);
+            } else {
+                $this->error($message);
+            }
+        } catch (Exception $e) {
+            $this->error('취소 반려 처리 중 오류 발생', ['exception' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * List all employee leave entitlements.
+     * Corresponds to GET /api/leaves_admin/entitlements
+     */
+    public function listEntitlements(): void
+    {
+        $this->requireAuth('leave_admin');
+        $filters = [
+            'year' => $this->request->input('year', date('Y')),
+            'department_id' => $this->request->input('department_id')
+        ];
+        
+        try {
+            $data = LeaveRepository::getAllEntitlements(array_filter($filters));
+            $this->success($data);
+        } catch (Exception $e) {
+            $this->error('연차 부여 내역 조회 중 오류 발생', ['exception' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Grant annual leave for all employees for a specific year.
+     * Corresponds to POST /api/leaves_admin/grant-all
+     */
+    public function grantForAll(): void
+    {
+        $this->requireAuth('leave_admin');
+        $year = (int)$this->request->input('year', date('Y'));
+
+        try {
+            [$success, $message] = $this->leaveService->grantAnnualLeaveForAllEmployees($year);
+            if ($success) {
+                $this->success(null, $message);
+            } else {
+                $this->error($message);
+            }
+        } catch (Exception $e) {
+            $this->error('전체 연차 부여 중 오류 발생', ['exception' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get leave history for a specific employee.
+     * Corresponds to GET /api/leaves_admin/history/{employeeId}
+     */
+    public function getHistory(int $employeeId): void
+    {
+        $this->requireAuth('leave_admin');
+        $year = (int)$this->request->input('year', date('Y'));
+
+        try {
+            $entitlement = LeaveRepository::findEntitlement($employeeId, $year);
+            $leaves = LeaveRepository::findByEmployeeId($employeeId, ['year' => $year]);
+
+            $this->success([
+                'entitlement' => $entitlement,
+                'leaves' => $leaves
+            ]);
+        } catch (Exception $e) {
+            $this->error('연차 내역 조회 중 오류 발생', ['exception' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Manually adjust leave entitlement for an employee.
+     * Corresponds to POST /api/leaves_admin/adjust
+     */
+    public function manualAdjustment(): void
+    {
+        $this->requireAuth('leave_admin');
+        $adminId = AuthManager::user()['id'];
+        
+        $data = $this->request->all();
+        $employeeId = (int)($data['employee_id'] ?? 0);
+        $year = (int)($data['year'] ?? date('Y'));
+        $adjustedDays = (float)($data['adjustment_days'] ?? 0);
+        $reason = trim($data['reason'] ?? '');
+        
+        if (!$employeeId || empty($reason)) {
+            $this->validationError(['employee_id' => '직원 선택은 필수', 'reason' => '조정 사유는 필수'], '필수 입력값이 누락되었습니다.');
+            return;
+        }
+        
+        try {
+            if ($this->leaveService->adjustLeaveEntitlement($employeeId, $year, $adjustedDays, $reason, $adminId)) {
+                $this->success(null, "연차 조정이 완료되었습니다.");
+            } else {
+                $this->error("연차 조정 처리 중 오류가 발생했습니다.");
+            }
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    /**
+     * Calculate leaves for employees based on filters.
+     * Corresponds to POST /api/leaves_admin/calculate
+     */
+    public function calculateLeaves(): void
     {
         $this->requireAuth('leave_admin');
         
-        $action = $this->getAction();
-        
-        try {
-            switch ($action) {
-                case 'list_entitlements':
-                    $this->listEntitlements();
-                    break;
-                case 'calculate_leaves':
-                    $this->calculateLeaves();
-                    break;
-                case 'save_leaves':
-                    $this->saveLeaves();
-                    break;
-                case 'calculate_and_grant':
-                    $this->calculateAndGrant();
-                    break;
-                case 'list_requests':
-                    $this->listRequests();
-                    break;
-                case 'approve_request':
-                    $this->approveRequest();
-                    break;
-                case 'reject_request':
-                    $this->rejectRequest();
-                    break;
-                case 'approve_cancellation':
-                    $this->approveCancellation();
-                    break;
-                case 'reject_cancellation':
-                    $this->rejectCancellation();
-                    break;
-                case 'get_history':
-                    $this->getHistory();
-                    break;
-                case 'grant_for_all':
-                    $this->grantForAll();
-                    break;
-                case 'manual_adjustment':
-                    $this->manualAdjustment();
-                    break;
-                default:
-                    $this->apiBadRequest('Invalid action');
-            }
-        } catch (\Exception $e) {
-            $this->handleException($e);
-        }
-    }
-
-    /**
-     * List all employee leave entitlements
-     */
-    private function listEntitlements(): void
-    {
-        $filters = [
-            'year' => $_GET['year'] ?? date('Y'),
-            'department_id' => $_GET['department_id'] ?? null
-        ];
-        
-        $data = LeaveRepository::getAllEntitlements($filters);
-        
-        // 각 직원에 대해 연차 계산 상세 내역을 추가
-        foreach ($data as &$row) {
-            if (!empty($row['hire_date'])) {
-                $row['leave_breakdown'] = $this->leaveService->calculateAnnualLeaveDays($row['hire_date'], $filters['year']);
-            } else {
-                $row['leave_breakdown'] = null;
-            }
-        }
-        unset($row);
-        
-        $this->apiSuccess($data);
-    }
-
-    /**
-     * Calculate leaves for employees
-     */
-    private function calculateLeaves(): void
-    {
-        $input = $this->getJsonInput();
-        $year = (int)($input['year'] ?? date('Y'));
-        $department_id = $input['department_id'] ?? null;
+        $data = $this->request->all();
+        $year = (int)($data['year'] ?? date('Y'));
+        $department_id = $data['department_id'] ?? null;
         
         $employeeFilters = ['status' => 'active'];
         if ($department_id) {
             $employeeFilters['department_id'] = $department_id;
         }
         
-        $employees = EmployeeRepository::getAll($employeeFilters);
-        
-        $results = [];
-        foreach ($employees as $employee) {
-            if (empty($employee['hire_date'])) {
-                $employee['leave_data'] = null;
-            } else {
-                $employee['leave_data'] = $this->leaveService->calculateAnnualLeaveDays($employee['hire_date'], $year);
+        try {
+            $employees = \App\Repositories\EmployeeRepository::getAll($employeeFilters);
+
+            $results = [];
+            foreach ($employees as $employee) {
+                if (empty($employee['hire_date'])) {
+                    $employee['leave_data'] = null;
+                } else {
+                    $employee['leave_data'] = $this->leaveService->calculateAnnualLeaveDays($employee['hire_date'], $year);
+                }
+                $results[] = $employee;
             }
-            $results[] = $employee;
+            $this->success($results);
+        } catch (Exception $e) {
+            $this->error('연차 계산 중 오류 발생', ['exception' => $e->getMessage()], 500);
         }
-        
-        $this->apiSuccess($results);
     }
 
     /**
-     * Save leaves for multiple employees
+     * Save calculated leave entitlements for multiple employees.
+     * Corresponds to POST /api/leaves_admin/save-entitlements
      */
-    private function saveLeaves(): void
+    public function saveEntitlements(): void
     {
-        $input = $this->getJsonInput();
-        $employees_data = $input['employees'] ?? [];
-        $year = (int)($input['year'] ?? date('Y'));
+        $this->requireAuth('leave_admin');
+        
+        $data = $this->request->all();
+        $employees_data = $data['employees'] ?? [];
+        $year = (int)($data['year'] ?? date('Y'));
         
         $success_count = 0;
         $failed_count = 0;
@@ -145,228 +284,15 @@ class LeaveAdminApiController extends BaseApiController
                 $success_count++;
             } catch (\Exception $e) {
                 $failed_count++;
-                $errors[] = "{$employee['name']}: " . $e->getMessage();
+                $errors[] = ($employee['name'] ?? $employee['id']) . ": " . $e->getMessage();
             }
         }
-        
+
         $message = "총 {$success_count}명의 연차 부여를 완료했습니다.";
         if ($failed_count > 0) {
-            $this->apiError("{$failed_count}명 실패. 오류: " . implode(', ', $errors));
+            $this->error("{$failed_count}명 실패. 오류: " . implode(', ', $errors));
         } else {
-            $this->apiSuccess(null, $message);
-        }
-    }
-
-    /**
-     * Calculate and grant leave for a single employee
-     */
-    private function calculateAndGrant(): void
-    {
-        $input = $this->getJsonInput();
-        $employeeId = (int)($input['employee_id'] ?? 0);
-        $year = (int)($input['year'] ?? date('Y'));
-        
-        if (!$employeeId) {
-            $this->apiBadRequest('Employee ID is required');
-            return;
-        }
-        
-        if ($this->leaveService->grantCalculatedAnnualLeave($employeeId, $year)) {
-            $this->apiSuccess(null, "연차 계산 및 부여가 완료되었습니다.");
-        } else {
-            $this->apiError("연차 부여 처리 중 오류가 발생했습니다.");
-        }
-    }
-
-    /**
-     * List leave requests by status
-     */
-    private function listRequests(): void
-    {
-        $status = $_GET['status'] ?? 'pending';
-        
-        if ($status === 'cancellation') {
-            $data = LeaveRepository::getAll(['status' => 'cancellation_requested']);
-        } else {
-            $data = LeaveRepository::getAll(['status' => $status]);
-        }
-        
-        $this->apiSuccess($data);
-    }
-
-    /**
-     * Approve a leave request
-     */
-    private function approveRequest(): void
-    {
-        $input = $this->getJsonInput();
-        $leaveId = (int)($input['id'] ?? 0);
-        $adminId = SessionManager::get('user')['id'];
-        
-        if (!$leaveId) {
-            $this->apiBadRequest('Leave ID is required');
-            return;
-        }
-        
-        [$success, $message] = $this->leaveService->approveRequest($leaveId, $adminId);
-        
-        if ($success) {
-            $this->apiSuccess(null, $message);
-        } else {
-            $this->apiError($message);
-        }
-    }
-
-    /**
-     * Reject a leave request
-     */
-    private function rejectRequest(): void
-    {
-        $input = $this->getJsonInput();
-        $leaveId = (int)($input['id'] ?? 0);
-        $reason = trim($input['reason'] ?? '');
-        $adminId = SessionManager::get('user')['id'];
-        
-        if (!$leaveId) {
-            $this->apiBadRequest('Leave ID is required');
-            return;
-        }
-        
-        if (empty($reason)) {
-            $this->apiBadRequest('반려 사유를 입력해야 합니다.');
-            return;
-        }
-        
-        [$success, $message] = $this->leaveService->rejectRequest($leaveId, $adminId, $reason);
-        
-        if ($success) {
-            $this->apiSuccess(null, $message);
-        } else {
-            $this->apiError($message);
-        }
-    }
-
-    /**
-     * Approve a leave cancellation request
-     */
-    private function approveCancellation(): void
-    {
-        $input = $this->getJsonInput();
-        $leaveId = (int)($input['id'] ?? 0);
-        $adminId = SessionManager::get('user')['id'];
-        
-        if (!$leaveId) {
-            $this->apiBadRequest('Leave ID is required');
-            return;
-        }
-        
-        [$success, $message] = $this->leaveService->approveCancellation($leaveId, $adminId);
-        
-        if ($success) {
-            $this->apiSuccess(null, $message);
-        } else {
-            $this->apiError($message);
-        }
-    }
-
-    /**
-     * Reject a leave cancellation request
-     */
-    private function rejectCancellation(): void
-    {
-        $input = $this->getJsonInput();
-        $leaveId = (int)($input['id'] ?? 0);
-        $reason = trim($input['reason'] ?? '');
-        $adminId = SessionManager::get('user')['id'];
-        
-        if (!$leaveId) {
-            $this->apiBadRequest('Leave ID is required');
-            return;
-        }
-        
-        if (empty($reason)) {
-            $this->apiBadRequest('취소 요청 반려 사유를 입력해야 합니다.');
-            return;
-        }
-        
-        [$success, $message] = $this->leaveService->rejectCancellation($leaveId, $adminId, $reason);
-        
-        if ($success) {
-            $this->apiSuccess(null, $message);
-        } else {
-            $this->apiError($message);
-        }
-    }
-
-    /**
-     * Get leave history for an employee
-     */
-    private function getHistory(): void
-    {
-        $employeeId = (int)($_GET['employee_id'] ?? 0);
-        $year = (int)($_GET['year'] ?? date('Y'));
-        
-        if (!$employeeId) {
-            $this->apiBadRequest('Employee ID is required');
-            return;
-        }
-        
-        $entitlement = LeaveRepository::findEntitlement($employeeId, $year);
-        $leaves = LeaveRepository::findByEmployeeId($employeeId, ['year' => $year]);
-        
-        $this->apiSuccess([
-            'entitlement' => $entitlement,
-            'leaves' => $leaves
-        ]);
-    }
-
-    /**
-     * Grant annual leave for all employees
-     */
-    private function grantForAll(): void
-    {
-        $input = $this->getJsonInput();
-        $year = (int)($input['year'] ?? date('Y'));
-        
-        [$success, $message] = $this->leaveService->grantAnnualLeaveForAllEmployees($year);
-        
-        if ($success) {
-            $this->apiSuccess(null, $message);
-        } else {
-            $this->apiError($message);
-        }
-    }
-
-    /**
-     * Manual adjustment of leave entitlement
-     */
-    private function manualAdjustment(): void
-    {
-        $input = $this->getJsonInput();
-        $employeeId = (int)($input['employee_id'] ?? 0);
-        $year = (int)($input['year'] ?? date('Y'));
-        $adjustedDays = (float)($input['adjustment_days'] ?? 0);
-        $reason = trim($input['reason'] ?? '');
-        $adminId = SessionManager::get('user')['id'];
-        
-        if (!$employeeId) {
-            $this->apiBadRequest('Employee ID is required');
-            return;
-        }
-        
-        if (empty($reason)) {
-            $this->apiBadRequest('Adjustment reason is required');
-            return;
-        }
-        
-        try {
-            if ($this->leaveService->adjustLeaveEntitlement($employeeId, $year, $adjustedDays, $reason, $adminId)) {
-                $this->apiSuccess(null, "연차 조정이 완료되었습니다.");
-            } else {
-                $this->apiError("연차 조정 처리 중 오류가 발생했습니다.");
-            }
-        } catch (\Exception $e) {
-            $this->apiError($e->getMessage());
+            $this->success(null, $message);
         }
     }
 }

@@ -6,17 +6,15 @@ class Router
 {
     protected array $webRoutes = [];
     protected array $apiRoutes = [];
-    protected array $currentGroup = [];
-    protected array $middleware = [];
 
     public static function load(string $webFile, string $apiFile = null): self
     {
         $router = new static;
         
-        // Load web routes
-        $router->webRoutes = require $webFile;
+        if (file_exists($webFile)) {
+            $router->webRoutes = require $webFile;
+        }
         
-        // Load API routes if provided
         if ($apiFile && file_exists($apiFile)) {
             $router->apiRoutes = require $apiFile;
         }
@@ -24,42 +22,7 @@ class Router
         return $router;
     }
 
-    public function web(string $uri, string $action): self
-    {
-        $this->webRoutes[$uri] = [
-            'action' => $action,
-            'middleware' => $this->currentGroup['middleware'] ?? []
-        ];
-        return $this;
-    }
-
-    public function api(string $uri, string $action): self
-    {
-        $this->apiRoutes[$uri] = [
-            'action' => $action,
-            'middleware' => $this->currentGroup['middleware'] ?? []
-        ];
-        return $this;
-    }
-
-    public function group(array $attributes, callable $callback): self
-    {
-        $previousGroup = $this->currentGroup;
-        $this->currentGroup = array_merge($this->currentGroup, $attributes);
-        
-        $callback($this);
-        
-        $this->currentGroup = $previousGroup;
-        return $this;
-    }
-
-    public function middleware(string $middleware): self
-    {
-        $this->currentGroup['middleware'][] = $middleware;
-        return $this;
-    }
-
-    public function direct(string $uri)
+    public function direct(string $uri, string $method)
     {
         // Remove query string from URI
         if (false !== $pos = strpos($uri, '?')) {
@@ -69,111 +32,64 @@ class Router
 
         // Check API routes first
         if (str_starts_with($uri, 'api/')) {
-            return $this->handleApiRoute($uri);
+            $apiUri = substr($uri, 4);
+            return $this->findAndCallRoute($this->apiRoutes, $apiUri, $method, 'Api');
         }
 
         // Check web routes
-        return $this->handleWebRoute($uri);
+        return $this->findAndCallRoute($this->webRoutes, $uri, $method, '');
     }
 
-    protected function handleWebRoute(string $uri)
+    protected function findAndCallRoute(array $routes, string $uri, string $method, string $namespacePrefix)
     {
-        if (array_key_exists($uri, $this->webRoutes)) {
-            $route = $this->webRoutes[$uri];
-            
-            // Handle legacy format (string) or new format (array)
-            if (is_string($route)) {
-                return $this->callAction(...explode('@', $route));
+        foreach ($routes as $routeDefinition => $action) {
+            // Split "METHOD /path"
+            $parts = explode(' ', $routeDefinition, 2);
+            if (count($parts) !== 2) {
+                continue;
             }
-            
-            // Apply middleware if defined
-            if (!empty($route['middleware'])) {
-                $this->applyMiddleware($route['middleware']);
+            [$routeMethod, $routePath] = $parts;
+
+            if ($routeMethod !== $method) {
+                continue;
             }
-            
-            return $this->callAction(...explode('@', $route['action']));
+
+            // Convert route path to regex: /users/{id} -> #^/users/([^/]+)$#
+            $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '([^/]+)', $routePath);
+            $regex = "#^" . $pattern . "$#";
+
+            $matches = [];
+            if (preg_match($regex, $uri, $matches)) {
+                // Remove the full match from the beginning of the array
+                array_shift($matches);
+                $params = $matches;
+
+                return $this->callAction($action, $params, $namespacePrefix);
+            }
         }
 
-        throw new \Exception("No web route defined for this URI: {$uri}");
+        throw new \Exception("No route defined for this URI: {$uri} with method {$method}");
     }
 
-    protected function handleApiRoute(string $uri)
+    protected function callAction(string $action, array $params, string $namespacePrefix)
     {
-        // Remove 'api/' prefix for matching
-        $apiUri = substr($uri, 4);
-        
-        if (array_key_exists($apiUri, $this->apiRoutes)) {
-            $route = $this->apiRoutes[$apiUri];
-            
-            // Handle legacy format (string) or new format (array)
-            if (is_string($route)) {
-                return $this->callApiAction(...explode('@', $route));
-            }
-            
-            // Apply middleware if defined
-            if (!empty($route['middleware'])) {
-                $this->applyMiddleware($route['middleware']);
-            }
-            
-            return $this->callApiAction(...explode('@', $route['action']));
+        [$controller, $method] = explode('@', $action);
+
+        $controllerNamespace = "App\\Controllers\\" . ($namespacePrefix ? "{$namespacePrefix}\\" : "");
+        $controller = $controllerNamespace . $controller;
+
+        if (!class_exists($controller)) {
+            throw new \Exception("Controller class {$controller} not found.");
         }
 
-        throw new \Exception("No API route defined for this URI: {$uri}");
-    }
-
-    protected function callAction(string $controller, string $action)
-    {
-        $controller = "App\\Controllers\\{$controller}";
         $controllerInstance = new $controller;
 
-        if (!method_exists($controllerInstance, $action)) {
+        if (!method_exists($controllerInstance, $method)) {
             throw new \Exception(
-                "{$controller} does not respond to the {$action} action."
+                "{$controller} does not respond to the {$method} action."
             );
         }
 
-        return $controllerInstance->$action();
-    }
-
-    protected function callApiAction(string $controller, string $action)
-    {
-        $controller = "App\\Controllers\\Api\\{$controller}";
-        $controllerInstance = new $controller;
-
-        if (!method_exists($controllerInstance, $action)) {
-            throw new \Exception(
-                "{$controller} does not respond to the {$action} action."
-            );
-        }
-
-        return $controllerInstance->$action();
-    }
-
-    protected function applyMiddleware(array $middleware): void
-    {
-        foreach ($middleware as $middlewareDefinition) {
-            // Handle middleware with parameters: "auth:permission_name" or just "auth"
-            if (is_string($middlewareDefinition)) {
-                $parts = explode(':', $middlewareDefinition, 2);
-                $middlewareName = $parts[0];
-                $parameter = $parts[1] ?? null;
-            } else {
-                $middlewareName = $middlewareDefinition;
-                $parameter = null;
-            }
-            
-            $middlewareClass = "App\\Middleware\\{$middlewareName}Middleware";
-            
-            if (class_exists($middlewareClass)) {
-                $middlewareInstance = new $middlewareClass;
-                
-                // Handle different middleware types
-                if ($parameter && method_exists($middlewareInstance, 'handle')) {
-                    $middlewareInstance->handle($parameter);
-                } else {
-                    $middlewareInstance->handle();
-                }
-            }
-        }
+        return $controllerInstance->$method(...$params);
     }
 }

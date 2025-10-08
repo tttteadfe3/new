@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let allDepartments = [];
     let allPositions = [];
+    const API_URL = '/api/employees';
 
     const fetchOptions = (options = {}) => {
         const defaultHeaders = {
@@ -83,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const posId = filterPosition.value;
         const status = filterStatus.value;
 
-        let url = '../api/employees.php?action=list';
+        let url = `${API_URL}?action=list`;
         if (deptId) url += `&department_id=${deptId}`;
         if (posId) url += `&position_id=${posId}`;
         if (status) url += `&status=${status}`;
@@ -102,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadInitialData = async () => {
         try {
             const status = filterStatus.value;
-            let url = '../api/employees.php?action=get_initial_data';
+            let url = `${API_URL}?action=get_initial_data`;
             if (status) url += `&status=${status}`;
             const response = await fetch(url, fetchOptions());
             const result = await response.json();
@@ -144,8 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target.classList.contains('edit-btn')) {
             try {
                 const [detailsRes, historyRes] = await Promise.all([
-                    fetch(`../api/employees.php?action=get_one&id=${employeeId}`, fetchOptions()),
-                    fetch(`../api/employees.php?action=get_change_history&id=${employeeId}`, fetchOptions())
+                    fetch(`${API_URL}?action=get_one&id=${employeeId}`, fetchOptions()),
+                    fetch(`${API_URL}?action=get_change_history&id=${employeeId}`, fetchOptions())
                 ]);
                 const detailsResult = await detailsRes.json();
                 const historyResult = await historyRes.json();
@@ -201,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!result.isConfirmed) return;
 
             try {
-                const response = await fetch('../api/employees.php?action=approve_update', fetchOptions({
+                const response = await fetch(`${API_URL}?action=approve_update`, fetchOptions({
                     method: 'POST', body: JSON.stringify({ id: employeeId })
                 }));
                 const result = await response.json();
@@ -231,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (reason) {
                 try {
-                    const response = await fetch('../api/employees.php?action=reject_update', fetchOptions({
+                    const response = await fetch(`${API_URL}?action=reject_update`, fetchOptions({
                         method: 'POST', body: JSON.stringify({ id: employeeId, reason: reason })
                     }));
                     const result = await response.json();
@@ -259,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = Object.fromEntries(formData.entries());
 
         try {
-            const response = await fetch('../api/employees.php?action=' + action, fetchOptions({
+            const response = await fetch(`${API_URL}?action=` + action, fetchOptions({
                 method: 'POST', body: JSON.stringify(data)
             }));
             const result = await response.json();

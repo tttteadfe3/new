@@ -17,7 +17,9 @@ class AuthManager
     {
         // Fetch all roles and permissions for the user
         $user['roles'] = RoleRepository::getUserRoles($user['id']);
-        $user['permissions'] = UserRepository::getPermissions($user['id']);
+        $permissions = UserRepository::getPermissions($user['id']);
+        // Ensure permissions are a flat array of strings for easy checking
+        $user['permissions'] = array_column($permissions, 'key');
 
         $_SESSION[self::USER_SESSION_KEY] = $user;
     }

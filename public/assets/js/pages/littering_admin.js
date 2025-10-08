@@ -1,7 +1,7 @@
 class LitteringAdminApp extends BaseApp {
     constructor() {
         super({
-            API_URL: '../api/littering_admin.php',
+            API_URL: '/api/littering_admin/reports', // Set base URL for this page
             ALLOWED_REGIONS: ['정왕1동']
         });
 
@@ -31,18 +31,30 @@ class LitteringAdminApp extends BaseApp {
         document.getElementById('delete-btn').addEventListener('click', () => this.deleteReport());
     }
 
+    async _fetch(url, options = {}) {
+        const defaultHeaders = {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+        };
+        const fetchOptions = { ...options, headers: { ...defaultHeaders, ...(options.headers || {}) } };
+
+        const response = await fetch(url, fetchOptions);
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'API 요청에 실패했습니다.');
+        }
+        return result;
+    }
+
     async loadData() {
         try {
-            const response = await this.apiCall('get_pending_littering', {}, 'GET');
-            if (response.success && Array.isArray(response.data)) {
-                this.state.pendingList = response.data;
-                this.renderPendingList();
-            } else {
-                this.renderPendingList();
-            }
+            const response = await this._fetch(`${this.options.API_URL}?status=pending`);
+            this.state.pendingList = response.data || [];
+            this.renderPendingList();
         } catch (error) {
             console.error('대기 목록 로드 실패:', error);
-            document.getElementById('pending-list').innerHTML = '<div class="list-group-item text-center text-danger">목록을 불러오는데 실패했습니다.</div>';
+            document.getElementById('pending-list').innerHTML = `<div class="list-group-item text-center text-danger">목록을 불러오는데 실패했습니다: ${error.message}</div>`;
         }
     }
 
@@ -67,10 +79,7 @@ class LitteringAdminApp extends BaseApp {
                     <small class="text-muted">등록자: ${registrantName}</small>
                 </a>
             `;
-            const itemEl = document.createElement('div');
-            itemEl.innerHTML = itemHtml;
-            const itemNode = itemEl.firstElementChild;
-
+            const itemNode = document.createRange().createContextualFragment(itemHtml).firstChild;
             itemNode.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.selectCase(parseInt(item.id));
@@ -88,26 +97,20 @@ class LitteringAdminApp extends BaseApp {
 
         this.state.selectedCase = selected;
 
-        // Populate form fields
         document.getElementById('case-id').value = selected.id;
         document.getElementById('latitude').value = selected.latitude;
         document.getElementById('longitude').value = selected.longitude;
         document.getElementById('address').value = selected.address;
         document.getElementById('mainType').value = selected.waste_type;
         document.getElementById('subType').value = selected.waste_type2;
-
-        const registrantName = selected.employee_name || selected.user_name || '알 수 없음';
-        const registrantType = selected.employee_name ? '(직원)' : '(일반)';
-        document.getElementById('registrant-info').textContent = `등록자: ${registrantName} ${registrantType}`;
+        document.getElementById('registrant-info').textContent = `등록자: ${selected.employee_name || selected.user_name || '알 수 없음'} (${selected.employee_name ? '직원' : '일반'})`;
         
         this.displayExistingPhoto(selected);
 
         const position = { lat: selected.latitude, lng: selected.longitude };
         this.state.mapManager.setCenter(position);
 
-        if (this.state.currentMarker) {
-            this.state.mapManager.removeMarker(this.state.currentMarker);
-        }
+        if (this.state.currentMarker) this.state.mapManager.removeMarker(this.state.currentMarker);
 
         this.state.currentMarker = this.state.mapManager.addMarker({
             position: position,
@@ -115,7 +118,6 @@ class LitteringAdminApp extends BaseApp {
             onDragEnd: (newPosition) => {
                 document.getElementById('latitude').value = newPosition.lat;
                 document.getElementById('longitude').value = newPosition.lng;
-                // The onAddressResolved callback in init() handles the address update.
             }
         });
 
@@ -126,26 +128,18 @@ class LitteringAdminApp extends BaseApp {
     displayExistingPhoto(markerData) {
         const wrapper = document.getElementById('photoSwiperWrapper');
         wrapper.innerHTML = '';
-        const basePath = '../storage/';
+        const basePath = '/storage/';
         const photos = [];
-        if (markerData.reg_photo_path) photos.push({ src: basePath + markerData.reg_photo_path, title: '작업전' });
-        if (markerData.reg_photo_path2) photos.push({ src: basePath + markerData.reg_photo_path2, title: '작업후' });
+        if (markerData.reg_photo_path) photos.push({ src: basePath + markerData.reg_photo_path, title: '등록 사진' });
     
         if (photos.length > 0) {
-            photos.forEach((photo, index) => {
-                const activeClass = index === 0 ? 'active' : '';
-                const slideHTML = `
-                    <div class="carousel-item ${activeClass}" data-bs-interval="false">
-                        <img src="${photo.src}" class="d-block w-100" alt="${photo.title}">
-                    </div>`;
-                const slideEl = document.createElement('div');
-                slideEl.innerHTML = slideHTML.trim();
-                const slideNode = slideEl.firstChild;
-                slideNode.addEventListener('click', () => this.showPhotoModal(photo.src, photo.title));
-                wrapper.appendChild(slideNode);
-            });
+            const photo = photos[0];
+            const slideHTML = `<img src="${photo.src}" class="d-block w-100" alt="${photo.title}">`;
+            const slideNode = document.createRange().createContextualFragment(slideHTML).firstChild;
+            slideNode.addEventListener('click', () => this.showPhotoModal(photo.src, photo.title));
+            wrapper.appendChild(slideNode);
         } else {
-            wrapper.innerHTML = '<div class="carousel-item active"><div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div></div>';
+            wrapper.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
         }
     }
 
@@ -169,17 +163,15 @@ class LitteringAdminApp extends BaseApp {
         };
 
         this.setButtonLoading('#confirm-btn', '저장 중...');
-
         try {
-            const response = await this.apiCall('confirm_littering', updatedData, 'POST');
-            if (response.success) {
-                Toast.success('성공적으로 확인 및 저장되었습니다.');
-                this.removeConfirmedItem(updatedData.id);
-            } else {
-                Toast.error('저장에 실패했습니다: ' + response.message);
-            }
+            await this._fetch(`${this.options.API_URL}/${updatedData.id}/confirm`, {
+                method: 'POST',
+                body: JSON.stringify(updatedData)
+            });
+            Toast.success('성공적으로 확인 및 저장되었습니다.');
+            this.removeConfirmedItem(updatedData.id);
         } catch (error) {
-            Toast.error('오류가 발생했습니다: ' + error.message);
+            Toast.error('저장에 실패했습니다: ' + error.message);
         } finally {
             this.resetButtonLoading('#confirm-btn', '<i class="ri-check-double-line me-1"></i>확인 및 저장');
         }
@@ -188,27 +180,20 @@ class LitteringAdminApp extends BaseApp {
     async deleteReport() {
         if (!this.state.selectedCase) return;
 
-        Confirm.fire('삭제 확인', '정말로 이 항목을 삭제하시겠습니까?').then(async (result) => {
-            if (result.isConfirmed) {
-                const data = { id: this.state.selectedCase.id };
-
-                this.setButtonLoading('#delete-btn', '삭제 중...');
-
-                try {
-                    const response = await this.apiCall('delete_littering', data, 'POST');
-                    if (response.success) {
-                        Toast.success('성공적으로 삭제되었습니다.');
-                        this.removeConfirmedItem(data.id);
-                    } else {
-                        Toast.error('삭제에 실패했습니다: ' + response.message);
-                    }
-                } catch (error) {
-                    Toast.error('오류가 발생했습니다: ' + error.message);
-                } finally {
-                    this.resetButtonLoading('#delete-btn', '<i class="ri-delete-bin-line me-1"></i>삭제');
-                }
+        const result = await Confirm.fire('삭제 확인', '정말로 이 항목을 삭제하시겠습니까?');
+        if (result.isConfirmed) {
+            const caseId = this.state.selectedCase.id;
+            this.setButtonLoading('#delete-btn', '삭제 중...');
+            try {
+                await this._fetch(`${this.options.API_URL}/${caseId}`, { method: 'DELETE' });
+                Toast.success('성공적으로 삭제되었습니다.');
+                this.removeConfirmedItem(caseId);
+            } catch (error) {
+                Toast.error('삭제에 실패했습니다: ' + error.message);
+            } finally {
+                this.resetButtonLoading('#delete-btn', '<i class="ri-delete-bin-line me-1"></i>삭제');
             }
-        });
+        }
     }
 
     removeConfirmedItem(caseId) {
@@ -222,10 +207,10 @@ class LitteringAdminApp extends BaseApp {
             this.state.currentMarker = null;
         }
         const activeItem = document.querySelector('#pending-list .active');
-        if (activeItem) {
-            activeItem.classList.remove('active');
-        }
+        if (activeItem) activeItem.classList.remove('active');
     }
 }
 
-new LitteringAdminApp();
+document.addEventListener('DOMContentLoaded', () => {
+    new LitteringAdminApp().init();
+});

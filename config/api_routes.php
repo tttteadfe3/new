@@ -6,20 +6,43 @@ return [
     // Employee API routes
     'employees' => 'EmployeeApiController@index',
     
-    // Holiday API routes  
-    'holidays' => 'HolidayApiController@index',
+    // Holiday API routes
+    'GET holidays' => 'HolidayApiController@index',
+    'POST holidays' => 'HolidayApiController@store',
+    'GET holidays/{id}' => 'HolidayApiController@show',
+    'PUT holidays/{id}' => 'HolidayApiController@update',
+    'DELETE holidays/{id}' => 'HolidayApiController@destroy',
     
     // Leave API routes (user)
-    'leaves' => 'LeaveApiController@index',
-    
+    'GET leaves' => 'LeaveApiController@index',
+    'POST leaves' => 'LeaveApiController@store',
+    'POST leaves/{id}/cancel' => 'LeaveApiController@cancel',
+    'POST leaves/calculate-days' => 'LeaveApiController@calculateDays',
+
     // Leave Admin API routes
-    'leaves_admin' => 'LeaveAdminApiController@index',
+    'GET leaves_admin/requests' => 'LeaveAdminApiController@listRequests',
+    'POST leaves_admin/requests/{id}/approve' => 'LeaveAdminApiController@approveRequest',
+    'POST leaves_admin/requests/{id}/reject' => 'LeaveAdminApiController@rejectRequest',
+    'POST leaves_admin/cancellations/{id}/approve' => 'LeaveAdminApiController@approveCancellation',
+    'POST leaves_admin/cancellations/{id}/reject' => 'LeaveAdminApiController@rejectCancellation',
+    'GET leaves_admin/entitlements' => 'LeaveAdminApiController@listEntitlements',
+    'POST leaves_admin/grant-all' => 'LeaveAdminApiController@grantForAll',
+    'GET leaves_admin/history/{employeeId}' => 'LeaveAdminApiController@getHistory',
+    'POST leaves_admin/adjust' => 'LeaveAdminApiController@manualAdjustment',
+    'POST leaves_admin/calculate' => 'LeaveAdminApiController@calculateLeaves',
+    'POST leaves_admin/save-entitlements' => 'LeaveAdminApiController@saveEntitlements',
     
-    // Littering API routes (user)
-    'littering' => 'LitteringApiController@index',
-    
+    // Littering API routes (user-facing for map, history, etc.)
+    'GET littering' => 'LitteringApiController@index',
+    'POST littering' => 'LitteringApiController@store',
+    'POST littering/{id}/process' => 'LitteringApiController@process',
+
     // Littering Admin API routes
-    'littering_admin' => 'LitteringAdminApiController@index',
+    'GET littering_admin/reports' => 'LitteringAdminApiController@listReports',
+    'POST littering_admin/reports/{id}/confirm' => 'LitteringAdminApiController@confirm',
+    'DELETE littering_admin/reports/{id}' => 'LitteringAdminApiController@destroy',
+    'POST littering_admin/reports/{id}/restore' => 'LitteringAdminApiController@restore',
+    'DELETE littering_admin/reports/{id}/permanent' => 'LitteringAdminApiController@permanentlyDelete',
     
     // Organization API routes
     'organization' => 'OrganizationApiController@index',
@@ -34,8 +57,21 @@ return [
     'menus' => 'MenuApiController@index',
     
     // Profile API routes
-    'profile' => 'ProfileApiController@index',
+    'GET profile' => 'ProfileApiController@index',
+    'PUT profile' => 'ProfileApiController@update',
     
     // Log API routes
-    'logs' => 'LogApiController@index',
+    'GET logs' => 'LogApiController@index',
+    'DELETE logs' => 'LogApiController@destroy',
+
+    // Waste Collection API routes
+    'GET waste-collections' => 'WasteCollectionApiController@index',
+    'POST waste-collections' => 'WasteCollectionApiController@store',
+    'GET waste-collections/admin' => 'WasteCollectionApiController@getAdminCollections',
+    'POST waste-collections/admin/{id}/process' => 'WasteCollectionApiController@processCollection',
+    'PUT waste-collections/admin/{id}/items' => 'WasteCollectionApiController@updateItems',
+    'PUT waste-collections/admin/{id}/memo' => 'WasteCollectionApiController@updateMemo',
+    'POST waste-collections/admin/parse-html' => 'WasteCollectionApiController@parseHtmlFile',
+    'POST waste-collections/admin/batch-register' => 'WasteCollectionApiController@batchRegister',
+    'DELETE waste-collections/admin/online-submissions' => 'WasteCollectionApiController@clearOnlineSubmissions',
 ];

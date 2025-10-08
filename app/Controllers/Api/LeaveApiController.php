@@ -4,7 +4,8 @@ namespace App\Controllers\Api;
 
 use App\Services\LeaveService;
 use App\Repositories\LeaveRepository;
-use App\Repositories\EmployeeRepository;
+use App\Core\AuthManager;
+use Exception;
 
 class LeaveApiController extends BaseApiController
 {
@@ -12,173 +13,128 @@ class LeaveApiController extends BaseApiController
 
     public function __construct()
     {
-        parent::__construct();
         $this->leaveService = new LeaveService();
     }
 
     /**
-     * Handle all leave API requests based on action parameter
+     * Get current user's leave status for a specific year.
+     * Corresponds to GET /api/leaves
      */
     public function index(): void
     {
-        $action = $this->getAction();
-        
-        try {
-            switch ($action) {
-                case 'get_my_status':
-                    $this->getMyStatus();
-                    break;
-                case 'submit_request':
-                    $this->submitRequest();
-                    break;
-                case 'cancel_request':
-                    $this->cancelRequest();
-                    break;
-                case 'calculate_days':
-                    $this->calculateDays();
-                    break;
-                case 'check_overlap':
-                    $this->checkOverlap();
-                    break;
-                default:
-                    $this->apiBadRequest('Invalid action');
-            }
-        } catch (\Exception $e) {
-            $this->handleException($e);
-        }
-    }
-
-    /**
-     * Get current user's leave status for a specific year
-     */
-    private function getMyStatus(): void
-    {
         $this->requireAuth('leave_view');
         
-        $employeeId = $this->getCurrentEmployeeId();
+        $employeeId = AuthManager::user()['employee_id'] ?? null;
         if (!$employeeId) {
-            $this->apiError('연결된 직원 정보가 없습니다.');
+            $this->error('연결된 직원 정보가 없습니다.', [], 400);
             return;
         }
         
-        $year = (int)($_GET['year'] ?? date('Y'));
+        $year = (int)$this->request->input('year', date('Y'));
         
-        $entitlement = LeaveRepository::findEntitlement($employeeId, $year);
-        $leaves = LeaveRepository::findByEmployeeId($employeeId, ['year' => $year]);
-        
-        $this->apiSuccess([
-            'entitlement' => $entitlement,
-            'leaves' => $leaves
-        ]);
-    }
+        try {
+            $entitlement = LeaveRepository::findEntitlement($employeeId, $year);
+            $leaves = LeaveRepository::findByEmployeeId($employeeId, ['year' => $year]);
 
-    /**
-     * Submit a new leave request
-     */
-    private function submitRequest(): void
-    {
-        $this->requireAuth('leave_request');
-        
-        $employeeId = $this->getCurrentEmployeeId();
-        if (!$employeeId) {
-            $this->apiError('연결된 직원 정보가 없습니다.');
-            return;
-        }
-        
-        $input = $this->getJsonInput();
-        if (empty($input)) {
-            $this->apiBadRequest('Leave request data is required');
-            return;
-        }
-        
-        [$success, $message] = $this->leaveService->requestLeave($input, $employeeId);
-        
-        if ($success) {
-            $this->apiSuccess(null, $message);
-        } else {
-            $this->apiError($message);
+            $this->success([
+                'entitlement' => $entitlement,
+                'leaves' => $leaves
+            ]);
+        } catch (Exception $e) {
+            $this->error('연차 정보를 불러오는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Cancel a leave request
+     * Submit a new leave request.
+     * Corresponds to POST /api/leaves
      */
-    private function cancelRequest(): void
+    public function store(): void
     {
         $this->requireAuth('leave_request');
         
-        $employeeId = $this->getCurrentEmployeeId();
+        $employeeId = AuthManager::user()['employee_id'] ?? null;
         if (!$employeeId) {
-            $this->apiError('연결된 직원 정보가 없습니다.');
+            $this->error('연결된 직원 정보가 없습니다.', [], 400);
             return;
         }
         
-        $input = $this->getJsonInput();
-        $leaveId = (int)($input['id'] ?? 0);
-        $reason = $input['reason'] ?? null;
-        
-        if (!$leaveId) {
-            $this->apiBadRequest('Leave ID is required');
+        $data = $this->request->all();
+        if (empty($data)) {
+            $this->validationError([], '연차 신청 정보가 필요합니다.');
             return;
         }
         
-        [$success, $message] = $this->leaveService->cancelRequest($leaveId, $employeeId, $reason);
-        
-        if ($success) {
-            $this->apiSuccess(null, $message);
-        } else {
-            $this->apiError($message);
+        try {
+            [$success, $message] = $this->leaveService->requestLeave($data, $employeeId);
+
+            if ($success) {
+                $this->success(null, $message);
+            } else {
+                $this->error($message);
+            }
+        } catch (Exception $e) {
+            $this->error('신청 처리 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Calculate leave days for a given period
+     * Cancel a leave request.
+     * Corresponds to POST /api/leaves/{id}/cancel
      */
-    private function calculateDays(): void
+    public function cancel(int $id): void
     {
         $this->requireAuth('leave_request');
         
-        $employeeId = $this->getCurrentEmployeeId();
+        $employeeId = AuthManager::user()['employee_id'] ?? null;
         if (!$employeeId) {
-            $this->apiError('연결된 직원 정보가 없습니다.');
+            $this->error('연결된 직원 정보가 없습니다.', [], 400);
             return;
         }
         
-        $startDate = $_GET['start_date'] ?? '';
-        $endDate = $_GET['end_date'] ?? '';
+        $reason = $this->request->input('reason');
+        
+        try {
+            [$success, $message] = $this->leaveService->cancelRequest($id, $employeeId, $reason);
+
+            if ($success) {
+                $this->success(null, $message);
+            } else {
+                $this->error($message);
+            }
+        } catch (Exception $e) {
+            $this->error('취소 처리 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Calculate leave days for a given period.
+     * Corresponds to POST /api/leaves/calculate-days
+     */
+    public function calculateDays(): void
+    {
+        $this->requireAuth('leave_request');
+        
+        $employeeId = AuthManager::user()['employee_id'] ?? null;
+        if (!$employeeId) {
+            $this->error('연결된 직원 정보가 없습니다.', [], 400);
+            return;
+        }
+        
+        $startDate = $this->request->input('start_date');
+        $endDate = $this->request->input('end_date');
         
         if (empty($startDate) || empty($endDate)) {
-            $this->apiBadRequest('시작일과 종료일이 필요합니다.');
+            $this->validationError(['start_date' => '기간이 필요합니다.', 'end_date' => '기간이 필요합니다.'], '시작일과 종료일이 필요합니다.');
             return;
         }
         
-        // 반차는 항상 0.5일이므로 isHalfDay는 false로 고정
-        $days = $this->leaveService->calculateLeaveDays($startDate, $endDate, $employeeId, false);
-        $this->apiSuccess(['days' => $days]);
-    }
-
-    /**
-     * Check for overlapping leave requests
-     */
-    private function checkOverlap(): void
-    {
-        $this->requireAuth('leave_request');
-        
-        $employeeId = $this->getCurrentEmployeeId();
-        if (!$employeeId) {
-            $this->apiError('연결된 직원 정보가 없습니다.');
-            return;
+        try {
+            // isHalfDay는 false로 고정 (반차는 0.5일로 클라이언트에서 계산)
+            $days = $this->leaveService->calculateLeaveDays($startDate, $endDate, $employeeId, false);
+            $this->success(['days' => $days]);
+        } catch (Exception $e) {
+            $this->error('일수 계산 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
         }
-        
-        $startDate = $_GET['start_date'] ?? '';
-        $endDate = $_GET['end_date'] ?? '';
-        
-        if (empty($startDate) || empty($endDate)) {
-            $this->apiBadRequest('시작일과 종료일이 필요합니다.');
-            return;
-        }
-        
-        $isOverlapping = LeaveRepository::findOverlappingLeaves($employeeId, $startDate, $endDate);
-        $this->apiSuccess(['is_overlapping' => $isOverlapping]);
     }
 }

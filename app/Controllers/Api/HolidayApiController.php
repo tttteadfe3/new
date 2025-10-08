@@ -3,7 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Services\HolidayService;
-use App\Repositories\HolidayRepository;
+use Exception;
 
 class HolidayApiController extends BaseApiController
 {
@@ -11,116 +11,128 @@ class HolidayApiController extends BaseApiController
 
     public function __construct()
     {
-        parent::__construct();
         $this->holidayService = new HolidayService();
     }
 
     /**
-     * Get all holidays
+     * Get all holidays and departments.
      */
     public function index(): void
     {
         $this->requireAuth('holiday_admin');
-        
+
         try {
-            $holidays = HolidayRepository::getAll();
-            $this->apiSuccess($holidays);
-        } catch (\Exception $e) {
-            $this->handleException($e);
+            $holidays = $this->holidayService->getAllHolidays();
+            $departments = $this->holidayService->getAllDepartments();
+
+            $this->success([
+                'holidays' => $holidays,
+                'departments' => $departments
+            ]);
+        } catch (Exception $e) {
+            $this->error('데이터를 불러오는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Get a specific holiday
+     * Get a specific holiday.
      */
     public function show(int $id): void
     {
         $this->requireAuth('holiday_admin');
-        
+
         try {
-            $holiday = HolidayRepository::findById($id);
+            $holiday = $this->holidayService->getHoliday($id);
             
-            if ($holiday) {
-                $this->apiSuccess($holiday);
-            } else {
-                $this->apiNotFound('Holiday not found');
+            if (!$holiday) {
+                $this->notFound('휴일을 찾을 수 없습니다.');
+                return;
             }
-        } catch (\Exception $e) {
-            $this->handleException($e);
+
+            $this->success($holiday);
+        } catch (Exception $e) {
+            $this->error('데이터를 불러오는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Create a new holiday
+     * Create a new holiday.
      */
     public function store(): void
     {
         $this->requireAuth('holiday_admin');
-        
+
         try {
-            $data = $_POST;
+            $data = $this->request->all();
             
-            if (empty($data)) {
-                $this->apiBadRequest('Holiday data is required');
+            if (empty(trim($data['name']))) {
+                $this->validationError(['name' => '이름은 필수입니다.'], '입력값이 올바르지 않습니다.');
                 return;
             }
-            
-            $result = $this->holidayService->createHoliday($data);
-            
-            if ($result) {
-                $this->apiSuccess(['new_id' => $result], '휴일이 성공적으로 생성되었습니다.');
-            } else {
-                $this->apiError('휴일 생성 중 오류가 발생했습니다.');
+            if (empty($data['date'])) {
+                $this->validationError(['date' => '날짜는 필수입니다.'], '입력값이 올바르지 않습니다.');
+                return;
             }
-        } catch (\Exception $e) {
-            $this->handleException($e);
+            if (empty($data['type']) || !in_array($data['type'], ['holiday', 'workday'])) {
+                $this->validationError(['type' => '유효한 타입을 선택해주세요.'], '입력값이 올바르지 않습니다.');
+                return;
+            }
+
+            $data['deduct_leave'] = isset($data['deduct_leave']) && $data['deduct_leave'];
+
+            $holiday = $this->holidayService->createHoliday($data);
+
+            $this->success($holiday, '성공적으로 생성되었습니다.', 201);
+        } catch (Exception $e) {
+            $this->error('생성 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 422);
         }
     }
 
     /**
-     * Update an existing holiday
+     * Update an existing holiday.
      */
     public function update(int $id): void
     {
         $this->requireAuth('holiday_admin');
-        
+
         try {
-            $data = $_POST;
+            $data = $this->request->all();
             
-            if (empty($data)) {
-                $this->apiBadRequest('Holiday data is required');
+            if (empty(trim($data['name']))) {
+                $this->validationError(['name' => '이름은 필수입니다.'], '입력값이 올바르지 않습니다.');
                 return;
             }
-            
-            $result = $this->holidayService->updateHoliday($id, $data);
-            
-            if ($result) {
-                $this->apiSuccess(null, '휴일이 성공적으로 수정되었습니다.');
-            } else {
-                $this->apiError('휴일 수정 중 오류가 발생했습니다.');
+            if (empty($data['date'])) {
+                $this->validationError(['date' => '날짜는 필수입니다.'], '입력값이 올바르지 않습니다.');
+                return;
             }
-        } catch (\Exception $e) {
-            $this->handleException($e);
+            if (empty($data['type']) || !in_array($data['type'], ['holiday', 'workday'])) {
+                $this->validationError(['type' => '유효한 타입을 선택해주세요.'], '입력값이 올바르지 않습니다.');
+                return;
+            }
+
+            $data['deduct_leave'] = isset($data['deduct_leave']) && $data['deduct_leave'];
+
+            $holiday = $this->holidayService->updateHoliday($id, $data);
+
+            $this->success($holiday, '성공적으로 수정되었습니다.');
+        } catch (Exception $e) {
+            $this->error('수정 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 422);
         }
     }
 
     /**
-     * Delete a holiday
+     * Delete a holiday.
      */
     public function destroy(int $id): void
     {
         $this->requireAuth('holiday_admin');
-        
+
         try {
-            $result = $this->holidayService->deleteHoliday($id);
-            
-            if ($result) {
-                $this->apiSuccess(null, '휴일이 성공적으로 삭제되었습니다.');
-            } else {
-                $this->apiError('휴일 삭제 중 오류가 발생했습니다.');
-            }
-        } catch (\Exception $e) {
-            $this->handleException($e);
+            $this->holidayService->deleteHoliday($id);
+            $this->success(null, '성공적으로 삭제되었습니다.');
+        } catch (Exception $e) {
+            $this->error('삭제 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 404);
         }
     }
 }
