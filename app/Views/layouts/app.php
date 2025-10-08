@@ -110,7 +110,7 @@ $profileImageUrl = SessionManager::get('user')['profile_image_url'] ?? BASE_ASSE
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">
-                    <?= $content ?>
+                    <?= View::yieldSection('content') ?>
                 </div>
                 <!-- container-fluid -->
             </div>
@@ -152,10 +152,10 @@ $profileImageUrl = SessionManager::get('user')['profile_image_url'] ?? BASE_ASSE
     <!-- Custom UI js -->
     <script src="<?= BASE_ASSETS_URL ?>/assets/js/utils/ui.js"></script>
 
-    <!-- App js -->
-    <script src="<?= BASE_ASSETS_URL ?>/assets/js/app.js"></script>
-
     <!-- Dynamic JS Section -->
     <?= View::yieldSection('js') ?>
+
+    <!-- App js -->
+    <script src="<?= BASE_ASSETS_URL ?>/assets/js/app.js"></script>
 </body>
 </html>

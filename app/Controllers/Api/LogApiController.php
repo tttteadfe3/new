@@ -3,16 +3,13 @@
 namespace App\Controllers\Api;
 
 use App\Repositories\LogRepository;
+use Exception;
 
 class LogApiController extends BaseApiController
 {
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     /**
-     * Search and retrieve logs
+     * Search and retrieve logs.
+     * Corresponds to GET /api/logs
      */
     public function index(): void
     {
@@ -20,31 +17,32 @@ class LogApiController extends BaseApiController
         
         try {
             $filters = [
-                'start_date' => $_GET['start_date'] ?? '',
-                'end_date' => $_GET['end_date'] ?? '',
-                'user_name' => $_GET['user_name'] ?? '',
-                'action' => $_GET['action'] ?? '',
+                'start_date' => $this->request->input('start_date', ''),
+                'end_date' => $this->request->input('end_date', ''),
+                'user_name' => $this->request->input('user_name', ''),
+                'action' => $this->request->input('action', ''),
             ];
             
-            $logs = LogRepository::search($filters);
-            $this->apiSuccess($logs);
-        } catch (\Exception $e) {
-            $this->handleException($e);
+            $logs = LogRepository::search(array_filter($filters));
+            $this->success($logs);
+        } catch (Exception $e) {
+            $this->error('로그 검색 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Clear all logs
+     * Clear all logs.
+     * Corresponds to DELETE /api/logs
      */
-    public function clear(): void
+    public function destroy(): void
     {
         $this->requireAuth('log_admin');
         
         try {
             LogRepository::truncate();
-            $this->apiSuccess(null, '로그가 성공적으로 비워졌습니다.');
-        } catch (\Exception $e) {
-            $this->handleException($e);
+            $this->success(null, '로그가 성공적으로 비워졌습니다.');
+        } catch (Exception $e) {
+            $this->error('로그를 비우는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
         }
     }
 }

@@ -134,39 +134,6 @@ class LitteringController extends BaseController
     }
 
     /**
-     * Store a new littering report
-     */
-    public function store(): void
-    {
-        $this->requireAuth('littering_process');
-        
-        try {
-            $user = $this->user();
-            $userId = $user['id'];
-            $employeeId = $user['employee_id'] ?? null;
-            
-            $result = $this->litteringService->registerLittering(
-                $this->request->all(),
-                $_FILES,
-                $userId,
-                $employeeId
-            );
-            
-            $this->json([
-                'success' => true,
-                'message' => '부적정배출이 성공적으로 등록되었습니다.',
-                'data' => $result
-            ]);
-        } catch (Exception $e) {
-            $this->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'errors' => ['general' => $e->getMessage()]
-            ], $e->getCode() ?: 500);
-        }
-    }
-
-    /**
      * Show edit form for littering report
      */
     public function edit(): string
@@ -185,90 +152,6 @@ class LitteringController extends BaseController
         } catch (Exception $e) {
             $this->redirect('/littering?error=' . urlencode($e->getMessage()));
             return '';
-        }
-    }
-
-    /**
-     * Update littering report (confirm)
-     */
-    public function update(): void
-    {
-        $this->requireAuth('littering_manage');
-        
-        try {
-            $user = $this->user();
-            $adminId = $user['id'];
-            
-            $result = $this->litteringService->confirmLittering(
-                $this->request->all(),
-                $adminId
-            );
-            
-            $this->json([
-                'success' => true,
-                'message' => '민원 정보가 성공적으로 확인되었습니다.',
-                'data' => $result
-            ]);
-        } catch (Exception $e) {
-            $this->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'errors' => ['general' => $e->getMessage()]
-            ], $e->getCode() ?: 500);
-        }
-    }
-
-    /**
-     * Delete littering report (soft delete)
-     */
-    public function delete(): void
-    {
-        $this->requireAuth('littering_manage');
-        
-        try {
-            $user = $this->user();
-            $adminId = $user['id'];
-            
-            $result = $this->litteringService->deleteLittering(
-                $this->request->all(),
-                $adminId
-            );
-            
-            $this->json([
-                'success' => true,
-                'message' => '민원이 성공적으로 삭제되었습니다.',
-                'data' => $result
-            ]);
-        } catch (Exception $e) {
-            $this->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'errors' => ['general' => $e->getMessage()]
-            ], $e->getCode() ?: 500);
-        }
-    }
-
-    /**
-     * Restore deleted littering report
-     */
-    public function restore(): void
-    {
-        $this->requireAuth('littering_admin');
-        
-        try {
-            $result = $this->litteringService->restoreLittering($this->request->all());
-            
-            $this->json([
-                'success' => true,
-                'message' => '민원이 성공적으로 복원되었습니다.',
-                'data' => $result
-            ]);
-        } catch (Exception $e) {
-            $this->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'errors' => ['general' => $e->getMessage()]
-            ], $e->getCode() ?: 500);
         }
     }
 }

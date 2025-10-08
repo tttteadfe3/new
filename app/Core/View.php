@@ -24,8 +24,8 @@ class View
         self::$layout = $layout;
         self::$layoutData = $data;
 
-        // Construct the full path to the view file
-        $viewPath = __DIR__ . '/../Views/' . str_replace('.', '/', $view) . '.php';
+        // Construct the full path to the view file using the ROOT_PATH constant
+        $viewPath = ROOT_PATH . '/app/Views/' . str_replace('.', '/', $view) . '.php';
 
         if (!file_exists($viewPath)) {
             throw new \Exception("View not found: {$viewPath}");
@@ -56,7 +56,7 @@ class View
      */
     private static function renderWithLayout(string $content, string $layout, array $data = []): string
     {
-        $layoutPath = __DIR__ . '/../Views/layouts/' . str_replace('.', '/', $layout) . '.php';
+        $layoutPath = ROOT_PATH . '/app/Views/layouts/' . str_replace('.', '/', $layout) . '.php';
 
         if (!file_exists($layoutPath)) {
             throw new \Exception("Layout not found: {$layoutPath}");

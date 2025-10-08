@@ -1,88 +1,77 @@
 <?php
 
 // All web application routes are defined here.
+// The new router requires an explicit HTTP method (GET, POST, etc.) for each route.
 return [
-    '' => 'AuthController@login',
+    'GET ' => 'AuthController@login',
     // Authentication routes
-    'login' => 'AuthController@login',
-    'auth/kakao/callback' => 'AuthController@kakaoCallback',
-    'logout' => 'AuthController@logout',
+    'GET login' => 'AuthController@login',
+    'GET auth/kakao/callback' => 'AuthController@kakaoCallback',
+    'GET logout' => 'AuthController@logout',
 
     // Dashboard and status
-    'dashboard' => 'DashboardController@index',
-    'status' => 'StatusController@index',
+    'GET dashboard' => 'DashboardController@index',
+    'GET status' => 'StatusController@index',
 
-    // Employee management routes
-    'employees' => 'EmployeeController@index',
-    'employees/create' => 'EmployeeController@create',
-    'employees/store' => 'EmployeeController@store',
-    'employees/edit' => 'EmployeeController@edit',
-    'employees/update' => 'EmployeeController@update',
-    'employees/delete' => 'EmployeeController@delete',
+    // Employee management routes - Note: These were mixed before. Now separated.
+    'GET employees' => 'EmployeeController@index',
+    'GET employees/create' => 'EmployeeController@create',
+    'GET employees/edit' => 'EmployeeController@edit',
+    // POST routes for data manipulation are now handled by the API controller.
+    // These web routes were pointing to methods that have been removed.
+    // 'POST employees/store' => 'EmployeeController@store',
+    // 'POST employees/update' => 'EmployeeController@update',
+    // 'POST employees/delete' => 'EmployeeController@delete',
 
     // Holiday management routes
-    'holidays' => 'HolidayController@index',
-    'holidays/create' => 'HolidayController@create',
-    'holidays/store' => 'HolidayController@store',
-    'holidays/edit' => 'HolidayController@edit',
-    'holidays/update' => 'HolidayController@update',
-    'holidays/delete' => 'HolidayController@delete',
+    'GET holidays' => 'HolidayController@index',
+    // create, store, edit, update, delete are now handled by API and JS on the index page.
 
     // Leave management routes
-    'leaves' => 'LeaveController@index',
-    'leaves/my' => 'LeaveController@my',
-    'leaves/create' => 'LeaveController@create',
-    'leaves/store' => 'LeaveController@store',
-    'leaves/approval' => 'LeaveController@approval',
-    'leaves/approve' => 'LeaveController@approve',
-    'leaves/reject' => 'LeaveController@reject',
-    'leaves/granting' => 'LeaveController@granting',
-    'leaves/grant' => 'LeaveController@grant',
-    'leaves/history' => 'LeaveController@history',
+    'GET leaves' => 'LeaveController@index',
+    'GET leaves/my' => 'LeaveController@my',
+    'GET leaves/approval' => 'LeaveController@approval',
+    'GET leaves/granting' => 'LeaveController@granting',
+    'GET leaves/history' => 'LeaveController@history',
+    // Actions like store, approve, reject, grant are now handled by the API.
 
     // Littering management routes
-    'littering' => 'LitteringController@index',
-    'littering/map' => 'LitteringController@map',
-    'littering/history' => 'LitteringController@history',
-    'littering/deleted' => 'LitteringController@deleted',
-    'littering/create' => 'LitteringController@create',
-    'littering/store' => 'LitteringController@store',
-    'littering/edit' => 'LitteringController@edit',
-    'littering/update' => 'LitteringController@update',
-    'littering/delete' => 'LitteringController@delete',
-    'littering/restore' => 'LitteringController@restore',
+    'GET littering' => 'LitteringController@index',
+    'GET littering/map' => 'LitteringController@map',
+    'GET littering/history' => 'LitteringController@history',
+    'GET littering/deleted' => 'LitteringController@deleted',
+    'GET littering/create' => 'LitteringController@create',
+    'GET littering/edit' => 'LitteringController@edit',
+    // Actions like store, update, delete, restore are now handled by the API.
 
     // Waste collection routes
-    'waste' => 'WasteCollectionController@index',
-    'waste/collection' => 'WasteCollectionController@collection',
-    'waste/admin' => 'WasteCollectionController@admin',
-    'waste/create' => 'WasteCollectionController@create',
-    'waste/store' => 'WasteCollectionController@store',
-    'waste/edit' => 'WasteCollectionController@edit',
-    'waste/update' => 'WasteCollectionController@update',
-    'waste/delete' => 'WasteCollectionController@delete',
+    'GET waste' => 'WasteCollectionController@index',
+    'GET waste/collection' => 'WasteCollectionController@collection',
+    'GET waste/admin' => 'WasteCollectionController@admin',
     
     // Legacy page routes for waste (for menu compatibility)
-    'pages/waste_collection.php' => 'WasteCollectionController@index',
-    'pages/waste_admin.php' => 'WasteCollectionController@admin',
+    'GET pages/waste_collection.php' => 'WasteCollectionController@index',
+    'GET pages/waste_admin.php' => 'WasteCollectionController@admin',
 
     // Admin routes
-    'admin/organization' => 'AdminController@organization',
-    'admin/role-permissions' => 'AdminController@rolePermissions',
-    'admin/users' => 'AdminController@users',
-    'admin/menus' => 'AdminController@menus',
+    'GET admin/organization' => 'AdminController@organization',
+    'GET admin/role-permissions' => 'AdminController@rolePermissions',
+    'GET admin/users' => 'AdminController@users',
+    'GET admin/menus' => 'AdminController@menus',
     
     // Legacy admin routes (for backward compatibility)
-    'pages/organization_admin.php' => 'AdminController@organization',
-    'pages/role_permission_admin.php' => 'AdminController@rolePermissions',
-    'pages/user_list.php' => 'AdminController@users',
-    'pages/menu_admin.php' => 'AdminController@menus',
+    'GET pages/organization_admin.php' => 'AdminController@organization',
+    'GET pages/role_permission_admin.php' => 'AdminController@rolePermissions',
+    'GET pages/user_list.php' => 'AdminController@users',
+    'GET pages/menu_admin.php' => 'AdminController@menus',
 
     // Profile and logs
-    'profile' => 'ProfileController@index',
-    'profile/update' => 'ProfileController@update',
-    'logs' => 'LogController@index',
+    'GET profile' => 'ProfileController@index',
+    'GET logs' => 'LogController@index',
 
     // Utility routes
-    'blank' => 'UtilityController@blank',
+    'GET blank' => 'UtilityController@blank',
+
+    // Temporary route for testing
+    'GET test-login' => 'TestLoginController@login',
 ];
