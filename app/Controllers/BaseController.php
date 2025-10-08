@@ -5,7 +5,6 @@ namespace App\Controllers;
 use App\Core\AuthManager;
 use App\Core\View;
 use App\Core\Request;
-use App\Models\Permission;
 
 abstract class BaseController
 {
@@ -32,9 +31,9 @@ abstract class BaseController
 
         if ($permission !== null) {
             $user = AuthManager::user();
-            $userRole = $user['role'] ?? 'guest';
+            $userPermissions = $user['permissions'] ?? [];
             
-            if (!Permission::hasPermission($userRole, $permission)) {
+            if (!in_array($permission, $userPermissions)) {
                 $this->json([
                     'success' => false,
                     'message' => 'Access denied. Insufficient permissions.',

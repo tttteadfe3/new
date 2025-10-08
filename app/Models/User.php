@@ -15,7 +15,7 @@ class User
         $pdo = DB::getInstance();
 
         // Check if user exists
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE kakao_id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM sys_users WHERE kakao_id = ?");
         $stmt->execute([$kakaoUser['id']]);
         $user = $stmt->fetch();
 
@@ -26,8 +26,8 @@ class User
 
         // User does not exist, create a new one
         $stmt = $pdo->prepare(
-            "INSERT INTO users (kakao_id, nickname, email, status, role)
-             VALUES (?, ?, ?, 'pending', 'staff')"
+            "INSERT INTO sys_users (kakao_id, nickname, email, status)
+             VALUES (?, ?, ?, 'pending')"
         );
         $stmt->execute([
             $kakaoUser['id'],
@@ -37,7 +37,7 @@ class User
 
         // Return the newly created user
         $id = $pdo->lastInsertId();
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM sys_users WHERE id = ?");
         $stmt->execute([$id]);
         return $stmt->fetch();
     }

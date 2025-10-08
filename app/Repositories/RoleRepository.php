@@ -104,4 +104,20 @@ class RoleRepository {
                 ORDER BY u.nickname ASC";
         return Database::query($sql, [':role_id' => $roleId]);
     }
+
+    /**
+     * 특정 사용자의 모든 역할 이름 목록을 가져옵니다.
+     * @param int $userId
+     * @return array
+     */
+    public static function getUserRoles(int $userId): array {
+        $sql = "SELECT r.name FROM sys_user_roles ur
+                JOIN sys_roles r ON ur.role_id = r.id
+                WHERE ur.user_id = :user_id";
+
+        $roles = Database::query($sql, [':user_id' => $userId]);
+
+        // 결과에서 'name' 컬럼만 추출하여 1차원 배열로 반환
+        return array_column($roles, 'name');
+    }
 }

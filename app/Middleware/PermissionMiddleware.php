@@ -3,7 +3,6 @@
 namespace App\Middleware;
 
 use App\Core\AuthManager;
-use App\Models\Permission;
 
 class PermissionMiddleware extends BaseMiddleware
 {
@@ -33,9 +32,9 @@ class PermissionMiddleware extends BaseMiddleware
             return;
         }
 
-        $userRole = $user['role'] ?? 'guest';
+        $userPermissions = $user['permissions'] ?? [];
         
-        if (!Permission::hasPermission($userRole, $permission)) {
+        if (!in_array($permission, $userPermissions)) {
             if ($this->isApiRequest()) {
                 $this->jsonResponse([
                     'success' => false,
