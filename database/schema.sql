@@ -1,0 +1,738 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Host: localhost
+-- 생성 시간: 25-09-06 08:31
+-- 서버 버전: 10.11.6-MariaDB
+-- PHP 버전: 8.0.30
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- 데이터베이스: `wonsil_test`
+--
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `hr_leave_adjustments_log`
+--
+
+CREATE TABLE `hr_leave_adjustments_log` (
+  `id` int(11) NOT NULL,
+  `employee_id` int(11) NOT NULL,
+  `year` int(4) NOT NULL,
+  `adjusted_days` decimal(4,1) NOT NULL,
+  `reason` varchar(255) NOT NULL,
+  `admin_id` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='연차 수동 조정 기록';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `sys_activity_logs`
+--
+
+CREATE TABLE `sys_activity_logs` (
+  `id` bigint(20) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `user_name` varchar(255) DEFAULT NULL,
+  `action` varchar(255) NOT NULL,
+  `details` text DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 활동 로그';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `hr_departments`
+--
+
+CREATE TABLE `hr_departments` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL COMMENT '부서명',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci COMMENT='부서 정보';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `hr_employees`
+--
+
+CREATE TABLE `hr_employees` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL COMMENT '직원명',
+  `employee_number` varchar(50) DEFAULT NULL COMMENT '사번',
+  `hire_date` date DEFAULT NULL COMMENT '입사일',
+  `termination_date` date DEFAULT NULL COMMENT '퇴사일',
+  `clothing_top_size` varchar(50) DEFAULT NULL COMMENT '상의 사이즈',
+  `clothing_bottom_size` varchar(50) DEFAULT NULL COMMENT '하의 사이즈',
+  `shoe_size` varchar(50) DEFAULT NULL COMMENT '신발 사이즈',
+  `profile_update_status` enum('none','pending','rejected') NOT NULL DEFAULT 'none' COMMENT '프로필 업데이트 상태',
+  `profile_update_rejection_reason` text DEFAULT NULL COMMENT '프로필 업데이트 거부 사유',
+  `pending_profile_data` text DEFAULT NULL COMMENT '대기중인 프로필 데이터',
+  `phone_number` varchar(255) DEFAULT NULL COMMENT '전화번호',
+  `address` text DEFAULT NULL COMMENT '주소',
+  `emergency_contact_name` varchar(255) DEFAULT NULL COMMENT '비상연락처 이름',
+  `emergency_contact_relation` varchar(50) DEFAULT NULL COMMENT '비상연락처 관계',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  `department_id` int(11) DEFAULT NULL COMMENT '부서 ID',
+  `position_id` int(11) DEFAULT NULL COMMENT '직급 ID'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원 정보';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `hr_employee_change_logs`
+--
+
+CREATE TABLE `hr_employee_change_logs` (
+  `id` int(11) NOT NULL,
+  `employee_id` int(11) NOT NULL COMMENT '어떤 직원의 기록인지',
+  `changer_id` int(11) DEFAULT NULL COMMENT '누가 변경했는지 (관리자 user_id)',
+  `field_name` varchar(100) NOT NULL COMMENT '변경된 필드명',
+  `old_value` text DEFAULT NULL COMMENT '변경 전 값',
+  `new_value` text DEFAULT NULL COMMENT '변경 후 값',
+  `changed_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원 정보 변경 이력';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `hr_holidays`
+--
+
+CREATE TABLE `hr_holidays` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL COMMENT '휴일/이벤트명',
+  `date` date NOT NULL COMMENT '날짜',
+  `type` enum('holiday','workday') NOT NULL COMMENT '유형 (holiday: 휴일, workday: 특정 근무일)',
+  `department_id` int(11) DEFAULT NULL COMMENT '적용될 부서 ID (NULL인 경우 전체 부서 적용)',
+  `deduct_leave` tinyint(1) NOT NULL DEFAULT 0 COMMENT '연차 차감 여부 (1: 차감, 0: 미차감, 휴일인 경우에만 의미있음)',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='휴일 및 특정 근무일 설정';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `illegal_disposal_cases2`
+--
+
+CREATE TABLE `illegal_disposal_cases2` (
+  `id` int(11) NOT NULL COMMENT '고유 ID (자동 증가)',
+  `latitude` decimal(15,10) NOT NULL COMMENT '위도',
+  `longitude` decimal(15,10) NOT NULL COMMENT '경도',
+  `address` varchar(255) NOT NULL COMMENT '배출 발생 주소',
+  `waste_type` varchar(50) NOT NULL COMMENT '폐기물 성상 (예: 생활폐기물, 재활용 등)',
+  `waste_type2` varchar(50) DEFAULT NULL COMMENT '혼합성상',
+  `issue_date` varchar(20) DEFAULT NULL COMMENT '부적정 배출 일자 (ex. 02월 04일)',
+  `collect_date` varchar(20) DEFAULT '' COMMENT '수거 처리 일자 (ex. 02월 25일)',
+  `corrected` enum('o','x','=') DEFAULT NULL COMMENT '개선 여부 (o: 개선됨, x: 미개선, =: 사라짐)',
+  `note` text DEFAULT NULL COMMENT '비고 메모',
+  `reg_photo_path` varchar(255) NOT NULL COMMENT '등록 사진 경로',
+  `reg_photo_path2` varchar(255) NOT NULL,
+  `proc_photo_path` varchar(255) DEFAULT NULL COMMENT '처리 사진 경로',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '데이터 등록 시각',
+  `updated_at` datetime DEFAULT NULL COMMENT '데이터 수정 시각',
+  `jibun_address` varchar(255) DEFAULT NULL,
+  `road_address` varchar(255) DEFAULT NULL,
+  `user_id` int(11) NOT NULL,
+  `employee_id` int(11) NOT NULL,
+  `confirmed_by` int(11) DEFAULT NULL,
+  `confirmed_at` datetime DEFAULT NULL,
+  `deleted_by` int(11) DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL,
+  `status` varchar(10) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='부적정 배출 정보 테이블';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `hr_leaves`
+--
+
+CREATE TABLE `hr_leaves` (
+  `id` int(11) NOT NULL,
+  `employee_id` int(11) NOT NULL COMMENT '신청한 직원 ID',
+  `leave_type` enum('annual','sick','special','other','half_day') NOT NULL DEFAULT 'annual' COMMENT '휴가 종류',
+  `start_date` date NOT NULL COMMENT '휴가 시작일',
+  `end_date` date NOT NULL COMMENT '휴가 종료일',
+  `days_count` decimal(4,1) NOT NULL COMMENT '신청 일수 (0.5=반차)',
+  `reason` text DEFAULT NULL COMMENT '신청 사유',
+  `status` enum('pending','approved','rejected','cancelled','cancellation_requested') NOT NULL DEFAULT 'pending',
+  `approved_by` int(11) DEFAULT NULL COMMENT '처리한 관리자 user_id',
+  `rejection_reason` text DEFAULT NULL COMMENT '반려 사유',
+  `cancellation_reason` text DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원 연차 신청 내역';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `hr_leave_entitlements`
+--
+
+CREATE TABLE `hr_leave_entitlements` (
+  `id` int(11) NOT NULL,
+  `employee_id` int(11) NOT NULL COMMENT '직원 ID',
+  `year` int(4) NOT NULL COMMENT '해당 연도',
+  `total_days` decimal(4,1) NOT NULL DEFAULT 0.0 COMMENT '부여된 총 연차 일수',
+  `used_days` decimal(4,1) NOT NULL DEFAULT 0.0 COMMENT '사용한 연차 일수',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원 연차 부여 내역';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `littering_cases`
+--
+
+CREATE TABLE `littering_cases` (
+  `id` int(11) NOT NULL,
+  `latitude` decimal(10,8) NOT NULL,
+  `longitude` decimal(11,8) NOT NULL,
+  `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `waste_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '주성상',
+  `waste_type2` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '부성상',
+  `issue_date` date DEFAULT NULL COMMENT '배출일자',
+  `collect_date` date DEFAULT NULL COMMENT '수거일자',
+  `corrected` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '개선여부 (o, x, =)',
+  `note` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '비고',
+  `reg_photo_path` varchar(255) DEFAULT NULL COMMENT '등록사진1 (작업전)',
+  `reg_photo_path2` varchar(255) DEFAULT NULL COMMENT '등록사진2 (작업후)',
+  `proc_photo_path` varchar(255) DEFAULT NULL COMMENT '처리사진',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `littering_reports`
+--
+
+CREATE TABLE `littering_reports` (
+  `id` int(11) NOT NULL,
+  `latitude` decimal(9,6) NOT NULL COMMENT '위도',
+  `longitude` decimal(9,6) NOT NULL COMMENT '경도',
+  `address` varchar(500) DEFAULT NULL COMMENT '주소',
+  `waste_type` varchar(50) NOT NULL COMMENT '주성상',
+  `waste_type2` varchar(50) DEFAULT NULL COMMENT '부성상',
+  `mixed` char(1) DEFAULT 'N' COMMENT '혼합배출 여부 (Y/N)',
+  `photo1` varchar(255) DEFAULT NULL COMMENT '작업전 사진',
+  `photo2` varchar(255) DEFAULT NULL COMMENT '작업후 사진',
+  `corrected` char(1) DEFAULT NULL COMMENT '개선여부 (o:개선, x:미개선, =:없어짐, NULL:미처리)',
+  `process_photo` varchar(255) DEFAULT NULL COMMENT '처리 사진',
+  `note` text DEFAULT NULL COMMENT '비고',
+  `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending' COMMENT '승인상태 (pending:대기, approved:승인, rejected:거부)',
+  `approved_by` int(11) DEFAULT NULL COMMENT '승인자 ID',
+  `approved_at` timestamp NULL DEFAULT NULL COMMENT '승인일시',
+  `rejection_reason` text DEFAULT NULL COMMENT '거부 사유',
+  `created_by` int(11) DEFAULT NULL COMMENT '등록자 ID',
+  `created_at` timestamp NULL DEFAULT current_timestamp() COMMENT '등록일시',
+  `processed_at` timestamp NULL DEFAULT NULL COMMENT '처리일시'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='부적정배출 신고';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `sys_menus`
+--
+
+CREATE TABLE `sys_menus` (
+  `id` int(11) NOT NULL,
+  `parent_id` int(11) DEFAULT NULL COMMENT '부모 메뉴 ID (하위 메뉴일 경우)',
+  `name` varchar(100) NOT NULL COMMENT '메뉴 이름',
+  `url` varchar(255) DEFAULT NULL COMMENT '메뉴 링크 URL',
+  `icon` varchar(100) DEFAULT NULL COMMENT 'Bootstrap 아이콘 클래스',
+  `permission_key` varchar(100) DEFAULT NULL COMMENT '접근에 필요한 퍼미션 키',
+  `display_order` int(11) NOT NULL DEFAULT 0 COMMENT '정렬 순서'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='동적 메뉴 관리';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `sys_permissions`
+--
+
+CREATE TABLE `sys_permissions` (
+  `id` int(11) NOT NULL,
+  `key` varchar(100) NOT NULL COMMENT '권한 키',
+  `description` varchar(255) DEFAULT NULL COMMENT '권한 설명'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='권한 정보';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `hr_positions`
+--
+
+CREATE TABLE `hr_positions` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL COMMENT '직급명',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci COMMENT='직급 정보';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `sys_roles`
+--
+
+CREATE TABLE `sys_roles` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL COMMENT '역할명',
+  `description` varchar(255) DEFAULT NULL COMMENT '역할 설명'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='역할 정보';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `sys_role_permissions`
+--
+
+CREATE TABLE `sys_role_permissions` (
+  `role_id` int(11) NOT NULL COMMENT '역할 ID',
+  `permission_id` int(11) NOT NULL COMMENT '권한 ID'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='역할-권한 매핑';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `sys_users`
+--
+
+CREATE TABLE `sys_users` (
+  `id` int(11) NOT NULL,
+  `kakao_id` varchar(255) NOT NULL COMMENT '카카오 ID',
+  `email` varchar(255) NOT NULL COMMENT '이메일',
+  `nickname` varchar(255) NOT NULL COMMENT '닉네임',
+  `profile_image_url` varchar(512) DEFAULT NULL COMMENT '프로필 이미지 URL',
+  `employee_id` int(11) DEFAULT NULL COMMENT '직원 ID',
+  `status` enum('pending','active','blocked') NOT NULL DEFAULT 'pending' COMMENT '사용자 상태',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 정보';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `sys_user_roles`
+--
+
+CREATE TABLE `sys_user_roles` (
+  `user_id` int(11) NOT NULL COMMENT '사용자 ID',
+  `role_id` int(11) NOT NULL COMMENT '역할 ID'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자-역할 매핑';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `waste_collections`
+--
+
+CREATE TABLE `waste_collections` (
+  `id` int(11) NOT NULL COMMENT '고유 ID',
+  `latitude` decimal(15,10) NOT NULL COMMENT '위도',
+  `longitude` decimal(15,10) NOT NULL COMMENT '경도',
+  `address` varchar(255) NOT NULL COMMENT '수거 주소',
+  `photo_path` varchar(255) DEFAULT NULL COMMENT '등록 사진 경로',
+  `user_id` int(11) NOT NULL COMMENT '등록한 사용자 ID',
+  `employee_id` int(11) DEFAULT NULL COMMENT '등록한 직원 ID',
+  `issue_date` datetime NOT NULL COMMENT '배출일시',
+  `discharge_number` varchar(100) DEFAULT NULL COMMENT '배출번호 (인터넷배출용)',
+  `submitter_name` varchar(100) DEFAULT NULL COMMENT '성명 (인터넷배출용)',
+  `submitter_phone` varchar(100) DEFAULT NULL COMMENT '전화번호 (인터넷배출용)',
+  `fee` int(11) NOT NULL DEFAULT 0,
+  `admin_memo` text DEFAULT NULL COMMENT '관리자 처리메모',
+  `status` varchar(20) NOT NULL DEFAULT 'unprocessed' COMMENT '상태 (unprocessed, processed)',
+  `type` enum('field','online') NOT NULL DEFAULT 'field' COMMENT '등록 구분 (field: 현장등록, online: 인터넷배출)',
+  `geocoding_status` enum('success','failure') NOT NULL DEFAULT 'success' COMMENT '주소변환 성공여부',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '데이터 등록 시각'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='대형폐기물 수거 정보';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `waste_collection_items`
+--
+
+CREATE TABLE `waste_collection_items` (
+  `id` int(11) NOT NULL COMMENT '고유 ID',
+  `collection_id` int(11) NOT NULL COMMENT '수거 정보 ID',
+  `item_name` varchar(100) NOT NULL COMMENT '품목명',
+  `quantity` int(11) NOT NULL DEFAULT 1 COMMENT '수량'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='대형폐기물 수거 품목';
+
+--
+-- 덤프된 테이블의 인덱스
+--
+
+--
+-- 테이블의 인덱스 `sys_activity_logs`
+--
+ALTER TABLE `sys_activity_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `idx_created_at` (`created_at`),
+  ADD KEY `idx_action` (`action`);
+
+--
+-- 테이블의 인덱스 `hr_departments`
+--
+ALTER TABLE `hr_departments`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `name` (`name`);
+
+--
+-- 테이블의 인덱스 `hr_employees`
+--
+ALTER TABLE `hr_employees`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `employee_number` (`employee_number`),
+  ADD KEY `idx_name` (`name`),
+  ADD KEY `fk_employees_department` (`department_id`),
+  ADD KEY `fk_employees_position` (`position_id`);
+
+--
+-- 테이블의 인덱스 `hr_employee_change_logs`
+--
+ALTER TABLE `hr_employee_change_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_employee_id` (`employee_id`),
+  ADD KEY `fk_log_changer_id` (`changer_id`);
+
+--
+-- 테이블의 인덱스 `hr_holidays`
+--
+ALTER TABLE `hr_holidays`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_holidays_department` (`department_id`);
+
+--
+-- 테이블의 인덱스 `illegal_disposal_cases2`
+--
+ALTER TABLE `illegal_disposal_cases2`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_coords` (`latitude`,`longitude`),
+  ADD KEY `idx_waste_type` (`waste_type`);
+
+--
+-- 테이블의 인덱스 `hr_leaves`
+--
+ALTER TABLE `hr_leaves`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_employee_id` (`employee_id`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_start_date` (`start_date`),
+  ADD KEY `fk_leaves_approved_by` (`approved_by`);
+
+--
+-- 테이블의 인덱스 `hr_leave_entitlements`
+--
+ALTER TABLE `hr_leave_entitlements`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_employee_year` (`employee_id`,`year`),
+  ADD KEY `idx_employee_id` (`employee_id`);
+
+--
+-- 테이블의 인덱스 `littering_cases`
+--
+ALTER TABLE `littering_cases`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_latitude_longitude` (`latitude`,`longitude`);
+
+--
+-- 테이블의 인덱스 `littering_reports`
+--
+ALTER TABLE `littering_reports`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_location` (`latitude`,`longitude`),
+  ADD KEY `idx_created_at` (`created_at`),
+  ADD KEY `idx_corrected` (`corrected`),
+  ADD KEY `idx_waste_type` (`waste_type`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `fk_approved_by` (`approved_by`),
+  ADD KEY `fk_created_by` (`created_by`);
+
+--
+-- 테이블의 인덱스 `sys_menus`
+--
+ALTER TABLE `sys_menus`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_menu_parent_id` (`parent_id`);
+
+--
+-- 테이블의 인덱스 `sys_permissions`
+--
+ALTER TABLE `sys_permissions`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `key` (`key`);
+
+--
+-- 테이블의 인덱스 `hr_positions`
+--
+ALTER TABLE `hr_positions`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `name` (`name`);
+
+--
+-- 테이블의 인덱스 `sys_roles`
+--
+ALTER TABLE `sys_roles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `name` (`name`);
+
+--
+-- 테이블의 인덱스 `sys_role_permissions`
+--
+ALTER TABLE `sys_role_permissions`
+  ADD PRIMARY KEY (`role_id`,`permission_id`),
+  ADD KEY `permission_id` (`permission_id`);
+
+--
+-- 테이블의 인덱스 `sys_users`
+--
+ALTER TABLE `sys_users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `kakao_id` (`kakao_id`),
+  ADD UNIQUE KEY `employee_id` (`employee_id`);
+
+--
+-- 테이블의 인덱스 `sys_user_roles`
+--
+ALTER TABLE `sys_user_roles`
+  ADD PRIMARY KEY (`user_id`,`role_id`),
+  ADD KEY `role_id` (`role_id`);
+
+--
+-- 테이블의 인덱스 `waste_collections`
+--
+ALTER TABLE `waste_collections`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_coords` (`latitude`,`longitude`),
+  ADD KEY `fk_waste_collection_user_id` (`user_id`);
+
+--
+-- 테이블의 인덱스 `waste_collection_items`
+--
+ALTER TABLE `waste_collection_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_waste_item_collection_id` (`collection_id`);
+
+--
+-- 덤프된 테이블의 AUTO_INCREMENT
+--
+
+--
+-- 테이블의 AUTO_INCREMENT `sys_activity_logs`
+--
+ALTER TABLE `sys_activity_logs`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `hr_departments`
+--
+ALTER TABLE `hr_departments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `hr_employees`
+--
+ALTER TABLE `hr_employees`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `hr_employee_change_logs`
+--
+ALTER TABLE `hr_employee_change_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `hr_holidays`
+--
+ALTER TABLE `hr_holidays`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `illegal_disposal_cases2`
+--
+ALTER TABLE `illegal_disposal_cases2`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID (자동 증가)';
+
+--
+-- 테이블의 AUTO_INCREMENT `hr_leaves`
+--
+ALTER TABLE `hr_leaves`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `hr_leave_entitlements`
+--
+ALTER TABLE `hr_leave_entitlements`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `littering_cases`
+--
+ALTER TABLE `littering_cases`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `littering_reports`
+--
+ALTER TABLE `littering_reports`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `sys_menus`
+--
+ALTER TABLE `sys_menus`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `sys_permissions`
+--
+ALTER TABLE `sys_permissions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `hr_positions`
+--
+ALTER TABLE `hr_positions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `sys_roles`
+--
+ALTER TABLE `sys_roles`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `sys_users`
+--
+ALTER TABLE `sys_users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 테이블의 AUTO_INCREMENT `waste_collections`
+--
+ALTER TABLE `waste_collections`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID';
+
+--
+-- 테이블의 AUTO_INCREMENT `waste_collection_items`
+--
+ALTER TABLE `waste_collection_items`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID';
+
+--
+-- 덤프된 테이블의 제약사항
+--
+
+--
+-- 테이블의 제약사항 `sys_activity_logs`
+--
+ALTER TABLE `sys_activity_logs`
+  ADD CONSTRAINT `activity_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_users` (`id`) ON DELETE SET NULL;
+
+--
+-- 테이블의 제약사항 `hr_employees`
+--
+ALTER TABLE `hr_employees`
+  ADD CONSTRAINT `fk_employees_department` FOREIGN KEY (`department_id`) REFERENCES `hr_departments` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_employees_position` FOREIGN KEY (`position_id`) REFERENCES `hr_positions` (`id`) ON DELETE SET NULL;
+
+--
+-- 테이블의 제약사항 `hr_employee_change_logs`
+--
+ALTER TABLE `hr_employee_change_logs`
+  ADD CONSTRAINT `fk_log_changer_id` FOREIGN KEY (`changer_id`) REFERENCES `sys_users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_log_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE;
+
+--
+-- 테이블의 제약사항 `hr_holidays`
+--
+ALTER TABLE `hr_holidays`
+  ADD CONSTRAINT `fk_holidays_department` FOREIGN KEY (`department_id`) REFERENCES `hr_departments` (`id`) ON DELETE SET NULL;
+
+--
+-- 테이블의 제약사항 `hr_leaves`
+--
+ALTER TABLE `hr_leaves`
+  ADD CONSTRAINT `fk_leaves_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `sys_users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_leaves_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE;
+
+--
+-- 테이블의 제약사항 `hr_leave_entitlements`
+--
+ALTER TABLE `hr_leave_entitlements`
+  ADD CONSTRAINT `fk_entitlements_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE;
+
+--
+-- 테이블의 제약사항 `littering_reports`
+--
+ALTER TABLE `littering_reports`
+  ADD CONSTRAINT `fk_littering_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `sys_users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_littering_created_by` FOREIGN KEY (`created_by`) REFERENCES `sys_users` (`id`) ON DELETE SET NULL;
+
+--
+-- 테이블의 제약사항 `sys_menus`
+--
+ALTER TABLE `sys_menus`
+  ADD CONSTRAINT `fk_menu_parent_id` FOREIGN KEY (`parent_id`) REFERENCES `sys_menus` (`id`) ON DELETE CASCADE;
+
+--
+-- 테이블의 제약사항 `sys_role_permissions`
+--
+ALTER TABLE `sys_role_permissions`
+  ADD CONSTRAINT `role_permissions_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `sys_roles` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `role_permissions_ibfk_2` FOREIGN KEY (`permission_id`) REFERENCES `sys_permissions` (`id`) ON DELETE CASCADE;
+
+--
+-- 테이블의 제약사항 `sys_users`
+--
+ALTER TABLE `sys_users`
+  ADD CONSTRAINT `users_fk_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL;
+
+--
+-- 테이블의 제약사항 `sys_user_roles`
+--
+ALTER TABLE `sys_user_roles`
+  ADD CONSTRAINT `user_roles_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `user_roles_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `sys_roles` (`id`) ON DELETE CASCADE;
+
+--
+-- 테이블의 제약사항 `waste_collections`
+--
+ALTER TABLE `waste_collections`
+  ADD CONSTRAINT `fk_waste_collection_user_id` FOREIGN KEY (`user_id`) REFERENCES `sys_users` (`id`) ON DELETE CASCADE;
+
+--
+-- 테이블의 제약사항 `waste_collection_items`
+--
+ALTER TABLE `waste_collection_items`
+  ADD CONSTRAINT `fk_waste_item_collection_id` FOREIGN KEY (`collection_id`) REFERENCES `waste_collections` (`id`) ON DELETE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

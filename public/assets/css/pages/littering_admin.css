@@ -1,0 +1,38 @@
+/* Carousel Image Styles */
+#detail-view .carousel-inner {
+    height: 250px;
+    background-color: #f8f9fa; /* A light background for when images are loading or not available */
+}
+
+#detail-view .carousel-item {
+    height: 100%;
+}
+
+#detail-view .carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* This will cover the area, cropping if necessary */
+    object-position: center;
+}
+
+/* Left Column Layout Styles */
+.left-column-wrapper {
+    position: relative;
+    /* Let the height be determined by its content or parent */
+}
+
+#detail-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+#detail-view .card-body {
+    overflow-y: auto; /* Allow scrolling within the detail view body if content overflows */
+}

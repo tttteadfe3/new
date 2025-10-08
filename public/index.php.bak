@@ -1,0 +1,38 @@
+<?php
+
+// public/index.php
+
+// Autoload dependencies
+require_once __DIR__ . '/../vendor/autoload.php';
+
+// Load environment variables
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv->load();
+
+foreach ($_ENV as $key => $value) {
+    putenv("$key=$value");
+}
+
+
+var_dump(DB_USER, DB_HOST, DB_NAME);
+// Load configuration
+$config = require_once __DIR__ . '/../config/config.php';
+
+// Start the session
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Load routes and direct the request
+try {
+    App\Core\Router::load(
+        __DIR__ . '/../config/routes.php',
+        __DIR__ . '/../config/api_routes.php'
+    )->direct(App\Core\Request::uri());
+} catch (Exception $e) {
+    // Basic error handling
+    // In a real application, you would log this and show a proper error page
+    header("HTTP/1.1 500 Internal Server Error");
+    echo '<h1>Error</h1>';
+    echo '<p>' . $e->getMessage() . '</p>';
+}

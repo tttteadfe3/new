@@ -1,0 +1,6 @@
+/* 카드 및 이미지 스타일 */
+.process-item-photo {
+    width: 60px; height: 60px; object-fit: cover; border-radius: 4px;
+    cursor: pointer; transition: transform 0.2s;
+}
+.process-item-photo:hover { transform: scale(1.1); }
