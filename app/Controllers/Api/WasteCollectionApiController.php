@@ -11,6 +11,7 @@ class WasteCollectionApiController extends BaseApiController
 
     public function __construct()
     {
+        parent::__construct();
         $this->wasteCollectionService = new WasteCollectionService();
     }
 

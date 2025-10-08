@@ -11,6 +11,7 @@ class ProfileApiController extends BaseApiController
 
     public function __construct()
     {
+        parent::__construct();
         $this->profileService = new ProfileService();
     }
 
