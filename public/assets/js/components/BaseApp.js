@@ -74,9 +74,14 @@ class BaseApp {
 
     /**
      * API 호출 (ApiService 사용)
+     * @param {string} endpoint - API 엔드포인트 (e.g., '/users')
+     * @param {object} options - fetch()에 전달될 옵션 (method, body 등)
+     * @returns {Promise<any>}
      */
-    apiCall(action, data = {}, method = 'POST') {
-        return ApiService.request(this.config.API_URL, { action, data, method });
+    apiCall(endpoint, options = {}) {
+        // this.config.API_URL은 이제 각 하위 클래스에서 전체 엔드포인트를 구성하는 데 사용됩니다.
+        // ApiService.request는 이제 기본 URL('/api')을 내부적으로 처리합니다.
+        return ApiService.request(endpoint, options);
     }
 
     /**

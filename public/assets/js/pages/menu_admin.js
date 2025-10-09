@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const deleteMenuBtn = document.getElementById('delete-menu-btn');
 
     let allMenus = [];
-
     function renderMenuTree(menus, parentId = null) {
         const ul = document.createElement('ul');
         if (parentId === null) {
@@ -16,7 +15,9 @@ document.addEventListener('DOMContentLoaded', function () {
             ul.classList.add('list-group', 'mt-2');
         }
 
-        const filteredMenus = menus.filter(menu => menu.parent_id == parentId);
+        const filteredMenus = menus
+            .filter(menu => menu.parent_id == parentId)
+            .sort((a, b) => a.display_order - b.display_order);
 
         filteredMenus.forEach(menu => {
             const li = document.createElement('li');
@@ -51,22 +52,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function fetchAndRenderMenus() {
         try {
-            const response = await fetch('../api/menus.php');
-            if (!response.ok) throw new Error('메뉴를 불러오는데 실패했습니다.');
-            const result = await response.json();
-
-            if (!result.success) {
-                throw new Error(result.message || 'API에서 데이터를 가져오는데 실패했습니다.');
-            }
-
+            const result = await ApiService.request('/menus');
             allMenus = result.data || [];
-
             menuTreeContainer.innerHTML = '';
             const menuTree = renderMenuTree(allMenus, null);
             menuTreeContainer.appendChild(menuTree);
-
             initializeSortable(menuTreeContainer.querySelectorAll('ul'));
-
         } catch (error) {
             console.error(error);
             menuTreeContainer.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
@@ -86,61 +77,37 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function handleDrop(evt) {
-        const itemEl = evt.item;
         const toList = evt.to;
         const fromList = evt.from;
 
-        const menuId = itemEl.dataset.id;
-        const newParentId = toList.closest('.list-group-item')?.dataset.id || null;
+        let updates = [];
 
-        const children = Array.from(toList.children);
-        const newOrder = children.indexOf(itemEl);
-
-        const updates = [];
-
-        // Update the dropped item
-        updates.push({ id: menuId, parent_id: newParentId, display_order: newOrder });
-
-        // Update siblings in the new list
-        children.forEach((child, index) => {
-            if (child.dataset.id !== menuId) {
-                updates.push({ id: child.dataset.id, display_order: index });
-            }
-        });
-
-        // Update siblings in the old list if it's different
-        if (fromList !== toList) {
-            Array.from(fromList.children).forEach((child, index) => {
-                updates.push({ id: child.dataset.id, display_order: index });
+        const processList = (list) => {
+            const parentId = list.closest('.list-group-item')?.dataset.id || null;
+            Array.from(list.children).forEach((child, index) => {
+                updates.push({
+                    id: parseInt(child.dataset.id),
+                    parent_id: parentId ? parseInt(parentId) : null,
+                    display_order: index
+                });
             });
+        };
+
+        processList(toList);
+        if (fromList !== toList) {
+            processList(fromList);
         }
 
-        // Batch update
+        // Remove duplicates by converting to a Map and back
+        const uniqueUpdates = [...new Map(updates.map(item => [item.id, item])).values()];
+
         try {
-            const menuToUpdate = findMenuById(menuId);
-            if (!menuToUpdate) return;
-
-            menuToUpdate.parent_id = newParentId;
-            menuToUpdate.display_order = newOrder;
-
-            const response = await fetch('../api/menus.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(menuToUpdate)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || '순서 변경에 실패했습니다.');
-            }
-
-            // Re-render to ensure consistency
+            await ApiService.request('/menus/order', { method: 'PUT', body: { updates: uniqueUpdates } });
+            Toast.success('메뉴 순서가 저장되었습니다.');
             await fetchAndRenderMenus();
-
         } catch(error) {
-            alert(error.message);
-            // Re-render to revert optimistic update
-            await fetchAndRenderMenus();
+            Toast.error(`순서 변경 실패: ${error.message}`);
+            await fetchAndRenderMenus(); // Revert on failure
         }
     }
 
@@ -189,29 +156,23 @@ document.addEventListener('DOMContentLoaded', function () {
         e.preventDefault();
         const formData = new FormData(menuForm);
         const data = Object.fromEntries(formData.entries());
+        const id = data.id ? parseInt(data.id) : null;
 
-        // Ensure numeric fields are numbers
-        data.id = data.id ? parseInt(data.id) : null;
         data.parent_id = data.parent_id ? parseInt(data.parent_id) : null;
+        // Remove empty id for creation
+        if (!id) delete data.id;
 
         try {
-            const response = await fetch('../api/menus.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            const result = id
+                ? await ApiService.request(`/menus/${id}`, { method: 'PUT', body: data })
+                : await ApiService.request('/menus', { method: 'POST', body: data });
 
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || '저장에 실패했습니다.');
-            }
-
+            Toast.success(result.message);
             menuModal.hide();
             await fetchAndRenderMenus();
 
         } catch (error) {
-            alert(error.message);
+            Toast.error(`저장 실패: ${error.message}`);
         }
     });
 
@@ -222,20 +183,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         try {
-            const response = await fetch(`/api/menus.php?id=${menuId}`, {
-                method: 'DELETE'
-            });
-
-            const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.message || '삭제에 실패했습니다.');
-            }
-
+            const result = await ApiService.request(`/menus/${menuId}`, { method: 'DELETE' });
+            Toast.success(result.message);
             menuModal.hide();
             await fetchAndRenderMenus();
 
         } catch (error) {
-            alert(error.message);
+            Toast.error(`삭제 실패: ${error.message}`);
         }
     });
 

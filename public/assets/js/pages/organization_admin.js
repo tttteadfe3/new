@@ -16,14 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const positionsListContainer = document.getElementById('positions-list-container');
     const addPositionBtn = document.getElementById('add-position-btn');
 
-    const fetchOptions = (options = {}) => {
-        const defaultHeaders = {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json'
-        };
-        return { ...options, headers: { ...defaultHeaders, ...options.headers } };
-    };
-
     const sanitizeHTML = (str) => {
         if (!str) return '';
         const div = document.createElement('div');
@@ -31,17 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     };
 
-    /**
-     * Generic function to load and render a list of items (departments or positions)
-     * @param {string} type - 'department' or 'position'
-     * @param {HTMLElement} container - The container element to render the list into
-     */
     const loadList = async (type, container) => {
         try {
-            const response = await fetch(`../api/organization.php?action=list&type=${type}`, fetchOptions());
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
-
+            const result = await ApiService.request(`/organization?type=${type}`);
             container.innerHTML = '';
             const entityName = type === 'department' ? '부서' : '직급';
 
@@ -67,11 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    /**
-     * Generic function to open the modal for adding or editing an item
-     * @param {string} type - 'department' or 'position'
-     * @param {object|null} data - The item data for editing, or null for adding
-     */
     const openModal = (type, data = null) => {
         orgForm.reset();
         const entityName = type === 'department' ? '부서' : '직급';
@@ -90,33 +69,33 @@ document.addEventListener('DOMContentLoaded', () => {
         orgModal.show();
     };
 
-    // Event Listeners
     addDepartmentBtn.addEventListener('click', () => openModal('department'));
     addPositionBtn.addEventListener('click', () => openModal('position'));
 
     orgForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const data = Object.fromEntries(new FormData(orgForm).entries());
-        const type = data.type;
+        const id = orgIdInput.value;
+        const type = orgTypeInput.value;
+        const name = orgNameInput.value;
+        const payload = { name, type };
 
         try {
-            const response = await fetch(`../api/organization.php?action=save&type=${type}`, fetchOptions({ method: 'POST', body: JSON.stringify(data) }));
-            const result = await response.json();
-
-            if (result.success) {
-                Toast.success(result.message);
-                orgModal.hide();
-                if (type === 'department') {
-                    loadList('department', departmentsListContainer);
-                } else {
-                    loadList('position', positionsListContainer);
-                }
+            let result;
+            if (id) { // Update
+                result = await ApiService.request(`/organization/${id}`, { method: 'PUT', body: payload });
+            } else { // Create
+                result = await ApiService.request('/organization', { method: 'POST', body: payload });
+            }
+            Toast.success(result.message);
+            orgModal.hide();
+            if (type === 'department') {
+                loadList('department', departmentsListContainer);
             } else {
-                Toast.error(result.message);
+                loadList('position', positionsListContainer);
             }
         } catch (error) {
             console.error(`Error saving ${type}:`, error);
-            Toast.error('작업 처리 중 오류가 발생했습니다.');
+            Toast.error(`저장 중 오류 발생: ${error.message}`);
         }
     });
 
@@ -126,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = target.dataset.name;
         const type = target.dataset.type;
 
-        if (!type) return;
+        if (!type || !id) return;
 
         if (target.classList.contains('edit-btn')) {
             openModal(type, { id, name });
@@ -146,22 +125,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const deleteItem = async (type, id) => {
         try {
-            const response = await fetch(`../api/organization.php?action=delete&type=${type}`, fetchOptions({ method: 'POST', body: JSON.stringify({ id }) }));
-            const result = await response.json();
-
-            if (result.success) {
-                Toast.success(result.message);
-                if (type === 'department') {
-                    loadList('department', departmentsListContainer);
-                } else {
-                    loadList('position', positionsListContainer);
-                }
+            const result = await ApiService.request(`/organization/${id}`, { method: 'DELETE', body: { type } });
+            Toast.success(result.message);
+            if (type === 'department') {
+                loadList('department', departmentsListContainer);
             } else {
-                Toast.error(result.message);
+                loadList('position', positionsListContainer);
             }
         } catch(error) {
             console.error(`Error deleting ${type}:`, error);
-            Toast.error(`${type === 'department' ? '부서' : '직급'} 삭제 중 오류가 발생했습니다.`);
+            Toast.error(`${type === 'department' ? '부서' : '직급'} 삭제 중 오류가 발생했습니다: ${error.message}`);
         }
     };
 

@@ -1,22 +1,11 @@
 // js/roles.js
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM 요소 캐싱
     const rolesListContainer = document.getElementById('roles-list-container');
     const roleDetailsContainer = document.getElementById('role-details-container');
     const roleModal = new bootstrap.Modal(document.getElementById('role-modal'));
     const roleForm = document.getElementById('role-form');
     let currentRoleId = null;
 
-    // 공통 fetch 옵션
-    const fetchOptions = (options = {}) => {
-        const defaultHeaders = {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json'
-        };
-        return { ...options, headers: { ...defaultHeaders, ...options.headers } };
-    };
-
-    // HTML 인코딩 함수
     const sanitizeHTML = (str) => {
         if (!str) return '';
         const div = document.createElement('div');
@@ -24,16 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     };
 
-    /**
-     * 역할 목록을 API에서 불러와 좌측 패널에 렌더링
-     * @param {number|null} selectRoleId - 로드 후 자동으로 선택할 역할 ID
-     */
     const loadRolesList = async (selectRoleId = null) => {
         try {
-            const response = await fetch('../api/roles.php?action=list_roles', fetchOptions());
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
-
+            const result = await ApiService.request('/roles');
             rolesListContainer.innerHTML = '';
             result.data.forEach(role => {
                 const userCountBadge = `<span class="badge bg-secondary rounded-pill ms-auto">${role.user_count}</span>`;
@@ -49,27 +31,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (roleIdToLoad) {
                 const roleElement = document.querySelector(`.list-group-item[data-id='${roleIdToLoad}']`);
                 if(roleElement) roleElement.classList.add('active');
-                loadRoleDetails(roleIdToLoad);
+                await loadRoleDetails(roleIdToLoad);
             } else {
                 roleDetailsContainer.innerHTML = '<div class="alert alert-info">표시할 역할이 없습니다. 새 역할을 추가해주세요.</div>';
             }
         } catch (error) {
             console.error('Error loading roles list:', error);
-            rolesListContainer.innerHTML = `<div class="list-group-item text-danger">역할 목록 로딩 실패</div>`;
+            rolesListContainer.innerHTML = `<div class="list-group-item text-danger">역할 목록 로딩 실패: ${error.message}</div>`;
         }
     };
 
-    /**
-     * 특정 역할의 상세 정보(권한, 할당된 사용자)를 불러와 우측 패널에 렌더링
-     * @param {number} roleId - 상세 정보를 조회할 역할 ID
-     */
     const loadRoleDetails = async (roleId) => {
         currentRoleId = roleId;
         try {
-            const response = await fetch(`../api/roles.php?action=get_details&role_id=${roleId}`, fetchOptions());
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
-
+            const result = await ApiService.request(`/roles/${roleId}`);
             const { role, all_permissions, assigned_permission_ids, assigned_users } = result.data;
 
             let permissionsHtml = all_permissions.map(p => {
@@ -115,11 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.delete-role-btn').addEventListener('click', handleRoleDelete);
         } catch (error) {
             console.error('Error loading role details:', error);
-            roleDetailsContainer.innerHTML = `<div class="alert alert-danger">상세 정보 로딩 실패</div>`;
+            roleDetailsContainer.innerHTML = `<div class="alert alert-danger">상세 정보 로딩 실패: ${error.message}</div>`;
         }
     };
     
-    // 이벤트 핸들러들
     rolesListContainer.addEventListener('click', (e) => {
         e.preventDefault();
         const target = e.target.closest('.list-group-item');
@@ -139,42 +113,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     roleForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const data = Object.fromEntries(new FormData(roleForm).entries());
+        const id = document.getElementById('role-id').value;
+        const data = {
+            name: document.getElementById('role-name').value,
+            description: document.getElementById('role-description').value
+        };
+
         try {
-            const response = await fetch('../api/roles.php?action=save_role', fetchOptions({ method: 'POST', body: JSON.stringify(data) }));
-            const result = await response.json();
+            const result = id
+                ? await ApiService.request(`/roles/${id}`, { method: 'PUT', body: data })
+                : await ApiService.request('/roles', { method: 'POST', body: data });
             
-            if (result.success) {
-                Toast.success(result.message);
-                roleModal.hide();
-                const newSelectedId = result.data?.new_role_id || data.id;
-                loadRolesList(newSelectedId);
-            } else {
-                Toast.error(result.message);
-            }
+            Toast.success(result.message);
+            roleModal.hide();
+            const newSelectedId = result.data?.id || id;
+            await loadRolesList(newSelectedId);
         } catch (error) {
             console.error('Error saving role:', error);
-            Toast.error('작업 처리 중 오류가 발생했습니다.');
+            Toast.error(`저장 중 오류 발생: ${error.message}`);
         }
     });
 
     const handlePermissionSave = async (e) => {
         e.preventDefault();
-        const data = {
-            role_id: currentRoleId,
-            permissions: Array.from(new FormData(e.target).getAll('permissions[]')).map(Number)
-        };
+        const permissions = Array.from(new FormData(e.target).getAll('permissions[]')).map(Number);
         try {
-            const response = await fetch('../api/roles.php?action=save_permissions', fetchOptions({ method: 'POST', body: JSON.stringify(data) }));
-            const result = await response.json();
-            if (result.success) {
-                Toast.success(result.message);
-            } else {
-                Toast.error(result.message);
-            }
+            const result = await ApiService.request(`/roles/${currentRoleId}/permissions`, { method: 'PUT', body: { permissions } });
+            Toast.success(result.message);
         } catch (error) {
             console.error('Error saving permissions:', error);
-            Toast.error('권한 저장 중 오류가 발생했습니다.');
+            Toast.error(`권한 저장 중 오류 발생: ${error.message}`);
         }
     };
 
@@ -188,27 +156,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const handleRoleDelete = async () => {
-        const roleName = document.querySelector(`#roles-list-container [data-id='${currentRoleId}']`).textContent.trim().split('\n')[0];
+        const roleNameElement = document.querySelector(`#roles-list-container [data-id='${currentRoleId}']`);
+        if (!roleNameElement) return;
+        const roleName = roleNameElement.textContent.trim().split('\n')[0];
         const confirmResult = await Confirm.fire('역할 삭제', `'${roleName}' 역할을 정말 삭제하시겠습니까?`);
         if (!confirmResult.isConfirmed) return;
 
         try {
-            const response = await fetch('../api/roles.php?action=delete_role', fetchOptions({ method: 'POST', body: JSON.stringify({ id: currentRoleId }) }));
-            const result = await response.json();
-            
-            if (result.success) {
-                Toast.success(result.message);
-                roleDetailsContainer.innerHTML = '<div class="alert alert-info">역할을 선택해주세요.</div>';
-                loadRolesList();
-            } else {
-                Toast.error(result.message);
-            }
+            const result = await ApiService.request(`/roles/${currentRoleId}`, { method: 'DELETE' });
+            Toast.success(result.message);
+            roleDetailsContainer.innerHTML = '<div class="alert alert-info">역할을 선택해주세요.</div>';
+            await loadRolesList();
         } catch(error) {
             console.error('Error deleting role:', error);
-            Toast.error('역할 삭제 중 오류가 발생했습니다.');
+            Toast.error(`역할 삭제 중 오류가 발생했습니다: ${error.message}`);
         }
     };
 
-    // 초기 역할 목록 로드
     loadRolesList();
 });

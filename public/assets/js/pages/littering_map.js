@@ -42,31 +42,14 @@ class WasteManagementApp extends BaseApp {
         this.loadData();
     }
 
-    async _fetch(url, options = {}) {
-        const isFormData = options.body instanceof FormData;
-        const defaultHeaders = { 'X-Requested-With': 'XMLHttpRequest' };
-        if (!isFormData) {
-            defaultHeaders['Content-Type'] = 'application/json';
-        }
-
-        const fetchOptions = { ...options, headers: { ...defaultHeaders, ...(options.headers || {}) } };
-
-        const response = await fetch(url, fetchOptions);
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-            throw new Error(result.message || 'API 요청에 실패했습니다.');
-        }
-        return result;
-    }
-
     async loadData() {
         try {
-            const response = await this._fetch(`${this.config.API_URL}?status=active`);
+            const response = await this.apiCall(`${this.config.API_URL}?status=active`, { method: 'GET' });
             this.state.markerList = [];
             response.data.forEach(item => this.addMarkerToMap(item));
         } catch (error) {
             console.error('기존 마커 로드 실패:', error);
+            Toast.error(`데이터 로딩 실패: ${error.message}`);
         }
     }
 
@@ -80,7 +63,7 @@ class WasteManagementApp extends BaseApp {
             const formData = this.buildRegistrationFormData();
             this.setButtonLoading('#registerBtn', '등록 중...');
 
-            const response = await this._fetch(this.config.API_URL, {
+            const response = await this.apiCall(this.config.API_URL, {
                 method: 'POST',
                 body: formData
             });
@@ -107,7 +90,7 @@ class WasteManagementApp extends BaseApp {
             const formData = this.buildProcessFormData();
             this.setButtonLoading('#processBtn', '처리 중...');
 
-            await this._fetch(`${this.config.API_URL}/${markerId}/process`, {
+            await this.apiCall(`${this.config.API_URL}/${markerId}/process`, {
                 method: 'POST',
                 body: formData
             });

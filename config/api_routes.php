@@ -4,7 +4,8 @@
 // These routes are prefixed with 'api/' automatically by the Router
 return [
     // Employee API routes
-    'employees' => 'EmployeeApiController@index',
+    'GET employees' => 'EmployeeApiController@index',
+    'GET employees/unlinked' => 'EmployeeApiController@unlinked',
     
     // Holiday API routes
     'GET holidays' => 'HolidayApiController@index',
@@ -45,16 +46,32 @@ return [
     'DELETE littering_admin/reports/{id}/permanent' => 'LitteringAdminApiController@permanentlyDelete',
     
     // Organization API routes
-    'organization' => 'OrganizationApiController@index',
+    'GET organization' => 'OrganizationApiController@index',
+    'POST organization' => 'OrganizationApiController@store',
+    'PUT organization/{id}' => 'OrganizationApiController@update',
+    'DELETE organization/{id}' => 'OrganizationApiController@destroy',
     
     // Role and Permission API routes
-    'roles' => 'RoleApiController@index',
+    'GET roles' => 'RoleApiController@index',
+    'POST roles' => 'RoleApiController@store',
+    'GET roles/{id}' => 'RoleApiController@show',
+    'PUT roles/{id}' => 'RoleApiController@update',
+    'DELETE roles/{id}' => 'RoleApiController@destroy',
+    'PUT roles/{id}/permissions' => 'RoleApiController@updatePermissions',
     
     // User API routes
-    'users' => 'UserApiController@index',
+    'GET users' => 'UserApiController@index',
+    'GET users/{id}' => 'UserApiController@show',
+    'PUT users/{id}' => 'UserApiController@update',
+    'POST users/{id}/link' => 'UserApiController@linkEmployee',
+    'POST users/{id}/unlink' => 'UserApiController@unlinkEmployee',
     
     // Menu API routes
-    'menus' => 'MenuApiController@index',
+    'GET menus' => 'MenuApiController@index',
+    'POST menus' => 'MenuApiController@store',
+    'PUT menus/order' => 'MenuApiController@updateOrder',
+    'PUT menus/{id}' => 'MenuApiController@update',
+    'DELETE menus/{id}' => 'MenuApiController@destroy',
     
     // Profile API routes
     'GET profile' => 'ProfileApiController@index',

@@ -17,11 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchBtn = document.getElementById('filter-search-btn');
     const resetBtn = document.getElementById('filter-reset-btn');
 
-    const fetchOptions = (options = {}) => {
-        const defaultHeaders = { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' };
-        return { ...options, headers: { ...defaultHeaders, ...options.headers } };
-    };
-
     const sanitizeHTML = (str) => {
         if (!str) return '';
         const div = document.createElement('div');
@@ -32,17 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadUserList = async (filters = {}) => {
         userTableBody.innerHTML = '<tr><td colspan="6" class="text-center">사용자 목록을 불러오는 중...</td></tr>';
         
-        const queryParams = new URLSearchParams();
-        Object.entries(filters).forEach(([key, value]) => {
-            if (value) {
-                queryParams.append(key, value);
-            }
-        });
+        const queryParams = new URLSearchParams(filters);
 
         try {
-            const response = await fetch(`../api/users.php?action=list&${queryParams.toString()}`, fetchOptions());
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
+            const result = await ApiService.request(`/users?${queryParams.toString()}`);
 
             userTableBody.innerHTML = '';
             if (result.data.length === 0) {
@@ -85,11 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loadRoles = async () => {
         try {
-            const response = await fetch(`../api/users.php?action=get_all_roles`, fetchOptions());
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
+            const result = await ApiService.request('/roles');
             
-            // Add "전체" option to roleFilter
             roleFilter.innerHTML = '<option value="">-- 전체 --</option>';
             result.data.forEach(role => {
                 const option = document.createElement('option');
@@ -126,9 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const employeeSelect = document.getElementById('employee_id_select');
         employeeSelect.innerHTML = '<option value="">불러오는 중...</option>';
         try {
-            const response = await fetch(`../api/users.php?action=get_unlinked_employees&department_id=${departmentId}`, fetchOptions());
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
+            const query = departmentId ? `?department_id=${departmentId}` : '';
+            const result = await ApiService.request(`/employees/unlinked${query}`);
             
             employeeSelect.innerHTML = '<option value="">-- 연결할 직원을 선택하세요 --</option>';
             result.data.forEach(emp => {
@@ -145,9 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loadDepartments = async () => {
         try {
-            const response = await fetch('../api/organization.php?action=list&type=department', fetchOptions());
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
+            const result = await ApiService.request('/organization?type=department');
 
             departmentFilter.innerHTML = '<option value="">-- 전체 --</option>';
             result.data.forEach(dept => {
@@ -165,23 +147,20 @@ document.addEventListener('DOMContentLoaded', () => {
         loadUnlinkedEmployees(departmentFilter.value);
     });
 
-    userTableBody.addEventListener('click', async (e) => { // 여기서 'e'는 이벤트 객체
+    userTableBody.addEventListener('click', async (e) => {
         const target = e.target;
         const userId = target.dataset.id;
         if (!userId) return;
 
         if (target.classList.contains('edit-btn')) {
             try {
-                const [userRes, rolesRes] = await Promise.all([
-                    fetch(`../api/users.php?action=get_one&user_id=${userId}`, fetchOptions()),
-                    fetch(`../api/users.php?action=get_all_roles`, fetchOptions())
+                const [userResult, rolesResult] = await Promise.all([
+                    ApiService.request(`/users/${userId}`),
+                    ApiService.request('/roles')
                 ]);
-                const userResult = await userRes.json();
-                const rolesResult = await rolesRes.json();
-                if (!userResult.success || !rolesResult.success) throw new Error('데이터 로딩 실패');
 
                 const user = userResult.data;
-                userModalTitle.textContent = `'${sanitizeHTML(user.nickname)}' 정보 수정`; // sanitizeHTML() 사용
+                userModalTitle.textContent = `'${sanitizeHTML(user.nickname)}' 정보 수정`;
                 userForm.user_id.value = user.id;
                 userForm.status.value = user.status;
                 
@@ -204,20 +183,17 @@ document.addEventListener('DOMContentLoaded', () => {
             mappingModalTitle.textContent = `'${sanitizeHTML(target.closest('tr').children[1].textContent)}' 사용자에게 직원 연결`;
             
             loadDepartments();
-            loadUnlinkedEmployees(); // 초기 목록 로드
+            loadUnlinkedEmployees();
 
             mappingModal.show();
         }
 
-        // 연결 해제
         if (target.classList.contains('unlink-btn')) {
-            const result = await Confirm.fire('연결 해제', '정말로 이 사용자의 직원 연결을 해제하시겠습니까?');
-            if (!result.isConfirmed) return;
+            const confirmResult = await Confirm.fire('연결 해제', '정말로 이 사용자의 직원 연결을 해제하시겠습니까?');
+            if (!confirmResult.isConfirmed) return;
 
             try {
-                const response = await fetch('../api/users.php?action=unlink_employee', fetchOptions({ method: 'POST', body: JSON.stringify({ user_id: userId }) }));
-                const result = await response.json();
-                if (!result.success) throw new Error(result.message);
+                const result = await ApiService.request(`/users/${userId}/unlink`, { method: 'POST' });
                 Toast.success(result.message);
                 loadUserList();
             } catch (error) {
@@ -227,20 +203,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    /**
-     * 역할/상태 수정 폼 제출 핸들러
-     */
     userForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const userId = userForm.user_id.value;
         const data = {
-            user_id: userForm.user_id.value,
             status: userForm.status.value,
             roles: Array.from(userForm.querySelectorAll('input[name="roles[]"]:checked')).map(el => Number(el.value))
         };
         try {
-            const response = await fetch('../api/users.php?action=save', fetchOptions({ method: 'POST', body: JSON.stringify(data) }));
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
+            const result = await ApiService.request(`/users/${userId}`, { method: 'PUT', body: data });
             userModal.hide();
             loadUserList();
             Toast.success(result.message);
@@ -250,20 +221,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    /**
-     * 직원 매핑 폼 제출 핸들러
-     */
     mappingForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const data = { user_id: mappingForm.user_id.value, employee_id: mappingForm.employee_id.value };
-        if (!data.employee_id) { 
+        const userId = mappingForm.user_id.value;
+        const employeeId = mappingForm.employee_id.value;
+        if (!employeeId) {
             Toast.error('연결할 직원을 선택해주세요.'); 
             return; 
         }
         try {
-            const response = await fetch('../api/users.php?action=link_employee', fetchOptions({ method: 'POST', body: JSON.stringify(data) }));
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
+            const result = await ApiService.request(`/users/${userId}/link`, { method: 'POST', body: { employee_id: employeeId } });
             mappingModal.hide();
             loadUserList();
             Toast.success(result.message);
