@@ -1,6 +1,6 @@
 <?php
 // Include sidebar menu functions
-include_once __DIR__ . '/../sidebar_menu_function.php';
+include_once __DIR__ . '/sidebar_menu_function.php';
 ?>
 
 <!-- ========== App Menu ========== -->
