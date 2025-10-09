@@ -1,70 +1,76 @@
-class WasteCollectionMarkerFactory {
-    static createSVGIcon(options = {}) {
-        const { color = '#28A745', size = { width: 38, height: 44 }, text = '현장' } = options;
-        const baseIcon = `
-            <svg width="${size.width}" height="${size.height}" viewBox="0 0 38 44" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 44C19 44 4 24.2 4 16.5C4 7.38781 10.835 0 19 0C27.165 0 34 7.38781 34 16.5C34 24.2 19 44 19 44Z" 
-                      fill="${color}" stroke="#ffffff" stroke-width="1.5"/>
-                <circle cx="19" cy="16" r="12" fill="#fff"/>
-                <text x="19" y="20.5" text-anchor="middle" fill="${color}" font-size="12" font-weight="bold" font-family="Arial, sans-serif">${text}</text>
-            </svg>`;
-        return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(baseIcon)));
-    }
-}
-
+/**
+ * Application for the Waste Collection page.
+ * Handles registration of large waste collections and displaying them on the map.
+ */
 class WasteCollectionApp extends BaseApp {
     constructor() {
         super({
-            API_URL: '/api/waste-collections', // Updated API Base URL
+            API_URL: '/api/waste-collections',
             ITEMS: ['매트리스', '침대틀', '장롱', '쇼파', '의자', '책상', '기타(가구)', '건폐', '소각', '변기', '캐리어', '기타'],
-            FILE: { MAX_SIZE: 5 * 1024 * 1024, ALLOWED_TYPES: ['image/jpeg', 'image/png'], COMPRESS: { MAX_WIDTH: 1200, MAX_HEIGHT: 1200, QUALITY: 0.8 } },
-            ALLOWED_REGIONS: ['정왕1동']
+            FILE: { MAX_SIZE: 5 * 1024 * 1024, ALLOWED_TYPES: ['image/jpeg', 'image/png'], COMPRESS: { MAX_WIDTH: 1200, MAX_HEIGHT: 1200, QUALITY: 0.8 } }
         });
-        this.state = { ...this.state, collectionList: [], modals: {}, currentOverlay: null };
+
+        this.state = {
+            ...this.state,
+            collectionList: [],
+            modals: {},
+            currentOverlay: null
+        };
+
+        // This is needed for the closeOverlay button in the custom overlay HTML.
+        // A better approach would be to add this event listener programmatically.
+        window.wasteCollectionApp = this;
     }
 
-    async init() {
+    /**
+     * @override
+     */
+    async initializeApp() {
         const mapOptions = {
             enableTempMarker: true,
             markerTypes: this.generateMarkerTypes(),
-            onTempMarkerClick: (locationData) => this.showRegisterModal(locationData),
+            onTempMarkerClick: (locationData) => this.openRegistrationModal(locationData),
             onAddressResolved: (locData) => document.getElementById('address').textContent = locData.isValid ? locData.address : '주소 확인 불가',
             onRegionValidation: (isValid, message) => !isValid && Toast.error(message)
         };
-        this.initMapManager(mapOptions);
-        this.initModals();
-        this.populateItems();
-        this.bindEvents();
+
+        this.initializeMapManager(mapOptions);
+        this.setupModals();
+        this.populateSelectableItems();
+        this.setupEventListeners();
+
         await this.waitForMapReady();
-        this.loadData();
+        this.loadInitialData();
     }
 
-    async _fetch(url, options = {}) {
-        const isFormData = options.body instanceof FormData;
-        const headers = { 'X-Requested-With': 'XMLHttpRequest', ...(options.headers || {}) };
-        if (!isFormData) headers['Content-Type'] = 'application/json';
-
-        const response = await fetch(url, { ...options, headers });
-        const result = await response.json();
-        if (!response.ok || !result.success) throw new Error(result.message || 'API 요청 실패');
-        return result;
+    /**
+     * @override
+     */
+    async loadInitialData() {
+        try {
+            const response = await this.apiCall(this.config.API_URL);
+            this.state.collectionList = [];
+            this.groupAndDisplayCollections(response.data || []);
+        } catch (error) {
+            console.error('Failed to load collection list:', error);
+            Toast.error(`데이터 로딩 실패: ${error.message}`);
+        }
     }
 
-    generateMarkerTypes() {
-        return {
-            field: WasteCollectionMarkerFactory.createSVGIcon({ color: '#28A745', text: '현장' }),
-            online: WasteCollectionMarkerFactory.createSVGIcon({ color: '#DC2626', text: '시청' })
-        };
-    }
-
-    async waitForMapReady() {
-        return new Promise(resolve => {
-            const check = () => (this.state.mapManager?.getMap()) ? resolve() : setTimeout(check, 100);
-            check();
+    /**
+     * @override
+     */
+    setupEventListeners() {
+        document.getElementById('registerBtn').addEventListener('click', () => this.submitNewCollection());
+        document.getElementById('currentLocationBtn').addEventListener('click', () => this.state.mapManager.setUserLocation());
+        document.getElementById('addCenterMarkerBtn')?.addEventListener('click', () => {
+            const center = this.state.mapManager.getMap().getCenter();
+            this.state.mapManager.handleLocationSelect(center);
         });
+        document.getElementById('photo').addEventListener('change', (e) => this.handlePhotoUpload(e));
     }
 
-    initModals() {
+    setupModals() {
         this.state.modals.register = new bootstrap.Offcanvas(document.getElementById('registerCollectionModal'));
         document.getElementById('registerCollectionModal').addEventListener('hidden.bs.offcanvas', () => {
             document.getElementById('wasteCollectionForm').reset();
@@ -73,9 +79,30 @@ class WasteCollectionApp extends BaseApp {
         });
     }
 
-    populateItems() {
+    async submitNewCollection() {
+        if (!this.validateRegistrationForm()) return;
+
+        const formData = this.buildRegistrationFormData();
+        this.setButtonLoading('#registerBtn', '등록 중...');
+        try {
+            const response = await this.apiCall(this.config.API_URL, { method: 'POST', body: formData });
+            this.addCollectionToMap(response.data);
+            this.state.modals.register.hide();
+            this.state.mapManager.removeTempMarker();
+            Toast.success('폐기물 수거 정보가 등록되었습니다.');
+        } catch (error) {
+            Toast.error(`등록 실패: ${error.message}`);
+        } finally {
+            this.resetButtonLoading('#registerBtn', '<i class="ri-save-line me-1"></i>등록');
+        }
+    }
+
+    // --- UI and Data Handling Methods ---
+
+    populateSelectableItems() {
         const itemList = document.getElementById('item-list');
         if (!itemList) return;
+
         this.config.ITEMS.forEach(item => {
             itemList.insertAdjacentHTML('beforeend', `
                 <div class="col-6 mb-2">
@@ -89,6 +116,7 @@ class WasteCollectionApp extends BaseApp {
                     </div>
                 </div>`);
         });
+
         itemList.addEventListener('click', (e) => {
             const btn = e.target;
             const input = btn.classList.contains('btn-plus') ? btn.previousElementSibling : (btn.classList.contains('btn-minus') ? btn.nextElementSibling : null);
@@ -100,37 +128,10 @@ class WasteCollectionApp extends BaseApp {
         });
     }
 
-    bindEvents() {
-        document.getElementById('registerBtn').addEventListener('click', () => this.registerCollection());
-        document.getElementById('currentLocationBtn').addEventListener('click', () => this.state.mapManager.setUserLocation());
-        document.getElementById('addCenterMarkerBtn')?.addEventListener('click', () => {
-            const center = this.state.mapManager.getMap().getCenter();
-            this.state.mapManager.handleLocationSelect(center);
-        });
-        document.getElementById('photo').addEventListener('change', (e) => this.handleFileUpload(e));
-    }
-
-    showRegisterModal(locationData) {
-        document.getElementById('lat').value = locationData.latitude;
-        document.getElementById('lng').value = locationData.longitude;
-        if (locationData.address) document.getElementById('address').textContent = locationData.address;
-        this.setTodayDate('#issue_date');
-        this.state.modals.register.show();
-    }
-
-    async loadData() {
-        try {
-            const response = await this._fetch(this.config.API_URL);
-            this.state.collectionList = [];
-            this.groupAndDisplayCollections(response.data || []);
-        } catch (error) {
-            console.error('수거 목록 로드 실패:', error);
-        }
-    }
-
     groupAndDisplayCollections(data) {
         const onlineSubmissions = data.filter(item => item.type === 'online');
         const fieldSubmissions = data.filter(item => item.type === 'field');
+
         fieldSubmissions.forEach(item => this.addCollectionToMap(item));
 
         const groupedOnline = onlineSubmissions.reduce((acc, c) => {
@@ -150,7 +151,7 @@ class WasteCollectionApp extends BaseApp {
             position: { lat: firstItem.latitude, lng: firstItem.longitude },
             type: 'online', // Cluster is always for online submissions
             data: { isCluster: true, collections: group },
-            onClick: (m, markerData) => this.showCollectionOverlay(markerData)
+            onClick: (m, markerData) => this.openCollectionOverlay(markerData)
         });
         this.state.collectionList.push({ isCluster: true, marker: marker.marker, data: { collections: group } });
     }
@@ -161,12 +162,12 @@ class WasteCollectionApp extends BaseApp {
             position: { lat: data.latitude, lng: data.longitude },
             type: data.type,
             data: { isCluster: false, collections: [data], id: data.id },
-            onClick: (m, markerData) => this.showCollectionOverlay(markerData)
+            onClick: (m, markerData) => this.openCollectionOverlay(markerData)
         });
         this.state.collectionList.push({ marker: collectionInfo.marker, data: { ...data, id: data.id } });
     }
 
-    showCollectionOverlay(markerData) {
+    openCollectionOverlay(markerData) {
         if (this.state.currentOverlay) this.state.currentOverlay.setMap(null);
 
         const { collections, isCluster } = markerData;
@@ -194,37 +195,28 @@ class WasteCollectionApp extends BaseApp {
         }
     }
 
-    async registerCollection() {
-        if (!this.validateRegistrationForm()) return;
-        const formData = this.buildRegistrationFormData();
-        this.setButtonLoading('#registerBtn', '등록 중...');
-        try {
-            const response = await this._fetch(this.config.API_URL, { method: 'POST', body: formData });
-            this.addCollectionToMap(response.data);
-            this.state.modals.register.hide();
-            this.state.mapManager.removeTempMarker();
-            Toast.success('폐기물 수거 정보가 등록되었습니다.');
-        } catch (error) {
-            Toast.error(`등록 실패: ${error.message}`);
-        } finally {
-            this.resetButtonLoading('#registerBtn', '<i class="ri-save-line me-1"></i>등록');
-        }
+    openRegistrationModal(locationData) {
+        document.getElementById('lat').value = locationData.latitude;
+        document.getElementById('lng').value = locationData.longitude;
+        if (locationData.address) document.getElementById('address').textContent = locationData.address;
+        this.setTodaysDate('#issue_date');
+        this.state.modals.register.show();
     }
 
-    validateRegistrationForm() {
-        const items = Array.from(document.querySelectorAll('.item-quantity-input')).filter(i => parseInt(i.value) > 0);
-        if (items.length === 0) return Toast.error('수량이 1 이상인 품목을 하나 이상 추가해주세요.') && false;
-        const lat = parseFloat(document.getElementById('lat').value), lng = parseFloat(document.getElementById('lng').value);
-        if (this.state.mapManager.checkDuplicateLocation({ lat, lng }, 5)) return Toast.error('같은 위치에 이미 수거 정보가 등록되어 있습니다.') && false;
-        const photoFile = document.getElementById('photo').files[0];
-        if (photoFile && !this.validateFile(photoFile)) return false;
-        return true;
+    // --- Helper and Utility Methods ---
+
+    generateMarkerTypes() {
+        return {
+            field: MarkerFactory.createSVGIcon({ type: 'waste', color: '#28A745', text: '현장' }),
+            online: MarkerFactory.createSVGIcon({ type: 'waste', color: '#DC2626', text: '시청' })
+        };
     }
 
-    validateFile(file) {
-        if (!this.config.FILE.ALLOWED_TYPES.includes(file.type)) return Toast.error('이미지 파일만 업로드 가능합니다.') && false;
-        if (file.size > this.config.FILE.MAX_SIZE) return Toast.error('파일 크기는 5MB 이하여야 합니다.') && false;
-        return true;
+    async waitForMapReady() {
+        return new Promise(resolve => {
+            const check = () => (this.state.mapManager?.getMap()) ? resolve() : setTimeout(check, 100);
+            check();
+        });
     }
 
     buildRegistrationFormData() {
@@ -240,14 +232,45 @@ class WasteCollectionApp extends BaseApp {
         return formData;
     }
 
-    async handleFileUpload(e) {
+    validateRegistrationForm() {
+        const items = Array.from(document.querySelectorAll('.item-quantity-input')).filter(i => parseInt(i.value) > 0);
+        if (items.length === 0) {
+            Toast.error('수량이 1 이상인 품목을 하나 이상 추가해주세요.');
+            return false;
+        }
+        const lat = parseFloat(document.getElementById('lat').value);
+        const lng = parseFloat(document.getElementById('lng').value);
+        if (this.state.mapManager.checkDuplicateLocation({ lat, lng }, 5)) {
+            Toast.error('같은 위치에 이미 수거 정보가 등록되어 있습니다.');
+            return false;
+        }
+        const photoFile = document.getElementById('photo').files[0];
+        if (photoFile && !this.validateFile(photoFile)) {
+            return false;
+        }
+        return true;
+    }
+
+    validateFile(file) {
+        if (!this.config.FILE.ALLOWED_TYPES.includes(file.type)) {
+            Toast.error('이미지 파일만 업로드 가능합니다.');
+            return false;
+        }
+        if (file.size > this.config.FILE.MAX_SIZE) {
+            Toast.error('파일 크기는 5MB 이하여야 합니다.');
+            return false;
+        }
+        return true;
+    }
+
+    async handlePhotoUpload(e) {
         const file = e.target.files[0];
         if (!file) return;
         const statusEl = document.getElementById('photoStatus');
         if (!this.validateFile(file)) { e.target.value = ''; return; }
         statusEl.innerHTML = '<i class="ri-loader-4-line"></i> 압축 중...';
         try {
-            const compressedFile = await this.compressImage(file);
+            const compressedFile = await this.compressImageFile(file);
             const dt = new DataTransfer();
             dt.items.add(compressedFile);
             e.target.files = dt.files;
@@ -257,9 +280,9 @@ class WasteCollectionApp extends BaseApp {
         }
     }
 
-    compressImage(file) {
+    compressImageFile(file) {
         const { MAX_WIDTH, MAX_HEIGHT, QUALITY } = this.config.FILE.COMPRESS;
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
                 const ratio = Math.min(MAX_WIDTH / img.width, MAX_HEIGHT / img.height, 1);
@@ -268,19 +291,23 @@ class WasteCollectionApp extends BaseApp {
                 canvas.height = img.height * ratio;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                ctx.canvas.toBlob(blob => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', QUALITY);
+                ctx.canvas.toBlob(blob => {
+                    if (blob) {
+                        resolve(new File([blob], file.name, { type: 'image/jpeg' }))
+                    } else {
+                        reject(new Error('Canvas to Blob conversion failed'));
+                    }
+                }, 'image/jpeg', QUALITY);
             };
+            img.onerror = () => reject(new Error('Image could not be loaded.'));
             img.src = URL.createObjectURL(file);
         });
     }
 
-    setTodayDate(selector) {
+    setTodaysDate(selector) {
         const today = new Date();
         document.querySelector(selector).value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
     }
-
-    // Other UI helpers from BaseApp can be used directly
 }
 
-window.wasteCollectionApp = new WasteCollectionApp();
-document.addEventListener('DOMContentLoaded', () => window.wasteCollectionApp.init());
+new WasteCollectionApp();

@@ -1,62 +1,52 @@
 /**
- * 처리 내역 조회 페이지 (littering_history.php) 스크립트
+ * Application for the Littering History page.
+ * Handles fetching and displaying processed littering reports on a map.
  */
-class MarkerFactory {
-    static createSVGIcon(options = {}) {
-        const { color = '#2563EB', size = { width: 34, height: 40 }, text = '', status = 'processed' } = options;
-        const statusIcon = `
-            <circle cx="24" cy="8" r="6" fill="#28a745"/>
-            <path d="M21 8L23 10L27 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        `;
-        const baseIcon = `
-            <svg width="${size.width}" height="${size.height}" viewBox="0 0 34 40" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17 40C17 40 3 22 3 15C3 6.71572 9.71572 0 17 0C24.2843 0 31 6.71572 31 15C31 22 17 40 17 40Z" 
-                      fill="${color}" stroke="#ffffff" stroke-width="1"/>
-                <circle cx="17" cy="15" r="11" fill="#fff"/>
-                <text x="17" y="20" text-anchor="middle" fill="${color}" font-size="12" font-weight="bold" font-family="Arial">${text}</text>
-                ${statusIcon}
-            </svg>
-        `;
-        const utf8Base64 = btoa(unescape(encodeURIComponent(baseIcon)));
-        return 'data:image/svg+xml;base64,' + utf8Base64;
-    }
-}
-
 class LitteringHistoryApp extends BaseApp {
     constructor() {
         super({
-            API_URL: '/api/littering', // Updated API Base URL
+            API_URL: '/api/littering',
             WASTE_TYPES: ['생활폐기물', '음식물', '재활용', '대형', '소각'],
-            UPLOADS_BASE_PATH: '/storage/' // Use absolute path
+            UPLOADS_BASE_PATH: '/storage/'
         });
 
-        this.state = { ...this.state, processedMarkers: [], groupedData: {}, offcanvas: null };
+        this.state = {
+            ...this.state,
+            processedReports: [],
+            groupedData: {},
+            detailsOffcanvas: null
+        };
     }
 
-    init() {
+    /**
+     * @override
+     */
+    initializeApp() {
         const mapOptions = {
             enableTempMarker: false,
             markerTypes: this.generateMarkerTypes(),
             markerSize: { width: 34, height: 40 },
-            onMarkerClick: (marker, data) => this.showOffcanvas(data.address, data.items)
+            onMarkerClick: (marker, data) => this.openDetailsOffcanvas(data.address, data.items)
         };
-        this.initMapManager(mapOptions);
-        this.initOffcanvas();
-        this.initGlightbox();
-        this.loadData();
+        this.initializeMapManager(mapOptions);
+        this.setupOffcanvas();
+        this.setupLightbox();
+        this.loadInitialData();
     }
 
-    async _fetch(url, options = {}) {
-        const defaultHeaders = { 'X-Requested-With': 'XMLHttpRequest' };
-        const fetchOptions = { ...options, headers: { ...defaultHeaders, ...(options.headers || {}) } };
-
-        const response = await fetch(url, fetchOptions);
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-            throw new Error(result.message || 'API 요청에 실패했습니다.');
+    /**
+     * @override
+     */
+    async loadInitialData() {
+        try {
+            const response = await this.apiCall(`${this.config.API_URL}?status=processed`);
+            this.state.processedReports = response.data || [];
+            this.groupReportsByAddress();
+            this.displayReportsOnMap();
+        } catch (error) {
+            console.error('Failed to load processed reports:', error);
+            Toast.error(`처리 내역 로딩 실패: ${error.message}`);
         }
-        return result;
     }
 
     generateMarkerTypes() {
@@ -67,38 +57,38 @@ class LitteringHistoryApp extends BaseApp {
         };
         this.config.WASTE_TYPES.forEach(type => {
             markerTypes[`${type}_processed`] = MarkerFactory.createSVGIcon({
-                color: wasteTypeColors[type] || '#666666', text: type[0], status: 'processed'
+                type: 'default',
+                color: wasteTypeColors[type] || '#666666',
+                text: type[0],
+                status: 'processed'
             });
         });
         return markerTypes;
     }
 
-    initOffcanvas() {
+    setupOffcanvas() {
         const offcanvasElement = document.getElementById('markerOffcanvas');
-        if (offcanvasElement) this.state.offcanvas = new bootstrap.Offcanvas(offcanvasElement);
-    }
-
-    async loadData() {
-        try {
-            const response = await this._fetch(`${this.config.API_URL}?status=processed`);
-            this.state.processedMarkers = response.data || [];
-            this.groupDataByAddress();
-            this.displayMarkersOnMap();
-        } catch (error) {
-            console.error('처리 완료 마커 로드 실패:', error);
+        if (offcanvasElement) {
+            this.state.detailsOffcanvas = new bootstrap.Offcanvas(offcanvasElement);
         }
     }
 
-    groupDataByAddress() {
-        this.state.groupedData = this.state.processedMarkers.reduce((acc, item) => {
+    setupLightbox() {
+        this.lightbox = GLightbox({ selector: '.gallery-lightbox' });
+    }
+
+    groupReportsByAddress() {
+        this.state.groupedData = this.state.processedReports.reduce((acc, item) => {
             const address = item.address || '주소 없음';
-            if (!acc[address]) acc[address] = [];
+            if (!acc[address]) {
+                acc[address] = [];
+            }
             acc[address].push(item);
             return acc;
         }, {});
     }
 
-    displayMarkersOnMap() {
+    displayReportsOnMap() {
         Object.entries(this.state.groupedData).forEach(([address, items]) => {
             const firstItem = items[0];
             const dominantType = this.getDominantWasteType(items);
@@ -106,7 +96,7 @@ class LitteringHistoryApp extends BaseApp {
                 position: { lat: firstItem.latitude, lng: firstItem.longitude },
                 type: `${dominantType}_processed`,
                 data: { address, items },
-                onClick: (marker, markerData) => this.showOffcanvas(markerData.address, markerData.items)
+                onClick: (marker, markerData) => this.openDetailsOffcanvas(markerData.address, markerData.items)
             });
         });
     }
@@ -120,7 +110,7 @@ class LitteringHistoryApp extends BaseApp {
         return Object.keys(typeCounts).reduce((a, b) => typeCounts[a] > typeCounts[b] ? a : b);
     }
 
-    showOffcanvas(address, items) {
+    openDetailsOffcanvas(address, items) {
         const offcanvasAddress = document.getElementById('offcanvasAddress');
         const processList = document.getElementById('processList');
         if (!offcanvasAddress || !processList) return;
@@ -128,11 +118,14 @@ class LitteringHistoryApp extends BaseApp {
         offcanvasAddress.textContent = address;
         processList.innerHTML = '';
         items.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-        items.forEach(item => processList.appendChild(this.createProcessItemElement(item)));
-        if (this.state.offcanvas) this.state.offcanvas.show();
+        items.forEach(item => processList.appendChild(this.createReportItemElement(item)));
+
+        if (this.state.detailsOffcanvas) {
+            this.state.detailsOffcanvas.show();
+        }
     }
 
-    createProcessItemElement(item) {
+    createReportItemElement(item) {
         const correctedMap = { 'o': '개선', 'x': '미개선', '=': '없어짐' };
         const correctedClassMap = { 'o': 'bg-success', 'x': 'bg-danger', '=': 'bg-warning text-dark' };
         const wasteTypeText = item.waste_type + (item.waste_type2 ? ` + ${item.waste_type2}` : '');
@@ -153,13 +146,13 @@ class LitteringHistoryApp extends BaseApp {
                     <span>수거일: ${this.formatDate(item.collect_date)}</span>
                 </div>
                 ${item.note ? `<p class="mt-2 mb-2 p-2 bg-light border rounded small">${item.note}</p>` : ''}
-                <div class="d-flex gap-2 mt-2 flex-wrap">${this.generatePhotoElements(item)}</div>
+                <div class="d-flex gap-2 mt-2 flex-wrap">${this.renderPhotoElements(item)}</div>
                 <div class="small text-muted mt-2">처리 완료: ${this.formatDateTime(item.updated_at)}</div>
             </div>`;
         return itemDiv;
     }
 
-    generatePhotoElements(item) {
+    renderPhotoElements(item) {
         const photos = [];
         const basePath = this.config.UPLOADS_BASE_PATH;
         if (item.reg_photo_path) photos.push({ src: basePath + item.reg_photo_path, title: '작업전' });
@@ -172,11 +165,13 @@ class LitteringHistoryApp extends BaseApp {
             </a>`).join('');
     }
 
-    initGlightbox() { this.lightbox = GLightbox({ selector: '.gallery-lightbox' }); }
-    formatDate(dateString) { return dateString ? new Date(dateString).toLocaleDateString('ko-KR') : 'N/A'; }
-    formatDateTime(dateTimeString) { return dateTimeString ? new Date(dateTimeString).toLocaleString('ko-KR') : 'N/A'; }
+    formatDate(dateString) {
+        return dateString ? new Date(dateString).toLocaleDateString('ko-KR') : 'N/A';
+    }
+
+    formatDateTime(dateTimeString) {
+        return dateTimeString ? new Date(dateTimeString).toLocaleString('ko-KR') : 'N/A';
+    }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    new LitteringHistoryApp().init();
-});
+new LitteringHistoryApp();
