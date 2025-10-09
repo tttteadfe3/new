@@ -32,7 +32,7 @@ class HolidayController extends BaseController
             'pageTitle' => '휴일/근무일 설정'
         ];
 
-        return $this->render('pages/holidays/index', $data, 'app');
+        return $this->render('pages/holidays/index', $data, 'layouts/app');
     }
 
 }

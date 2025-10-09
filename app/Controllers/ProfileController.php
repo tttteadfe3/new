@@ -28,7 +28,7 @@ class ProfileController extends BaseController
 
         return $this->render('pages/profile/index', [
             'pageTitle' => $pageTitle
-        ]);
+        ], 'layouts/app');
     }
 
 }

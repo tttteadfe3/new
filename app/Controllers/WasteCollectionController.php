@@ -44,7 +44,7 @@ class WasteCollectionController extends BaseController
             'pageCss' => $pageCss,
             'pageJs' => $pageJs,
             'pageTitle' => $pageTitle
-        ]);
+        ], 'layouts/app');
     }
 
     /**
@@ -75,7 +75,7 @@ class WasteCollectionController extends BaseController
             'pageCss' => $pageCss,
             'pageJs' => $pageJs,
             'pageTitle' => $pageTitle
-        ]);
+        ], 'layouts/app');
     }
 
 }

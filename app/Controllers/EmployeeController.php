@@ -34,7 +34,7 @@ class EmployeeController extends BaseController
         return $this->render('pages/employees/index', [
             'pageTitle' => $pageTitle,
             'pageJs' => $pageJs
-        ]);
+        ], 'layouts/app');
     }
 
     /**
@@ -44,7 +44,7 @@ class EmployeeController extends BaseController
     {
         $this->requireAuth('employee_admin');
         
-        return $this->render('pages/employees/create');
+        return $this->render('pages/employees/create', [], 'layouts/app');
     }
 
 
@@ -69,7 +69,7 @@ class EmployeeController extends BaseController
         
         return $this->render('pages/employees/edit', [
             'employee' => $employee
-        ]);
+        ], 'layouts/app');
     }
 
 

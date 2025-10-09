@@ -38,7 +38,7 @@ class LitteringController extends BaseController
             BASE_ASSETS_URL . "/assets/js/pages/littering_admin.js"
         ];
 
-        return $this->render('pages/littering/admin', compact('pageTitle', 'pageCss', 'pageJs'));
+        return $this->render('pages/littering/admin', compact('pageTitle', 'pageCss', 'pageJs'), 'layouts/app');
     }
 
     /**
@@ -67,7 +67,7 @@ class LitteringController extends BaseController
             BASE_ASSETS_URL . "/assets/js/pages/littering_map.js"
         ];
 
-        return $this->render('pages/littering/map', compact('pageTitle', 'pageCss', 'pageJs'));
+        return $this->render('pages/littering/map', compact('pageTitle', 'pageCss', 'pageJs'), 'layouts/app');
     }
 
     /**
@@ -96,7 +96,7 @@ class LitteringController extends BaseController
             BASE_ASSETS_URL . "/assets/js/pages/littering_history.js"
         ];
 
-        return $this->render('pages/littering/history', compact('pageTitle', 'pageCss', 'pageJs'));
+        return $this->render('pages/littering/history', compact('pageTitle', 'pageCss', 'pageJs'), 'layouts/app');
     }
 
     /**
@@ -119,7 +119,7 @@ class LitteringController extends BaseController
             BASE_ASSETS_URL . "/assets/js/pages/littering_deleted_admin.js"
         ];
 
-        return $this->render('pages/littering/deleted', compact('pageTitle', 'pageCss', 'pageJs'));
+        return $this->render('pages/littering/deleted', compact('pageTitle', 'pageCss', 'pageJs'), 'layouts/app');
     }
 
     /**
@@ -130,7 +130,7 @@ class LitteringController extends BaseController
         $this->requireAuth('littering_process');
         
         // This might be handled via AJAX/API, but keeping for completeness
-        return $this->render('pages/littering/create');
+        return $this->render('pages/littering/create', [], 'layouts/app');
     }
 
     /**
@@ -148,7 +148,7 @@ class LitteringController extends BaseController
         
         try {
             $littering = $this->litteringService->getLitteringById($id);
-            return $this->render('pages/littering/edit', compact('littering'));
+            return $this->render('pages/littering/edit', compact('littering'), 'layouts/app');
         } catch (Exception $e) {
             $this->redirect('/littering?error=' . urlencode($e->getMessage()));
             return '';

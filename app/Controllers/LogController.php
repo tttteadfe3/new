@@ -32,7 +32,7 @@ class LogController extends BaseController
         return $this->render('pages/logs/index', [
             'pageTitle' => $pageTitle,
             'pageJs' => $pageJs
-        ]);
+        ], 'layouts/app');
     }
 
 }

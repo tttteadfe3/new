@@ -41,7 +41,7 @@ class AdminController extends BaseController
         return $this->render('pages/admin/organization', [
             'pageTitle' => $pageTitle,
             'pageJs' => $pageJs
-        ]);
+        ], 'layouts/app');
     }
 
     /**
@@ -62,7 +62,7 @@ class AdminController extends BaseController
         return $this->render('pages/admin/role-permissions', [
             'pageTitle' => $pageTitle,
             'pageJs' => $pageJs
-        ]);
+        ], 'layouts/app');
     }
 
     /**
@@ -83,7 +83,7 @@ class AdminController extends BaseController
         return $this->render('pages/admin/users', [
             'pageTitle' => $pageTitle,
             'pageJs' => $pageJs
-        ]);
+        ], 'layouts/app');
     }
 
     /**
@@ -100,6 +100,6 @@ class AdminController extends BaseController
         
         return $this->render('pages/admin/menus', [
             'pageTitle' => $pageTitle
-        ]);
+        ], 'layouts/app');
     }
 }
