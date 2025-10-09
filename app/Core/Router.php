@@ -192,7 +192,6 @@ class Router
                 }
 
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
-                // 컨트롤러의 반환값을 출력(echo)하도록 수정
                 $response = (new $controller)->{$methodName}(...array_values($params));
                 if (is_string($response)) {
                     echo $response;
