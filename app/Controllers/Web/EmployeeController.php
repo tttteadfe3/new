@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controllers;
+namespace App\Controllers\Web;
 
 use App\Services\EmployeeService;
 use App\Repositories\EmployeeRepository;
