@@ -17,7 +17,7 @@ class WasteCollectionController extends BaseController
     /**
      * Display waste collection map page (for users)
      */
-    public function index(): string
+    public function index(): void
     {
         $this->requireAuth('waste_view');
         
@@ -27,7 +27,7 @@ class WasteCollectionController extends BaseController
 
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
-        \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=bb4a71438b323ef95ff740374eef24a2&libraries=services");
+        \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/MapManager.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/BaseApp.js");
@@ -36,7 +36,7 @@ class WasteCollectionController extends BaseController
         $pageTitle = "대형폐기물 수거";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        return $this->render('pages/waste/collection', [
+        echo $this->render('pages/waste/collection', [
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
@@ -44,15 +44,15 @@ class WasteCollectionController extends BaseController
     /**
      * Display waste collection map page (alias for index)
      */
-    public function collection(): string
+    public function collection(): void
     {
-        return $this->index();
+        $this->index();
     }
 
     /**
      * Display waste admin page
      */
-    public function admin(): string
+    public function admin(): void
     {
         $this->requireAuth('waste_admin');
         
@@ -62,7 +62,7 @@ class WasteCollectionController extends BaseController
         $pageTitle = "대형폐기물 관리";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        return $this->render('pages/waste/admin', [
+        echo $this->render('pages/waste/admin', [
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }

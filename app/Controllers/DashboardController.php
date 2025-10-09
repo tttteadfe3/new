@@ -14,7 +14,7 @@ class DashboardController extends BaseController
         $user = $this->user();
 
         // Render the dashboard view within the main application layout.
-        $this->render('pages/dashboard', [
+        echo $this->render('pages/dashboard', [
             'pageTitle' => 'Dashboard',
             'nickname' => $user['properties']['nickname'] ?? 'User'
         ], 'layouts/app');

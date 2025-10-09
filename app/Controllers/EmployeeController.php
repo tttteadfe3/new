@@ -19,7 +19,7 @@ class EmployeeController extends BaseController
     /**
      * Display the employee list page
      */
-    public function index(): string
+    public function index(): void
     {
         $this->requireAuth('employee_admin');
         
@@ -31,7 +31,7 @@ class EmployeeController extends BaseController
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
-        return $this->render('pages/employees/index', [
+        echo $this->render('pages/employees/index', [
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
@@ -39,34 +39,34 @@ class EmployeeController extends BaseController
     /**
      * Show the form for creating a new employee
      */
-    public function create(): string
+    public function create(): void
     {
         $this->requireAuth('employee_admin');
         
-        return $this->render('pages/employees/create', [], 'layouts/app');
+        echo $this->render('pages/employees/create', [], 'layouts/app');
     }
 
 
     /**
      * Show the form for editing an employee
      */
-    public function edit(): string
+    public function edit(): void
     {
         $this->requireAuth('employee_admin');
         
         $id = $this->request->get('id');
         if (!$id) {
             $this->redirect('/employees');
-            return '';
+            return;
         }
         
         $employee = $this->employeeService->getEmployee((int)$id);
         if (!$employee) {
             $this->redirect('/employees');
-            return '';
+            return;
         }
         
-        return $this->render('pages/employees/edit', [
+        echo $this->render('pages/employees/edit', [
             'employee' => $employee
         ], 'layouts/app');
     }

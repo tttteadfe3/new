@@ -26,12 +26,12 @@ class HolidayApiController extends BaseApiController
             $holidays = $this->holidayService->getAllHolidays();
             $departments = $this->holidayService->getAllDepartments();
 
-            $this->success([
+            $this->apiSuccess([
                 'holidays' => $holidays,
                 'departments' => $departments
             ]);
         } catch (Exception $e) {
-            $this->error('데이터를 불러오는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
+            $this->apiError('데이터를 불러오는 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 
@@ -46,13 +46,13 @@ class HolidayApiController extends BaseApiController
             $holiday = $this->holidayService->getHoliday($id);
             
             if (!$holiday) {
-                $this->notFound('휴일을 찾을 수 없습니다.');
+                $this->apiNotFound('휴일을 찾을 수 없습니다.');
                 return;
             }
 
-            $this->success($holiday);
+            $this->apiSuccess($holiday);
         } catch (Exception $e) {
-            $this->error('데이터를 불러오는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
+            $this->apiError('데이터를 불러오는 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 
@@ -64,18 +64,18 @@ class HolidayApiController extends BaseApiController
         $this->requireAuth('holiday_admin');
 
         try {
-            $data = $this->request->all();
+            $data = $this->getJsonInput();
             
             if (empty(trim($data['name']))) {
-                $this->validationError(['name' => '이름은 필수입니다.'], '입력값이 올바르지 않습니다.');
+                $this->apiError('이름은 필수입니다.', 'VALIDATION_ERROR', 422);
                 return;
             }
             if (empty($data['date'])) {
-                $this->validationError(['date' => '날짜는 필수입니다.'], '입력값이 올바르지 않습니다.');
+                $this->apiError('날짜는 필수입니다.', 'VALIDATION_ERROR', 422);
                 return;
             }
             if (empty($data['type']) || !in_array($data['type'], ['holiday', 'workday'])) {
-                $this->validationError(['type' => '유효한 타입을 선택해주세요.'], '입력값이 올바르지 않습니다.');
+                $this->apiError('유효한 타입을 선택해주세요.', 'VALIDATION_ERROR', 422);
                 return;
             }
 
@@ -83,9 +83,9 @@ class HolidayApiController extends BaseApiController
 
             $holiday = $this->holidayService->createHoliday($data);
 
-            $this->success($holiday, '성공적으로 생성되었습니다.', 201);
+            $this->apiSuccess($holiday, '성공적으로 생성되었습니다.', 201);
         } catch (Exception $e) {
-            $this->error('생성 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 422);
+            $this->apiError('생성 중 오류가 발생했습니다.', 'SERVER_ERROR', 422);
         }
     }
 
@@ -97,18 +97,18 @@ class HolidayApiController extends BaseApiController
         $this->requireAuth('holiday_admin');
 
         try {
-            $data = $this->request->all();
+            $data = $this->getJsonInput();
             
             if (empty(trim($data['name']))) {
-                $this->validationError(['name' => '이름은 필수입니다.'], '입력값이 올바르지 않습니다.');
+                $this->apiError('이름은 필수입니다.', 'VALIDATION_ERROR', 422);
                 return;
             }
             if (empty($data['date'])) {
-                $this->validationError(['date' => '날짜는 필수입니다.'], '입력값이 올바르지 않습니다.');
+                $this->apiError('날짜는 필수입니다.', 'VALIDATION_ERROR', 422);
                 return;
             }
             if (empty($data['type']) || !in_array($data['type'], ['holiday', 'workday'])) {
-                $this->validationError(['type' => '유효한 타입을 선택해주세요.'], '입력값이 올바르지 않습니다.');
+                $this->apiError('유효한 타입을 선택해주세요.', 'VALIDATION_ERROR', 422);
                 return;
             }
 
@@ -116,9 +116,9 @@ class HolidayApiController extends BaseApiController
 
             $holiday = $this->holidayService->updateHoliday($id, $data);
 
-            $this->success($holiday, '성공적으로 수정되었습니다.');
+            $this->apiSuccess($holiday, '성공적으로 수정되었습니다.');
         } catch (Exception $e) {
-            $this->error('수정 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 422);
+            $this->apiError('수정 중 오류가 발생했습니다.', 'SERVER_ERROR', 422);
         }
     }
 
@@ -131,9 +131,9 @@ class HolidayApiController extends BaseApiController
 
         try {
             $this->holidayService->deleteHoliday($id);
-            $this->success(null, '성공적으로 삭제되었습니다.');
+            $this->apiSuccess(null, '성공적으로 삭제되었습니다.');
         } catch (Exception $e) {
-            $this->error('삭제 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 404);
+            $this->apiError('삭제 중 오류가 발생했습니다.', 'SERVER_ERROR', 404);
         }
     }
 }

@@ -26,7 +26,7 @@ class LeaveApiController extends BaseApiController
         
         $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {
-            $this->error('연결된 직원 정보가 없습니다.', [], 400);
+            $this->apiError('연결된 직원 정보가 없습니다.', 'NO_EMPLOYEE_LINK', 400);
             return;
         }
         
@@ -36,12 +36,12 @@ class LeaveApiController extends BaseApiController
             $entitlement = LeaveRepository::findEntitlement($employeeId, $year);
             $leaves = LeaveRepository::findByEmployeeId($employeeId, ['year' => $year]);
 
-            $this->success([
+            $this->apiSuccess([
                 'entitlement' => $entitlement,
                 'leaves' => $leaves
             ]);
         } catch (Exception $e) {
-            $this->error('연차 정보를 불러오는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
+            $this->apiError('연차 정보를 불러오는 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 
@@ -55,13 +55,13 @@ class LeaveApiController extends BaseApiController
         
         $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {
-            $this->error('연결된 직원 정보가 없습니다.', [], 400);
+            $this->apiError('연결된 직원 정보가 없습니다.', 'NO_EMPLOYEE_LINK', 400);
             return;
         }
         
-        $data = $this->request->all();
+        $data = $this->getJsonInput();
         if (empty($data)) {
-            $this->validationError([], '연차 신청 정보가 필요합니다.');
+            $this->apiError('연차 신청 정보가 필요합니다.', 'INVALID_INPUT', 422);
             return;
         }
         
@@ -69,12 +69,12 @@ class LeaveApiController extends BaseApiController
             [$success, $message] = $this->leaveService->requestLeave($data, $employeeId);
 
             if ($success) {
-                $this->success(null, $message);
+                $this->apiSuccess(null, $message);
             } else {
-                $this->error($message);
+                $this->apiError($message, 'OPERATION_FAILED');
             }
         } catch (Exception $e) {
-            $this->error('신청 처리 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
+            $this->apiError('신청 처리 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 
@@ -88,22 +88,23 @@ class LeaveApiController extends BaseApiController
         
         $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {
-            $this->error('연결된 직원 정보가 없습니다.', [], 400);
+            $this->apiError('연결된 직원 정보가 없습니다.', 'NO_EMPLOYEE_LINK', 400);
             return;
         }
         
-        $reason = $this->request->input('reason');
+        $data = $this->getJsonInput();
+        $reason = $data['reason'] ?? '';
         
         try {
             [$success, $message] = $this->leaveService->cancelRequest($id, $employeeId, $reason);
 
             if ($success) {
-                $this->success(null, $message);
+                $this->apiSuccess(null, $message);
             } else {
-                $this->error($message);
+                $this->apiError($message, 'OPERATION_FAILED');
             }
         } catch (Exception $e) {
-            $this->error('취소 처리 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
+            $this->apiError('취소 처리 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 
@@ -117,24 +118,25 @@ class LeaveApiController extends BaseApiController
         
         $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {
-            $this->error('연결된 직원 정보가 없습니다.', [], 400);
+            $this->apiError('연결된 직원 정보가 없습니다.', 'NO_EMPLOYEE_LINK', 400);
             return;
         }
         
-        $startDate = $this->request->input('start_date');
-        $endDate = $this->request->input('end_date');
+        $data = $this->getJsonInput();
+        $startDate = $data['start_date'] ?? null;
+        $endDate = $data['end_date'] ?? null;
         
         if (empty($startDate) || empty($endDate)) {
-            $this->validationError(['start_date' => '기간이 필요합니다.', 'end_date' => '기간이 필요합니다.'], '시작일과 종료일이 필요합니다.');
+            $this->apiError('시작일과 종료일이 필요합니다.', 'VALIDATION_ERROR', 422);
             return;
         }
         
         try {
             // isHalfDay는 false로 고정 (반차는 0.5일로 클라이언트에서 계산)
             $days = $this->leaveService->calculateLeaveDays($startDate, $endDate, $employeeId, false);
-            $this->success(['days' => $days]);
+            $this->apiSuccess(['days' => $days]);
         } catch (Exception $e) {
-            $this->error('일수 계산 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
+            $this->apiError('일수 계산 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 }

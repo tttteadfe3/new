@@ -4,6 +4,7 @@ namespace App\Controllers\Api;
 
 use App\Services\UserService;
 use Exception;
+use InvalidArgumentException;
 
 /**
  * Handles all API requests related to user management.
@@ -21,8 +22,6 @@ class UserApiController extends BaseApiController
 
     /**
      * Routes user API requests based on an 'action' parameter.
-     * Note: This is a non-RESTful pattern. A future refactoring could
-     * map these actions to distinct controller methods and routes.
      */
     public function index(): void
     {
@@ -54,10 +53,10 @@ class UserApiController extends BaseApiController
                     $this->unlinkEmployee();
                     break;
                 default:
-                    $this->error('Invalid action specified.', [], 400);
+                    $this->apiError('Invalid action specified.', 'INVALID_ACTION', 400);
             }
         } catch (Exception $e) {
-            $this->error('An unexpected error occurred: ' . $e->getMessage(), [], 500);
+            $this->apiError('An unexpected error occurred: ' . $e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 
@@ -71,32 +70,31 @@ class UserApiController extends BaseApiController
         ];
         
         $users = $this->userService->getAllUsers(array_filter($filters));
-        $this->success($users);
+        $this->apiSuccess($users);
     }
 
     private function getUser(): void
     {
         $userId = (int)$this->request->input('user_id', 0);
         if (!$userId) {
-            $this->error('User ID is required', [], 400);
+            $this->apiError('User ID is required', 'INVALID_INPUT', 400);
             return;
         }
         
         $user = $this->userService->getUser($userId);
         
         if ($user) {
-            // The service layer could be enhanced to include this in the getUser response
             $user['assigned_roles'] = $this->userService->getUserRoles($userId);
-            $this->success($user);
+            $this->apiSuccess($user);
         } else {
-            $this->notFound('User not found');
+            $this->apiNotFound('User not found');
         }
     }
 
     private function getAllRoles(): void
     {
         $roles = $this->userService->getAllRoles();
-        $this->success($roles);
+        $this->apiSuccess($roles);
     }
 
     private function saveUser(): void
@@ -104,22 +102,21 @@ class UserApiController extends BaseApiController
         $input = $this->getJsonInput();
         $userId = (int)($input['user_id'] ?? 0);
         if (!$userId) {
-            $this->error('User ID is required', [], 400);
+            $this->apiError('User ID is required', 'INVALID_INPUT', 400);
             return;
         }
         
         try {
             if ($this->userService->updateUser($userId, $input)) {
-                // Invalidate permission cache for all users since roles may have changed
                 $timestamp_file = ROOT_PATH . '/storage/permissions_last_updated.txt';
                 file_put_contents($timestamp_file, time());
                 
-                $this->success(null, '사용자 정보가 저장되었습니다.');
+                $this->apiSuccess(null, '사용자 정보가 저장되었습니다.');
             } else {
-                $this->error('저장 중 오류가 발생했습니다.', [], 500);
+                $this->apiError('저장 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
             }
         } catch (InvalidArgumentException $e) {
-            $this->error($e->getMessage(), [], 400);
+            $this->apiError($e->getMessage(), 'INVALID_INPUT', 400);
         }
     }
 
@@ -127,7 +124,7 @@ class UserApiController extends BaseApiController
     {
         $departmentId = $this->request->input('department_id') ? (int)$this->request->input('department_id') : null;
         $employees = $this->userService->getUnlinkedEmployees($departmentId);
-        $this->success($employees);
+        $this->apiSuccess($employees);
     }
 
     private function linkEmployee(): void
@@ -137,14 +134,14 @@ class UserApiController extends BaseApiController
         $employeeId = (int)($input['employee_id'] ?? 0);
         
         if (!$userId || !$employeeId) {
-            $this->error('User ID and Employee ID are required', [], 400);
+            $this->apiError('User ID and Employee ID are required', 'INVALID_INPUT', 400);
             return;
         }
         
         if ($this->userService->linkEmployee($userId, $employeeId)) {
-            $this->success(null, '직원이 성공적으로 연결되었습니다.');
+            $this->apiSuccess(null, '직원이 성공적으로 연결되었습니다.');
         } else {
-            $this->error('연결에 실패했습니다. 이미 다른 사용자와 연결된 직원일 수 있습니다.', [], 500);
+            $this->apiError('연결에 실패했습니다. 이미 다른 사용자와 연결된 직원일 수 있습니다.', 'OPERATION_FAILED', 500);
         }
     }
 
@@ -153,20 +150,14 @@ class UserApiController extends BaseApiController
         $input = $this->getJsonInput();
         $userId = (int)($input['user_id'] ?? 0);
         if (!$userId) {
-            $this->error('User ID is required', [], 400);
+            $this->apiError('User ID is required', 'INVALID_INPUT', 400);
             return;
         }
         
-        // This method was missing from the service, assuming it should be added.
         if ($this->userService->unlinkEmployee($userId)) {
-            $this->success(null, '직원 연결이 해제되었습니다.');
+            $this->apiSuccess(null, '직원 연결이 해제되었습니다.');
         } else {
-            $this->error('연결 해제에 실패했습니다.', [], 500);
+            $this->apiError('연결 해제에 실패했습니다.', 'OPERATION_FAILED', 500);
         }
-    }
-
-    private function getJsonInput(): array
-    {
-        return json_decode(file_get_contents('php://input'), true) ?? [];
     }
 }

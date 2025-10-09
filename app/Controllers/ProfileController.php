@@ -19,14 +19,14 @@ class ProfileController extends BaseController
     /**
      * Display the profile page
      */
-    public function index(): string
+    public function index(): void
     {
         $this->requireAuth();
         
         $pageTitle = "내 프로필";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        return $this->render('pages/profile/index', [
+        echo $this->render('pages/profile/index', [
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }

@@ -26,7 +26,7 @@ class AdminController extends BaseController
     /**
      * 부서/직급 관리 페이지
      */
-    public function organization(): string
+    public function organization(): void
     {
         $this->requireAuth('organization_admin');
         
@@ -36,7 +36,7 @@ class AdminController extends BaseController
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
-        return $this->render('pages/admin/organization', [
+        echo $this->render('pages/admin/organization', [
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
@@ -44,7 +44,7 @@ class AdminController extends BaseController
     /**
      * 역할 및 권한 관리 페이지
      */
-    public function rolePermissions(): string
+    public function rolePermissions(): void
     {
         $this->requireAuth('role_admin');
         
@@ -54,7 +54,7 @@ class AdminController extends BaseController
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
-        return $this->render('pages/admin/role-permissions', [
+        echo $this->render('pages/admin/role-permissions', [
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
@@ -62,7 +62,7 @@ class AdminController extends BaseController
     /**
      * 사용자 관리 페이지
      */
-    public function users(): string
+    public function users(): void
     {
         $this->requireAuth('user_admin');
         
@@ -72,7 +72,7 @@ class AdminController extends BaseController
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
-        return $this->render('pages/admin/users', [
+        echo $this->render('pages/admin/users', [
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
@@ -80,7 +80,7 @@ class AdminController extends BaseController
     /**
      * 메뉴 관리 페이지
      */
-    public function menus(): string
+    public function menus(): void
     {
         $this->requireAuth('menu_admin');
         
@@ -91,7 +91,7 @@ class AdminController extends BaseController
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
-        return $this->render('pages/admin/menus', [
+        echo $this->render('pages/admin/menus', [
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }

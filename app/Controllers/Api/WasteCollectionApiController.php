@@ -24,9 +24,9 @@ class WasteCollectionApiController extends BaseApiController
         $this->requireAuth();
         try {
             $data = $this->wasteCollectionService->getCollections();
-            $this->success($data, '수거 목록 조회 성공');
+            $this->apiSuccess($data, '수거 목록 조회 성공');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), [], 500);
+            $this->apiError($e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 
@@ -40,9 +40,9 @@ class WasteCollectionApiController extends BaseApiController
         $user = $this->user();
         try {
             $result = $this->wasteCollectionService->registerCollection($_POST, $_FILES, $user['id'], $user['employee_id'] ?? null);
-            $this->success($result, '폐기물 수거 정보가 성공적으로 등록되었습니다.');
+            $this->apiSuccess($result, '폐기물 수거 정보가 성공적으로 등록되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), [], 422);
+            $this->apiError($e->getMessage(), 'VALIDATION_ERROR', 422);
         }
     }
 
@@ -55,9 +55,9 @@ class WasteCollectionApiController extends BaseApiController
         $this->requireAuth('waste_admin');
         try {
             $collections = $this->wasteCollectionService->getAdminCollections($this->request->all());
-            $this->success($collections);
+            $this->apiSuccess($collections);
         } catch (Exception $e) {
-            $this->error($e->getMessage(), [], 500);
+            $this->apiError($e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 
@@ -70,9 +70,9 @@ class WasteCollectionApiController extends BaseApiController
         $this->requireAuth('waste_admin');
         try {
             $result = $this->wasteCollectionService->processCollectionById($id);
-            $this->success($result, '선택한 항목이 처리되었습니다.');
+            $this->apiSuccess($result, '선택한 항목이 처리되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), [], 422);
+            $this->apiError($e->getMessage(), 'VALIDATION_ERROR', 422);
         }
     }
 
@@ -86,9 +86,9 @@ class WasteCollectionApiController extends BaseApiController
         try {
             $items = $this->request->input('items', '[]');
             $result = $this->wasteCollectionService->updateCollectionItems($id, $items);
-            $this->success($result, '품목이 저장되었습니다.');
+            $this->apiSuccess($result, '품목이 저장되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), [], 422);
+            $this->apiError($e->getMessage(), 'VALIDATION_ERROR', 422);
         }
     }
 
@@ -102,9 +102,9 @@ class WasteCollectionApiController extends BaseApiController
         try {
             $memo = $this->request->input('memo', '');
             $result = $this->wasteCollectionService->updateAdminMemo($id, $memo);
-            $this->success($result, '메모가 업데이트되었습니다.');
+            $this->apiSuccess($result, '메모가 업데이트되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), [], 422);
+            $this->apiError($e->getMessage(), 'VALIDATION_ERROR', 422);
         }
     }
 
@@ -116,14 +116,14 @@ class WasteCollectionApiController extends BaseApiController
     {
         $this->requireAuth('waste_admin');
         if (empty($_FILES['htmlFile'])) {
-            $this->error('HTML 파일이 없습니다.', [], 400);
+            $this->apiError('HTML 파일이 없습니다.', 'INVALID_INPUT', 400);
             return;
         }
         try {
             $result = $this->wasteCollectionService->parseHtmlFile($_FILES['htmlFile']);
-            $this->success($result);
+            $this->apiSuccess($result);
         } catch (Exception $e) {
-            $this->error($e->getMessage(), [], 500);
+            $this->apiError($e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 
@@ -137,14 +137,14 @@ class WasteCollectionApiController extends BaseApiController
         $userId = $this->user()['id'];
         $collections = $this->request->input('collections', []);
         if (empty($collections)) {
-            $this->error('등록할 데이터가 없습니다.', [], 400);
+            $this->apiError('등록할 데이터가 없습니다.', 'INVALID_INPUT', 400);
             return;
         }
         try {
             $result = $this->wasteCollectionService->batchRegisterCollections($collections, $userId);
-            $this->success($result, '데이터가 일괄 등록되었습니다.');
+            $this->apiSuccess($result, '데이터가 일괄 등록되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), [], 500);
+            $this->apiError($e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 
@@ -157,9 +157,9 @@ class WasteCollectionApiController extends BaseApiController
         $this->requireAuth('waste_admin');
         try {
             $result = $this->wasteCollectionService->clearOnlineSubmissions();
-            $this->success($result, '모든 인터넷 배출 데이터가 삭제되었습니다.');
+            $this->apiSuccess($result, '모든 인터넷 배출 데이터가 삭제되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), [], 500);
+            $this->apiError($e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 }

@@ -30,12 +30,12 @@ class LitteringApiController extends BaseApiController
             } elseif ($status === 'processed') {
                 $data = $this->litteringService->getProcessedLittering();
             } else {
-                $this->error('Invalid status value.', [], 400);
+                $this->apiError('Invalid status value.', 'INVALID_INPUT', 400);
                 return;
             }
-            $this->success($data);
+            $this->apiSuccess($data);
         } catch (Exception $e) {
-            $this->error('목록을 불러오는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
+            $this->apiError('목록을 불러오는 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 
@@ -49,7 +49,7 @@ class LitteringApiController extends BaseApiController
 
         $user = $this->user();
         if (!$user) {
-            $this->error('로그인이 필요합니다.', [], 401);
+            $this->apiError('로그인이 필요합니다.', 'UNAUTHORIZED', 401);
             return;
         }
         
@@ -57,17 +57,16 @@ class LitteringApiController extends BaseApiController
         $employeeId = $user['employee_id'] ?? null;
         
         try {
-            // Note: File uploads are not part of the request body, so we access $_FILES directly.
-            // This is a common practice even in modern frameworks when dealing with multipart/form-data.
+            // Note: File uploads are handled via $_FILES, not JSON body.
             $result = $this->litteringService->registerLittering(
-                $this->request->all(),
+                $this->request->all(), // POST data is appropriate here
                 $_FILES,
                 $userId,
                 $employeeId
             );
-            $this->success($result, '부적정배출 정보가 성공적으로 등록되었습니다.');
+            $this->apiSuccess($result, '부적정배출 정보가 성공적으로 등록되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
+            $this->apiError($e->getMessage(), 'VALIDATION_ERROR', 422);
         }
     }
 
@@ -80,14 +79,14 @@ class LitteringApiController extends BaseApiController
         $this->requireAuth('littering_process');
         
         try {
-            $data = $this->request->all();
+            $data = $this->request->all(); // POST data is appropriate here
             $data['id'] = $id; // Ensure the ID from URL is used
 
             // Note: Accessing $_FILES for file uploads.
             $result = $this->litteringService->processLittering($data, $_FILES);
-            $this->success($result, '처리 상태가 성공적으로 업데이트되었습니다.');
+            $this->apiSuccess($result, '처리 상태가 성공적으로 업데이트되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
+            $this->apiError($e->getMessage(), 'VALIDATION_ERROR', 422);
         }
     }
 }

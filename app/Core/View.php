@@ -18,9 +18,22 @@ class View
      */
     public static function render(string $view, array $data = [], ?string $layout = null): string
     {
-        // Reset sections for each render
+        // Preserve asset sections (css, js) before clearing for the new render.
+        $css = self::$sections['css'] ?? null;
+        $js = self::$sections['js'] ?? null;
+
+        // Reset sections for the new view rendering.
         self::$sections = [];
         self::$currentSection = null;
+
+        // Restore asset sections so they are available to the layout.
+        if ($css) {
+            self::$sections['css'] = $css;
+        }
+        if ($js) {
+            self::$sections['js'] = $js;
+        }
+
         self::$layout = $layout;
         self::$layoutData = $data;
 

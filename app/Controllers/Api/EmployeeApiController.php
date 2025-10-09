@@ -7,6 +7,7 @@ use App\Repositories\PositionRepository;
 use App\Services\EmployeeService;
 use App\Repositories\EmployeeChangeLogRepository;
 use Exception;
+use InvalidArgumentException;
 
 class EmployeeApiController extends BaseApiController
 {
@@ -20,7 +21,6 @@ class EmployeeApiController extends BaseApiController
 
     /**
      * Handle all employee API requests based on action parameter.
-     * This is a non-RESTful approach that we are refactoring to be more robust.
      */
     public function index(): void
     {
@@ -55,10 +55,10 @@ class EmployeeApiController extends BaseApiController
                     $this->rejectUpdate();
                     break;
                 default:
-                    $this->error('Invalid action specified.', [], 400);
+                    $this->apiError('Invalid action specified.', 'INVALID_ACTION', 400);
             }
         } catch (Exception $e) {
-            $this->error('An unexpected error occurred: ' . $e->getMessage(), [], 500);
+            $this->apiError('An unexpected error occurred: ' . $e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 
@@ -70,7 +70,7 @@ class EmployeeApiController extends BaseApiController
         $departments = DepartmentRepository::getAll();
         $positions = PositionRepository::getAll();
         
-        $this->success([
+        $this->apiSuccess([
             'employees' => $employees,
             'departments' => $departments,
             'positions' => $positions
@@ -86,22 +86,22 @@ class EmployeeApiController extends BaseApiController
         ];
         
         $employees = $this->employeeService->getAllEmployees(array_filter($filters));
-        $this->success($employees);
+        $this->apiSuccess($employees);
     }
 
     private function getEmployee(): void
     {
         $employeeId = (int)$this->request->input('id', 0);
         if (!$employeeId) {
-            $this->error('Employee ID is required', [], 400);
+            $this->apiError('Employee ID is required', 'INVALID_INPUT', 400);
             return;
         }
         
         $employee = $this->employeeService->getEmployee($employeeId);
         if ($employee) {
-            $this->success($employee);
+            $this->apiSuccess($employee);
         } else {
-            $this->notFound('Employee not found');
+            $this->apiNotFound('Employee not found');
         }
     }
 
@@ -109,19 +109,19 @@ class EmployeeApiController extends BaseApiController
     {
         $employeeId = (int)$this->request->input('id', 0);
         if (!$employeeId) {
-            $this->error('Employee ID is required', [], 400);
+            $this->apiError('Employee ID is required', 'INVALID_INPUT', 400);
             return;
         }
         
         $history = EmployeeChangeLogRepository::findByEmployeeId($employeeId);
-        $this->success($history);
+        $this->apiSuccess($history);
     }
 
     private function saveEmployee(): void
     {
         $input = $this->getJsonInput();
         if (empty($input)) {
-            $this->error('Employee data is required', [], 400);
+            $this->apiError('Employee data is required', 'INVALID_INPUT', 400);
             return;
         }
         
@@ -132,11 +132,11 @@ class EmployeeApiController extends BaseApiController
             } else {
                 $result = $this->employeeService->createEmployee($input);
             }
-            $this->success(['new_id' => $result], '직원 정보가 저장되었습니다.');
+            $this->apiSuccess(['new_id' => $result], '직원 정보가 저장되었습니다.');
         } catch (InvalidArgumentException $e) {
-            $this->error($e->getMessage(), [], 400);
+            $this->apiError($e->getMessage(), 'INVALID_INPUT', 400);
         } catch (Exception $e) {
-            $this->error('저장 중 오류가 발생했습니다: ' . $e->getMessage(), [], 500);
+            $this->apiError('저장 중 오류가 발생했습니다: ' . $e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 
@@ -145,18 +145,18 @@ class EmployeeApiController extends BaseApiController
         $input = $this->getJsonInput();
         $employeeId = (int)($input['id'] ?? 0);
         if (!$employeeId) {
-            $this->error('Employee ID is required', [], 400);
+            $this->apiError('Employee ID is required', 'INVALID_INPUT', 400);
             return;
         }
         
         try {
             if ($this->employeeService->deleteEmployee($employeeId)) {
-                $this->success(null, '직원 정보가 삭제되었습니다.');
+                $this->apiSuccess(null, '직원 정보가 삭제되었습니다.');
             } else {
-                $this->error('삭제 중 오류가 발생했습니다.', [], 500);
+                $this->apiError('삭제 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
             }
         } catch (InvalidArgumentException $e) {
-            $this->notFound($e->getMessage());
+            $this->apiNotFound($e->getMessage());
         }
     }
 
@@ -165,14 +165,14 @@ class EmployeeApiController extends BaseApiController
         $input = $this->getJsonInput();
         $employeeId = (int)($input['id'] ?? 0);
         if (!$employeeId) {
-            $this->error('Employee ID is required', [], 400);
+            $this->apiError('Employee ID is required', 'INVALID_INPUT', 400);
             return;
         }
         
         if ($this->employeeService->approveProfileUpdate($employeeId)) {
-            $this->success(null, '프로필 변경사항이 승인되었습니다.');
+            $this->apiSuccess(null, '프로필 변경사항이 승인되었습니다.');
         } else {
-            $this->error('프로필 변경 승인에 실패했거나, 처리할 요청이 없습니다.', [], 500);
+            $this->apiError('프로필 변경 승인에 실패했거나, 처리할 요청이 없습니다.', 'SERVER_ERROR', 500);
         }
     }
 
@@ -183,23 +183,18 @@ class EmployeeApiController extends BaseApiController
         $reason = trim($input['reason'] ?? '');
         
         if (!$employeeId) {
-            $this->error('Employee ID is required', [], 400);
+            $this->apiError('Employee ID is required', 'INVALID_INPUT', 400);
             return;
         }
         if (empty($reason)) {
-            $this->error('반려 사유를 반드시 입력해야 합니다.', [], 400);
+            $this->apiError('반려 사유를 반드시 입력해야 합니다.', 'INVALID_INPUT', 400);
             return;
         }
         
         if ($this->employeeService->rejectProfileUpdate($employeeId, $reason)) {
-            $this->success(null, '프로필 변경 요청을 반려 처리했습니다.');
+            $this->apiSuccess(null, '프로필 변경 요청을 반려 처리했습니다.');
         } else {
-            $this->error('반려 처리에 실패했습니다.', [], 500);
+            $this->apiError('반려 처리에 실패했습니다.', 'SERVER_ERROR', 500);
         }
-    }
-
-    private function getJsonInput(): array
-    {
-        return json_decode(file_get_contents('php://input'), true) ?? [];
     }
 }
