@@ -29,10 +29,14 @@ class LitteringController extends BaseController
         
         \App\Core\View::addJs("https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js");
         \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/MapManager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/BaseApp.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering_admin.js");
+
+        // Refactored Scripts
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map-manager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-admin-app.js");
 
         echo $this->render('pages/littering/admin', compact('pageTitle'), 'layouts/app');
     }
@@ -54,10 +58,15 @@ class LitteringController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
         \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/MapManager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/BaseApp.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering_map.js");
+
+        // Refactored Scripts
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map-manager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-map-app.js");
 
         echo $this->render('pages/littering/map', compact('pageTitle'), 'layouts/app');
     }
@@ -79,10 +88,15 @@ class LitteringController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
         \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/MapManager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/BaseApp.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering_history.js");
+
+        // Refactored Scripts
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map-manager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-history-app.js");
 
         echo $this->render('pages/littering/history', compact('pageTitle'), 'layouts/app');
     }
@@ -98,10 +112,14 @@ class LitteringController extends BaseController
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/MapManager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/BaseApp.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering_deleted_admin.js");
+
+        // Refactored Scripts
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map-manager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-deleted-admin-app.js");
 
         echo $this->render('pages/littering/deleted', compact('pageTitle'), 'layouts/app');
     }

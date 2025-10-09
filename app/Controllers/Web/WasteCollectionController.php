@@ -28,10 +28,15 @@ class WasteCollectionController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
         \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/MapManager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/BaseApp.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste_collection.js");
+
+        // Refactored Scripts
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map-manager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-collection-app.js");
 
         $pageTitle = "대형폐기물 수거";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
@@ -56,8 +61,10 @@ class WasteCollectionController extends BaseController
     {
         $this->requireAuth('waste_admin');
         
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste_admin.js");
+        // Refactored Scripts
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-admin-app.js");
         
         $pageTitle = "대형폐기물 관리";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);

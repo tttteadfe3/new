@@ -16,7 +16,7 @@ class ApiService {
      * @param {number} [options.timeout=30000] - 요청 타임아웃 (ms)
      * @returns {Promise<any>} - 성공 시 API 응답의 data 필드를, 실패 시 에러를 resolve/reject하는 Promise
      */
-    static async request(endpoint, options = {}) {
+    async request(endpoint, options = {}) {
         const { timeout = 30000 } = options;
 
         if (!endpoint) {
