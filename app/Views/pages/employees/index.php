@@ -1,14 +1,4 @@
-<?php
-use App\Core\View;
-
-// Add page-specific CSS
-View::addCss(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.css');
-
-// Add page-specific JS
-View::addJs(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.js');
-View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
-?>
-
+<?php \App\Core\View::startSection('content'); ?>
 <div class="row">
     <div class="col-lg-12">
         <div class="card" id="employeeList">
@@ -185,3 +175,4 @@ View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
         </div>
     </div>
 </div>
+<?php \App\Core\View::endSection(); ?>

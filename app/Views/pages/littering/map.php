@@ -1,3 +1,4 @@
+<?php \App\Core\View::startSection('content'); ?>
 <style>
 .photo-swiper-container {
     width: 100%;
@@ -272,3 +273,4 @@
         </div>
     </div>
 </div>
+<?php \App\Core\View::endSection(); ?>

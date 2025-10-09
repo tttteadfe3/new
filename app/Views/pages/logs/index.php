@@ -1,3 +1,4 @@
+<?php \App\Core\View::startSection('content'); ?>
 <div class="row">
     <div class="col-lg-12">
         <div class="card" id="logViewerList">
@@ -71,3 +72,4 @@
         </div>
     </div>
 </div>
+<?php \App\Core\View::endSection(); ?>

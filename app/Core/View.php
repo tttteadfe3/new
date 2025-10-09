@@ -24,37 +24,42 @@ class View
         self::$layout = $layout;
         self::$layoutData = $data;
 
-        // Construct the full path to the view file using the ROOT_PATH constant
         $viewPath = ROOT_PATH . '/app/Views/' . str_replace('.', '/', $view) . '.php';
 
         if (!file_exists($viewPath)) {
             throw new \Exception("View not found: {$viewPath}");
         }
 
-        // Extract the data array into individual variables
         extract($data);
 
-        // Buffer the output
         ob_start();
         require $viewPath;
-        $content = ob_get_clean();
+        $viewContent = ob_get_clean();
 
-        // If a layout is specified, render with layout
-        if (self::$layout) {
-            return self::renderWithLayout($content, self::$layout, self::$layoutData);
+        // If a layout is being used and the 'content' section was not explicitly defined
+        // by the view (using startSection), then we assume the entire view's
+        // output is the content.
+        if (self::$layout && !isset(self::$sections['content'])) {
+            self::$sections['content'] = $viewContent;
         }
 
-        return $content;
+        // If a layout is specified, render it.
+        if (self::$layout) {
+            return self::renderWithLayout(self::$layout, self::$layoutData);
+        }
+
+        // Otherwise, just return the content. If sections were used without a layout,
+        // this will correctly return the main content.
+        return self::$sections['content'] ?? $viewContent;
     }
 
     /**
      * Render a view with a layout.
      *
-     * @param string $content The main content to render.
      * @param string $layout The layout file name.
      * @param array $data The data to pass to the layout.
      */
-    private static function renderWithLayout(string $content, string $layout, array $data = []): string
+    private static function renderWithLayout(string $layout, array $data = []): string
     {
         // Path should be relative to the /app/Views/ directory, same as regular views.
         $layoutPath = ROOT_PATH . '/app/Views/' . str_replace('.', '/', $layout) . '.php';
@@ -63,14 +68,11 @@ class View
             throw new \Exception("Layout not found: {$layoutPath}");
         }
 
-        // Make content and sections available to layout
-        $data['content'] = $content;
+        // The content is now consistently available via `yieldSection('content')`.
+        // We just need to make sure any other data is available to the layout.
         $data['sections'] = self::$sections;
-
-        // Extract the data array into individual variables
         extract($data);
 
-        // Buffer the output
         ob_start();
         require $layoutPath;
         return ob_get_clean();

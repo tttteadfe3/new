@@ -1,3 +1,4 @@
+<?php \App\Core\View::startSection('content'); ?>
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -90,6 +91,4 @@
         </div>
     </div>
 </div>
-
-
-<script src="<?= BASE_ASSETS_URL ?>/assets/js/pages/my_leave.js"></script>
+<?php \App\Core\View::endSection(); ?>

@@ -22,8 +22,10 @@ View::startSection('css');
 </style>
 <?php
 View::endSection();
-?>
 
+// Define the main content for the layout
+View::startSection('content');
+?>
 <div class="status-card">
     <h1 class="display-4">승인 대기 중</h1>
     <p class="lead">계정이 아직 승인되지 않았습니다. 관리자에게 문의하세요.</p>
@@ -31,3 +33,4 @@ View::endSection();
     <p>Your account is pending approval. Please contact an administrator.</p>
     <a class="btn btn-primary btn-lg mt-3" href="/logout" role="button">로그아웃</a>
 </div>
+<?php View::endSection(); ?>

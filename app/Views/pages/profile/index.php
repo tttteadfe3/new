@@ -1,3 +1,4 @@
+<?php \App\Core\View::startSection('content'); ?>
 <div class="row mt-2">
     <div class="card">
         <div class="card-body">
@@ -12,5 +13,4 @@
         </div>
     </div>
 </div>
-
-<script src="<?= BASE_ASSETS_URL ?>/assets/js/pages/profile.js"></script>
+<?php \App\Core\View::endSection(); ?>
