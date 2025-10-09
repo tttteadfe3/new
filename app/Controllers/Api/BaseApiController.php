@@ -2,7 +2,7 @@
 
 namespace App\Controllers\Api;
 
-use App\Controllers\BaseController;
+use App\Controllers\Web\BaseController;
 use App\Core\JsonResponse;
 use App\Services\AuthService;
 
