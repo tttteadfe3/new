@@ -26,8 +26,8 @@ date_default_timezone_set('Asia/Seoul');
 
 
 // 2. 경로 및 URL 상수
-define('BASE_URL', 'https://wonsil.kr/s/n4');
-define('BASE_ASSETS_URL', '/s/n4');
+define('BASE_URL', '');
+define('BASE_ASSETS_URL', '');
 define('ROOT_PATH', dirname(__DIR__));
 
 // 3. 데이터베이스 설정
