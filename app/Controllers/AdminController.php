@@ -31,16 +31,13 @@ class AdminController extends BaseController
         $this->requireAuth('organization_admin');
         
         $pageTitle = "부서/직급 관리";
-        $pageJs = [
-            BASE_ASSETS_URL . '/assets/js/pages/organization_admin.js'
-        ];
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/organization_admin.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
         return $this->render('pages/admin/organization', [
-            'pageTitle' => $pageTitle,
-            'pageJs' => $pageJs
+            'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
 
@@ -52,16 +49,13 @@ class AdminController extends BaseController
         $this->requireAuth('role_admin');
         
         $pageTitle = "역할 및 권한 관리";
-        $pageJs = [
-            BASE_ASSETS_URL . '/assets/js/pages/roles.js'
-        ];
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/roles.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
         return $this->render('pages/admin/role-permissions', [
-            'pageTitle' => $pageTitle,
-            'pageJs' => $pageJs
+            'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
 
@@ -73,16 +67,13 @@ class AdminController extends BaseController
         $this->requireAuth('user_admin');
         
         $pageTitle = "사용자 관리";
-        $pageJs = [
-            BASE_ASSETS_URL . '/assets/js/pages/users.js'
-        ];
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/users.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
         return $this->render('pages/admin/users', [
-            'pageTitle' => $pageTitle,
-            'pageJs' => $pageJs
+            'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
 

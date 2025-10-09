@@ -25,20 +25,16 @@ class LitteringController extends BaseController
         $pageTitle = "부적정배출 확인";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        $pageCss = [
-            BASE_ASSETS_URL . "/assets/css/pages/split-layout.css"
-        ];
+        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/css/pages/split-layout.css");
         
-        $pageJs = [
-            "https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js",
-            "//dapi.kakao.com/v2/maps/sdk.js?appkey=bb4a71438b323ef95ff740374eef24a2&libraries=services",
-            BASE_ASSETS_URL . "/assets/js/services/ApiService.js",
-            BASE_ASSETS_URL . "/assets/js/components/MapManager.js",
-            BASE_ASSETS_URL . "/assets/js/components/BaseApp.js",
-            BASE_ASSETS_URL . "/assets/js/pages/littering_admin.js"
-        ];
+        \App\Core\View::addJs("https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js");
+        \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=bb4a71438b323ef95ff740374eef24a2&libraries=services");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/MapManager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/BaseApp.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering_admin.js");
 
-        return $this->render('pages/littering/admin', compact('pageTitle', 'pageCss', 'pageJs'), 'layouts/app');
+        return $this->render('pages/littering/admin', compact('pageTitle'), 'layouts/app');
     }
 
     /**
@@ -51,23 +47,19 @@ class LitteringController extends BaseController
         $pageTitle = "부적정배출 등록";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        $pageCss = [
-            BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css",
-            BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css",
-            BASE_ASSETS_URL . "/assets/css/pages/littering.css"
-        ];
+        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
+        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
+        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/css/pages/littering.css");
         
-        $pageJs = [
-            BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js",
-            BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js",
-            "//dapi.kakao.com/v2/maps/sdk.js?appkey=bb4a71438b323ef95ff740374eef24a2&libraries=services",
-            BASE_ASSETS_URL . "/assets/js/services/ApiService.js",
-            BASE_ASSETS_URL . "/assets/js/components/MapManager.js",
-            BASE_ASSETS_URL . "/assets/js/components/BaseApp.js",
-            BASE_ASSETS_URL . "/assets/js/pages/littering_map.js"
-        ];
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
+        \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=bb4a71438b323ef95ff740374eef24a2&libraries=services");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/MapManager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/BaseApp.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering_map.js");
 
-        return $this->render('pages/littering/map', compact('pageTitle', 'pageCss', 'pageJs'), 'layouts/app');
+        return $this->render('pages/littering/map', compact('pageTitle'), 'layouts/app');
     }
 
     /**
@@ -80,23 +72,19 @@ class LitteringController extends BaseController
         $pageTitle = "무단투기 처리 내역";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        $pageCss = [
-            BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css",
-            BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css",
-            BASE_ASSETS_URL . "/assets/css/pages/littering_history.css"
-        ];
+        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
+        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
+        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/css/pages/littering_history.css");
         
-        $pageJs = [
-            BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js",
-            BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js",
-            "//dapi.kakao.com/v2/maps/sdk.js?appkey=bb4a71438b323ef95ff740374eef24a2&libraries=services",
-            BASE_ASSETS_URL . "/assets/js/services/ApiService.js",
-            BASE_ASSETS_URL . "/assets/js/components/MapManager.js",
-            BASE_ASSETS_URL . "/assets/js/components/BaseApp.js",
-            BASE_ASSETS_URL . "/assets/js/pages/littering_history.js"
-        ];
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
+        \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=bb4a71438b323ef95ff740374eef24a2&libraries=services");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/MapManager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/BaseApp.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering_history.js");
 
-        return $this->render('pages/littering/history', compact('pageTitle', 'pageCss', 'pageJs'), 'layouts/app');
+        return $this->render('pages/littering/history', compact('pageTitle'), 'layouts/app');
     }
 
     /**
@@ -109,17 +97,13 @@ class LitteringController extends BaseController
         $pageTitle = "삭제된 부적정배출";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        $pageCss = [];
-        
-        $pageJs = [
-            "//dapi.kakao.com/v2/maps/sdk.js?appkey=bb4a71438b323ef95ff740374eef24a2&libraries=services",
-            BASE_ASSETS_URL . "/assets/js/services/ApiService.js",
-            BASE_ASSETS_URL . "/assets/js/components/MapManager.js",
-            BASE_ASSETS_URL . "/assets/js/components/BaseApp.js",
-            BASE_ASSETS_URL . "/assets/js/pages/littering_deleted_admin.js"
-        ];
+        \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=bb4a71438b323ef95ff740374eef24a2&libraries=services");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/MapManager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/BaseApp.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering_deleted_admin.js");
 
-        return $this->render('pages/littering/deleted', compact('pageTitle', 'pageCss', 'pageJs'), 'layouts/app');
+        return $this->render('pages/littering/deleted', compact('pageTitle'), 'layouts/app');
     }
 
     /**
