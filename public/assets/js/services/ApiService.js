@@ -2,95 +2,72 @@
  * ApiService - 서버와의 통신을 관리하는 유틸리티 클래스
  *
  * 주요 기능:
- * - GET, POST 등 다양한 HTTP 메서드 지원
+ * - GET, POST, PUT, DELETE 등 다양한 HTTP 메서드 지원
  * - JSON, FormData 등 다양한 데이터 타입 처리
  * - 일관된 에러 처리 및 타임아웃 관리
  */
 class ApiService {
     /**
      * 서버에 API 요청을 보냅니다.
-     * @param {string} url - 요청을 보낼 API 엔드포인트 URL
-     * @param {object} options - 요청 옵션
-     * @param {string} [options.method='POST'] - HTTP 메서드 (GET, POST 등)
-     * @param {object|FormData} [options.data={}] - 전송할 데이터
-     * @param {string} [options.action] - URL 파라미터로 전달할 action
+     * @param {string} endpoint - 요청을 보낼 API 엔드포인트 (e.g., '/users/1')
+     * @param {object} options - fetch()에 전달할 옵션
+     * @param {string} [options.method='GET'] - HTTP 메서드
+     * @param {object|FormData} [options.body] - 요청 본문
      * @param {number} [options.timeout=30000] - 요청 타임아웃 (ms)
-     * @returns {Promise<any>} - 서버 응답을 resolve하는 Promise
+     * @returns {Promise<any>} - 성공 시 API 응답의 data 필드를, 실패 시 에러를 resolve/reject하는 Promise
      */
-    static request(url, options = {}) {
-        const {
-            method = 'POST',
-            data = {},
-            action,
-            timeout = 30000
-        } = options;
+    static async request(endpoint, options = {}) {
+        const { timeout = 30000 } = options;
 
-        if (!url) {
-            return Promise.reject(new Error('API URL이 제공되지 않았습니다.'));
+        if (!endpoint) {
+            throw new Error('API 엔드포인트가 제공되지 않았습니다.');
         }
 
-        // AbortController를 이용한 타임아웃 처리
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
         const fetchOptions = {
-            method: method.toUpperCase(),
+            ...options,
             signal: controller.signal,
-            headers: {}
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                ...(options.headers || {}),
+            },
         };
 
-        let requestUrl = url;
-
-        if (fetchOptions.method === 'GET') {
-            // GET 요청: 데이터를 URL 쿼리 파라미터로 변환
-            const params = new URLSearchParams(data);
-            if (action) {
-                params.set('action', action);
-            }
-            const queryString = params.toString();
-            if (queryString) {
-                requestUrl = `${url}?${queryString}`;
-            }
-        } else {
-            // POST 및 기타 요청
-            if (action) {
-                // action은 URL에 쿼리 파라미터로 추가
-                requestUrl = `${url}?action=${encodeURIComponent(action)}`;
-            }
-
-            if (data instanceof FormData) {
-                fetchOptions.body = data;
-                // FormData의 경우 Content-Type 헤더는 브라우저가 자동으로 설정
-            } else if (Object.keys(data).length > 0) {
-                fetchOptions.body = JSON.stringify(data);
-                fetchOptions.headers['Content-Type'] = 'application/json';
-            }
+        // FormData가 아니고 body가 객체일 경우, JSON으로 변환하고 Content-Type 설정
+        if (fetchOptions.body && typeof fetchOptions.body === 'object' && !(fetchOptions.body instanceof FormData)) {
+            fetchOptions.body = JSON.stringify(fetchOptions.body);
+            fetchOptions.headers['Content-Type'] = 'application/json';
         }
 
-        return fetch(requestUrl, fetchOptions)
-            .finally(() => {
-                clearTimeout(timeoutId);
-            })
-            .then(response => {
-                if (!response.ok) {
-                    let msg = `서버 통신 오류: ${response.status}`;
-                    if (response.status >= 500) {
-                        msg = '서버 내부 오류';
-                    }
-                    throw new Error(msg);
-                }
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    return response.json();
-                }
-                return response.text();
-            })
-            .catch(error => {
-                if (error.name === 'AbortError') {
-                    throw new Error('요청 시간 초과');
-                }
-                // 다른 모든 오류 다시 던지기
-                throw error;
-            });
+        const API_BASE_URL = '/api';
+        try {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
+
+            clearTimeout(timeoutId);
+
+            // 응답이 비어있는 경우 (e.g., 204 No Content)
+            if (response.status === 204) {
+                return Promise.resolve({ success: true, message: '요청이 성공적으로 처리되었지만 응답 본문이 없습니다.' });
+            }
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.message || `API 요청 실패: ${response.status}`);
+            }
+
+            // 항상 result 객체 전체를 반환하여 호출부에서 message, data 등을 사용할 수 있게 함
+            return result;
+
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error('요청 시간이 초과되었습니다.');
+            }
+            // 다른 모든 오류 다시 던지기
+            throw error;
+        }
     }
 }
