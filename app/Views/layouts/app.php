@@ -29,6 +29,8 @@ $profileImageUrl = SessionManager::get('user')['profile_image_url'] ?? BASE_ASSE
     <link href="<?= BASE_ASSETS_URL ?>/assets/css/app.min.css" rel="stylesheet" type="text/css" />
     <!-- custom Css-->
     <link href="<?= BASE_ASSETS_URL ?>/assets/css/custom.min.css" rel="stylesheet" type="text/css" />
+    <!-- Custom Layout CSS -->
+    <link href="<?= BASE_ASSETS_URL ?>/assets/css/custom-layout.css" rel="stylesheet" type="text/css" />
 </head>
 
 <body>
