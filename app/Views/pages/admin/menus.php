@@ -1,3 +1,4 @@
+<?php \App\Core\View::startSection('content'); ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800">메뉴 관리</h1>
     <button class="btn btn-primary" id="add-root-menu-btn">
@@ -91,6 +92,4 @@
     border-top: 2px dashed blue;
 }
 </style>
-
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script src="<?= BASE_ASSETS_URL ?>/assets/js/pages/menu_admin.js"></script>
+<?php \App\Core\View::endSection(); ?>

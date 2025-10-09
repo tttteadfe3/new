@@ -1,3 +1,4 @@
+<?php \App\Core\View::startSection('content'); ?>
 <div class="row mt-n4 mx-n4" style="margin:0;">
     <div class="col-12" style=" height: calc(100vh - 70px - 60px);padding:0;">
         <div id="map" style="width:100%;height:100%;position:relative;overflow:hidden;">
@@ -20,3 +21,4 @@
         </div>
     </div>
 </div>
+<?php \App\Core\View::endSection(); ?>

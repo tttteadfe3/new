@@ -1,7 +1,6 @@
 <?php
 use App\Core\View;
 
-View::extends('app');
 View::startSection('content');
 ?>
 

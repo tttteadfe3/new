@@ -85,6 +85,8 @@ class AdminController extends BaseController
         $this->requireAuth('menu_admin');
         
         $pageTitle = "메뉴 관리";
+        \App\Core\View::addJs("https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/menu_admin.js");
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);

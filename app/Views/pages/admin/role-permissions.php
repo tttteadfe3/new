@@ -1,3 +1,4 @@
+<?php \App\Core\View::startSection('content'); ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800">역할 및 권한 관리 (비동기)</h1>
 </div>
@@ -50,3 +51,4 @@
         </div>
     </div>
 </div>
+<?php \App\Core\View::endSection(); ?>
