@@ -61,5 +61,5 @@ Router::get('/admin/menus', [AdminController::class, 'menus'])->name('admin.menu
 Router::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
 Router::get('/logs', [LogController::class, 'index'])->name('logs.index');
 
-// --- Test-Login ---
-Router::get('/test-login', [TestLoginController::class, 'login'])->name('test-login');
+// --- 유틸리티 ---
+Router::get('/blank', ['App\Controllers\Web\UtilityController', 'blank'])->name('blank');
