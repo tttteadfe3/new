@@ -31,9 +31,9 @@ class LeaveAdminApiController extends BaseApiController
             } else {
                 $data = LeaveRepository::getAll(['status' => $status]);
             }
-            $this->success($data);
+            $this->apiSuccess($data);
         } catch (Exception $e) {
-            $this->error('요청 목록을 불러오는 중 오류 발생', ['exception' => $e->getMessage()], 500);
+            $this->apiError('요청 목록을 불러오는 중 오류 발생', 'SERVER_ERROR', 500);
         }
     }
 
@@ -49,12 +49,12 @@ class LeaveAdminApiController extends BaseApiController
         try {
             [$success, $message] = $this->leaveService->approveRequest($id, $adminId);
             if ($success) {
-                $this->success(null, $message);
+                $this->apiSuccess(null, $message);
             } else {
-                $this->error($message);
+                $this->apiError($message, 'OPERATION_FAILED');
             }
         } catch (Exception $e) {
-            $this->error('승인 처리 중 오류 발생', ['exception' => $e->getMessage()], 500);
+            $this->apiError('승인 처리 중 오류 발생', 'SERVER_ERROR', 500);
         }
     }
 
@@ -69,19 +69,19 @@ class LeaveAdminApiController extends BaseApiController
         $reason = $this->request->input('reason');
 
         if (empty($reason)) {
-            $this->validationError(['reason' => '반려 사유는 필수입니다.'], '반려 사유가 필요합니다.');
+            $this->apiError('반려 사유는 필수입니다.', 'VALIDATION_ERROR', 422);
             return;
         }
 
         try {
             [$success, $message] = $this->leaveService->rejectRequest($id, $adminId, $reason);
             if ($success) {
-                $this->success(null, $message);
+                $this->apiSuccess(null, $message);
             } else {
-                $this->error($message);
+                $this->apiError($message, 'OPERATION_FAILED');
             }
         } catch (Exception $e) {
-            $this->error('반려 처리 중 오류 발생', ['exception' => $e->getMessage()], 500);
+            $this->apiError('반려 처리 중 오류 발생', 'SERVER_ERROR', 500);
         }
     }
 
@@ -97,12 +97,12 @@ class LeaveAdminApiController extends BaseApiController
         try {
             [$success, $message] = $this->leaveService->approveCancellation($id, $adminId);
             if ($success) {
-                $this->success(null, $message);
+                $this->apiSuccess(null, $message);
             } else {
-                $this->error($message);
+                $this->apiError($message, 'OPERATION_FAILED');
             }
         } catch (Exception $e) {
-            $this->error('취소 승인 처리 중 오류 발생', ['exception' => $e->getMessage()], 500);
+            $this->apiError('취소 승인 처리 중 오류 발생', 'SERVER_ERROR', 500);
         }
     }
 
@@ -117,19 +117,19 @@ class LeaveAdminApiController extends BaseApiController
         $reason = $this->request->input('reason');
         
         if (empty($reason)) {
-            $this->validationError(['reason' => '반려 사유는 필수입니다.'], '반려 사유가 필요합니다.');
+            $this->apiError('반려 사유는 필수입니다.', 'VALIDATION_ERROR', 422);
             return;
         }
 
         try {
             [$success, $message] = $this->leaveService->rejectCancellation($id, $adminId, $reason);
             if ($success) {
-                $this->success(null, $message);
+                $this->apiSuccess(null, $message);
             } else {
-                $this->error($message);
+                $this->apiError($message, 'OPERATION_FAILED');
             }
         } catch (Exception $e) {
-            $this->error('취소 반려 처리 중 오류 발생', ['exception' => $e->getMessage()], 500);
+            $this->apiError('취소 반려 처리 중 오류 발생', 'SERVER_ERROR', 500);
         }
     }
 
@@ -147,9 +147,9 @@ class LeaveAdminApiController extends BaseApiController
         
         try {
             $data = LeaveRepository::getAllEntitlements(array_filter($filters));
-            $this->success($data);
+            $this->apiSuccess($data);
         } catch (Exception $e) {
-            $this->error('연차 부여 내역 조회 중 오류 발생', ['exception' => $e->getMessage()], 500);
+            $this->apiError('연차 부여 내역 조회 중 오류 발생', 'SERVER_ERROR', 500);
         }
     }
 
@@ -165,12 +165,12 @@ class LeaveAdminApiController extends BaseApiController
         try {
             [$success, $message] = $this->leaveService->grantAnnualLeaveForAllEmployees($year);
             if ($success) {
-                $this->success(null, $message);
+                $this->apiSuccess(null, $message);
             } else {
-                $this->error($message);
+                $this->apiError($message, 'OPERATION_FAILED');
             }
         } catch (Exception $e) {
-            $this->error('전체 연차 부여 중 오류 발생', ['exception' => $e->getMessage()], 500);
+            $this->apiError('전체 연차 부여 중 오류 발생', 'SERVER_ERROR', 500);
         }
     }
 
@@ -187,12 +187,12 @@ class LeaveAdminApiController extends BaseApiController
             $entitlement = LeaveRepository::findEntitlement($employeeId, $year);
             $leaves = LeaveRepository::findByEmployeeId($employeeId, ['year' => $year]);
 
-            $this->success([
+            $this->apiSuccess([
                 'entitlement' => $entitlement,
                 'leaves' => $leaves
             ]);
         } catch (Exception $e) {
-            $this->error('연차 내역 조회 중 오류 발생', ['exception' => $e->getMessage()], 500);
+            $this->apiError('연차 내역 조회 중 오류 발생', 'SERVER_ERROR', 500);
         }
     }
 
@@ -205,25 +205,25 @@ class LeaveAdminApiController extends BaseApiController
         $this->requireAuth('leave_admin');
         $adminId = $this->user()['id'];
         
-        $data = $this->request->all();
+        $data = $this->getJsonInput();
         $employeeId = (int)($data['employee_id'] ?? 0);
         $year = (int)($data['year'] ?? date('Y'));
         $adjustedDays = (float)($data['adjustment_days'] ?? 0);
         $reason = trim($data['reason'] ?? '');
         
         if (!$employeeId || empty($reason)) {
-            $this->validationError(['employee_id' => '직원 선택은 필수', 'reason' => '조정 사유는 필수'], '필수 입력값이 누락되었습니다.');
+            $this->apiError('필수 입력값이 누락되었습니다.', 'VALIDATION_ERROR', 422);
             return;
         }
         
         try {
             if ($this->leaveService->adjustLeaveEntitlement($employeeId, $year, $adjustedDays, $reason, $adminId)) {
-                $this->success(null, "연차 조정이 완료되었습니다.");
+                $this->apiSuccess(null, "연차 조정이 완료되었습니다.");
             } else {
-                $this->error("연차 조정 처리 중 오류가 발생했습니다.");
+                $this->apiError("연차 조정 처리 중 오류가 발생했습니다.", 'OPERATION_FAILED');
             }
         } catch (Exception $e) {
-            $this->error($e->getMessage());
+            $this->apiError($e->getMessage(), 'SERVER_ERROR');
         }
     }
 
@@ -235,7 +235,7 @@ class LeaveAdminApiController extends BaseApiController
     {
         $this->requireAuth('leave_admin');
         
-        $data = $this->request->all();
+        $data = $this->getJsonInput();
         $year = (int)($data['year'] ?? date('Y'));
         $department_id = $data['department_id'] ?? null;
         
@@ -256,9 +256,9 @@ class LeaveAdminApiController extends BaseApiController
                 }
                 $results[] = $employee;
             }
-            $this->success($results);
+            $this->apiSuccess($results);
         } catch (Exception $e) {
-            $this->error('연차 계산 중 오류 발생', ['exception' => $e->getMessage()], 500);
+            $this->apiError('연차 계산 중 오류 발생', 'SERVER_ERROR', 500);
         }
     }
 
@@ -270,7 +270,7 @@ class LeaveAdminApiController extends BaseApiController
     {
         $this->requireAuth('leave_admin');
         
-        $data = $this->request->all();
+        $data = $this->getJsonInput();
         $employees_data = $data['employees'] ?? [];
         $year = (int)($data['year'] ?? date('Y'));
         
@@ -290,9 +290,9 @@ class LeaveAdminApiController extends BaseApiController
 
         $message = "총 {$success_count}명의 연차 부여를 완료했습니다.";
         if ($failed_count > 0) {
-            $this->error("{$failed_count}명 실패. 오류: " . implode(', ', $errors));
+            $this->apiError("{$failed_count}명 실패. 오류: " . implode(', ', $errors), 'PARTIAL_SUCCESS');
         } else {
-            $this->success(null, $message);
+            $this->apiSuccess(null, $message);
         }
     }
 }

@@ -30,12 +30,12 @@ class LitteringAdminApiController extends BaseApiController
             } elseif ($status === 'deleted') {
                 $data = $this->litteringService->getDeletedLittering();
             } else {
-                $this->error('Invalid status value.', [], 400);
+                $this->apiError('Invalid status value.', 'INVALID_INPUT', 400);
                 return;
             }
-            $this->success($data);
+            $this->apiSuccess($data);
         } catch (Exception $e) {
-            $this->error('목록을 불러오는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
+            $this->apiError('목록을 불러오는 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 
@@ -49,13 +49,13 @@ class LitteringAdminApiController extends BaseApiController
         $adminId = $this->user()['id'];
         
         try {
-            $data = $this->request->all();
+            $data = $this->getJsonInput();
             $data['id'] = $id; // Ensure ID from URL is used
 
             $result = $this->litteringService->confirmLittering($data, $adminId);
-            $this->success($result, '민원 정보가 성공적으로 확인되었습니다.');
+            $this->apiSuccess($result, '민원 정보가 성공적으로 확인되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
+            $this->apiError($e->getMessage(), 'OPERATION_FAILED', 422);
         }
     }
 
@@ -69,13 +69,13 @@ class LitteringAdminApiController extends BaseApiController
         $adminId = $this->user()['id'];
 
         try {
-            $data = $this->request->all();
+            $data = $this->getJsonInput();
             $data['id'] = $id;
 
             $result = $this->litteringService->deleteLittering($data, $adminId);
-            $this->success($result, '민원 정보가 성공적으로 삭제되었습니다.');
+            $this->apiSuccess($result, '민원 정보가 성공적으로 삭제되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
+            $this->apiError($e->getMessage(), 'OPERATION_FAILED', 422);
         }
     }
 
@@ -90,9 +90,9 @@ class LitteringAdminApiController extends BaseApiController
         try {
             $data = ['id' => $id];
             $result = $this->litteringService->restoreLittering($data);
-            $this->success($result, '민원 정보가 성공적으로 복원되었습니다.');
+            $this->apiSuccess($result, '민원 정보가 성공적으로 복원되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
+            $this->apiError($e->getMessage(), 'OPERATION_FAILED', 422);
         }
     }
 
@@ -107,9 +107,9 @@ class LitteringAdminApiController extends BaseApiController
         try {
             $data = ['id' => $id];
             $result = $this->litteringService->permanentlyDeleteLittering($data);
-            $this->success($result, '민원 정보가 영구적으로 삭제되었습니다.');
+            $this->apiSuccess($result, '민원 정보가 영구적으로 삭제되었습니다.');
         } catch (Exception $e) {
-            $this->error($e->getMessage(), ['exception' => $e->getMessage()], 422);
+            $this->apiError($e->getMessage(), 'OPERATION_FAILED', 422);
         }
     }
 }

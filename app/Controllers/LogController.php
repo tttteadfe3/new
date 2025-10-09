@@ -19,7 +19,7 @@ class LogController extends BaseController
     /**
      * Display the log viewer page
      */
-    public function index(): string
+    public function index(): void
     {
         $this->requireAuth('log_admin');
         
@@ -27,7 +27,7 @@ class LogController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/log_viewer.js');
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        return $this->render('pages/logs/index', [
+        echo $this->render('pages/logs/index', [
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }

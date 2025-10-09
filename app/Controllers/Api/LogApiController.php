@@ -24,9 +24,9 @@ class LogApiController extends BaseApiController
             ];
             
             $logs = LogRepository::search(array_filter($filters));
-            $this->success($logs);
+            $this->apiSuccess($logs);
         } catch (Exception $e) {
-            $this->error('로그 검색 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
+            $this->apiError('로그 검색 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 
@@ -40,9 +40,9 @@ class LogApiController extends BaseApiController
         
         try {
             LogRepository::truncate();
-            $this->success(null, '로그가 성공적으로 비워졌습니다.');
+            $this->apiSuccess(null, '로그가 성공적으로 비워졌습니다.');
         } catch (Exception $e) {
-            $this->error('로그를 비우는 중 오류가 발생했습니다.', ['exception' => $e->getMessage()], 500);
+            $this->apiError('로그를 비우는 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 }

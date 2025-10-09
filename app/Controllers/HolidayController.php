@@ -19,7 +19,7 @@ class HolidayController extends BaseController
     /**
      * Display the holiday administration page.
      */
-    public function index(): string
+    public function index(): void
     {
         $this->requireAuth('holiday_admin');
 
@@ -32,7 +32,7 @@ class HolidayController extends BaseController
             'pageTitle' => '휴일/근무일 설정'
         ];
 
-        return $this->render('pages/holidays/index', $data, 'layouts/app');
+        echo $this->render('pages/holidays/index', $data, 'layouts/app');
     }
 
 }

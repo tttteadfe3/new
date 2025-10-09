@@ -21,18 +21,18 @@ class LeaveController extends BaseController
     /**
      * Display leave management index page (redirects to my leaves for regular users)
      */
-    public function index(): string
+    public function index(): void
     {
         $this->requireAuth('leave_view');
         
         // Regular users should see their own leaves
-        return $this->redirect('/leaves/my');
+        $this->redirect('/leaves/my');
     }
 
     /**
      * Display user's own leave requests and status
      */
-    public function my(): string
+    public function my(): void
     {
         $this->requireAuth('leave_view');
 
@@ -44,39 +44,39 @@ class LeaveController extends BaseController
         // Check permission in the controller, not in the view.
         $can_request_leave = $this->authService->check('leave_request');
 
-        return $this->render('pages/leaves/my', compact('pageTitle', 'can_request_leave'), 'layouts/app');
+        echo $this->render('pages/leaves/my', compact('pageTitle', 'can_request_leave'), 'layouts/app');
     }
 
     /**
      * Display leave approval page for administrators
      */
-    public function approval(): string
+    public function approval(): void
     {
         $this->requireAuth('leave_admin');
 
         $pageTitle = "연차 신청 승인/반려";
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/leave_approval.js');
 
-        return $this->render('pages/leaves/approval', compact('pageTitle'), 'layouts/app');
+        echo $this->render('pages/leaves/approval', compact('pageTitle'), 'layouts/app');
     }
 
     /**
      * Display leave granting page for administrators
      */
-    public function granting(): string
+    public function granting(): void
     {
         $this->requireAuth('leave_admin');
 
         $pageTitle = "연차 부여/계산";
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/leave_granting.js');
 
-        return $this->render('pages/leaves/granting', compact('pageTitle'), 'layouts/app');
+        echo $this->render('pages/leaves/granting', compact('pageTitle'), 'layouts/app');
     }
 
     /**
      * Display leave history for administrators
      */
-    public function history(): string
+    public function history(): void
     {
         $this->requireAuth('leave_admin');
 
@@ -86,7 +86,7 @@ class LeaveController extends BaseController
         // Get all employees for the dropdown via the service layer
         $employees = $this->employeeService->getActiveEmployees();
 
-        return $this->render('pages/leaves/history', compact('pageTitle', 'employees'), 'layouts/app');
+        echo $this->render('pages/leaves/history', compact('pageTitle', 'employees'), 'layouts/app');
     }
 
 }
