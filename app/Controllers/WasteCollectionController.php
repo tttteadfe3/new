@@ -21,28 +21,22 @@ class WasteCollectionController extends BaseController
     {
         $this->requireAuth('waste_view');
         
-        $pageCss = [
-            BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css",
-            BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css",
-            BASE_ASSETS_URL . "/assets/css/pages/littering.css"
-        ];
+        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
+        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
+        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/css/pages/littering.css");
 
-        $pageJs = [
-            BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js",
-            BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js",
-            "//dapi.kakao.com/v2/maps/sdk.js?appkey=bb4a71438b323ef95ff740374eef24a2&libraries=services",
-            BASE_ASSETS_URL . "/assets/js/services/ApiService.js",
-            BASE_ASSETS_URL . "/assets/js/components/MapManager.js",
-            BASE_ASSETS_URL . "/assets/js/components/BaseApp.js",
-            BASE_ASSETS_URL . "/assets/js/pages/waste_collection.js"
-        ];
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
+        \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=bb4a71438b323ef95ff740374eef24a2&libraries=services");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/MapManager.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/BaseApp.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste_collection.js");
 
         $pageTitle = "대형폐기물 수거";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         return $this->render('pages/waste/collection', [
-            'pageCss' => $pageCss,
-            'pageJs' => $pageJs,
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
@@ -62,18 +56,13 @@ class WasteCollectionController extends BaseController
     {
         $this->requireAuth('waste_admin');
         
-        $pageCss = [];
-        $pageJs = [
-            BASE_ASSETS_URL . "/assets/js/services/ApiService.js",
-            BASE_ASSETS_URL . "/assets/js/pages/waste_admin.js"
-        ];
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/ApiService.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste_admin.js");
         
         $pageTitle = "대형폐기물 관리";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         return $this->render('pages/waste/admin', [
-            'pageCss' => $pageCss,
-            'pageJs' => $pageJs,
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }

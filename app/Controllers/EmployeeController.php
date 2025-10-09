@@ -24,16 +24,13 @@ class EmployeeController extends BaseController
         $this->requireAuth('employee_admin');
         
         $pageTitle = "직원 목록";
-        $pageJs = [
-            BASE_ASSETS_URL . '/assets/js/pages/employees.js'
-        ];
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
         
         return $this->render('pages/employees/index', [
-            'pageTitle' => $pageTitle,
-            'pageJs' => $pageJs
+            'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
 

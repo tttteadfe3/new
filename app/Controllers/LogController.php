@@ -24,14 +24,11 @@ class LogController extends BaseController
         $this->requireAuth('log_admin');
         
         $pageTitle = "사용 로그 뷰어";
-        $pageJs = [
-            BASE_ASSETS_URL . '/assets/js/pages/log_viewer.js'
-        ];
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/log_viewer.js');
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         return $this->render('pages/logs/index', [
-            'pageTitle' => $pageTitle,
-            'pageJs' => $pageJs
+            'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
 

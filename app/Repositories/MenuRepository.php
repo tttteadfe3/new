@@ -27,24 +27,36 @@ class MenuRepository
             }
         }
         
-        // 2단계: 보이는 자식이 있는 부모들을 재귀적으로 추가
-        $addedParents = [];
+        // 2단계: 보이는 자식이 있는 모든 상위 부모들을 반복적으로 추가
+        $parentIdsToAdd = [];
         foreach ($visibleMenus as $menu) {
-            $parentId = $menu['parent_id'];
-            
-            // 부모를 아직 추가 안했다면
-            if ($parentId && !isset($addedParents[$parentId])) {
-                // 부모 찾아서 추가
+            if ($menu['parent_id']) {
+                $parentIdsToAdd[$menu['parent_id']] = true;
+            }
+        }
+
+        while (!empty($parentIdsToAdd)) {
+            $newParentIds = [];
+            foreach (array_keys($parentIdsToAdd) as $parentId) {
+                if (isset($visibleMenus[$parentId])) {
+                    continue; // 이미 처리된 부모는 건너뜁니다.
+                }
+
                 foreach ($allMenus as $parent) {
                     if ($parent['id'] == $parentId) {
+                        // 부모의 권한을 확인하고 목록에 추가합니다.
                         if (empty($parent['permission_key']) || in_array($parent['permission_key'], $userPermissions)) {
                             $visibleMenus[$parent['id']] = $parent;
+                            // 이 부모에게 또 다른 부모가 있다면, 다음 반복에서 처리하도록 큐에 추가합니다.
+                            if ($parent['parent_id']) {
+                                $newParentIds[$parent['parent_id']] = true;
+                            }
                         }
-                        $addedParents[$parentId] = true;
-                        break;
+                        break; // 해당 부모를 찾았으므로 내부 루프를 중단합니다.
                     }
                 }
             }
+            $parentIdsToAdd = $newParentIds;
         }
         
         // 3단계: 독립 메뉴들 (parent_id가 없고 자식도 없는) 권한 체크해서 추가
