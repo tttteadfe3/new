@@ -5,7 +5,7 @@
 class WasteCollectionApp extends BaseApp {
     constructor() {
         super({
-            API_URL: '/api/waste-collections',
+            API_URL: '/waste-collections',
             ITEMS: ['매트리스', '침대틀', '장롱', '쇼파', '의자', '책상', '기타(가구)', '건폐', '소각', '변기', '캐리어', '기타'],
             FILE: { MAX_SIZE: 5 * 1024 * 1024, ALLOWED_TYPES: ['image/jpeg', 'image/png'], COMPRESS: { MAX_WIDTH: 1200, MAX_HEIGHT: 1200, QUALITY: 0.8 } }
         });
