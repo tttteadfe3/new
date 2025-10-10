@@ -26,7 +26,7 @@ class EmployeeController extends BaseController
         $pageTitle = "직원 목록";
         \App\Core\View::addCss(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.css');
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employees-app.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
