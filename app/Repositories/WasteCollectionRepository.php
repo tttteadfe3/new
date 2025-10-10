@@ -46,12 +46,11 @@ class WasteCollectionRepository {
         $query = "
             SELECT
                 wc.*,
-                COALESCE(
-                    (SELECT JSON_ARRAYAGG(JSON_OBJECT('name', wci.item_name, 'quantity', wci.quantity))
-                     FROM waste_collection_items wci
-                     WHERE wci.collection_id = wc.id),
-                    JSON_ARRAY()
-                ) as items
+                IFNULL((
+                    SELECT CONCAT('[', GROUP_CONCAT(JSON_OBJECT('name', wci.item_name, 'quantity', wci.quantity)), ']')
+                    FROM waste_collection_items wci
+                    WHERE wci.collection_id = wc.id
+                ), '[]') AS items
             FROM `waste_collections` wc
             WHERE wc.status = 'unprocessed'
             ORDER BY wc.created_at DESC
@@ -64,12 +63,11 @@ class WasteCollectionRepository {
             SELECT
                 wc.*,
                 (SELECT COUNT(*) FROM waste_collection_items wci WHERE wci.collection_id = wc.id) as item_count,
-                COALESCE(
-                    (SELECT JSON_ARRAYAGG(JSON_OBJECT('name', wci.item_name, 'quantity', wci.quantity))
-                     FROM waste_collection_items wci
-                     WHERE wci.collection_id = wc.id),
-                    JSON_ARRAY()
-                ) as items
+                IFNULL((
+                    SELECT CONCAT('[', GROUP_CONCAT(JSON_OBJECT('name', wci.item_name, 'quantity', wci.quantity)), ']')
+                    FROM waste_collection_items wci
+                    WHERE wci.collection_id = wc.id
+                ), '[]') AS items
             FROM `waste_collections` wc
         ";
         $whereClauses = ["wc.type = 'online'"];
@@ -92,7 +90,10 @@ class WasteCollectionRepository {
             $params[] = $filters['searchStatus'];
         }
 
-        $baseQuery .= " WHERE " . implode(' AND ', $whereClauses);
+        if (count($whereClauses) > 0) {
+            $baseQuery .= " WHERE " . implode(' AND ', $whereClauses);
+        }
+
         $baseQuery .= " ORDER BY wc.created_at DESC";
 
         return Database::fetchAll($baseQuery, $params);
@@ -102,12 +103,11 @@ class WasteCollectionRepository {
         $query = "
             SELECT
                 wc.*,
-                COALESCE(
-                    (SELECT JSON_ARRAYAGG(JSON_OBJECT('name', wci.item_name, 'quantity', wci.quantity))
-                     FROM waste_collection_items wci
-                     WHERE wci.collection_id = wc.id),
-                    JSON_ARRAY()
-                ) as items
+                IFNULL((
+                    SELECT CONCAT('[', GROUP_CONCAT(JSON_OBJECT('name', wci.item_name, 'quantity', wci.quantity)), ']')
+                    FROM waste_collection_items wci
+                    WHERE wci.collection_id = wc.id
+                ), '[]') AS items
             FROM `waste_collections` wc
             WHERE wc.id = ?
         ";
