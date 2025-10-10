@@ -66,6 +66,7 @@ class HolidayApiController extends BaseApiController
         try {
             $data = $this->getJsonInput();
             
+            // Basic validation
             if (empty(trim($data['name']))) {
                 $this->apiError('이름은 필수입니다.', 'VALIDATION_ERROR', 422);
                 return;
@@ -79,13 +80,14 @@ class HolidayApiController extends BaseApiController
                 return;
             }
 
-            $data['deduct_leave'] = isset($data['deduct_leave']) && $data['deduct_leave'];
+            // Convert boolean to integer for validation and database storage
+            $data['deduct_leave'] = (int)(isset($data['deduct_leave']) && $data['deduct_leave']);
 
             $holiday = $this->holidayService->createHoliday($data);
 
             $this->apiSuccess($holiday, '성공적으로 생성되었습니다.', 201);
         } catch (Exception $e) {
-            $this->apiError('생성 중 오류가 발생했습니다.', 'SERVER_ERROR', 422);
+            $this->apiError($e->getMessage(), 'VALIDATION_ERROR', 422);
         }
     }
 
@@ -99,6 +101,7 @@ class HolidayApiController extends BaseApiController
         try {
             $data = $this->getJsonInput();
             
+            // Basic validation
             if (empty(trim($data['name']))) {
                 $this->apiError('이름은 필수입니다.', 'VALIDATION_ERROR', 422);
                 return;
@@ -112,13 +115,14 @@ class HolidayApiController extends BaseApiController
                 return;
             }
 
-            $data['deduct_leave'] = isset($data['deduct_leave']) && $data['deduct_leave'];
+            // Convert boolean to integer for validation and database storage
+            $data['deduct_leave'] = (int)(isset($data['deduct_leave']) && $data['deduct_leave']);
 
             $holiday = $this->holidayService->updateHoliday($id, $data);
 
             $this->apiSuccess($holiday, '성공적으로 수정되었습니다.');
         } catch (Exception $e) {
-            $this->apiError('수정 중 오류가 발생했습니다.', 'SERVER_ERROR', 422);
+            $this->apiError($e->getMessage(), 'VALIDATION_ERROR', 422);
         }
     }
 
