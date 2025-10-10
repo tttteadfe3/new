@@ -71,6 +71,14 @@ class UserService
     }
 
     /**
+     * Get a user's role IDs.
+     */
+    public function getRoleIdsForUser(int $userId): array
+    {
+        return UserRepository::getRoleIdsForUser($userId);
+    }
+
+    /**
      * Get all roles available in the system.
      */
     public function getAllRoles(): array

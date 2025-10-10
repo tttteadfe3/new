@@ -48,7 +48,7 @@ class UserApiController extends BaseApiController
         try {
             $user = $this->userService->getUser($id);
             if ($user) {
-                $user['assigned_roles'] = $this->userService->getUserRoles($id);
+                $user['assigned_roles'] = $this->userService->getRoleIdsForUser($id);
                 $this->apiSuccess($user);
             } else {
                 $this->apiNotFound('User not found');
@@ -79,7 +79,7 @@ class UserApiController extends BaseApiController
         } catch (InvalidArgumentException $e) {
             $this->apiError($e->getMessage(), 'INVALID_INPUT', 400);
         } catch (Exception $e) {
-            $this.handleException($e);
+            $this->handleException($e);
         }
     }
 
