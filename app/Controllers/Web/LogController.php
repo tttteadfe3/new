@@ -21,8 +21,6 @@ class LogController extends BaseController
      */
     public function index(): void
     {
-        $this->requireAuth('log_admin');
-        
         $pageTitle = "사용 로그 뷰어";
 
         // Load BaseApp and dependencies

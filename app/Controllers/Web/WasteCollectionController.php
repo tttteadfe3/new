@@ -19,8 +19,6 @@ class WasteCollectionController extends BaseController
      */
     public function index(): void
     {
-        $this->requireAuth('waste_view');
-        
         \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
         \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
         \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/css/pages/littering.css");
@@ -59,8 +57,6 @@ class WasteCollectionController extends BaseController
      */
     public function admin(): void
     {
-        $this->requireAuth('waste_admin');
-        
         // Refactored Scripts
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");

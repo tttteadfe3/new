@@ -21,8 +21,6 @@ class EmployeeController extends BaseController
      */
     public function index(): void
     {
-        $this->requireAuth('employee_admin');
-        
         $pageTitle = "직원 목록";
         \App\Core\View::addCss(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.css');
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.js');
@@ -46,8 +44,6 @@ class EmployeeController extends BaseController
      */
     public function create(): void
     {
-        $this->requireAuth('employee_admin');
-        
         echo $this->render('pages/employees/create', [], 'layouts/app');
     }
 
@@ -57,8 +53,6 @@ class EmployeeController extends BaseController
      */
     public function edit(): void
     {
-        $this->requireAuth('employee_admin');
-        
         $id = $this->request->get('id');
         if (!$id) {
             $this->redirect('/employees');

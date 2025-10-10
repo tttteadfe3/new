@@ -24,6 +24,10 @@ if (session_status() === PHP_SESSION_NONE) {
 // Routing
 use App\Core\Router;
 
+// Register Middlewares
+Router::addMiddleware('auth', \App\Middleware\AuthMiddleware::class);
+Router::addMiddleware('permission', \App\Middleware\PermissionMiddleware::class);
+
 // Load routes
 require_once __DIR__ . '/../routes/web.php';
 require_once __DIR__ . '/../routes/api.php';

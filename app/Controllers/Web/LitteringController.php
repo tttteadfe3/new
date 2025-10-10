@@ -20,8 +20,6 @@ class LitteringController extends BaseController
      */
     public function index(): void
     {
-        $this->requireAuth('littering_manage');
-        
         $pageTitle = "부적정배출 확인";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
@@ -46,8 +44,6 @@ class LitteringController extends BaseController
      */
     public function map(): void
     {
-        $this->requireAuth('littering_process');
-        
         $pageTitle = "부적정배출 등록";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
@@ -76,8 +72,6 @@ class LitteringController extends BaseController
      */
     public function history(): void
     {
-        $this->requireAuth('littering_view');
-        
         $pageTitle = "무단투기 처리 내역";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
@@ -106,8 +100,6 @@ class LitteringController extends BaseController
      */
     public function deleted(): void
     {
-        $this->requireAuth('littering_admin');
-        
         $pageTitle = "삭제된 부적정배출";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
@@ -129,8 +121,6 @@ class LitteringController extends BaseController
      */
     public function create(): void
     {
-        $this->requireAuth('littering_process');
-        
         // This might be handled via AJAX/API, but keeping for completeness
         echo $this->render('pages/littering/create', [], 'layouts/app');
     }
@@ -140,8 +130,6 @@ class LitteringController extends BaseController
      */
     public function edit(): void
     {
-        $this->requireAuth('littering_manage');
-        
         $id = $this->request->get('id');
         if (!$id) {
             $this->redirect('/littering');

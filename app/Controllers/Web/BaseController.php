@@ -19,29 +19,6 @@ abstract class BaseController
     }
 
     /**
-     * Require authentication and optionally check for specific permission.
-     * 
-     * @deprecated Use middleware instead: 'auth' or 'permission:permission_name'
-     * @param string|null $permission The permission to check for
-     * @throws \Exception If user is not authenticated or lacks permission
-     */
-    protected function requireAuth(string $permission = null): void
-    {
-        if (!$this->authService->isLoggedIn()) {
-            $this->redirect('/login');
-            exit;
-        }
-
-        if ($permission !== null) {
-            // Use the new centralized permission checker
-            if (!$this->authService->check($permission)) {
-                View::render('errors/403', ['message' => 'Access denied. Insufficient permissions.']);
-                exit;
-            }
-        }
-    }
-
-    /**
      * Render a view with data.
      * 
      * @param string $view The view file to render

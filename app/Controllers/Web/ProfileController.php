@@ -21,8 +21,6 @@ class ProfileController extends BaseController
      */
     public function index(): void
     {
-        $this->requireAuth();
-        
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/profile-app.js");

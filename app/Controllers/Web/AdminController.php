@@ -28,8 +28,6 @@ class AdminController extends BaseController
      */
     public function organization(): void
     {
-        $this->requireAuth('organization_admin');
-        
         $pageTitle = "부서/직급 관리";
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/components/base-app.js');
@@ -48,8 +46,6 @@ class AdminController extends BaseController
      */
     public function rolePermissions(): void
     {
-        $this->requireAuth('role_admin');
-        
         $pageTitle = "역할 및 권한 관리";
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/components/base-app.js');
@@ -68,8 +64,6 @@ class AdminController extends BaseController
      */
     public function users(): void
     {
-        $this->requireAuth('user_admin');
-        
         $pageTitle = "사용자 관리";
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/components/base-app.js');
@@ -88,8 +82,6 @@ class AdminController extends BaseController
      */
     public function menus(): void
     {
-        $this->requireAuth('menu_admin');
-        
         $pageTitle = "메뉴 관리";
         \App\Core\View::addJs("https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
