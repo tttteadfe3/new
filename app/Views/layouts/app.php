@@ -90,7 +90,7 @@ $profileImageUrl = SessionManager::get('user')['profile_image_url'] ?? BASE_ASSE
     <!-- sweetalert2 js -->
     <script src="<?= BASE_ASSETS_URL ?>/assets/libs/sweetalert2/sweetalert2.min.js"></script>
     <!-- Custom UI js -->
-    <script src="<?= BASE_ASSETS_URL ?>/assets/js/utils/ui.js"></script>
+    <script src="<?= BASE_ASSETS_URL ?>/assets/js/utils/ui-helpers.js"></script>
 
     <!-- Dynamic JS Section -->
     <?= View::yieldSection('js') ?>
