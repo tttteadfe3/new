@@ -26,6 +26,11 @@ class HolidayController extends BaseController
         // Set page-specific CSS and JS
         View::addCss(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.css');
         View::addJs(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.js');
+
+        // Load BaseApp and dependencies
+        View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
+        View::addJs(BASE_ASSETS_URL . '/assets/js/components/base-app.js');
+
         View::addJs(BASE_ASSETS_URL . '/assets/js/pages/holiday-admin-app.js');
 
         $data = [
