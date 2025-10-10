@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Repositories\RoleRepository;
+use Exception;
 
 class RoleApiController extends BaseApiController
 {
@@ -12,137 +13,134 @@ class RoleApiController extends BaseApiController
     }
 
     /**
-     * Handle all role API requests based on action parameter
+     * Get all roles with user count.
+     * GET /api/roles
      */
     public function index(): void
     {
         $this->requireAuth('role_admin');
-        
-        $action = $this->getAction();
-        
         try {
-            switch ($action) {
-                case 'list_roles':
-                    $this->listRoles();
-                    break;
-                case 'get_details':
-                    $this->getRoleDetails();
-                    break;
-                case 'save_permissions':
-                    $this->savePermissions();
-                    break;
-                case 'save_role':
-                    $this->saveRole();
-                    break;
-                case 'delete_role':
-                    $this->deleteRole();
-                    break;
-                default:
-                    $this->apiBadRequest('Invalid action');
-            }
-        } catch (\Exception $e) {
+            $roles = RoleRepository::getAllRolesWithUserCount();
+            $this->apiSuccess($roles);
+        } catch (Exception $e) {
             $this->handleException($e);
         }
     }
 
     /**
-     * Get all roles with user count
+     * Get role details including permissions and assigned users.
+     * GET /api/roles/{id}
      */
-    private function listRoles(): void
+    public function show(int $id): void
     {
-        $roles = RoleRepository::getAllRolesWithUserCount();
-        $this->apiSuccess($roles);
+        $this->requireAuth('role_admin');
+        try {
+            $role = RoleRepository::findById($id);
+            if (!$role) {
+                $this->apiNotFound('Role not found');
+            }
+
+            $allPermissions = RoleRepository::getAllPermissions();
+            $assignedPermissions = array_column(RoleRepository::getRolePermissions($id), 'id');
+            $assignedUsers = RoleRepository::getUsersAssignedToRole($id);
+
+            $this->apiSuccess([
+                'role' => $role,
+                'all_permissions' => $allPermissions,
+                'assigned_permission_ids' => $assignedPermissions,
+                'assigned_users' => $assignedUsers
+            ]);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
     }
 
     /**
-     * Get role details including permissions and assigned users
+     * Create a new role.
+     * POST /api/roles
      */
-    private function getRoleDetails(): void
+    public function store(): void
     {
-        $roleId = (int)($_GET['role_id'] ?? 0);
-        
-        if (!$roleId) {
-            $this->apiBadRequest('Role ID is required');
-            return;
-        }
-        
-        $role = RoleRepository::findById($roleId);
-        $allPermissions = RoleRepository::getAllPermissions();
-        $assignedPermissions = array_column(RoleRepository::getRolePermissions($roleId), 'id');
-        $assignedUsers = RoleRepository::getUsersAssignedToRole($roleId);
-        
-        $this->apiSuccess([
-            'role' => $role,
-            'all_permissions' => $allPermissions,
-            'assigned_permission_ids' => $assignedPermissions,
-            'assigned_users' => $assignedUsers
-        ]);
-    }
+        $this->requireAuth('role_admin');
+        try {
+            $input = $this->getJsonInput();
+            $name = trim($input['name'] ?? '');
+            $description = trim($input['description'] ?? '');
 
-    /**
-     * Save role permissions
-     */
-    private function savePermissions(): void
-    {
-        $input = $this->getJsonInput();
-        $roleId = (int)($input['role_id'] ?? 0);
-        $permissionIds = $input['permissions'] ?? [];
-        
-        if (!$roleId) {
-            $this->apiBadRequest('Role ID is required');
-            return;
-        }
-        
-        RoleRepository::updateRolePermissions($roleId, $permissionIds);
-        
-        // 글로벌 권한 변경 타임스탬프 업데이트
-        $timestamp_file = ROOT_PATH . '/storage/permissions_last_updated.txt';
-        file_put_contents($timestamp_file, time());
-        
-        $this->apiSuccess(null, '권한이 저장되었습니다.');
-    }
+            if (empty($name)) {
+                $this->apiBadRequest('역할 이름은 필수입니다.');
+            }
 
-    /**
-     * Save role (create or update)
-     */
-    private function saveRole(): void
-    {
-        $input = $this->getJsonInput();
-        $roleId = (int)($input['id'] ?? 0);
-        $name = trim($input['name'] ?? '');
-        $description = trim($input['description'] ?? '');
-        
-        if (empty($name)) {
-            $this->apiBadRequest('역할 이름은 필수입니다.');
-            return;
-        }
-        
-        if ($roleId > 0) { // 수정
-            RoleRepository::update($roleId, $name, $description);
-            $this->apiSuccess(null, '역할 정보가 수정되었습니다.');
-        } else { // 생성
             $newRoleId = RoleRepository::create($name, $description);
-            $this->apiSuccess(['new_role_id' => $newRoleId], '새 역할이 생성되었습니다.');
+            $this->apiSuccess(['id' => $newRoleId], '새 역할이 생성되었습니다.');
+
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
     }
 
     /**
-     * Delete a role
+     * Update an existing role.
+     * PUT /api/roles/{id}
      */
-    private function deleteRole(): void
+    public function update(int $id): void
     {
-        $input = $this->getJsonInput();
-        $roleId = (int)($input['id'] ?? 0);
-        
-        if (!$roleId) {
-            $this->apiBadRequest('Role ID is required');
-            return;
+        $this->requireAuth('role_admin');
+        try {
+            $input = $this->getJsonInput();
+            $name = trim($input['name'] ?? '');
+            $description = trim($input['description'] ?? '');
+
+            if (empty($name)) {
+                $this->apiBadRequest('역할 이름은 필수입니다.');
+            }
+
+            RoleRepository::update($id, $name, $description);
+            $this->apiSuccess(null, '역할 정보가 수정되었습니다.');
+
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
-        
-        if (RoleRepository::delete($roleId)) {
-            $this->apiSuccess(null, '역할이 삭제되었습니다.');
-        } else {
-            $this->apiError('사용자가 할당된 역할은 삭제할 수 없습니다.');
+    }
+
+    /**
+     * Delete a role.
+     * DELETE /api/roles/{id}
+     */
+    public function destroy(int $id): void
+    {
+        $this->requireAuth('role_admin');
+        try {
+            if (RoleRepository::delete($id)) {
+                $this->apiSuccess(null, '역할이 삭제되었습니다.');
+            } else {
+                $this->apiError('사용자가 할당된 역할은 삭제할 수 없습니다.');
+            }
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
+     * Update permissions for a role.
+     * PUT /api/roles/{id}/permissions
+     */
+    public function updatePermissions(int $id): void
+    {
+        $this->requireAuth('role_admin');
+        try {
+            $input = $this->getJsonInput();
+            $permissionIds = $input['permissions'] ?? [];
+
+            RoleRepository::updateRolePermissions($id, $permissionIds);
+
+            // Invalidate permissions cache
+            $timestamp_file = ROOT_PATH . '/storage/permissions_last_updated.txt';
+            file_put_contents($timestamp_file, time());
+
+            $this->apiSuccess(null, '권한이 저장되었습니다.');
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
     }
 }

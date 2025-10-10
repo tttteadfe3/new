@@ -27,7 +27,7 @@ Router::group('/api', function() {
     Router::put('/holidays/{id}', [HolidayApiController::class, 'update'])->name('api.holidays.update');
     Router::delete('/holidays/{id}', [HolidayApiController::class, 'destroy'])->name('api.holidays.destroy');
 
-    // Leave API  routes (User)
+    // Leave API routes (User)
     Router::get('/leaves', [LeaveApiController::class, 'index'])->name('api.leaves.index');
     Router::post('/leaves', [LeaveApiController::class, 'store'])->name('api.leaves.store');
     Router::post('/leaves/{id}/cancel', [LeaveApiController::class, 'cancel'])->name('api.leaves.cancel');
@@ -58,13 +58,13 @@ Router::group('/api', function() {
     Router::post('/littering_admin/reports/{id}/restore', [LitteringAdminApiController::class, 'restore'])->name('api.littering_admin.restore');
     Router::delete('/littering_admin/reports/{id}/permanent', [LitteringAdminApiController::class, 'permanentlyDelete'])->name('api.littering_admin.permanent');
 
-    // Organization API routes
+    // Organization API routes (RESTful)
     Router::get('/organization', [OrganizationApiController::class, 'index'])->name('api.organization.index');
     Router::post('/organization', [OrganizationApiController::class, 'store'])->name('api.organization.store');
     Router::put('/organization/{id}', [OrganizationApiController::class, 'update'])->name('api.organization.update');
     Router::delete('/organization/{id}', [OrganizationApiController::class, 'destroy'])->name('api.organization.destroy');
 
-    // Role and Permission API routes
+    // Role and Permission API routes (RESTful)
     Router::get('/roles', [RoleApiController::class, 'index'])->name('api.roles.index');
     Router::post('/roles', [RoleApiController::class, 'store'])->name('api.roles.store');
     Router::get('/roles/{id}', [RoleApiController::class, 'show'])->name('api.roles.show');
@@ -72,7 +72,7 @@ Router::group('/api', function() {
     Router::delete('/roles/{id}', [RoleApiController::class, 'destroy'])->name('api.roles.destroy');
     Router::put('/roles/{id}/permissions', [RoleApiController::class, 'updatePermissions'])->name('api.roles.permissions');
 
-    // User API routes
+    // User API routes (RESTful)
     Router::get('/users', [UserApiController::class, 'index'])->name('api.users.index');
     Router::get('/users/{id}', [UserApiController::class, 'show'])->name('api.users.show');
     Router::put('/users/{id}', [UserApiController::class, 'update'])->name('api.users.update');
