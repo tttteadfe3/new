@@ -1,7 +1,7 @@
 class WasteAdminApp extends BaseApp {
     constructor() {
         super({
-            API_URL: '/api/waste-collections/admin'
+            API_URL: '/waste-collections/admin'
         });
 
         this.state = {

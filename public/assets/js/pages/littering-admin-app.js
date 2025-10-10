@@ -1,7 +1,7 @@
 class LitteringAdminApp extends BaseApp {
     constructor() {
         super({
-            API_URL: '/api/littering_admin/reports',
+            API_URL: '/littering_admin/reports',
             ALLOWED_REGIONS: ['정왕1동']
         });
 
