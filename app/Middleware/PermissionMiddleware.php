@@ -14,7 +14,16 @@ class PermissionMiddleware extends BaseMiddleware
                 $this->jsonResponse(['error' => 'Forbidden'], 403);
             } else {
                 http_response_code(403);
-                View::render('errors/403', ['message' => 'Access denied. Insufficient permissions.']);
+                // Render the 403 error page within the main application layout
+                // to provide a consistent user experience.
+                // To ensure the layout renders correctly with menus,
+                // we need to provide the common view data.
+                $commonData = \App\Services\ViewDataService::getCommonData();
+                $viewData = array_merge($commonData, [
+                    'pageTitle' => '접근 권한 없음',
+                    'message' => '이 페이지에 접근할 수 있는 권한이 없습니다.'
+                ]);
+                echo View::render('errors/403', $viewData, 'layouts/app');
             }
             exit();
         }
