@@ -73,7 +73,12 @@
                 <div class="modal-body">
                     <input type="hidden" name="user_id">
                     <div class="mb-3"><label for="status" class="form-label">계정 상태</label><select name="status" id="status" class="form-select"><option value="pending">pending</option><option value="active">active</option><option value="blocked">blocked</option></select></div>
-                    <div class="mb-3"><label class="form-label">역할 할당</label><div id="roles-container"></div></div>
+                    <div class="mb-3">
+                        <label class="form-label">역할 할당</label>
+                        <div class="form-control" style="height: auto;">
+                            <div id="roles-container"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button><button type="submit" class="btn btn-primary">저장하기</button></div>
             </form>

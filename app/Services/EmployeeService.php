@@ -20,6 +20,14 @@ class EmployeeService
     }
 
     /**
+     * Get employees not linked to a user account
+     */
+    public function getUnlinkedEmployees(): array
+    {
+        return EmployeeRepository::findUnlinked();
+    }
+
+    /**
      * Get all employees with optional filters
      */
     public function getAllEmployees(array $filters = []): array

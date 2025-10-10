@@ -21,6 +21,20 @@ class EmployeeRepository {
     }
 
     /**
+     * Finds active employees who are not linked to any user account.
+     * @return array
+     */
+    public static function findUnlinked(): array
+    {
+        $sql = "SELECT e.*
+                FROM hr_employees e
+                LEFT JOIN sys_users u ON e.id = u.employee_id
+                WHERE u.employee_id IS NULL AND e.termination_date IS NULL
+                ORDER BY e.name ASC";
+        return Database::query($sql);
+    }
+
+    /**
      * 사용자의 고유 ID(user_id)에 연결된 직원 정보를 조회합니다.
      * @param int $userId 사용자의 id
      * @return mixed
