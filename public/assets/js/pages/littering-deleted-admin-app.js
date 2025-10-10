@@ -1,7 +1,7 @@
 class LitteringDeletedAdminApp extends BaseApp {
     constructor() {
         super({
-            API_URL: '/api/littering_admin/reports' // Updated API Base URL
+            API_URL: '/littering_admin/reports'
         });
 
         this.state = {
@@ -10,29 +10,13 @@ class LitteringDeletedAdminApp extends BaseApp {
         };
     }
 
-    init() {
-        this.loadData();
+    initializeApp() {
+        this.loadInitialData();
     }
 
-    async _fetch(url, options = {}) {
-        const defaultHeaders = {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json'
-        };
-        const fetchOptions = { ...options, headers: { ...defaultHeaders, ...(options.headers || {}) } };
-
-        const response = await fetch(url, fetchOptions);
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-            throw new Error(result.message || 'API 요청에 실패했습니다.');
-        }
-        return result;
-    }
-
-    async loadData() {
+    async loadInitialData() {
         try {
-            const response = await this._fetch(`${this.config.API_URL}?status=deleted`);
+            const response = await this.apiCall(`${this.config.API_URL}?status=deleted`);
             this.state.deletedList = response.data || [];
             this.renderDeletedList();
         } catch (error) {
@@ -78,9 +62,9 @@ class LitteringDeletedAdminApp extends BaseApp {
         const result = await Confirm.fire('복원 확인', `ID ${caseId} 항목을 복원하시겠습니까?`);
         if (result.isConfirmed) {
             try {
-                await this._fetch(`${this.config.API_URL}/${caseId}/restore`, { method: 'POST' });
+                await this.apiCall(`${this.config.API_URL}/${caseId}/restore`, { method: 'POST' });
                 Toast.success('항목이 성공적으로 복원되었습니다.');
-                this.loadData();
+                this.loadInitialData();
             } catch (error) {
                 Toast.error('복원에 실패했습니다: ' + error.message);
             }
@@ -91,9 +75,9 @@ class LitteringDeletedAdminApp extends BaseApp {
         const result = await Confirm.fire('영구 삭제 확인', `ID ${caseId} 항목을 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`);
         if (result.isConfirmed) {
             try {
-                await this._fetch(`${this.config.API_URL}/${caseId}/permanent`, { method: 'DELETE' });
+                await this.apiCall(`${this.config.API_URL}/${caseId}/permanent`, { method: 'DELETE' });
                 Toast.success('항목이 성공적으로 영구 삭제되었습니다.');
-                this.loadData();
+                this.loadInitialData();
             } catch (error) {
                 Toast.error('영구 삭제에 실패했습니다: ' + error.message);
             }
@@ -101,6 +85,4 @@ class LitteringDeletedAdminApp extends BaseApp {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    new LitteringDeletedAdminApp().init();
-});
+new LitteringDeletedAdminApp();

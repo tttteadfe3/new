@@ -1,47 +1,99 @@
-// js/employees.js
-document.addEventListener('DOMContentLoaded', () => {
-    // DOM 요소 캐싱
-    const employeeTableBody = document.getElementById('employee-table-body');
-    const addEmployeeBtn = document.getElementById('add-employee-btn');
-    const employeeModal = new bootstrap.Modal(document.getElementById('employee-modal'));
-    const employeeForm = document.getElementById('employee-form');
-    const modalTitle = document.getElementById('modal-title');
-    const deleteBtn = document.getElementById('delete-btn');
-    const historyContainer = document.getElementById('change-history-container');
-    const historySeparator = document.getElementById('history-separator');
-    const historyList = document.getElementById('history-log-list');
-    const filterDepartment = document.getElementById('filter-department');
-    const filterPosition = document.getElementById('filter-position');
-    const filterStatus = document.getElementById('filter-status');
+class EmployeesApp extends BaseApp {
+    constructor() {
+        super({
+            API_URL: '/employees'
+        });
 
-    let allDepartments = [];
-    let allPositions = [];
-    const API_URL = '/api/employees';
-
-    const fetchOptions = (options = {}) => {
-        const defaultHeaders = {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json'
+        this.state = {
+            ...this.state,
+            allDepartments: [],
+            allPositions: [],
+            employeeModal: null
         };
-        return { ...options, headers: { ...defaultHeaders, ...options.headers } };
-    };
+    }
 
-    const sanitizeHTML = (str) => {
-        if (!str) return '';
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    };
+    initializeApp() {
+        this.cacheDOMElements();
+        this.state.employeeModal = new bootstrap.Modal(document.getElementById('employee-modal'));
+        this.setupEventListeners();
+        this.loadInitialData();
+    }
 
-    const renderEmployeeTable = (employeeList) => {
-        employeeTableBody.innerHTML = '';
+    cacheDOMElements() {
+        this.elements = {
+            tableBody: document.getElementById('employee-table-body'),
+            addBtn: document.getElementById('add-employee-btn'),
+            form: document.getElementById('employee-form'),
+            modalTitle: document.getElementById('modal-title'),
+            deleteBtn: document.getElementById('delete-btn'),
+            historyContainer: document.getElementById('change-history-container'),
+            historySeparator: document.getElementById('history-separator'),
+            historyList: document.getElementById('history-log-list'),
+            filterDepartment: document.getElementById('filter-department'),
+            filterPosition: document.getElementById('filter-position'),
+            filterStatus: document.getElementById('filter-status')
+        };
+    }
+
+    setupEventListeners() {
+        this.elements.addBtn.addEventListener('click', () => this.openEmployeeModal());
+        this.elements.tableBody.addEventListener('click', (e) => this.handleTableClick(e));
+        this.elements.form.addEventListener('submit', (e) => this.handleFormSubmit(e));
+
+        this.elements.filterDepartment.addEventListener('change', () => this.loadEmployees());
+        this.elements.filterPosition.addEventListener('change', () => this.loadEmployees());
+        this.elements.filterStatus.addEventListener('change', () => this.loadEmployees());
+    }
+
+    async loadInitialData() {
+        try {
+            const status = this.elements.filterStatus.value;
+            let url = `${this.config.API_URL}?action=get_initial_data`;
+            if (status) url += `&status=${status}`;
+
+            const response = await this.apiCall(url);
+            const { employees, departments, positions } = response.data;
+
+            this.state.allDepartments = departments;
+            this.state.allPositions = positions;
+
+            this.renderEmployeeTable(employees);
+            this.populateDropdowns([this.elements.form.department_id, this.elements.filterDepartment], this.state.allDepartments, '부서 선택');
+            this.populateDropdowns([this.elements.form.position_id, this.elements.filterPosition], this.state.allPositions, '직급 선택');
+        } catch (error) {
+            console.error('Error loading initial data:', error);
+            this.elements.tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">목록 로딩 실패: ${error.message}</td></tr>`;
+        }
+    }
+
+    async loadEmployees() {
+        const deptId = this.elements.filterDepartment.value;
+        const posId = this.elements.filterPosition.value;
+        const status = this.elements.filterStatus.value;
+
+        let url = `${this.config.API_URL}?action=list`;
+        if (deptId) url += `&department_id=${deptId}`;
+        if (posId) url += `&position_id=${posId}`;
+        if (status) url += `&status=${status}`;
+
+        try {
+            const response = await this.apiCall(url);
+            this.renderEmployeeTable(response.data);
+        } catch (error) {
+            console.error('Error loading employees:', error);
+            this.elements.tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">목록 로딩 실패: ${error.message}</td></tr>`;
+        }
+    }
+
+    renderEmployeeTable(employeeList) {
+        this.elements.tableBody.innerHTML = '';
         if (employeeList.length === 0) {
-            employeeTableBody.innerHTML = `<tr><td colspan="8" class="text-center">해당 조건의 직원이 없습니다.</td></tr>`;
+            this.elements.tableBody.innerHTML = `<tr><td colspan="8" class="text-center">해당 조건의 직원이 없습니다.</td></tr>`;
             return;
         }
 
-        employeeList.forEach(employee => {
-            const linkedUser = employee.nickname ? `<span class="badge bg-primary">${sanitizeHTML(employee.nickname)}</span>` : '<span class="text-muted"><i>없음</i></span>';
+        const rowsHtml = employeeList.map(employee => {
+            const linkedUser = employee.nickname ? `<span class="badge bg-primary">${this.sanitizeHTML(employee.nickname)}</span>` : '<span class="text-muted"><i>없음</i></span>';
             const statusInfo = employee.profile_update_status === 'pending' ? `<span class="badge bg-warning ms-2">수정 요청</span>`
                             : (employee.profile_update_status === 'rejected' ? `<span class="badge bg-danger ms-2">반려됨</span>` : '');
 
@@ -50,15 +102,15 @@ document.addEventListener('DOMContentLoaded', () => {
                    <button class="btn btn-danger btn-sm reject-btn ms-1" data-id="${employee.id}">반려</button>`
                 : '';
             
-            const terminationDate = employee.termination_date ? `<span class="text-danger">${sanitizeHTML(employee.termination_date)}</span>` : '';
+            const terminationDate = employee.termination_date ? `<span class="text-danger">${this.sanitizeHTML(employee.termination_date)}</span>` : '';
 
-            const row = `
+            return `
                 <tr>
-                    <td>${sanitizeHTML(employee.name)} ${statusInfo}</td>
-                    <td>${sanitizeHTML(employee.department_name) || '<i>미지정</i>'}</td>
-                    <td>${sanitizeHTML(employee.position_name) || '<i>미지정</i>'}</td>
-                    <td>${sanitizeHTML(employee.employee_number)}</td>
-                    <td>${sanitizeHTML(employee.hire_date)}</td>
+                    <td>${this.sanitizeHTML(employee.name)} ${statusInfo}</td>
+                    <td>${this.sanitizeHTML(employee.department_name) || '<i>미지정</i>'}</td>
+                    <td>${this.sanitizeHTML(employee.position_name) || '<i>미지정</i>'}</td>
+                    <td>${this.sanitizeHTML(employee.employee_number)}</td>
+                    <td>${this.sanitizeHTML(employee.hire_date)}</td>
                     <td>${terminationDate}</td>
                     <td>${linkedUser}</td>
                     <td class="text-nowrap">
@@ -66,78 +118,40 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${actionButtons}
                     </td>
                 </tr>`;
-            employeeTableBody.insertAdjacentHTML('beforeend', row);
-        });
-    };
+        }).join('');
+        this.elements.tableBody.innerHTML = rowsHtml;
+    }
 
-    const populateDropdowns = (selects, data, defaultOptionText) => {
-        selects.forEach(select => {
-            select.innerHTML = `<option value="">${defaultOptionText}</option>`;
-            data.forEach(item => {
-                select.insertAdjacentHTML('beforeend', `<option value="${item.id}">${sanitizeHTML(item.name)}</option>`);
+    openEmployeeModal(employeeData = null) {
+        this.elements.form.reset();
+        if (employeeData) {
+            this.elements.modalTitle.textContent = '직원 정보 수정';
+            this.elements.deleteBtn.classList.remove('d-none');
+            this.elements.form.employee_number.readOnly = false;
+            this.elements.form.hire_date.readOnly = true;
+
+            Object.keys(employeeData).forEach(key => {
+                if (this.elements.form[key]) {
+                    this.elements.form[key].value = employeeData[key] || '';
+                }
             });
-        });
-    };
-
-    const loadEmployees = async () => {
-        const deptId = filterDepartment.value;
-        const posId = filterPosition.value;
-        const status = filterStatus.value;
-
-        let url = `${API_URL}?action=list`;
-        if (deptId) url += `&department_id=${deptId}`;
-        if (posId) url += `&position_id=${posId}`;
-        if (status) url += `&status=${status}`;
-
-        try {
-            const response = await fetch(url, fetchOptions());
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
-            renderEmployeeTable(result.data);
-        } catch (error) {
-            console.error('Error loading employees:', error);
-            employeeTableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">목록 로딩 실패: ${error.message}</td></tr>`;
+        } else {
+            this.elements.modalTitle.textContent = '신규 직원 정보 등록';
+            this.elements.deleteBtn.classList.add('d-none');
+            this.elements.form.id.value = '';
+            this.elements.form.employee_number.placeholder = '입사일 지정 후 자동 생성';
+            this.elements.form.employee_number.readOnly = true;
+            this.elements.form.hire_date.readOnly = false;
         }
-    };
 
-    const loadInitialData = async () => {
-        try {
-            const status = filterStatus.value;
-            let url = `${API_URL}?action=get_initial_data`;
-            if (status) url += `&status=${status}`;
-            const response = await fetch(url, fetchOptions());
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
+        this.elements.historyContainer.classList.add('d-none');
+        this.elements.historySeparator.classList.add('d-none');
+        this.elements.historyList.innerHTML = '';
 
-            const { employees, departments, positions } = result.data;
+        this.state.employeeModal.show();
+    }
 
-            allDepartments = departments;
-            allPositions = positions;
-
-            renderEmployeeTable(employees);
-            populateDropdowns([document.getElementById('department_id'), filterDepartment], allDepartments, '부서 선택');
-            populateDropdowns([document.getElementById('position_id'), filterPosition], allPositions, '직급 선택');
-
-        } catch (error) {
-            console.error('Error loading initial data:', error);
-            employeeTableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">목록 로딩 실패: ${error.message}</td></tr>`;
-        }
-    };
-
-    addEmployeeBtn.addEventListener('click', () => {
-        employeeForm.reset();
-        modalTitle.textContent = '신규 직원 정보 등록';
-        deleteBtn.classList.add('d-none');
-        historyContainer.classList.add('d-none');
-        historySeparator.classList.add('d-none');
-        employeeForm.id.value = '';
-        employeeForm.employee_number.placeholder = '입사일 지정 후 자동 생성';
-        employeeForm.employee_number.readOnly = true;
-        employeeForm.hire_date.readOnly = false;
-        employeeModal.show();
-    });
-
-    employeeTableBody.addEventListener('click', async (e) => {
+    async handleTableClick(e) {
         const target = e.target;
         const employeeId = target.dataset.id;
         if (!employeeId) return;
@@ -145,109 +159,79 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target.classList.contains('edit-btn')) {
             try {
                 const [detailsRes, historyRes] = await Promise.all([
-                    fetch(`${API_URL}?action=get_one&id=${employeeId}`, fetchOptions()),
-                    fetch(`${API_URL}?action=get_change_history&id=${employeeId}`, fetchOptions())
+                    this.apiCall(`${this.config.API_URL}?action=get_one&id=${employeeId}`),
+                    this.apiCall(`${this.config.API_URL}?action=get_change_history&id=${employeeId}`)
                 ]);
-                const detailsResult = await detailsRes.json();
-                const historyResult = await historyRes.json();
-                if (!detailsResult.success || !historyResult.success) throw new Error('데이터 로딩 실패');
-
-                employeeForm.reset();
-                modalTitle.textContent = '직원 정보 수정';
-                deleteBtn.classList.remove('d-none');
-                employeeForm.employee_number.readOnly = false;
-                employeeForm.hire_date.readOnly = true;
-
-                const employee = detailsResult.data;
-                employeeForm.id.value = employee.id;
-                employeeForm.name.value = employee.name;
-                employeeForm.department_id.value = employee.department_id || '';
-                employeeForm.position_id.value = employee.position_id || '';
-                employeeForm.employee_number.value = employee.employee_number || '';
-                employeeForm.hire_date.value = employee.hire_date || '';
-                employeeForm.phone_number.value = employee.phone_number || '';
-                employeeForm.address.value = employee.address || '';
-                employeeForm.emergency_contact_name.value = employee.emergency_contact_name || '';
-                employeeForm.emergency_contact_relation.value = employee.emergency_contact_relation || '';
-                employeeForm.clothing_top_size.value = employee.clothing_top_size || '';
-                employeeForm.clothing_bottom_size.value = employee.clothing_bottom_size || '';
-                employeeForm.shoe_size.value = employee.shoe_size || '';
-
-                historyList.innerHTML = '';
-                if (historyResult.data.length > 0) {
-                    historyResult.data.forEach(log => {
-                        const item = `
-                            <div class="list-group-item">
-                                <p class="mb-1"><strong>${sanitizeHTML(log.field_name)}:</strong> <span class="text-danger text-decoration-line-through">${sanitizeHTML(log.old_value)}</span> → <span class="text-success fw-bold">${sanitizeHTML(log.new_value)}</span></p>
-                                <small class="text-muted">${log.changed_at} by ${sanitizeHTML(log.changer_name) || 'System'}</small>
-                            </div>`;
-                        historyList.insertAdjacentHTML('beforeend', item);
-                    });
-                    historySeparator.classList.remove('d-none');
-                    historyContainer.classList.remove('d-none');
-                } else {
-                    historySeparator.classList.add('d-none');
-                    historyContainer.classList.add('d-none');
-                }
-
-                employeeModal.show();
+                this.openEmployeeModal(detailsRes.data);
+                this.renderHistory(historyRes.data);
             } catch (error) {
-                console.error('Error fetching employee details:', error);
                 Toast.error('직원 정보를 불러오는 데 실패했습니다.');
             }
         }
 
         if (target.classList.contains('approve-btn')) {
-            const result = await Confirm.fire('승인 확인', '이 사용자의 프로필 변경 요청을 승인하시겠습니까?');
-            if (!result.isConfirmed) return;
-
-            try {
-                const response = await fetch(`${API_URL}?action=approve_update`, fetchOptions({
-                    method: 'POST', body: JSON.stringify({ id: employeeId })
-                }));
-                const result = await response.json();
-                if (!result.success) throw new Error(result.message);
-                Toast.success(result.message);
-                loadEmployees();
-            } catch (error) {
-                console.error('Error approving update:', error);
-                Toast.error('승인 처리 중 오류가 발생했습니다.');
-            }
+            this.approveProfileUpdate(employeeId);
         }
 
         if (target.classList.contains('reject-btn')) {
-            const { value: reason } = await Swal.fire({
-                title: '프로필 변경 요청 반려',
-                input: 'text',
-                inputPlaceholder: '반려 사유를 입력해주세요.',
-                showCancelButton: true,
-                cancelButtonText: '취소',
-                confirmButtonText: '확인',
-                inputValidator: (value) => {
-                    if (!value) {
-                        return '반려 사유를 반드시 입력해야 합니다.'
-                    }
-                }
-            });
+            this.rejectProfileUpdate(employeeId);
+        }
+    }
 
-            if (reason) {
-                try {
-                    const response = await fetch(`${API_URL}?action=reject_update`, fetchOptions({
-                        method: 'POST', body: JSON.stringify({ id: employeeId, reason: reason })
-                    }));
-                    const result = await response.json();
-                    if (!result.success) throw new Error(result.message);
-                    Toast.success(result.message);
-                    loadEmployees();
-                } catch (error) {
-                    console.error('Error rejecting update:', error);
-                    Toast.error(`반려 처리 중 오류: ${error.message}`);
-                }
+    renderHistory(historyData) {
+        if (historyData.length > 0) {
+            const historyHtml = historyData.map(log => `
+                <div class="list-group-item">
+                    <p class="mb-1"><strong>${this.sanitizeHTML(log.field_name)}:</strong> <span class="text-danger text-decoration-line-through">${this.sanitizeHTML(log.old_value)}</span> → <span class="text-success fw-bold">${this.sanitizeHTML(log.new_value)}</span></p>
+                    <small class="text-muted">${log.changed_at} by ${this.sanitizeHTML(log.changer_name) || 'System'}</small>
+                </div>`
+            ).join('');
+            this.elements.historyList.innerHTML = historyHtml;
+            this.elements.historySeparator.classList.remove('d-none');
+            this.elements.historyContainer.classList.remove('d-none');
+        }
+    }
+
+    async approveProfileUpdate(employeeId) {
+        const result = await Confirm.fire('승인 확인', '이 사용자의 프로필 변경 요청을 승인하시겠습니까?');
+        if (!result.isConfirmed) return;
+
+        try {
+            const response = await this.apiCall(`${this.config.API_URL}?action=approve_update`, {
+                method: 'POST', body: { id: employeeId }
+            });
+            Toast.success(response.message);
+            this.loadEmployees();
+        } catch (error) {
+            Toast.error('승인 처리 중 오류가 발생했습니다.');
+        }
+    }
+
+    async rejectProfileUpdate(employeeId) {
+        const { value: reason } = await Swal.fire({
+            title: '프로필 변경 요청 반려',
+            input: 'text',
+            inputPlaceholder: '반려 사유를 입력해주세요.',
+            showCancelButton: true,
+            cancelButtonText: '취소',
+            confirmButtonText: '확인',
+            inputValidator: (value) => !value && '반려 사유를 반드시 입력해야 합니다.'
+        });
+
+        if (reason) {
+            try {
+                const response = await this.apiCall(`${this.config.API_URL}?action=reject_update`, {
+                    method: 'POST', body: { id: employeeId, reason: reason }
+                });
+                Toast.success(response.message);
+                this.loadEmployees();
+            } catch (error) {
+                Toast.error(`반려 처리 중 오류: ${error.message}`);
             }
         }
-    });
+    }
 
-    employeeForm.addEventListener('submit', async (e) => {
+    async handleFormSubmit(e) {
         e.preventDefault();
         const action = e.submitter && e.submitter.id === 'delete-btn' ? 'delete' : 'save';
         
@@ -256,27 +240,38 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!result.isConfirmed) return;
         }
 
-        const formData = new FormData(employeeForm);
+        const formData = new FormData(this.elements.form);
         const data = Object.fromEntries(formData.entries());
 
         try {
-            const response = await fetch(`${API_URL}?action=` + action, fetchOptions({
-                method: 'POST', body: JSON.stringify(data)
-            }));
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
-            employeeModal.hide();
-            loadEmployees();
-            Toast.success(result.message);
+            const response = await this.apiCall(`${this.config.API_URL}?action=${action}`, {
+                method: 'POST', body: data
+            });
+            this.state.employeeModal.hide();
+            this.loadEmployees();
+            Toast.success(response.message);
         } catch (error) {
-            console.error(`Error ${action} employee:`, error);
             Toast.error(`작업 처리 중 오류가 발생했습니다: ${error.message}`);
         }
-    });
+    }
 
-    filterDepartment.addEventListener('change', loadEmployees);
-    filterPosition.addEventListener('change', loadEmployees);
-    filterStatus.addEventListener('change', loadEmployees);
+    populateDropdowns(selects, data, defaultOptionText) {
+        selects.forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = `<option value="">${defaultOptionText}</option>`;
+            data.forEach(item => {
+                select.insertAdjacentHTML('beforeend', `<option value="${item.id}">${this.sanitizeHTML(item.name)}</option>`);
+            });
+            select.value = currentValue;
+        });
+    }
 
-    loadInitialData();
-});
+    sanitizeHTML = (str) => {
+        if (str === null || str === undefined) return '';
+        const temp = document.createElement('div');
+        temp.textContent = str;
+        return temp.innerHTML;
+    };
+}
+
+new EmployeesApp();
