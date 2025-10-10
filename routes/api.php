@@ -16,9 +16,17 @@ use App\Controllers\Api\LogApiController;
 use App\Controllers\Api\WasteCollectionApiController;
 
 Router::group('/api', function() {
-    // Employee API routes
+    // Employee API routes (Refactored to be RESTful)
     Router::get('/employees', [EmployeeApiController::class, 'index'])->name('api.employees.index');
+    Router::post('/employees', [EmployeeApiController::class, 'store'])->name('api.employees.store');
+    Router::get('/employees/initial-data', [EmployeeApiController::class, 'getInitialData'])->name('api.employees.initial-data');
     Router::get('/employees/unlinked', [EmployeeApiController::class, 'unlinked'])->name('api.employees.unlinked');
+    Router::get('/employees/{id}', [EmployeeApiController::class, 'show'])->name('api.employees.show');
+    Router::put('/employees/{id}', [EmployeeApiController::class, 'update'])->name('api.employees.update');
+    Router::delete('/employees/{id}', [EmployeeApiController::class, 'destroy'])->name('api.employees.destroy');
+    Router::get('/employees/{id}/history', [EmployeeApiController::class, 'getChangeHistory'])->name('api.employees.history');
+    Router::post('/employees/{id}/approve-update', [EmployeeApiController::class, 'approveUpdate'])->name('api.employees.approve-update');
+    Router::post('/employees/{id}/reject-update', [EmployeeApiController::class, 'rejectUpdate'])->name('api.employees.reject-update');
 
     // Holiday API routes
     Router::get('/holidays', [HolidayApiController::class, 'index'])->name('api.holidays.index');
@@ -82,7 +90,8 @@ Router::group('/api', function() {
     // Menu API routes
     Router::get('/menus', [MenuApiController::class, 'index'])->name('api.menus.index');
     Router::post('/menus', [MenuApiController::class, 'store'])->name('api.menus.store');
-    Router::put('/menus/order', [MenuApiController::class, 'updateOrder'])->name('api.menus.order');
+    Router::get('/menus/{id}', [MenuApiController::class, 'show'])->name('api.menus.show');
+    Router::post('/menus/order', [MenuApiController::class, 'updateOrder'])->name('api.menus.order');
     Router::put('/menus/{id}', [MenuApiController::class, 'update'])->name('api.menus.update');
     Router::delete('/menus/{id}', [MenuApiController::class, 'destroy'])->name('api.menus.destroy');
 

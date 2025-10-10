@@ -1,8 +1,6 @@
 class EmployeesApp extends BaseApp {
     constructor() {
-        super({
-            API_URL: '/employees'
-        });
+        super(); // No specific config needed as we'll use resource-based URLs
 
         this.state = {
             ...this.state,
@@ -47,37 +45,34 @@ class EmployeesApp extends BaseApp {
 
     async loadInitialData() {
         try {
-            const status = this.elements.filterStatus.value;
-            let url = `${this.config.API_URL}?action=get_initial_data`;
-            if (status) url += `&status=${status}`;
-
-            const response = await this.apiCall(url);
-            const { employees, departments, positions } = response.data;
+            // Fetch dropdown data and then load the main employee list
+            const response = await this.apiCall('/employees/initial-data');
+            const { departments, positions } = response.data;
 
             this.state.allDepartments = departments;
             this.state.allPositions = positions;
 
-            this.renderEmployeeTable(employees);
             this.populateDropdowns([this.elements.form.department_id, this.elements.filterDepartment], this.state.allDepartments, '부서 선택');
             this.populateDropdowns([this.elements.form.position_id, this.elements.filterPosition], this.state.allPositions, '직급 선택');
+
+            // Now, load the employees with the current filters
+            await this.loadEmployees();
         } catch (error) {
             console.error('Error loading initial data:', error);
-            this.elements.tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">목록 로딩 실패: ${error.message}</td></tr>`;
+            this.elements.tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">초기 정보 로딩 실패: ${error.message}</td></tr>`;
         }
     }
 
     async loadEmployees() {
-        const deptId = this.elements.filterDepartment.value;
-        const posId = this.elements.filterPosition.value;
-        const status = this.elements.filterStatus.value;
-
-        let url = `${this.config.API_URL}?action=list`;
-        if (deptId) url += `&department_id=${deptId}`;
-        if (posId) url += `&position_id=${posId}`;
-        if (status) url += `&status=${status}`;
+        const filters = {
+            department_id: this.elements.filterDepartment.value,
+            position_id: this.elements.filterPosition.value,
+            status: this.elements.filterStatus.value
+        };
+        const params = new URLSearchParams(Object.entries(filters).filter(([, value]) => value));
 
         try {
-            const response = await this.apiCall(url);
+            const response = await this.apiCall(`/employees?${params.toString()}`);
             this.renderEmployeeTable(response.data);
         } catch (error) {
             console.error('Error loading employees:', error);
@@ -87,7 +82,7 @@ class EmployeesApp extends BaseApp {
 
     renderEmployeeTable(employeeList) {
         this.elements.tableBody.innerHTML = '';
-        if (employeeList.length === 0) {
+        if (!employeeList || employeeList.length === 0) {
             this.elements.tableBody.innerHTML = `<tr><td colspan="8" class="text-center">해당 조건의 직원이 없습니다.</td></tr>`;
             return;
         }
@@ -124,6 +119,10 @@ class EmployeesApp extends BaseApp {
 
     openEmployeeModal(employeeData = null) {
         this.elements.form.reset();
+        this.elements.historyContainer.classList.add('d-none');
+        this.elements.historySeparator.classList.add('d-none');
+        this.elements.historyList.innerHTML = '';
+
         if (employeeData) {
             this.elements.modalTitle.textContent = '직원 정보 수정';
             this.elements.deleteBtn.classList.remove('d-none');
@@ -131,10 +130,12 @@ class EmployeesApp extends BaseApp {
             this.elements.form.hire_date.readOnly = true;
 
             Object.keys(employeeData).forEach(key => {
-                if (this.elements.form[key]) {
-                    this.elements.form[key].value = employeeData[key] || '';
+                const formElement = this.elements.form[key];
+                if (formElement) {
+                    formElement.value = employeeData[key] || '';
                 }
             });
+             this.elements.form.id.value = employeeData.id;
         } else {
             this.elements.modalTitle.textContent = '신규 직원 정보 등록';
             this.elements.deleteBtn.classList.add('d-none');
@@ -143,10 +144,6 @@ class EmployeesApp extends BaseApp {
             this.elements.form.employee_number.readOnly = true;
             this.elements.form.hire_date.readOnly = false;
         }
-
-        this.elements.historyContainer.classList.add('d-none');
-        this.elements.historySeparator.classList.add('d-none');
-        this.elements.historyList.innerHTML = '';
 
         this.state.employeeModal.show();
     }
@@ -159,27 +156,23 @@ class EmployeesApp extends BaseApp {
         if (target.classList.contains('edit-btn')) {
             try {
                 const [detailsRes, historyRes] = await Promise.all([
-                    this.apiCall(`${this.config.API_URL}?action=get_one&id=${employeeId}`),
-                    this.apiCall(`${this.config.API_URL}?action=get_change_history&id=${employeeId}`)
+                    this.apiCall(`/employees/${employeeId}`),
+                    this.apiCall(`/employees/${employeeId}/history`)
                 ]);
                 this.openEmployeeModal(detailsRes.data);
                 this.renderHistory(historyRes.data);
             } catch (error) {
                 Toast.error('직원 정보를 불러오는 데 실패했습니다.');
             }
-        }
-
-        if (target.classList.contains('approve-btn')) {
+        } else if (target.classList.contains('approve-btn')) {
             this.approveProfileUpdate(employeeId);
-        }
-
-        if (target.classList.contains('reject-btn')) {
+        } else if (target.classList.contains('reject-btn')) {
             this.rejectProfileUpdate(employeeId);
         }
     }
 
     renderHistory(historyData) {
-        if (historyData.length > 0) {
+        if (historyData && historyData.length > 0) {
             const historyHtml = historyData.map(log => `
                 <div class="list-group-item">
                     <p class="mb-1"><strong>${this.sanitizeHTML(log.field_name)}:</strong> <span class="text-danger text-decoration-line-through">${this.sanitizeHTML(log.old_value)}</span> → <span class="text-success fw-bold">${this.sanitizeHTML(log.new_value)}</span></p>
@@ -197,9 +190,7 @@ class EmployeesApp extends BaseApp {
         if (!result.isConfirmed) return;
 
         try {
-            const response = await this.apiCall(`${this.config.API_URL}?action=approve_update`, {
-                method: 'POST', body: { id: employeeId }
-            });
+            const response = await this.apiCall(`/employees/${employeeId}/approve-update`, { method: 'POST' });
             Toast.success(response.message);
             this.loadEmployees();
         } catch (error) {
@@ -220,8 +211,8 @@ class EmployeesApp extends BaseApp {
 
         if (reason) {
             try {
-                const response = await this.apiCall(`${this.config.API_URL}?action=reject_update`, {
-                    method: 'POST', body: { id: employeeId, reason: reason }
+                const response = await this.apiCall(`/employees/${employeeId}/reject-update`, {
+                    method: 'POST', body: { reason: reason }
                 });
                 Toast.success(response.message);
                 this.loadEmployees();
@@ -233,26 +224,37 @@ class EmployeesApp extends BaseApp {
 
     async handleFormSubmit(e) {
         e.preventDefault();
-        const action = e.submitter && e.submitter.id === 'delete-btn' ? 'delete' : 'save';
-
-        if (action === 'delete') {
-            const result = await Confirm.fire('삭제 확인', '정말로 이 직원의 정보를 삭제하시겠습니까? 사용자 계정과의 연결도 해제됩니다.');
-            if (!result.isConfirmed) return;
-        }
-
         const formData = new FormData(this.elements.form);
         const data = Object.fromEntries(formData.entries());
+        const employeeId = data.id;
 
-        try {
-            const response = await this.apiCall(`${this.config.API_URL}?action=${action}`, {
-                method: 'POST', body: data
-            });
-            this.state.employeeModal.hide();
-            this.loadEmployees();
-            Toast.success(response.message);
-        } catch (error) {
-            Toast.error(`작업 처리 중 오류가 발생했습니다: ${error.message}`);
+        const isDelete = e.submitter && e.submitter.id === 'delete-btn';
+
+        if (isDelete) {
+            const result = await Confirm.fire('삭제 확인', '정말로 이 직원의 정보를 삭제하시겠습니까? 사용자 계정과의 연결도 해제됩니다.');
+            if (!result.isConfirmed) return;
+
+            try {
+                const response = await this.apiCall(`/employees/${employeeId}`, { method: 'DELETE' });
+                Toast.success(response.message);
+            } catch (error) {
+                Toast.error(`삭제 처리 중 오류: ${error.message}`);
+            }
+        } else {
+            // Save (Create or Update)
+            const method = employeeId ? 'PUT' : 'POST';
+            const url = employeeId ? `/employees/${employeeId}` : '/employees';
+
+            try {
+                const response = await this.apiCall(url, { method, body: data });
+                Toast.success(response.message);
+            } catch (error) {
+                Toast.error(`저장 처리 중 오류: ${error.message}`);
+            }
         }
+
+        this.state.employeeModal.hide();
+        this.loadEmployees();
     }
 
     populateDropdowns(selects, data, defaultOptionText) {
