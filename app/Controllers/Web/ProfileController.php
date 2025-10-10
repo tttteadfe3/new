@@ -23,6 +23,10 @@ class ProfileController extends BaseController
     {
         $this->requireAuth();
         
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/profile-app.js");
+
         $pageTitle = "내 프로필";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 

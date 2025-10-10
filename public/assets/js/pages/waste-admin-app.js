@@ -1,8 +1,6 @@
 class WasteAdminApp extends BaseApp {
     constructor() {
-        super({
-            API_URL: '/waste-collections/admin'
-        });
+        super();
 
         this.state = {
             ...this.state,
@@ -30,7 +28,7 @@ class WasteAdminApp extends BaseApp {
         const form = document.getElementById('listForm');
         const params = new URLSearchParams(new FormData(form)).toString();
         try {
-            const response = await this.apiCall(`${this.config.API_URL}?${params}`);
+            const response = await this.apiCall(`/waste-collections/admin?${params}`);
             this.renderTable(response.data);
             document.getElementById('total-count').textContent = response.data.length;
         } catch (e) {
@@ -99,7 +97,7 @@ class WasteAdminApp extends BaseApp {
         const formData = new FormData();
         formData.append('htmlFile', file);
         try {
-            const response = await this.apiCall(`${this.config.API_URL}/parse-html`, { method: 'POST', body: formData });
+            const response = await this.apiCall('/waste-collections/admin/parse-html', { method: 'POST', body: formData });
             this.showParsedResultInModal(response.data);
         } catch (e) {
             Toast.error(`파일 파싱 실패: ${e.message}`);
@@ -129,7 +127,7 @@ class WasteAdminApp extends BaseApp {
         }
 
         try {
-            const response = await this.apiCall(`${this.config.API_URL}/batch-register`, { method: 'POST', body: { collections } });
+            const response = await this.apiCall('/waste-collections/admin/batch-register', { method: 'POST', body: { collections } });
             const { count, failures, duplicates } = response.data;
             Toast.success(`${count}건 성공, ${failures}건 실패, ${duplicates}건 중복 처리되었습니다.`);
             this.state.fileParseResultModal.hide();
@@ -145,7 +143,7 @@ class WasteAdminApp extends BaseApp {
 
     async saveItems(id, itemsJson) {
         try {
-            await this.apiCall(`${this.config.API_URL}/${id}/items`, { method: 'PUT', body: { items: itemsJson } });
+            await this.apiCall(`/waste-collections/admin/${id}/items`, { method: 'PUT', body: { items: itemsJson } });
             Toast.success('품목이 저장되었습니다.');
             this.loadInitialData();
         } catch (e) {
@@ -157,7 +155,7 @@ class WasteAdminApp extends BaseApp {
         const result = await Confirm.fire('이 항목을 처리완료로 변경하시겠습니까?');
         if (result.isConfirmed) {
             try {
-                await this.apiCall(`${this.config.API_URL}/${id}/process`, { method: 'POST' });
+                await this.apiCall(`/waste-collections/admin/${id}/process`, { method: 'POST' });
                 Toast.success('항목이 처리되었습니다.');
                 this.loadInitialData();
             } catch(e) {
@@ -170,7 +168,7 @@ class WasteAdminApp extends BaseApp {
         const result = await Confirm.fire('[주의] 정말로 모든 인터넷 배출 데이터를 삭제하시겠습니까?', '이 작업은 되돌릴 수 없습니다.');
         if (result.isConfirmed) {
             try {
-                await this.apiCall(`${this.config.API_URL}/online-submissions`, { method: 'DELETE' });
+                await this.apiCall('/waste-collections/admin/online-submissions', { method: 'DELETE' });
                 Toast.success('모든 인터넷 배출 데이터가 삭제되었습니다.');
                 this.loadInitialData();
             } catch(e) {
