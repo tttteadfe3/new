@@ -23,8 +23,6 @@ class LeaveController extends BaseController
      */
     public function index(): void
     {
-        $this->requireAuth('leave_view');
-        
         // Regular users should see their own leaves
         $this->redirect('/leaves/my');
     }
@@ -34,8 +32,6 @@ class LeaveController extends BaseController
      */
     public function my(): void
     {
-        $this->requireAuth('leave_view');
-
         $pageTitle = "연차 신청/내역";
         \App\Core\View::addCss(BASE_ASSETS_URL . '/assets/libs/sweetalert2/sweetalert2.min.css');
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/libs/sweetalert2/sweetalert2.min.js');
@@ -52,8 +48,6 @@ class LeaveController extends BaseController
      */
     public function approval(): void
     {
-        $this->requireAuth('leave_admin');
-
         $pageTitle = "연차 신청 승인/반려";
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-approval-app.js');
 
@@ -65,8 +59,6 @@ class LeaveController extends BaseController
      */
     public function granting(): void
     {
-        $this->requireAuth('leave_admin');
-
         $pageTitle = "연차 부여/계산";
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-granting-app.js');
 
@@ -78,8 +70,6 @@ class LeaveController extends BaseController
      */
     public function history(): void
     {
-        $this->requireAuth('leave_admin');
-
         $pageTitle = "직원 연차 내역 조회";
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-history-admin-app.js');
 

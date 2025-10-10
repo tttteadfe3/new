@@ -9,8 +9,6 @@ class DashboardController extends BaseController
 {
     public function index()
     {
-        $this->requireAuth();
-
         $user = $this->user();
 
         // Render the dashboard view within the main application layout.

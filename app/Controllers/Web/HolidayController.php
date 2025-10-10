@@ -21,8 +21,6 @@ class HolidayController extends BaseController
      */
     public function index(): void
     {
-        $this->requireAuth('holiday_admin');
-
         // Set page-specific CSS and JS
         View::addCss(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.css');
         View::addJs(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.js');
