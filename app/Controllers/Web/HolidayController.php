@@ -26,7 +26,7 @@ class HolidayController extends BaseController
         // Set page-specific CSS and JS
         View::addCss(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.css');
         View::addJs(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.js');
-        View::addJs(BASE_ASSETS_URL . '/assets/js/pages/holiday_admin.js');
+        View::addJs(BASE_ASSETS_URL . '/assets/js/pages/holiday-admin-app.js');
 
         $data = [
             'pageTitle' => '휴일/근무일 설정'

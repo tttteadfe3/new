@@ -101,7 +101,7 @@ class EmployeesApp extends BaseApp {
                 ? `<button class="btn btn-success btn-sm approve-btn" data-id="${employee.id}">승인</button>
                    <button class="btn btn-danger btn-sm reject-btn ms-1" data-id="${employee.id}">반려</button>`
                 : '';
-            
+
             const terminationDate = employee.termination_date ? `<span class="text-danger">${this.sanitizeHTML(employee.termination_date)}</span>` : '';
 
             return `
@@ -234,7 +234,7 @@ class EmployeesApp extends BaseApp {
     async handleFormSubmit(e) {
         e.preventDefault();
         const action = e.submitter && e.submitter.id === 'delete-btn' ? 'delete' : 'save';
-        
+
         if (action === 'delete') {
             const result = await Confirm.fire('삭제 확인', '정말로 이 직원의 정보를 삭제하시겠습니까? 사용자 계정과의 연결도 해제됩니다.');
             if (!result.isConfirmed) return;

@@ -1,58 +1,57 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = '/api/profile';
-    const container = document.getElementById('profile-container');
-    if (!container) return;
-
-    const fetchOptions = (options = {}) => {
-        const defaultHeaders = {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json'
+class ProfileApp extends BaseApp {
+    constructor() {
+        super({
+            API_URL: '/profile'
+        });
+        this.elements = {};
+        this.state = {
+            ...this.state,
+            profileData: null
         };
-        return { ...options, headers: { ...defaultHeaders, ...options.headers } };
-    };
+    }
 
-    const sanitizeHTML = (str) => {
-        if (str === null || typeof str === 'undefined') return '';
-        const div = document.createElement('div');
-        div.textContent = String(str);
-        return div.innerHTML;
-    };
+    initializeApp() {
+        this.cacheDOMElements();
+        if (!this.elements.container) return;
+        this.loadInitialData();
+    }
 
-    let profileData = null;
+    cacheDOMElements() {
+        this.elements = {
+            container: document.getElementById('profile-container')
+        };
+    }
 
-    const loadProfile = async () => {
+    async loadInitialData() {
         try {
-            const response = await fetch(API_URL, fetchOptions());
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
-            profileData = result.data;
-            renderProfile(false);
+            const response = await this.apiCall(this.config.API_URL);
+            this.state.profileData = response.data;
+            this.renderProfile();
         } catch (error) {
-            container.innerHTML = `<div class="alert alert-danger">프로필 정보를 불러오는 데 실패했습니다: ${error.message}</div>`;
+            this.elements.container.innerHTML = `<div class="alert alert-danger">프로필 정보를 불러오는 데 실패했습니다: ${error.message}</div>`;
         }
-    };
+    }
 
-    const renderProfile = (isEditMode = false) => {
-        if (!profileData) return;
+    renderProfile(isEditMode = false) {
+        if (!this.state.profileData) return;
 
-        const { user, employee } = profileData;
+        const { user, employee } = this.state.profileData;
         const isPending = employee?.profile_update_status === 'pending';
         const isRejected = employee?.profile_update_status === 'rejected';
 
         let statusMessage = '';
         if (isPending) {
             statusMessage = `<div class="alert alert-warning">프로필 변경사항이 관리자 승인을 기다리고 있습니다. 승인 전까지는 재수정할 수 없습니다.</div>`;
-        }
-        if (isRejected) {
+        } else if (isRejected) {
             statusMessage = `
                 <div class="alert alert-danger">
                     <h5 class="alert-heading">프로필 수정 요청이 반려되었습니다.</h5>
-                    <p><strong>반려 사유:</strong> ${sanitizeHTML(employee.profile_update_rejection_reason)}</p>
+                    <p><strong>반려 사유:</strong> ${this._sanitizeHTML(employee.profile_update_rejection_reason)}</p>
                     <hr><p class="mb-0">아래 내용을 수정하여 다시 요청해주세요.</p>
                 </div>`;
         }
 
-        const profileImageUrl = user.profile_image_url ? sanitizeHTML(user.profile_image_url) : 'https://via.placeholder.com/100?text=No+Image';
+        const profileImageUrl = user.profile_image_url ? this._sanitizeHTML(user.profile_image_url) : 'https://via.placeholder.com/100?text=No+Image';
 
         const userCard = `
             <div class="card shadow mb-4">
@@ -60,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto"><img src="${profileImageUrl}" alt="프로필 사진" class="rounded-circle" width="100" height="100"></div>
-                        <div class="col"><h4 class="mb-1">${sanitizeHTML(user.nickname)}</h4><p class="text-muted mb-0">${sanitizeHTML(user.email)}</p></div>
+                        <div class="col"><h4 class="mb-1">${this._sanitizeHTML(user.nickname)}</h4><p class="text-muted mb-0">${this._sanitizeHTML(user.email)}</p></div>
                     </div>
                 </div>
             </div>`;
@@ -68,23 +67,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let employeeCard = '';
         if (employee) {
             const fields = [
-                { label: '사번', key: 'employee_number', readonly: true },
-                { label: '입사일', key: 'hire_date', readonly: true },
-                { label: '연락처', key: 'phone_number' },
-                { label: '주소', key: 'address' },
-                { label: '비상연락처', key: 'emergency_contact_name' },
-                { label: '관계', key: 'emergency_contact_relation' },
-                { label: '상의 사이즈', key: 'clothing_top_size' },
-                { label: '하의 사이즈', key: 'clothing_bottom_size' },
+                { label: '사번', key: 'employee_number', readonly: true }, { label: '입사일', key: 'hire_date', readonly: true },
+                { label: '연락처', key: 'phone_number' }, { label: '주소', key: 'address' },
+                { label: '비상연락처', key: 'emergency_contact_name' }, { label: '관계', key: 'emergency_contact_relation' },
+                { label: '상의 사이즈', key: 'clothing_top_size' }, { label: '하의 사이즈', key: 'clothing_bottom_size' },
                 { label: '신발 사이즈', key: 'shoe_size' },
             ];
             const employeeContent = isEditMode
                 ? `<form id="profile-form">${fields.map(f => `
                        <div class="col-md-6 mb-3">
                            <label for="${f.key}" class="form-label">${f.label}</label>
-                           <input type="text" class="form-control" id="${f.key}" name="${f.key}" value="${sanitizeHTML(employee[f.key])}" ${f.readonly ? 'readonly' : ''}>
+                           <input type="text" class="form-control" id="${f.key}" name="${f.key}" value="${this._sanitizeHTML(employee[f.key])}" ${f.readonly ? 'readonly' : ''}>
                        </div>`).join('')}</form>`
-                : fields.map(f => `<div class="col-md-6 mb-3"><strong>${f.label}:</strong> ${sanitizeHTML(employee[f.key]) || '<i>-</i>'}</div>`).join('');
+                : fields.map(f => `<div class="col-md-6 mb-3"><strong>${f.label}:</strong> ${this._sanitizeHTML(employee[f.key]) || '<i>-</i>'}</div>`).join('');
             
             employeeCard = `
                 <div class="card shadow mb-4">
@@ -95,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             employeeCard = `<div class="alert alert-secondary">연결된 직원 정보가 없습니다.</div>`;
         }
 
-        container.innerHTML = `
+        this.elements.container.innerHTML = `
             ${statusMessage}
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0 text-gray-800">내 프로필</h1>
@@ -104,46 +99,46 @@ document.addEventListener('DOMContentLoaded', () => {
             ${employeeCard}
             ${userCard}`;
 
-        renderButtons(isEditMode, isPending, !!employee);
-    };
+        this.renderButtons(isEditMode, isPending, !!employee);
+    }
 
-    const renderButtons = (isEditMode, isPending, isEmployee) => {
+    renderButtons(isEditMode, isPending, isEmployee) {
         const buttonsContainer = document.getElementById('action-buttons');
         if (!buttonsContainer) return;
         
         let buttonsHtml = '';
         if (isEmployee) {
-            if (isEditMode) {
-                buttonsHtml = `
-                    <button class="btn btn-secondary" id="cancel-btn">취소</button>
-                    <button class="btn btn-primary" id="save-btn" form="profile-form">수정 요청</button>`;
-            } else {
-                buttonsHtml = `<button class="btn btn-primary" id="edit-btn" ${isPending ? 'disabled' : ''}>정보 수정</button>`;
-            }
+            buttonsHtml = isEditMode
+                ? `<button class="btn btn-secondary" id="cancel-btn">취소</button>
+                   <button class="btn btn-primary" id="save-btn" form="profile-form">수정 요청</button>`
+                : `<button class="btn btn-primary" id="edit-btn" ${isPending ? 'disabled' : ''}>정보 수정</button>`;
         }
         buttonsContainer.innerHTML = buttonsHtml;
         
-        document.getElementById('edit-btn')?.addEventListener('click', () => renderProfile(true));
-        document.getElementById('cancel-btn')?.addEventListener('click', () => renderProfile(false));
-        document.getElementById('save-btn')?.addEventListener('click', handleProfileSave);
-    };
+        document.getElementById('edit-btn')?.addEventListener('click', () => this.renderProfile(true));
+        document.getElementById('cancel-btn')?.addEventListener('click', () => this.renderProfile(false));
+        document.getElementById('save-btn')?.addEventListener('click', (e) => this.handleProfileSave(e));
+    }
     
-    const handleProfileSave = async (e) => {
+    async handleProfileSave(e) {
         e.preventDefault();
         const form = document.getElementById('profile-form');
         const data = Object.fromEntries(new FormData(form).entries());
         try {
-            const response = await fetch(API_URL, fetchOptions({
-                method: 'PUT', body: JSON.stringify(data)
-            }));
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
+            const result = await this.apiCall(this.config.API_URL, { method: 'PUT', body: data });
             Toast.success(result.message);
-            loadProfile();
+            this.loadInitialData();
         } catch (error) {
             Toast.error('수정 요청 중 오류 발생: ' + error.message);
         }
-    };
+    }
 
-    loadProfile();
-});
+    _sanitizeHTML(str) {
+        if (str === null || typeof str === 'undefined') return '';
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+    }
+}
+
+new ProfileApp();

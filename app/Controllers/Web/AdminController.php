@@ -31,7 +31,7 @@ class AdminController extends BaseController
         $this->requireAuth('organization_admin');
         
         $pageTitle = "부서/직급 관리";
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/organization_admin.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/organization-admin-app.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
@@ -49,7 +49,7 @@ class AdminController extends BaseController
         $this->requireAuth('role_admin');
         
         $pageTitle = "역할 및 권한 관리";
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/roles.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/roles-app.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
@@ -67,7 +67,7 @@ class AdminController extends BaseController
         $this->requireAuth('user_admin');
         
         $pageTitle = "사용자 관리";
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/users.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/users-app.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
@@ -86,7 +86,7 @@ class AdminController extends BaseController
         
         $pageTitle = "메뉴 관리";
         \App\Core\View::addJs("https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/menu_admin.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/menu-admin-app.js");
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
