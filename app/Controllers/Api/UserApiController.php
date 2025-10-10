@@ -22,7 +22,6 @@ class UserApiController extends BaseApiController
      */
     public function index(): void
     {
-        $this->requireAuth('user_admin');
         try {
             $filters = [
                 'status' => $this->request->input('status'),
@@ -44,7 +43,6 @@ class UserApiController extends BaseApiController
      */
     public function show(int $id): void
     {
-        $this->requireAuth('user_admin');
         try {
             $user = $this->userService->getUser($id);
             if ($user) {
@@ -64,7 +62,6 @@ class UserApiController extends BaseApiController
      */
     public function update(int $id): void
     {
-        $this->requireAuth('user_admin');
         try {
             $input = $this->getJsonInput();
             if ($this->userService->updateUser($id, $input)) {
@@ -89,7 +86,6 @@ class UserApiController extends BaseApiController
      */
     public function linkEmployee(int $id): void
     {
-        $this->requireAuth('user_admin');
         try {
             $input = $this->getJsonInput();
             $employeeId = (int)($input['employee_id'] ?? 0);
@@ -114,7 +110,6 @@ class UserApiController extends BaseApiController
      */
     public function unlinkEmployee(int $id): void
     {
-        $this->requireAuth('user_admin');
         try {
             if ($this->userService->unlinkEmployee($id)) {
                 $this->apiSuccess(null, '직원 연결이 해제되었습니다.');

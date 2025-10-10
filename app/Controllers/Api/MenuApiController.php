@@ -17,7 +17,6 @@ class MenuApiController extends BaseApiController
      */
     public function index(): void
     {
-        $this->requireAuth('menu_admin');
         
         try {
             $sql = "SELECT * FROM sys_menus ORDER BY parent_id, display_order";
@@ -33,7 +32,6 @@ class MenuApiController extends BaseApiController
      */
     public function show(int $id): void
     {
-        $this->requireAuth('menu_admin');
 
         try {
             if (empty($id)) {
@@ -59,7 +57,6 @@ class MenuApiController extends BaseApiController
      */
     public function store(): void
     {
-        $this->requireAuth('menu_admin');
         
         try {
             $data = $this->getJsonInput();
@@ -96,7 +93,6 @@ class MenuApiController extends BaseApiController
      */
     public function update(int $id): void
     {
-        $this->requireAuth('menu_admin');
 
         try {
             if (empty($id)) {
@@ -139,7 +135,6 @@ class MenuApiController extends BaseApiController
      */
     public function updateOrder(): void
     {
-        $this->requireAuth('menu_admin');
 
         try {
             $data = $this->getJsonInput();
@@ -179,7 +174,6 @@ class MenuApiController extends BaseApiController
      */
     public function destroy(int $id): void
     {
-        $this->requireAuth('menu_admin');
         
         try {
             if (!$id) {

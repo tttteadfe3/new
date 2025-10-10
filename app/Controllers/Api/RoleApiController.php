@@ -18,7 +18,6 @@ class RoleApiController extends BaseApiController
      */
     public function index(): void
     {
-        $this->requireAuth('role_admin');
         try {
             $roles = RoleRepository::getAllRolesWithUserCount();
             $this->apiSuccess($roles);
@@ -33,7 +32,6 @@ class RoleApiController extends BaseApiController
      */
     public function show(int $id): void
     {
-        $this->requireAuth('role_admin');
         try {
             $role = RoleRepository::findById($id);
             if (!$role) {
@@ -61,7 +59,6 @@ class RoleApiController extends BaseApiController
      */
     public function store(): void
     {
-        $this->requireAuth('role_admin');
         try {
             $input = $this->getJsonInput();
             $name = trim($input['name'] ?? '');
@@ -85,7 +82,6 @@ class RoleApiController extends BaseApiController
      */
     public function update(int $id): void
     {
-        $this->requireAuth('role_admin');
         try {
             $input = $this->getJsonInput();
             $name = trim($input['name'] ?? '');
@@ -109,7 +105,6 @@ class RoleApiController extends BaseApiController
      */
     public function destroy(int $id): void
     {
-        $this->requireAuth('role_admin');
         try {
             if (RoleRepository::delete($id)) {
                 $this->apiSuccess(null, '역할이 삭제되었습니다.');
@@ -127,7 +122,6 @@ class RoleApiController extends BaseApiController
      */
     public function updatePermissions(int $id): void
     {
-        $this->requireAuth('role_admin');
         try {
             $input = $this->getJsonInput();
             $permissionIds = $input['permissions'] ?? [];

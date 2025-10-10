@@ -22,7 +22,6 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function listRequests(): void
     {
-        $this->requireAuth('leave_admin');
         $status = $this->request->input('status', 'pending');
 
         try {
@@ -43,7 +42,6 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function approveRequest(int $id): void
     {
-        $this->requireAuth('leave_admin');
         $adminId = $this->user()['id'];
 
         try {
@@ -64,7 +62,6 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function rejectRequest(int $id): void
     {
-        $this->requireAuth('leave_admin');
         $adminId = $this->user()['id'];
         $reason = $this->request->input('reason');
 
@@ -91,7 +88,6 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function approveCancellation(int $id): void
     {
-        $this->requireAuth('leave_admin');
         $adminId = $this->user()['id'];
 
         try {
@@ -112,7 +108,6 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function rejectCancellation(int $id): void
     {
-        $this->requireAuth('leave_admin');
         $adminId = $this->user()['id'];
         $reason = $this->request->input('reason');
         
@@ -139,7 +134,6 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function listEntitlements(): void
     {
-        $this->requireAuth('leave_admin');
         $filters = [
             'year' => $this->request->input('year', date('Y')),
             'department_id' => $this->request->input('department_id')
@@ -159,7 +153,6 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function grantForAll(): void
     {
-        $this->requireAuth('leave_admin');
         $year = (int)$this->request->input('year', date('Y'));
 
         try {
@@ -180,7 +173,6 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function getHistory(int $employeeId): void
     {
-        $this->requireAuth('leave_admin');
         $year = (int)$this->request->input('year', date('Y'));
 
         try {
@@ -202,7 +194,6 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function manualAdjustment(): void
     {
-        $this->requireAuth('leave_admin');
         $adminId = $this->user()['id'];
         
         $data = $this->getJsonInput();
@@ -233,7 +224,6 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function calculateLeaves(): void
     {
-        $this->requireAuth('leave_admin');
         
         $data = $this->getJsonInput();
         $year = (int)($data['year'] ?? date('Y'));
@@ -268,7 +258,6 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function saveEntitlements(): void
     {
-        $this->requireAuth('leave_admin');
         
         $data = $this->getJsonInput();
         $employees_data = $data['employees'] ?? [];

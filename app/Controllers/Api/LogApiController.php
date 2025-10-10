@@ -13,7 +13,6 @@ class LogApiController extends BaseApiController
      */
     public function index(): void
     {
-        $this->requireAuth('log_admin');
         
         try {
             $filters = [
@@ -36,7 +35,6 @@ class LogApiController extends BaseApiController
      */
     public function destroy(): void
     {
-        $this->requireAuth('log_admin');
         
         try {
             LogRepository::truncate();

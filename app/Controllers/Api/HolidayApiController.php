@@ -20,7 +20,6 @@ class HolidayApiController extends BaseApiController
      */
     public function index(): void
     {
-        $this->requireAuth('holiday_admin');
 
         try {
             $holidays = $this->holidayService->getAllHolidays();
@@ -40,7 +39,6 @@ class HolidayApiController extends BaseApiController
      */
     public function show(int $id): void
     {
-        $this->requireAuth('holiday_admin');
 
         try {
             $holiday = $this->holidayService->getHoliday($id);
@@ -61,7 +59,6 @@ class HolidayApiController extends BaseApiController
      */
     public function store(): void
     {
-        $this->requireAuth('holiday_admin');
 
         try {
             $data = $this->getJsonInput();
@@ -96,7 +93,6 @@ class HolidayApiController extends BaseApiController
      */
     public function update(int $id): void
     {
-        $this->requireAuth('holiday_admin');
 
         try {
             $data = $this->getJsonInput();
@@ -131,7 +127,6 @@ class HolidayApiController extends BaseApiController
      */
     public function destroy(int $id): void
     {
-        $this->requireAuth('holiday_admin');
 
         try {
             $this->holidayService->deleteHoliday($id);

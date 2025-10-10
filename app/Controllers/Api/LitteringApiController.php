@@ -21,7 +21,6 @@ class LitteringApiController extends BaseApiController
      */
     public function index(): void
     {
-        $this->requireAuth('littering_view');
         $status = $this->request->input('status', 'active'); // 'active', 'processed'
 
         try {
@@ -45,7 +44,6 @@ class LitteringApiController extends BaseApiController
      */
     public function store(): void
     {
-        $this->requireAuth('littering_process');
 
         $user = $this->user();
         if (!$user) {
@@ -76,7 +74,6 @@ class LitteringApiController extends BaseApiController
      */
     public function process(int $id): void
     {
-        $this->requireAuth('littering_process');
         
         try {
             $data = $this->request->all(); // POST data is appropriate here

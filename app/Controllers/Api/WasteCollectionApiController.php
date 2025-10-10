@@ -21,7 +21,6 @@ class WasteCollectionApiController extends BaseApiController
      */
     public function index(): void
     {
-        $this->requireAuth();
         try {
             $data = $this->wasteCollectionService->getCollections();
             $this->apiSuccess($data, '수거 목록 조회 성공');
@@ -36,7 +35,6 @@ class WasteCollectionApiController extends BaseApiController
      */
     public function store(): void
     {
-        $this->requireAuth();
         $user = $this->user();
         try {
             $result = $this->wasteCollectionService->registerCollection($_POST, $_FILES, $user['id'], $user['employee_id'] ?? null);
@@ -52,7 +50,6 @@ class WasteCollectionApiController extends BaseApiController
      */
     public function getAdminCollections(): void
     {
-        $this->requireAuth('waste_admin');
         try {
             $collections = $this->wasteCollectionService->getAdminCollections($this->request->all());
             $this->apiSuccess($collections);
@@ -67,7 +64,6 @@ class WasteCollectionApiController extends BaseApiController
      */
     public function processCollection(int $id): void
     {
-        $this->requireAuth('waste_admin');
         try {
             $result = $this->wasteCollectionService->processCollectionById($id);
             $this->apiSuccess($result, '선택한 항목이 처리되었습니다.');
@@ -82,7 +78,6 @@ class WasteCollectionApiController extends BaseApiController
      */
     public function updateItems(int $id): void
     {
-        $this->requireAuth('waste_admin');
         try {
             $items = $this->request->input('items', '[]');
             $result = $this->wasteCollectionService->updateCollectionItems($id, $items);
@@ -98,7 +93,6 @@ class WasteCollectionApiController extends BaseApiController
      */
     public function updateMemo(int $id): void
     {
-        $this->requireAuth('waste_admin');
         try {
             $memo = $this->request->input('memo', '');
             $result = $this->wasteCollectionService->updateAdminMemo($id, $memo);
@@ -114,7 +108,6 @@ class WasteCollectionApiController extends BaseApiController
      */
     public function parseHtmlFile(): void
     {
-        $this->requireAuth('waste_admin');
         if (empty($_FILES['htmlFile'])) {
             $this->apiError('HTML 파일이 없습니다.', 'INVALID_INPUT', 400);
             return;
@@ -133,7 +126,6 @@ class WasteCollectionApiController extends BaseApiController
      */
     public function batchRegister(): void
     {
-        $this->requireAuth('waste_admin');
         $userId = $this->user()['id'];
         $collections = $this->request->input('collections', []);
         if (empty($collections)) {
@@ -154,7 +146,6 @@ class WasteCollectionApiController extends BaseApiController
      */
     public function clearOnlineSubmissions(): void
     {
-        $this->requireAuth('waste_admin');
         try {
             $result = $this->wasteCollectionService->clearOnlineSubmissions();
             $this->apiSuccess($result, '모든 인터넷 배출 데이터가 삭제되었습니다.');

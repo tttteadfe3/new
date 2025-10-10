@@ -21,7 +21,6 @@ class LitteringAdminApiController extends BaseApiController
      */
     public function listReports(): void
     {
-        $this->requireAuth('littering_manage');
         $status = $this->request->input('status', 'pending'); // 'pending', 'deleted'
 
         try {
@@ -45,7 +44,6 @@ class LitteringAdminApiController extends BaseApiController
      */
     public function confirm(int $id): void
     {
-        $this->requireAuth('littering_manage');
         $adminId = $this->user()['id'];
         
         try {
@@ -65,7 +63,6 @@ class LitteringAdminApiController extends BaseApiController
      */
     public function destroy(int $id): void
     {
-        $this->requireAuth('littering_manage');
         $adminId = $this->user()['id'];
 
         try {
@@ -85,7 +82,6 @@ class LitteringAdminApiController extends BaseApiController
      */
     public function restore(int $id): void
     {
-        $this->requireAuth('littering_admin');
         
         try {
             $data = ['id' => $id];
@@ -102,7 +98,6 @@ class LitteringAdminApiController extends BaseApiController
      */
     public function permanentlyDelete(int $id): void
     {
-        $this->requireAuth('littering_admin'); // Or a higher permission if needed
 
         try {
             $data = ['id' => $id];
