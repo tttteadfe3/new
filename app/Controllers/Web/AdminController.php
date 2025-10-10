@@ -4,14 +4,14 @@ namespace App\Controllers\Web;
 
 use App\Services\OrganizationService;
 use App\Services\RolePermissionService;
-use App\Services\UserManagementService;
+use App\Services\UserService;
 use App\Services\MenuManagementService;
 
 class AdminController extends BaseController
 {
     private OrganizationService $organizationService;
     private RolePermissionService $rolePermissionService;
-    private UserManagementService $userManagementService;
+    private UserService $userService;
     private MenuManagementService $menuManagementService;
 
     public function __construct()
@@ -19,7 +19,7 @@ class AdminController extends BaseController
         parent::__construct();
         $this->organizationService = new OrganizationService();
         $this->rolePermissionService = new RolePermissionService();
-        $this->userManagementService = new UserManagementService();
+        $this->userService = new UserService();
         $this->menuManagementService = new MenuManagementService();
     }
 

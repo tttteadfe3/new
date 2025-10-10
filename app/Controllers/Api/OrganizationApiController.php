@@ -4,6 +4,7 @@ namespace App\Controllers\Api;
 
 use App\Repositories\DepartmentRepository;
 use App\Repositories\PositionRepository;
+use Exception;
 
 class OrganizationApiController extends BaseApiController
 {
@@ -13,99 +14,111 @@ class OrganizationApiController extends BaseApiController
     }
 
     /**
-     * Handle all organization API requests based on action and type parameters
+     * Get a list of departments or positions.
+     * GET /api/organization?type=department
      */
     public function index(): void
     {
-        $action = $this->getAction();
-        $type = $_GET['type'] ?? '';
-        
-        $repository = null;
-        $entityName = '';
-        
-        if ($type === 'department') {
-            $repository = DepartmentRepository::class;
-            $entityName = '부서';
-        } elseif ($type === 'position') {
-            $repository = PositionRepository::class;
-            $entityName = '직급';
-        } else {
-            $this->apiBadRequest('Invalid entity type specified.');
-            return;
-        }
-        
         try {
-            switch ($action) {
-                case 'list':
-                    $this->listEntities($repository);
-                    break;
-                case 'save':
-                    $this->saveEntity($repository, $entityName);
-                    break;
-                case 'delete':
-                    $this->deleteEntity($repository, $entityName);
-                    break;
-                default:
-                    $this->apiBadRequest('Invalid action');
-            }
-        } catch (\Exception $e) {
+            $type = $_GET['type'] ?? '';
+            $repository = $this->getRepositoryForType($type);
+
+            $entities = $repository::getAll();
+            $this->apiSuccess($entities);
+        } catch (Exception $e) {
             $this->handleException($e);
         }
     }
 
     /**
-     * List all entities (departments or positions)
+     * Store a new department or position.
+     * POST /api/organization
      */
-    private function listEntities(string $repository): void
+    public function store(): void
     {
-        $entities = $repository::getAll();
-        $this->apiSuccess($entities);
-    }
+        try {
+            $this->requireAuth('organization_admin');
+            $input = $this->getJsonInput();
+            $type = $input['type'] ?? '';
+            $name = trim($input['name'] ?? '');
 
-    /**
-     * Save entity (create or update)
-     */
-    private function saveEntity(string $repository, string $entityName): void
-    {
-        $this->requireAuth('organization_admin');
-        
-        $input = $this->getJsonInput();
-        $id = (int)($input['id'] ?? 0);
-        $name = trim($input['name'] ?? '');
-        
-        if (empty($name)) {
-            $this->apiBadRequest($entityName . ' 이름은 필수입니다.');
-            return;
-        }
-        
-        if ($id > 0) { // 수정
-            $repository::update($id, $name);
-            $this->apiSuccess(null, $entityName . ' 정보가 수정되었습니다.');
-        } else { // 생성
+            $repository = $this->getRepositoryForType($type);
+            $entityName = $type === 'department' ? '부서' : '직급';
+
+            if (empty($name)) {
+                $this->apiBadRequest($entityName . ' 이름은 필수입니다.');
+            }
+
             $newId = $repository::create($name);
             $this->apiSuccess(['new_id' => $newId], '새 ' . $entityName . '(이)가 생성되었습니다.');
+
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
     }
 
     /**
-     * Delete entity
+     * Update an existing department or position.
+     * PUT /api/organization/{id}
      */
-    private function deleteEntity(string $repository, string $entityName): void
+    public function update(int $id): void
     {
-        $this->requireAuth('organization_admin');
-        
-        $input = $this->getJsonInput();
-        $id = (int)($input['id'] ?? 0);
-        
-        if (!$id) {
-            $this->apiBadRequest('ID is required');
-            return;
+        try {
+            $this->requireAuth('organization_admin');
+            $input = $this->getJsonInput();
+            $type = $input['type'] ?? '';
+            $name = trim($input['name'] ?? '');
+
+            $repository = $this->getRepositoryForType($type);
+            $entityName = $type === 'department' ? '부서' : '직급';
+
+            if (empty($name)) {
+                $this->apiBadRequest($entityName . ' 이름은 필수입니다.');
+            }
+
+            $repository::update($id, $name);
+            $this->apiSuccess(null, $entityName . ' 정보가 수정되었습니다.');
+
+        } catch (Exception $e) {
+            $this.handleException($e);
         }
-        
-        if ($repository::delete($id)) {
-            $this->apiSuccess(null, $entityName . '(이)가 삭제되었습니다.');
-        } else {
-            $this->apiError('직원이 할당된 ' . $entityName . '은(는) 삭제할 수 없습니다.');
+    }
+
+    /**
+     * Delete a department or position.
+     * DELETE /api/organization/{id}
+     */
+    public function destroy(int $id): void
+    {
+        try {
+            $this->requireAuth('organization_admin');
+            $input = $this->getJsonInput();
+            $type = $input['type'] ?? '';
+
+            $repository = $this->getRepositoryForType($type);
+            $entityName = $type === 'department' ? '부서' : '직급';
+
+            if ($repository::delete($id)) {
+                $this->apiSuccess(null, $entityName . '(이)가 삭제되었습니다.');
+            } else {
+                $this->apiError('직원이 할당된 ' . $entityName . '은(는) 삭제할 수 없습니다.');
+            }
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
+    }
+
+    /**
+     * Get the corresponding repository class based on the entity type.
+     * @throws Exception
+     */
+    private function getRepositoryForType(string $type): string
+    {
+        if ($type === 'department') {
+            return DepartmentRepository::class;
+        } elseif ($type === 'position') {
+            return PositionRepository::class;
+        }
+        throw new Exception('Invalid entity type specified.');
     }
 }
