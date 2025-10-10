@@ -24,7 +24,6 @@ class EmployeeApiController extends BaseApiController
      */
     public function index(): void
     {
-        $this->requireAuth('employee_admin');
         try {
             $filters = [
                 'department_id' => $this->request->input('department_id'),
@@ -44,7 +43,6 @@ class EmployeeApiController extends BaseApiController
      */
     public function getInitialData(): void
     {
-        $this->requireAuth('employee_admin');
         try {
             $departments = DepartmentRepository::getAll();
             $positions = PositionRepository::getAll();
@@ -63,7 +61,6 @@ class EmployeeApiController extends BaseApiController
      */
     public function show(int $id): void
     {
-        $this->requireAuth('employee_admin');
         try {
             $employee = $this->employeeService->getEmployee($id);
             if ($employee) {
@@ -81,7 +78,6 @@ class EmployeeApiController extends BaseApiController
      */
     public function store(): void
     {
-        $this->requireAuth('employee_admin');
         try {
             $input = $this->getJsonInput();
             if (empty($input)) {
@@ -102,7 +98,6 @@ class EmployeeApiController extends BaseApiController
      */
     public function update(int $id): void
     {
-        $this->requireAuth('employee_admin');
         try {
             $input = $this->getJsonInput();
             if (empty($input)) {
@@ -123,7 +118,6 @@ class EmployeeApiController extends BaseApiController
      */
     public function destroy(int $id): void
     {
-        $this->requireAuth('employee_admin');
         try {
             if ($this->employeeService->deleteEmployee($id)) {
                 $this->apiSuccess(null, '직원 정보가 삭제되었습니다.');
@@ -142,7 +136,6 @@ class EmployeeApiController extends BaseApiController
      */
     public function getChangeHistory(int $id): void
     {
-        $this->requireAuth('employee_admin');
         try {
             $history = EmployeeChangeLogRepository::findByEmployeeId($id);
             $this->apiSuccess($history);
@@ -156,7 +149,6 @@ class EmployeeApiController extends BaseApiController
      */
     public function unlinked(): void
     {
-        $this->requireAuth('user_admin');
         try {
             $unlinkedEmployees = $this->employeeService->getUnlinkedEmployees();
             $this->apiSuccess($unlinkedEmployees);
@@ -170,8 +162,6 @@ class EmployeeApiController extends BaseApiController
      */
     public function approveUpdate(int $id): void
     {
-        $this->requireAuth('employee_admin');
-
         if (empty($id)) {
             $this->apiBadRequest('Employee ID is required.');
             return;
@@ -193,8 +183,6 @@ class EmployeeApiController extends BaseApiController
      */
     public function rejectUpdate(int $id): void
     {
-        $this->requireAuth('employee_admin');
-
         if (empty($id)) {
             $this->apiBadRequest('Employee ID is required.');
             return;

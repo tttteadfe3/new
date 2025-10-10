@@ -37,7 +37,6 @@ class OrganizationApiController extends BaseApiController
     public function store(): void
     {
         try {
-            $this->requireAuth('organization_admin');
             $input = $this->getJsonInput();
             $type = $input['type'] ?? '';
             $name = trim($input['name'] ?? '');
@@ -64,7 +63,6 @@ class OrganizationApiController extends BaseApiController
     public function update(int $id): void
     {
         try {
-            $this->requireAuth('organization_admin');
             $input = $this->getJsonInput();
             $type = $input['type'] ?? '';
             $name = trim($input['name'] ?? '');
@@ -91,7 +89,6 @@ class OrganizationApiController extends BaseApiController
     public function destroy(int $id): void
     {
         try {
-            $this->requireAuth('organization_admin');
             $input = $this->getJsonInput();
             $type = $input['type'] ?? '';
 

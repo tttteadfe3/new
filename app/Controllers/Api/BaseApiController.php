@@ -34,23 +34,6 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
-     * Require authentication for API endpoints
-     * Override parent method to use API-specific error responses
-     */
-    protected function requireAuth(string $permission = null): void
-    {
-        if (!$this->authService->isLoggedIn()) {
-            $this->apiError('Authentication required', 'UNAUTHORIZED', 401);
-        }
-
-        if ($permission !== null) {
-            if (!$this->authService->check($permission)) {
-                $this->apiError('Access denied. Insufficient permissions.', 'FORBIDDEN', 403);
-            }
-        }
-    }
-
-    /**
      * Send a successful API response
      */
     protected function apiSuccess($data = null, string $message = 'Success'): void

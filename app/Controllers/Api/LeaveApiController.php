@@ -22,7 +22,6 @@ class LeaveApiController extends BaseApiController
      */
     public function index(): void
     {
-        $this->requireAuth('leave_view');
         
         $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {
@@ -51,7 +50,6 @@ class LeaveApiController extends BaseApiController
      */
     public function store(): void
     {
-        $this->requireAuth('leave_request');
         
         $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {
@@ -84,7 +82,6 @@ class LeaveApiController extends BaseApiController
      */
     public function cancel(int $id): void
     {
-        $this->requireAuth('leave_request');
         
         $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {
@@ -114,7 +111,6 @@ class LeaveApiController extends BaseApiController
      */
     public function calculateDays(): void
     {
-        $this->requireAuth('leave_request');
         
         $employeeId = $this->user()['employee_id'] ?? null;
         if (!$employeeId) {

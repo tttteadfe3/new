@@ -21,7 +21,6 @@ class ProfileApiController extends BaseApiController
      */
     public function index(): void
     {
-        $this->requireAuth();
         
         try {
             $userId = $this->user()['id'];
@@ -38,7 +37,6 @@ class ProfileApiController extends BaseApiController
      */
     public function update(): void
     {
-        $this->requireAuth();
         
         try {
             $userId = $this->user()['id'];
