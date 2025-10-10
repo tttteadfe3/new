@@ -11,9 +11,8 @@ class MenuManagementService
      */
     public function getAllMenusForAdmin(): array
     {
-        // 관리자용으로 모든 메뉴를 직접 조회
-        $sql = "SELECT * FROM sys_menus ORDER BY parent_id ASC, display_order ASC, name ASC";
-        return \App\Core\Database::query($sql);
+        // 이제 MenuRepository를 통해 조회
+        return MenuRepository::findAllForAdmin();
     }
 
     /**
@@ -62,5 +61,37 @@ class MenuManagementService
     public function updateMenuParent(int $id, ?int $parentId): bool
     {
         return MenuRepository::updateParent($id, $parentId);
+    }
+
+    /**
+     * 메뉴 순서와 계층 구조를 한 번에 업데이트 (트랜잭션)
+     * @param array $updates 업데이트할 메뉴 데이터 배열
+     * @return bool
+     * @throws \Exception
+     */
+    public function updateOrderAndHierarchy(array $updates): bool
+    {
+        \App\Core\Database::beginTransaction();
+        try {
+            foreach ($updates as $menuItem) {
+                $id = $menuItem['id'] ?? null;
+                if (!$id) {
+                    continue; // ID가 없으면 건너뛰기
+                }
+                
+                $sql = "UPDATE sys_menus SET display_order = :display_order, parent_id = :parent_id WHERE id = :id";
+                \App\Core\Database::execute($sql, [
+                    ':display_order' => $menuItem['display_order'] ?? 0,
+                    ':parent_id' => $menuItem['parent_id'] ?? null,
+                    ':id' => $id
+                ]);
+            }
+            \App\Core\Database::commit();
+            return true;
+        } catch (\Exception $e) {
+            \App\Core\Database::rollBack();
+            // Re-throw the exception to be handled by the controller
+            throw $e;
+        }
     }
 }

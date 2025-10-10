@@ -2,14 +2,17 @@
 
 namespace App\Controllers\Api;
 
-use App\Core\Database;
+use App\Services\MenuManagementService;
 use Exception;
 
 class MenuApiController extends BaseApiController
 {
+    private MenuManagementService $menuManagementService;
+
     public function __construct()
     {
         parent::__construct();
+        $this->menuManagementService = new MenuManagementService();
     }
 
     /**
@@ -17,10 +20,8 @@ class MenuApiController extends BaseApiController
      */
     public function index(): void
     {
-        
         try {
-            $sql = "SELECT * FROM sys_menus ORDER BY parent_id, display_order";
-            $menus = Database::query($sql);
+            $menus = $this->menuManagementService->getAllMenusForAdmin();
             $this->apiSuccess($menus);
         } catch (Exception $e) {
             $this->handleException($e);
@@ -32,15 +33,13 @@ class MenuApiController extends BaseApiController
      */
     public function show(int $id): void
     {
-
         try {
             if (empty($id)) {
                 $this->apiBadRequest('ID가 필요합니다.');
                 return;
             }
 
-            $sql = "SELECT * FROM sys_menus WHERE id = :id";
-            $menu = Database::fetchOne($sql, [':id' => $id]);
+            $menu = $this->menuManagementService->getMenu($id);
 
             if ($menu) {
                 $this->apiSuccess($menu);
@@ -57,7 +56,6 @@ class MenuApiController extends BaseApiController
      */
     public function store(): void
     {
-        
         try {
             $data = $this->getJsonInput();
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -71,16 +69,7 @@ class MenuApiController extends BaseApiController
                 return;
             }
 
-            $sql = "INSERT INTO sys_menus (name, url, icon, permission_key, parent_id, display_order) VALUES (:name, :url, :icon, :permission_key, :parent_id, :display_order)";
-            $params = [
-                ':name' => $name,
-                ':url' => $data['url'] ?? null,
-                ':icon' => $data['icon'] ?? null,
-                ':permission_key' => $data['permission_key'] ?? null,
-                ':parent_id' => $data['parent_id'] ?? null,
-                ':display_order' => $data['display_order'] ?? 0
-            ];
-            $newId = Database::insert($sql, $params);
+            $newId = $this->menuManagementService->createMenu($data);
             $this->apiSuccess(['message' => '메뉴가 생성되었습니다.', 'id' => $newId], 201);
             
         } catch (Exception $e) {
@@ -93,7 +82,6 @@ class MenuApiController extends BaseApiController
      */
     public function update(int $id): void
     {
-
         try {
             if (empty($id)) {
                 $this->apiBadRequest('ID가 필요합니다.');
@@ -112,17 +100,7 @@ class MenuApiController extends BaseApiController
                 return;
             }
 
-            $sql = "UPDATE sys_menus SET name = :name, url = :url, icon = :icon, permission_key = :permission_key, parent_id = :parent_id, display_order = :display_order WHERE id = :id";
-            $params = [
-                ':id' => $id,
-                ':name' => $name,
-                ':url' => $data['url'] ?? null,
-                ':icon' => $data['icon'] ?? null,
-                ':permission_key' => $data['permission_key'] ?? null,
-                ':parent_id' => $data['parent_id'] ?? null,
-                ':display_order' => $data['display_order'] ?? 0
-            ];
-            Database::execute($sql, $params);
+            $this->menuManagementService->updateMenu($id, $data);
             $this->apiSuccess(['message' => '메뉴가 업데이트되었습니다.']);
             
         } catch (Exception $e) {
@@ -131,11 +109,10 @@ class MenuApiController extends BaseApiController
     }
 
     /**
-     * Update menu order
+     * Update menu order and hierarchy
      */
     public function updateOrder(): void
     {
-
         try {
             $data = $this->getJsonInput();
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -143,28 +120,18 @@ class MenuApiController extends BaseApiController
                 return;
             }
 
-            Database::beginTransaction();
-
-            foreach ($data as $menuItem) {
-                $id = $menuItem['id'] ?? null;
-                $order = $menuItem['display_order'] ?? 0;
-                $parentId = $menuItem['parent_id'] ?? null;
-
-                if (!$id) continue;
-
-                $sql = "UPDATE sys_menus SET display_order = :display_order, parent_id = :parent_id WHERE id = :id";
-                Database::execute($sql, [
-                    ':display_order' => $order,
-                    ':parent_id' => $parentId,
-                    ':id' => $id
-                ]);
+            // Frontend sends data wrapped in an 'updates' key
+            $updates = $data['updates'] ?? null;
+            if (!is_array($updates)) {
+                $this->apiBadRequest('메뉴 업데이트 데이터가 필요합니다.');
+                return;
             }
 
-            Database::commit();
+            $this->menuManagementService->updateOrderAndHierarchy($updates);
             $this->apiSuccess(['message' => '메뉴 순서가 업데이트되었습니다.']);
 
         } catch (Exception $e) {
-            Database::rollBack();
+            // Service layer handles rollback, controller just reports error
             $this->handleException($e);
         }
     }
@@ -174,25 +141,19 @@ class MenuApiController extends BaseApiController
      */
     public function destroy(int $id): void
     {
-        
         try {
             if (!$id) {
                 $this->apiBadRequest('ID가 필요합니다.');
                 return;
             }
             
-            // Check for child menus
-            $sql = "SELECT COUNT(*) as count FROM sys_menus WHERE parent_id = :id";
-            $result = Database::fetchOne($sql, [':id' => $id]);
+            $success = $this->menuManagementService->deleteMenu($id);
             
-            if ($result && $result['count'] > 0) {
-                $this->apiBadRequest('하위 메뉴가 있는 메뉴는 삭제할 수 없습니다. 하위 메뉴를 먼저 삭제하거나 다른 곳으로 이동해주세요.');
-                return;
+            if ($success) {
+                $this->apiSuccess(['message' => '메뉴가 삭제되었습니다.']);
+            } else {
+                $this->apiBadRequest('하위 메뉴가 있는 메뉴는 삭제할 수 없습니다.');
             }
-            
-            $sql = "DELETE FROM sys_menus WHERE id = :id";
-            Database::execute($sql, [':id' => $id]);
-            $this->apiSuccess(['message' => '메뉴가 삭제되었습니다.']);
         } catch (Exception $e) {
             $this->handleException($e);
         }

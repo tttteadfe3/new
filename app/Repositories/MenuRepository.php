@@ -394,5 +394,15 @@ private static function isMenuActive(array $menu, string $currentUrl): bool
         $sql = "UPDATE sys_menus SET parent_id = :parent_id WHERE id = :id";
         return Database::execute($sql, [':id' => $id, ':parent_id' => $parentId]);
     }
+
+    /**
+     * 관리자용으로 모든 메뉴를 가져옵니다.
+     * @return array
+     */
+    public static function findAllForAdmin(): array
+    {
+        $sql = "SELECT * FROM sys_menus ORDER BY parent_id ASC, display_order ASC, name ASC";
+        return Database::query($sql);
+    }
     
 }
