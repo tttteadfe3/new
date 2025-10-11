@@ -1,4 +1,4 @@
-class LeaveApprovalApp extends BaseApp {
+class LeaveApprovalPage extends BasePage {
     constructor() {
         super({
             API_URL: '/leaves_admin'
@@ -162,4 +162,4 @@ class LeaveApprovalApp extends BaseApp {
     }
 }
 
-new LeaveApprovalApp();
+new LeaveApprovalPage();

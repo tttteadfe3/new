@@ -1,4 +1,4 @@
-class RolesAdminApp extends BaseApp {
+class RolesAdminPage extends BasePage {
     constructor() {
         super({
             API_URL: '/roles'
@@ -222,4 +222,4 @@ class RolesAdminApp extends BaseApp {
     }
 }
 
-new RolesAdminApp();
+new RolesAdminPage();
