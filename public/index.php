@@ -9,17 +9,14 @@ require_once __DIR__ . '/../vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load();
 
-foreach ($_ENV as $key => $value) {
-    putenv("$key=$value");
-}
+// Use the new instance-based SessionManager
+$sessionManager = new App\Core\SessionManager();
+$sessionManager->start();
+$sessionManager->regenerate();
+
 
 // Load configuration
-$config = require_once __DIR__ . '/../config/config.php';
-
-// Start the session
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../config/config.php';
 
 // Routing
 use App\Core\Router;

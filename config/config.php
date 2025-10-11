@@ -85,9 +85,7 @@ set_exception_handler(function(Throwable $exception) {
 require_once ROOT_PATH . '/app/Core/helpers.php';
 
 
-// 9. 세션 시작 및 관리
-App\Core\SessionManager::start();
-App\Core\SessionManager::regenerate();
+// 9. 세션 시작 및 관리 (public/index.php 로 이동)
 
 // 10. 공통 페이지 변수 설정은 ViewDataService로 이전되었습니다.
 // 이 파일은 이제 전역 설정 및 초기화만 담당합니다.
