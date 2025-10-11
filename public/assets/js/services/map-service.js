@@ -13,10 +13,15 @@ class MapService {
      * @param {number} [config.level] - The initial zoom level of the map.
      */
     constructor(config = {}) {
-        this.config = {
+        const defaults = {
             mapId: 'map',
             center: { lat: 37.340187, lng: 126.743888 },
             level: 3,
+            allowedRegions: window.AppConfig?.allowedRegions || ['정왕1동'] // Use global config or hardcoded default
+        };
+
+        this.config = {
+            ...defaults,
             ...config
         };
 

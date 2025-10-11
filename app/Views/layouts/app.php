@@ -96,6 +96,13 @@ $profileImageUrl = SessionManager::get('user')['profile_image_url'] ?? BASE_ASSE
     <script src="<?= BASE_ASSETS_URL ?>/assets/js/services/api-service.js"></script>
     <script src="<?= BASE_ASSETS_URL ?>/assets/js/core/base-page.js"></script>
 
+    <!-- Conditionally Rendered JS Config from Controller -->
+    <?php if (isset($jsConfig)): ?>
+    <script>
+        window.AppConfig = <?= json_encode($jsConfig) ?>;
+    </script>
+    <?php endif; ?>
+
     <!-- Dynamic JS Section -->
     <?= View::yieldSection('js') ?>
 
