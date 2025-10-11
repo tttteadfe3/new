@@ -19,7 +19,7 @@ class RoleApiController extends BaseApiController
     public function index(): void
     {
         try {
-            $roles = RoleRepository::getAllRolesWithUserCount();
+            $roles = $this->roleRepository->getAllRolesWithUserCount();
             $this->apiSuccess($roles);
         } catch (Exception $e) {
             $this->handleException($e);
@@ -33,14 +33,14 @@ class RoleApiController extends BaseApiController
     public function show(int $id): void
     {
         try {
-            $role = RoleRepository::findById($id);
+            $role = $this->roleRepository->findById($id);
             if (!$role) {
                 $this->apiNotFound('Role not found');
             }
 
-            $allPermissions = RoleRepository::getAllPermissions();
-            $assignedPermissions = array_column(RoleRepository::getRolePermissions($id), 'id');
-            $assignedUsers = RoleRepository::getUsersAssignedToRole($id);
+            $allPermissions = $this->roleRepository->getAllPermissions();
+            $assignedPermissions = array_column($this->roleRepository->getRolePermissions($id), 'id');
+            $assignedUsers = $this->roleRepository->getUsersAssignedToRole($id);
 
             $this->apiSuccess([
                 'role' => $role,
@@ -68,7 +68,7 @@ class RoleApiController extends BaseApiController
                 $this->apiBadRequest('역할 이름은 필수입니다.');
             }
 
-            $newRoleId = RoleRepository::create($name, $description);
+            $newRoleId = $this->roleRepository->create($name, $description);
             $this->apiSuccess(['id' => $newRoleId], '새 역할이 생성되었습니다.');
 
         } catch (Exception $e) {
@@ -91,7 +91,7 @@ class RoleApiController extends BaseApiController
                 $this->apiBadRequest('역할 이름은 필수입니다.');
             }
 
-            RoleRepository::update($id, $name, $description);
+            $this->roleRepository->update($id, $name, $description);
             $this->apiSuccess(null, '역할 정보가 수정되었습니다.');
 
         } catch (Exception $e) {
@@ -106,7 +106,7 @@ class RoleApiController extends BaseApiController
     public function destroy(int $id): void
     {
         try {
-            if (RoleRepository::delete($id)) {
+            if ($this->roleRepository->delete($id)) {
                 $this->apiSuccess(null, '역할이 삭제되었습니다.');
             } else {
                 $this->apiError('사용자가 할당된 역할은 삭제할 수 없습니다.');
@@ -126,7 +126,7 @@ class RoleApiController extends BaseApiController
             $input = $this->getJsonInput();
             $permissionIds = $input['permissions'] ?? [];
 
-            RoleRepository::updateRolePermissions($id, $permissionIds);
+            $this->roleRepository->updateRolePermissions($id, $permissionIds);
 
             // Invalidate permissions cache
             $timestamp_file = ROOT_PATH . '/storage/permissions_last_updated.txt';

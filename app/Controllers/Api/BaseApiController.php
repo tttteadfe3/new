@@ -3,17 +3,22 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\Web\BaseController;
+use App\Core\Database;
 use App\Core\JsonResponse;
 use App\Services\AuthService;
+use App\Repositories\EmployeeRepository;
 
 abstract class BaseApiController extends BaseController
 {
     protected AuthService $authService;
+    protected EmployeeRepository $employeeRepository;
 
     public function __construct()
     {
         parent::__construct();
         $this->authService = new AuthService();
+        $db = Database::getInstance();
+        $this->employeeRepository = new EmployeeRepository($db);
         
         // Ensure all API requests are AJAX requests
         if (!$this->isAjaxRequest()) {
@@ -121,7 +126,7 @@ abstract class BaseApiController extends BaseController
 
         // If not available, try to find through EmployeeRepository
         try {
-            $employee = \App\Repositories\EmployeeRepository::findByUserId($user['id']);
+            $employee = $this->employeeRepository->findByUserId($user['id']);
             return $employee ? (int)$employee['id'] : null;
         } catch (\Exception $e) {
             return null;

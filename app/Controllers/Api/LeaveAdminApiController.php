@@ -26,9 +26,9 @@ class LeaveAdminApiController extends BaseApiController
 
         try {
             if ($status === 'cancellation') {
-                $data = LeaveRepository::getAll(['status' => 'cancellation_requested']);
+                $data = $this->leaveRepository->getAll(['status' => 'cancellation_requested']);
             } else {
-                $data = LeaveRepository::getAll(['status' => $status]);
+                $data = $this->leaveRepository->getAll(['status' => $status]);
             }
             $this->apiSuccess($data);
         } catch (Exception $e) {
@@ -140,7 +140,7 @@ class LeaveAdminApiController extends BaseApiController
         ];
         
         try {
-            $data = LeaveRepository::getAllEntitlements(array_filter($filters));
+            $data = $this->leaveRepository->getAllEntitlements(array_filter($filters));
             $this->apiSuccess($data);
         } catch (Exception $e) {
             $this->apiError('연차 부여 내역 조회 중 오류 발생', 'SERVER_ERROR', 500);
@@ -176,8 +176,8 @@ class LeaveAdminApiController extends BaseApiController
         $year = (int)$this->request->input('year', date('Y'));
 
         try {
-            $entitlement = LeaveRepository::findEntitlement($employeeId, $year);
-            $leaves = LeaveRepository::findByEmployeeId($employeeId, ['year' => $year]);
+            $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
+            $leaves = $this->leaveRepository->findByEmployeeId($employeeId, ['year' => $year]);
 
             $this->apiSuccess([
                 'entitlement' => $entitlement,
@@ -235,7 +235,7 @@ class LeaveAdminApiController extends BaseApiController
         }
         
         try {
-            $employees = \App\Repositories\EmployeeRepository::getAll($employeeFilters);
+            $employees = $this->employeeRepository->getAll($employeeFilters);
 
             $results = [];
             foreach ($employees as $employee) {

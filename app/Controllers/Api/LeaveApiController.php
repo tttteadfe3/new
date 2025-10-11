@@ -32,8 +32,8 @@ class LeaveApiController extends BaseApiController
         $year = (int)$this->request->input('year', date('Y'));
         
         try {
-            $entitlement = LeaveRepository::findEntitlement($employeeId, $year);
-            $leaves = LeaveRepository::findByEmployeeId($employeeId, ['year' => $year]);
+            $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
+            $leaves = $this->leaveRepository->findByEmployeeId($employeeId, ['year' => $year]);
 
             $this->apiSuccess([
                 'entitlement' => $entitlement,

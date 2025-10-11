@@ -6,18 +6,21 @@ use App\Core\View;
 use App\Core\Request;
 use App\Services\AuthService;
 use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
 
 abstract class BaseController
 {
     protected Request $request;
     protected AuthService $authService;
     protected ViewDataService $viewDataService;
+    protected ActivityLogger $activityLogger;
 
     public function __construct()
     {
         $this->request = new Request();
         $this->authService = new AuthService();
         $this->viewDataService = new ViewDataService();
+        $this->activityLogger = new ActivityLogger();
     }
 
     /**

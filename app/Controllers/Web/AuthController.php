@@ -8,6 +8,7 @@ use App\Core\View;
 use App\Repositories\UserRepository;
 
 class AuthController extends BaseController
+    protected \App\Repositories\UserRepository $userRepository;
 {
     public function login()
     {
@@ -39,7 +40,7 @@ class AuthController extends BaseController
             $kakaoUserInfo = $kakaoAuthService->getUserProfile($token['access_token']);
 
             // Find or create the user in the database using the repository
-            $user = UserRepository::findOrCreateFromKakao($kakaoUserInfo);
+            $user = $this->userRepository->findOrCreateFromKakao($kakaoUserInfo);
 
             // Log the user in using the AuthService instance
             $this->authService->login($user);
