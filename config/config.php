@@ -25,10 +25,9 @@ if (ENVIRONMENT === 'development') {
 date_default_timezone_set('Asia/Seoul');
 
 
-// 2. 경로 및 URL 상수
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? 80) == 443) ? "https://" : "http://";
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-define('BASE_URL', $protocol . $host);
+// 2. 경로 및 URL 상수 (.env 파일 사용 권장)
+// .env 파일에 APP_URL=http://yourdomain.com/your-app-root 형식으로 설정하는 것을 권장합니다.
+define('BASE_URL', rtrim($_ENV['APP_URL'] ?? 'http://localhost', '/'));
 define('BASE_ASSETS_URL', BASE_URL . '/assets');
 define('ROOT_PATH', dirname(__DIR__));
 
