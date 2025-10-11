@@ -11,11 +11,13 @@ abstract class BaseController
 {
     protected Request $request;
     protected AuthService $authService;
+    protected ViewDataService $viewDataService;
 
     public function __construct()
     {
         $this->request = new Request();
         $this->authService = new AuthService();
+        $this->viewDataService = new ViewDataService();
     }
 
     /**
@@ -31,8 +33,8 @@ abstract class BaseController
         // Prepare common data for all views that use a layout
         $commonData = [];
         if ($layout !== null && $this->isAuthenticated()) {
-            // Decouple controller from data-fetching logic by using the dedicated service.
-            $commonData = ViewDataService::getCommonData();
+            // Use the instance of the dedicated service.
+            $commonData = $this->viewDataService->getCommonData();
         }
 
         // Merge controller-specific data with common data

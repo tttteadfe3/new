@@ -5,19 +5,24 @@ namespace App\Repositories;
 use App\Core\Database;
 
 class HolidayRepository {
-    public static function getAll() {
+    private Database $db;
+
+    public function __construct(Database $db) {
+        $this->db = $db;
+    }
+    public function getAll() {
         $sql = "SELECT h.*, d.name as department_name
                 FROM hr_holidays h
                 LEFT JOIN hr_departments d ON h.department_id = d.id
                 ORDER BY h.date DESC";
-        return Database::query($sql);
+        return $this->db->query($sql);
     }
 
-    public static function findById(int $id) {
-        return Database::fetchOne("SELECT * FROM hr_holidays WHERE id = :id", [':id' => $id]);
+    public function findById(int $id) {
+        return $this->db->fetchOne("SELECT * FROM hr_holidays WHERE id = :id", [':id' => $id]);
     }
 
-    public static function create(array $data): string {
+    public function create(array $data): string {
         $sql = "INSERT INTO hr_holidays (name, date, type, department_id, deduct_leave)
                 VALUES (:name, :date, :type, :department_id, :deduct_leave)";
 
@@ -29,11 +34,11 @@ class HolidayRepository {
             ':deduct_leave' => $data['deduct_leave']
         ];
 
-        Database::execute($sql, $params);
-        return Database::lastInsertId();
+        $this->db->execute($sql, $params) > 0;
+        return $this->db->lastInsertId();
     }
 
-    public static function update(int $id, array $data): bool {
+    public function update(int $id, array $data): bool {
         $sql = "UPDATE hr_holidays SET
                     name = :name,
                     date = :date,
@@ -51,11 +56,11 @@ class HolidayRepository {
             ':deduct_leave' => $data['deduct_leave']
         ];
 
-        return Database::execute($sql, $params);
+        return $this->db->execute($sql, $params) > 0;
     }
 
-    public static function delete(int $id): bool {
-        return Database::execute("DELETE FROM hr_holidays WHERE id = :id", [':id' => $id]);
+    public function delete(int $id): bool {
+        return $this->db->execute("DELETE FROM hr_holidays WHERE id = :id", [':id' => $id]) > 0;
     }
 
     /**
@@ -65,7 +70,7 @@ class HolidayRepository {
      * @param int|null $departmentId 부서 ID (null이면 전체 부서용 설정만 조회)
      * @return array
      */
-    public static function findForDateRange(string $startDate, string $endDate, ?int $departmentId): array {
+    public function findForDateRange(string $startDate, string $endDate, ?int $departmentId): array {
         // 부서별 설정과 전체 공통 설정을 모두 가져옵니다.
         // department_id IS NULL: 전체 공통
         // department_id = :departmentId: 해당 직원의 부서
@@ -79,6 +84,6 @@ class HolidayRepository {
             ':department_id' => $departmentId
         ];
 
-        return Database::query($sql, $params);
+        return $this->db->query($sql, $params);
     }
 }

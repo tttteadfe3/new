@@ -5,61 +5,67 @@ namespace App\Repositories;
 use App\Core\Database;
 
 class UserRepository {
-    public static function findById(int $id) {
+    private Database $db;
+
+    public function __construct(Database $db) {
+        $this->db = $db;
+    }
+
+    public function findById(int $id) {
         $sql = "SELECT * FROM sys_users WHERE id = :id";
-        return Database::fetchOne($sql, [':id' => $id]);
+        return $this->db->fetchOne($sql, [':id' => $id]);
     }
 
-    public static function findByKakaoId(string $kakaoId) {
+    public function findByKakaoId(string $kakaoId) {
         $sql = "SELECT * FROM sys_users WHERE kakao_id = :kakao_id";
-        return Database::fetchOne($sql, [':kakao_id' => $kakaoId]);
+        return $this->db->fetchOne($sql, [':kakao_id' => $kakaoId]);
     }
 
-    public static function create(array $data): string {
+    public function create(array $data): string {
         $sql = "INSERT INTO sys_users (kakao_id, nickname, email, profile_image_url, status)
                 VALUES (:kakao_id, :nickname, :email, :p_img, 'pending')";
-        Database::execute($sql, [
+        $this->db->execute($sql, [
             ':kakao_id' => $data['id'],
             ':nickname' => $data['properties']['nickname'],
             ':email' => $data['kakao_account']['email'] ?? 'email-unavailable-'.uniqid().'@example.com',
             ':p_img' => $data['properties']['profile_image'] ?? null,
         ]);
-        return Database::lastInsertId();
+        return $this->db->lastInsertId();
     }
     
-    public static function update(int $userId, array $data): bool {
+    public function update(int $userId, array $data): bool {
         $sql = "UPDATE sys_users SET nickname = :nickname, email = :email, profile_image_url = :p_img WHERE id = :id";
-        return Database::execute($sql, [
+        return $this->db->execute($sql, [
             ':nickname' => $data['properties']['nickname'],
             ':email' => $data['kakao_account']['email'] ?? 'email-unavailable-'.uniqid().'@example.com',
             ':p_img' => $data['properties']['profile_image'] ?? null,
             ':id' => $userId
-        ]);
+        ]) > 0;
     }
     
-    public static function updateUserStatus(int $userId, string $status): bool {
+    public function updateUserStatus(int $userId, string $status): bool {
         $sql = "UPDATE sys_users SET status = :status WHERE id = :id";
-        return Database::execute($sql, [':status' => $status, ':id' => $userId]);
+        return $this->db->execute($sql, [':status' => $status, ':id' => $userId]) > 0;
     }
 
-    public static function countAll(): int {
-        return (int) Database::fetchOne("SELECT COUNT(*) as count FROM sys_users")['count'];
+    public function countAll(): int {
+        return (int) $this->db->fetchOne("SELECT COUNT(*) as count FROM sys_users")['count'];
     }
 
-    public static function countByStatus(string $status): int {
+    public function countByStatus(string $status): int {
         $sql = "SELECT COUNT(*) as count FROM sys_users WHERE status = :status";
-        return (int) Database::fetchOne($sql, [':status' => $status])['count'];
+        return (int) $this->db->fetchOne($sql, [':status' => $status])['count'];
     }
 
-    public static function getPermissions(int $userId): array {
+    public function getPermissions(int $userId): array {
         $sql = "SELECT DISTINCT p.`key` FROM sys_user_roles ur
                 JOIN sys_role_permissions rp ON ur.role_id = rp.role_id
                 JOIN sys_permissions p ON rp.permission_id = p.id
                 WHERE ur.user_id = :user_id";
-        return Database::query($sql, [':user_id' => $userId]);
+        return $this->db->query($sql, [':user_id' => $userId]);
     }
     
-    public static function getAllWithRoles(array $filters = []): array {
+    public function getAllWithRoles(array $filters = []): array {
         $baseSql = "SELECT 
                     u.id, u.nickname, u.email, u.status, u.employee_id,
                     GROUP_CONCAT(DISTINCT r.name SEPARATOR ', ') as roles,
@@ -102,20 +108,20 @@ class UserRepository {
 
         $sql .= " GROUP BY u.id, e.name ORDER BY u.created_at DESC";
 
-        return Database::query($sql, $params);
+        return $this->db->query($sql, $params);
     }
 
-    public static function getRoleIdsForUser(int $userId): array {
+    public function getRoleIdsForUser(int $userId): array {
         $sql = "SELECT role_id FROM sys_user_roles WHERE user_id = :user_id";
-        $results = Database::query($sql, [':user_id' => $userId]);
+        $results = $this->db->query($sql, [':user_id' => $userId]);
         return array_column($results, 'role_id');
     }
 
-    public static function updateUserRoles(int $userId, array $roleIds): void {
-        Database::beginTransaction();
+    public function updateUserRoles(int $userId, array $roleIds): void {
+        $this->db->beginTransaction();
         try {
             // 기존 역할 모두 삭제
-            Database::execute("DELETE FROM sys_user_roles WHERE user_id = :user_id", [':user_id' => $userId]);
+            $this->db->execute("DELETE FROM sys_user_roles WHERE user_id = :user_id", [':user_id' => $userId]);
 
             // 새 역할 추가
             if (!empty($roleIds)) {
@@ -128,11 +134,11 @@ class UserRepository {
                     $params[$key] = $roleId;
                 }
                 $sql .= implode(', ', $placeholders);
-                Database::execute($sql, $params);
+                $this->db->execute($sql, $params);
             }
-            Database::commit();
+            $this->db->commit();
         } catch (\Exception $e) {
-            Database::rollBack();
+            $this->db->rollBack();
             throw $e;
         }
     }
@@ -140,19 +146,19 @@ class UserRepository {
     /**
      * 직원 정보와 아직 연결되지 않은 '활성' 사용자 목록을 가져옵니다.
      */
-    public static function findUsersWithoutEmployeeRecord(): array {
+    public function findUsersWithoutEmployeeRecord(): array {
         $sql = "SELECT u.id, u.nickname FROM sys_users u
                 LEFT JOIN hr_employees e ON u.id = e.user_id
                 WHERE e.user_id IS NULL AND u.status = 'active'
                 ORDER BY u.nickname";
-        return Database::query($sql);
+        return $this->db->query($sql);
     }
 
     /**
      * 사용자 계정과 아직 연결되지 않은 직원 목록을 가져옵니다.
      * @param int|null $departmentId 부서 ID로 필터링
      */
-    public static function getUnlinkedEmployees(int $departmentId = null): array {
+    public function getUnlinkedEmployees(int $departmentId = null): array {
         $params = [];
         // employees.id가 users.employee_id에 존재하지 않고, 퇴사일이 없는 직원만 선택
         $sql = "SELECT e.id, e.name, e.employee_number FROM hr_employees e
@@ -165,49 +171,49 @@ class UserRepository {
         }
         
         $sql .= " ORDER BY e.name";
-        return Database::query($sql, $params);
+        return $this->db->query($sql, $params);
     }
 
     /**
      * 특정 사용자에게 직원을 연결(매핑)합니다.
      */
-    public static function linkEmployee(int $userId, int $employeeId): bool {
+    public function linkEmployee(int $userId, int $employeeId): bool {
         $sql = "UPDATE sys_users SET employee_id = :employee_id WHERE id = :user_id";
-        return Database::execute($sql, [':employee_id' => $employeeId, ':user_id' => $userId]);
+        return $this->db->execute($sql, [':employee_id' => $employeeId, ':user_id' => $userId]) > 0;
     }
     
     /**
      * 특정 사용자의 직원 연결을 해제합니다.
      * (Called when user status is changed to non-active)
      */
-    public static function unlinkEmployee(int $userId): bool {
+    public function unlinkEmployee(int $userId): bool {
         $sql = "UPDATE sys_users SET employee_id = NULL WHERE id = :user_id";
-        return Database::execute($sql, [':user_id' => $userId]);
+        return $this->db->execute($sql, [':user_id' => $userId]) > 0;
     }
 
     /**
      * 모든 사용자 목록 조회
      */
-    public static function getAll(): array {
-        return self::getAllWithRoles();
+    public function getAll(): array {
+        return $this->getAllWithRoles();
     }
 
     /**
      * 사용자 삭제
      */
-    public static function delete(int $id): bool {
-        Database::beginTransaction();
+    public function delete(int $id): bool {
+        $this->db->beginTransaction();
         try {
             // 먼저 사용자 역할 삭제
-            Database::execute("DELETE FROM sys_user_roles WHERE user_id = :user_id", [':user_id' => $id]);
+            $this->db->execute("DELETE FROM sys_user_roles WHERE user_id = :user_id", [':user_id' => $id]);
             
             // 사용자 삭제
-            $result = Database::execute("DELETE FROM sys_users WHERE id = :id", [':id' => $id]);
+            $result = $this->db->execute("DELETE FROM sys_users WHERE id = :id", [':id' => $id]);
             
-            Database::commit();
-            return $result;
+            $this->db->commit();
+            return $result > 0;
         } catch (\Exception $e) {
-            Database::rollBack();
+            $this->db->rollBack();
             throw $e;
         }
     }
@@ -215,24 +221,24 @@ class UserRepository {
     /**
      * 사용자 역할 목록 조회
      */
-    public static function getUserRoles(int $userId): array {
+    public function getUserRoles(int $userId): array {
         $sql = "SELECT r.id, r.name FROM sys_user_roles ur
                 JOIN sys_roles r ON ur.role_id = r.id
                 WHERE ur.user_id = :user_id
                 ORDER BY r.name";
-        return Database::query($sql, [':user_id' => $userId]);
+        return $this->db->query($sql, [':user_id' => $userId]);
     }
 
     /**
      * 사용자 상태 토글 (활성/비활성)
      */
-    public static function toggleStatus(int $userId): bool {
+    public function toggleStatus(int $userId): bool {
         $sql = "UPDATE sys_users SET status = CASE 
                     WHEN status = 'active' THEN 'inactive' 
                     ELSE 'active' 
                 END 
                 WHERE id = :id";
-        return Database::execute($sql, [':id' => $userId]);
+        return $this->db->execute($sql, [':id' => $userId]) > 0;
     }
 
     /**
@@ -240,10 +246,10 @@ class UserRepository {
      * This encapsulates the logic that was previously in the User model,
      * and uses the standardized Database helper.
      */
-    public static function findOrCreateFromKakao(array $kakaoUser): array
+    public function findOrCreateFromKakao(array $kakaoUser): array
     {
         // 1. Find user by Kakao ID
-        $user = self::findByKakaoId($kakaoUser['id']);
+        $user = $this->findByKakaoId($kakaoUser['id']);
 
         if ($user) {
             // User exists, return their data
@@ -251,9 +257,9 @@ class UserRepository {
         }
 
         // 2. User does not exist, create a new one using the existing create method
-        $newUserId = self::create($kakaoUser);
+        $newUserId = $this->create($kakaoUser);
 
         // 3. Return the newly created user's data
-        return self::findById((int)$newUserId);
+        return $this->findById((int)$newUserId);
     }
 }

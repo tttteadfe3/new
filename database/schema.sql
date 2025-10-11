@@ -28,13 +28,13 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `hr_leave_adjustments_log` (
-  `id` int(11) NOT NULL,
-  `employee_id` int(11) NOT NULL,
-  `year` int(4) NOT NULL,
-  `adjusted_days` decimal(4,1) NOT NULL,
-  `reason` varchar(255) NOT NULL,
-  `admin_id` int(11) NOT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+  `id` int(11) NOT NULL COMMENT '고유 ID',
+  `employee_id` int(11) NOT NULL COMMENT '직원 ID',
+  `year` int(4) NOT NULL COMMENT '조정 연도',
+  `adjusted_days` decimal(4,1) NOT NULL COMMENT '조정된 연차 일수 (+/-)',
+  `reason` varchar(255) NOT NULL COMMENT '조정 사유',
+  `admin_id` int(11) NOT NULL COMMENT '조정한 관리자 ID',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '기록 생성일시'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='연차 수동 조정 기록';
 
 -- --------------------------------------------------------
@@ -45,12 +45,12 @@ CREATE TABLE `hr_leave_adjustments_log` (
 
 CREATE TABLE `sys_activity_logs` (
   `id` bigint(20) NOT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `user_name` varchar(255) DEFAULT NULL,
-  `action` varchar(255) NOT NULL,
-  `details` text DEFAULT NULL,
-  `ip_address` varchar(45) DEFAULT NULL,
-  `created_at` datetime DEFAULT current_timestamp()
+  `user_id` int(11) DEFAULT NULL COMMENT '행위자 ID',
+  `user_name` varchar(255) DEFAULT NULL COMMENT '행위자 이름 (user_id가 없을 경우 대비)',
+  `action` varchar(255) NOT NULL COMMENT '행위 종류 (예: Login, Update)',
+  `details` text DEFAULT NULL COMMENT '행위 상세 내용',
+  `ip_address` varchar(45) DEFAULT NULL COMMENT 'IP 주소',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '기록 생성일시'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 활동 로그';
 
 -- --------------------------------------------------------
@@ -83,7 +83,7 @@ CREATE TABLE `hr_employees` (
   `shoe_size` varchar(50) DEFAULT NULL COMMENT '신발 사이즈',
   `profile_update_status` enum('none','pending','rejected') NOT NULL DEFAULT 'none' COMMENT '프로필 업데이트 상태',
   `profile_update_rejection_reason` text DEFAULT NULL COMMENT '프로필 업데이트 거부 사유',
-  `pending_profile_data` text DEFAULT NULL COMMENT '대기중인 프로필 데이터',
+  `pending_profile_data` text DEFAULT NULL COMMENT '대기중인 프로필 데이터 (JSON)',
   `phone_number` varchar(255) DEFAULT NULL COMMENT '전화번호',
   `address` text DEFAULT NULL COMMENT '주소',
   `emergency_contact_name` varchar(255) DEFAULT NULL COMMENT '비상연락처 이름',
@@ -144,21 +144,21 @@ CREATE TABLE `illegal_disposal_cases2` (
   `collect_date` varchar(20) DEFAULT '' COMMENT '수거 처리 일자 (ex. 02월 25일)',
   `corrected` enum('o','x','=') DEFAULT NULL COMMENT '개선 여부 (o: 개선됨, x: 미개선, =: 사라짐)',
   `note` text DEFAULT NULL COMMENT '비고 메모',
-  `reg_photo_path` varchar(255) NOT NULL COMMENT '등록 사진 경로',
-  `reg_photo_path2` varchar(255) NOT NULL,
+  `reg_photo_path` varchar(255) NOT NULL COMMENT '등록 사진 경로 (작업 전)',
+  `reg_photo_path2` varchar(255) NOT NULL COMMENT '등록 사진 경로 (작업 후)',
   `proc_photo_path` varchar(255) DEFAULT NULL COMMENT '처리 사진 경로',
   `created_at` datetime DEFAULT current_timestamp() COMMENT '데이터 등록 시각',
   `updated_at` datetime DEFAULT NULL COMMENT '데이터 수정 시각',
-  `jibun_address` varchar(255) DEFAULT NULL,
-  `road_address` varchar(255) DEFAULT NULL,
-  `user_id` int(11) NOT NULL,
-  `employee_id` int(11) NOT NULL,
-  `confirmed_by` int(11) DEFAULT NULL,
-  `confirmed_at` datetime DEFAULT NULL,
-  `deleted_by` int(11) DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  `status` varchar(10) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='부적정 배출 정보 테이블';
+  `jibun_address` varchar(255) DEFAULT NULL COMMENT '지번 주소',
+  `road_address` varchar(255) DEFAULT NULL COMMENT '도로명 주소',
+  `user_id` int(11) NOT NULL COMMENT '등록한 사용자(앱) ID',
+  `employee_id` int(11) NOT NULL COMMENT '등록한 직원 ID',
+  `confirmed_by` int(11) DEFAULT NULL COMMENT '내용 확인한 관리자 ID',
+  `confirmed_at` datetime DEFAULT NULL COMMENT '내용 확인일시',
+  `deleted_by` int(11) DEFAULT NULL COMMENT '삭제한 관리자 ID',
+  `deleted_at` datetime DEFAULT NULL COMMENT '삭제일시',
+  `status` varchar(20) NOT NULL COMMENT '처리 상태 (예: pending, confirmed)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='(신규) 부적정 배출 정보 테이블';
 
 -- --------------------------------------------------------
 
@@ -174,10 +174,10 @@ CREATE TABLE `hr_leaves` (
   `end_date` date NOT NULL COMMENT '휴가 종료일',
   `days_count` decimal(4,1) NOT NULL COMMENT '신청 일수 (0.5=반차)',
   `reason` text DEFAULT NULL COMMENT '신청 사유',
-  `status` enum('pending','approved','rejected','cancelled','cancellation_requested') NOT NULL DEFAULT 'pending',
+  `status` enum('pending','approved','rejected','cancelled','cancellation_requested') NOT NULL DEFAULT 'pending' COMMENT '신청 상태',
   `approved_by` int(11) DEFAULT NULL COMMENT '처리한 관리자 user_id',
   `rejection_reason` text DEFAULT NULL COMMENT '반려 사유',
-  `cancellation_reason` text DEFAULT NULL,
+  `cancellation_reason` text DEFAULT NULL COMMENT '취소 사유',
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원 연차 신청 내역';
@@ -205,12 +205,12 @@ CREATE TABLE `hr_leave_entitlements` (
 --
 
 CREATE TABLE `littering_cases` (
-  `id` int(11) NOT NULL,
-  `latitude` decimal(10,8) NOT NULL,
-  `longitude` decimal(11,8) NOT NULL,
-  `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `waste_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '주성상',
-  `waste_type2` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '부성상',
+  `id` int(11) NOT NULL COMMENT '고유 ID',
+  `latitude` decimal(10,8) NOT NULL COMMENT '위도',
+  `longitude` decimal(11,8) NOT NULL COMMENT '경도',
+  `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '주소',
+  `waste_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '주요 폐기물 성상',
+  `waste_type2` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '혼합 폐기물 성상',
   `issue_date` date DEFAULT NULL COMMENT '배출일자',
   `collect_date` date DEFAULT NULL COMMENT '수거일자',
   `corrected` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '개선여부 (o, x, =)',
@@ -218,9 +218,9 @@ CREATE TABLE `littering_cases` (
   `reg_photo_path` varchar(255) DEFAULT NULL COMMENT '등록사진1 (작업전)',
   `reg_photo_path2` varchar(255) DEFAULT NULL COMMENT '등록사진2 (작업후)',
   `proc_photo_path` varchar(255) DEFAULT NULL COMMENT '처리사진',
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci COMMENT='(구) 부적정 배출 정보 테이블';
 
 -- --------------------------------------------------------
 
@@ -274,7 +274,7 @@ CREATE TABLE `sys_menus` (
 
 CREATE TABLE `sys_permissions` (
   `id` int(11) NOT NULL,
-  `key` varchar(100) NOT NULL COMMENT '권한 키',
+  `key` varchar(100) NOT NULL COMMENT '권한 키 (예: manage_users)',
   `description` varchar(255) DEFAULT NULL COMMENT '권한 설명'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='권한 정보';
 
@@ -322,11 +322,11 @@ CREATE TABLE `sys_role_permissions` (
 
 CREATE TABLE `sys_users` (
   `id` int(11) NOT NULL,
-  `kakao_id` varchar(255) NOT NULL COMMENT '카카오 ID',
+  `kakao_id` varchar(255) NOT NULL COMMENT '카카오 고유 ID',
   `email` varchar(255) NOT NULL COMMENT '이메일',
   `nickname` varchar(255) NOT NULL COMMENT '닉네임',
   `profile_image_url` varchar(512) DEFAULT NULL COMMENT '프로필 이미지 URL',
-  `employee_id` int(11) DEFAULT NULL COMMENT '직원 ID',
+  `employee_id` int(11) DEFAULT NULL COMMENT '연결된 직원 ID',
   `status` enum('pending','active','blocked') NOT NULL DEFAULT 'pending' COMMENT '사용자 상태',
   `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시'
@@ -359,9 +359,9 @@ CREATE TABLE `waste_collections` (
   `employee_id` int(11) DEFAULT NULL COMMENT '등록한 직원 ID',
   `issue_date` datetime NOT NULL COMMENT '배출일시',
   `discharge_number` varchar(100) DEFAULT NULL COMMENT '배출번호 (인터넷배출용)',
-  `submitter_name` varchar(100) DEFAULT NULL COMMENT '성명 (인터넷배출용)',
+  `submitter_name` varchar(100) DEFAULT NULL COMMENT '성명 (인터net배출용)',
   `submitter_phone` varchar(100) DEFAULT NULL COMMENT '전화번호 (인터넷배출용)',
-  `fee` int(11) NOT NULL DEFAULT 0,
+  `fee` int(11) NOT NULL DEFAULT 0 COMMENT '수수료',
   `admin_memo` text DEFAULT NULL COMMENT '관리자 처리메모',
   `status` varchar(20) NOT NULL DEFAULT 'unprocessed' COMMENT '상태 (unprocessed, processed)',
   `type` enum('field','online') NOT NULL DEFAULT 'field' COMMENT '등록 구분 (field: 현장등록, online: 인터넷배출)',
@@ -385,6 +385,12 @@ CREATE TABLE `waste_collection_items` (
 --
 -- 덤프된 테이블의 인덱스
 --
+
+--
+-- 테이블의 인덱스 `hr_leave_adjustments_log`
+--
+ALTER TABLE `hr_leave_adjustments_log`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- 테이블의 인덱스 `sys_activity_logs`
@@ -542,6 +548,11 @@ ALTER TABLE `waste_collection_items`
 -- 덤프된 테이블의 AUTO_INCREMENT
 --
 
+--
+-- 테이블의 AUTO_INCREMENT `hr_leave_adjustments_log`
+--
+ALTER TABLE `hr_leave_adjustments_log`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID';
 --
 -- 테이블의 AUTO_INCREMENT `sys_activity_logs`
 --

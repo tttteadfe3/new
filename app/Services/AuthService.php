@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Core\Database;
 use App\Core\SessionManager;
 use App\Repositories\UserRepository;
 use App\Repositories\RoleRepository;
@@ -11,16 +12,27 @@ use Exception;
 /**
  * Provides a unified, instance-based service for all authentication,
  * authorization, and session management tasks.
- * This class merges the responsibilities of the old Core\AuthManager and Services\AuthManager.
  */
 class AuthService {
+    private SessionManager $sessionManager;
+    private UserRepository $userRepository;
+    private RoleRepository $roleRepository;
+    private LogRepository $logRepository;
+
+    public function __construct() {
+        $db = \App\Core\Database::getInstance();
+        $this->sessionManager = new SessionManager();
+        $this->userRepository = new UserRepository($db);
+        $this->roleRepository = new RoleRepository($db);
+        $this->logRepository = new LogRepository($db);
+    }
 
     /**
      * Get the currently authenticated user from the session.
      */
     public function user(): ?array
     {
-        return SessionManager::get('user');
+        return $this->sessionManager->get('user');
     }
 
     /**
@@ -28,22 +40,20 @@ class AuthService {
      */
     public function isLoggedIn(): bool
     {
-        return SessionManager::has('user');
+        return $this->sessionManager->has('user');
     }
 
     /**
      * Establishes a user session after successful login.
-     * Merges logic from Core\AuthManager and the old establishSession.
      */
     public function login(array $user) {
         if ($user['status'] === 'blocked') {
             throw new Exception("Blocked accounts cannot log in.");
         }
 
-        // Refresh roles and permissions and store them in the session
         $this->_refreshSessionPermissions($user);
 
-        LogRepository::insert([
+        $this->logRepository->insert([
             ':user_id' => $user['id'],
             ':user_name' => $user['nickname'],
             ':action' => 'Login Success',
@@ -58,10 +68,10 @@ class AuthService {
     public function logout() {
         if ($this->isLoggedIn()) {
             $user = $this->user();
-            $latestUser = UserRepository::findById($user['id']);
+            $latestUser = $this->userRepository->findById($user['id']);
             $nickname = $latestUser['nickname'] ?? $user['nickname'];
 
-            LogRepository::insert([
+            $this->logRepository->insert([
                 ':user_id' => $user['id'],
                 ':user_name' => $nickname,
                 ':action' => 'Logout',
@@ -69,7 +79,7 @@ class AuthService {
                 ':ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
             ]);
         }
-        SessionManager::destroy();
+        $this->sessionManager->destroy();
         header('Location: /login');
         exit();
     }
@@ -84,9 +94,8 @@ class AuthService {
 
         $permissions_last_updated_file = ROOT_PATH . '/storage/permissions_last_updated.txt';
         $global_permissions_last_updated = file_exists($permissions_last_updated_file) ? (int)file_get_contents($permissions_last_updated_file) : 0;
-        $user_permissions_cached_at = SessionManager::get('permissions_cached_at', 0);
+        $user_permissions_cached_at = $this->sessionManager->get('permissions_cached_at', 0);
 
-        // If cache is old, refresh permissions without creating a new login log.
         if ($user_permissions_cached_at < $global_permissions_last_updated) {
             $this->_refreshSessionPermissions($this->user());
         }
@@ -133,7 +142,7 @@ class AuthService {
             $this->logout();
         }
 
-        $currentUser = UserRepository::findById($user['id']);
+        $currentUser = $this->userRepository->findById($user['id']);
 
         if (!$currentUser || !isset($currentUser['status'])) {
             $this->logout();
@@ -144,18 +153,13 @@ class AuthService {
 
     /**
      * Refreshes the user's roles and permissions in the session.
-     * This is a private method to avoid logging "Login Success" on every permission refresh.
      */
     private function _refreshSessionPermissions(array $user): void {
-        // Fetch and enrich user data with roles and permissions
-        $user['roles'] = RoleRepository::getUserRoles($user['id']);
-        $permissions = UserRepository::getPermissions($user['id']);
+        $user['roles'] = $this->roleRepository->getUserRoles($user['id']);
+        $permissions = $this->userRepository->getPermissions($user['id']);
         $user['permissions'] = array_column($permissions, 'key');
 
-        // Update the session with the new data
-        SessionManager::set('user', $user);
-
-        // Update the cache timestamp
-        SessionManager::set('permissions_cached_at', time());
+        $this->sessionManager->set('user', $user);
+        $this->sessionManager->set('permissions_cached_at', time());
     }
 }

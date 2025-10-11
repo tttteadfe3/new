@@ -16,7 +16,7 @@ class UserService
      */
     public function getAllUsers(array $filters = []): array
     {
-        return UserRepository::getAllWithRoles($filters);
+        return $this->userRepository->getAllWithRoles($filters);
     }
 
     /**
@@ -24,7 +24,7 @@ class UserService
      */
     public function getUser(int $id): ?array
     {
-        return UserRepository::findById($id);
+        return $this->userRepository->findById($id);
     }
 
     /**
@@ -40,15 +40,15 @@ class UserService
 
         $newStatus = $data['status'];
 
-        UserRepository::updateUserStatus($userId, $newStatus);
+        $this->userRepository->updateUserStatus($userId, $newStatus);
 
         if ($newStatus !== 'active') {
             // If user is made inactive, blocked, etc., unlink from employee and remove all roles.
-            UserRepository::unlinkEmployee($userId);
-            UserRepository::updateUserRoles($userId, []);
+            $this->userRepository->unlinkEmployee($userId);
+            $this->userRepository->updateUserRoles($userId, []);
         } else {
             // Only update roles if user is active.
-            UserRepository::updateUserRoles($userId, $data['roles']);
+            $this->userRepository->updateUserRoles($userId, $data['roles']);
         }
 
         return true;
@@ -59,7 +59,7 @@ class UserService
      */
     public function deleteUser(int $id): bool
     {
-        return UserRepository::delete($id);
+        return $this->userRepository->delete($id);
     }
 
     /**
@@ -67,7 +67,7 @@ class UserService
      */
     public function getUserRoles(int $userId): array
     {
-        return RoleRepository::getUserRoles($userId);
+        return $this->roleRepository->getUserRoles($userId);
     }
 
     /**
@@ -75,7 +75,7 @@ class UserService
      */
     public function getRoleIdsForUser(int $userId): array
     {
-        return UserRepository::getRoleIdsForUser($userId);
+        return $this->userRepository->getRoleIdsForUser($userId);
     }
 
     /**
@@ -83,7 +83,7 @@ class UserService
      */
     public function getAllRoles(): array
     {
-        return RoleRepository::getAllRoles();
+        return $this->roleRepository->getAllRoles();
     }
 
     /**
@@ -91,7 +91,7 @@ class UserService
      */
     public function linkEmployee(int $userId, int $employeeId): bool
     {
-        return UserRepository::linkEmployee($userId, $employeeId);
+        return $this->userRepository->linkEmployee($userId, $employeeId);
     }
 
     /**
@@ -99,7 +99,7 @@ class UserService
      */
     public function getUsersWithoutEmployee(): array
     {
-        return UserRepository::findUsersWithoutEmployeeRecord();
+        return $this->userRepository->findUsersWithoutEmployeeRecord();
     }
 
     /**
@@ -107,7 +107,7 @@ class UserService
      */
     public function getUnlinkedEmployees(?int $departmentId = null): array
     {
-        return UserRepository::getUnlinkedEmployees($departmentId);
+        return $this->userRepository->getUnlinkedEmployees($departmentId);
     }
 
     /**
@@ -115,6 +115,6 @@ class UserService
      */
     public function unlinkEmployee(int $userId): bool
     {
-        return UserRepository::unlinkEmployee($userId);
+        return $this->userRepository->unlinkEmployee($userId);
     }
 }

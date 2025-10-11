@@ -30,7 +30,7 @@ class LeaveService {
      * @throws Exception 직원 정보가 없거나 입사일이 설정되지 않은 경우
      */
     public function grantCalculatedAnnualLeave(int $employeeId, int $year): bool {
-        $employee = EmployeeRepository::findById($employeeId);
+        $employee = $this->employeeRepository->findById($employeeId);
         if (!$employee || !$employee['hire_date']) {
             throw new Exception("직원 정보 또는 입사일이 존재하지 않습니다.");
         }
@@ -38,7 +38,7 @@ class LeaveService {
         $leaveData = $this->calculateAnnualLeaveDays($employee['hire_date'], $year);
         $total_days = $leaveData['total_days'];
 
-        return LeaveRepository::createOrUpdateEntitlement([
+        return $this->leaveRepository->createOrUpdateEntitlement([
             'employee_id' => $employeeId,
             'year' => $year,
             'total_days' => $total_days
@@ -113,7 +113,7 @@ class LeaveService {
             }
 
             // Check for overlapping leaves
-            if (LeaveRepository::findOverlappingLeaves($employeeId, $data['start_date'], $data['end_date'])) {
+            if ($this->leaveRepository->findOverlappingLeaves($employeeId, $data['start_date'], $data['end_date'])) {
                 return [false, "신청하신 기간에 이미 다른 연차 신청 내역이 존재합니다."];
             }
 
@@ -129,7 +129,7 @@ class LeaveService {
 
             if (in_array($data['leave_type'], ['annual', 'half_day'])) {
                 $year = (int)$startDate->format('Y');
-                $entitlement = LeaveRepository::findEntitlement($employeeId, $year);
+                $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
                 $remaining_days = ($entitlement['total_days'] ?? 0) - ($entitlement['used_days'] ?? 0);
 
                 if ($remaining_days < $daysToUse) {
@@ -140,7 +140,7 @@ class LeaveService {
             $data['employee_id'] = $employeeId;
             $data['days_count'] = $daysToUse;
 
-            $leaveId = LeaveRepository::create($data);
+            $leaveId = $this->leaveRepository->create($data);
 
             return $leaveId ? [true, "연차 신청이 완료되었습니다."] : [false, "신청 처리 중 오류가 발생했습니다."];
 
@@ -170,10 +170,10 @@ class LeaveService {
             return $leaveDays < 1 ? 0 : 0.5;
         }
 
-        $employee = EmployeeRepository::findById($employeeId);
+        $employee = $this->employeeRepository->findById($employeeId);
         $departmentId = $employee['department_id'] ?? null;
 
-        $holidaysRaw = HolidayRepository::findForDateRange($startDateStr, $endDateStr, $departmentId);
+        $holidaysRaw = $this->holidayRepository->findForDateRange($startDateStr, $endDateStr, $departmentId);
         $holidays = [];
         foreach($holidaysRaw as $h) {
             if(!isset($holidays[$h['date']]) || $h['department_id'] !== null) {
@@ -213,16 +213,16 @@ class LeaveService {
      * @return array [성공 여부(bool), 메시지(string)]
      */
     public function approveRequest(int $leaveId, int $adminUserId): array {
-        $leave = LeaveRepository::findById($leaveId);
+        $leave = $this->leaveRepository->findById($leaveId);
         if (!$leave || $leave['status'] !== 'pending') {
             return [false, "승인할 수 없는 신청 건입니다."];
         }
 
         $year = (int)(new DateTime($leave['start_date']))->format('Y');
 
-        $updatedStatus = LeaveRepository::updateStatus($leaveId, 'approved', $adminUserId, null);
+        $updatedStatus = $this->leaveRepository->updateStatus($leaveId, 'approved', $adminUserId, null);
         if ($updatedStatus) {
-            $updatedDays = LeaveRepository::updateUsedDays($leave['employee_id'], $year, $leave['days_count']);
+            $updatedDays = $this->leaveRepository->updateUsedDays($leave['employee_id'], $year, $leave['days_count']);
             if ($updatedDays) {
                 return [true, "연차 신청이 승인되었습니다."];
             }
@@ -239,12 +239,12 @@ class LeaveService {
      * @return array [성공 여부(bool), 메시지(string)]
      */
     public function rejectRequest(int $leaveId, int $adminUserId, string $reason): array {
-        $leave = LeaveRepository::findById($leaveId);
+        $leave = $this->leaveRepository->findById($leaveId);
         if (!$leave || $leave['status'] !== 'pending') {
             return [false, "반려할 수 없는 신청 건입니다."];
         }
 
-        if (LeaveRepository::updateStatus($leaveId, 'rejected', $adminUserId, $reason)) {
+        if ($this->leaveRepository->updateStatus($leaveId, 'rejected', $adminUserId, $reason)) {
             return [true, "연차 신청을 반려 처리했습니다."];
         }
         return [false, "처리 중 오류가 발생했습니다."];
@@ -261,14 +261,14 @@ class LeaveService {
      * @return array [성공 여부(bool), 메시지(string)]
      */
     public function cancelRequest(int $leaveId, int $employeeId, ?string $reason = null): array {
-        $leave = LeaveRepository::findById($leaveId);
+        $leave = $this->leaveRepository->findById($leaveId);
         if (!$leave || $leave['employee_id'] != $employeeId) {
             return [false, "권한이 없습니다."];
         }
 
         switch ($leave['status']) {
             case 'pending':
-                if (LeaveRepository::updateStatus($leaveId, 'cancelled', null, "사용자 취소")) {
+                if ($this->leaveRepository->updateStatus($leaveId, 'cancelled', null, "사용자 취소")) {
                     return [true, "신청이 취소되었습니다."];
                 }
                 break;
@@ -277,7 +277,7 @@ class LeaveService {
                 if (empty($reason)) {
                     return [false, "승인된 연차를 취소하려면 사유를 반드시 입력해야 합니다."];
                 }
-                if (LeaveRepository::requestCancellation($leaveId, $reason)) {
+                if ($this->leaveRepository->requestCancellation($leaveId, $reason)) {
                     return [true, "연차 취소 요청이 완료되었습니다. 관리자 승인 후 최종 처리됩니다."];
                 }
                 break;
@@ -297,7 +297,7 @@ class LeaveService {
      */
     public function grantAnnualLeaveForAllEmployees(int $year): array
     {
-        $employees = EmployeeRepository::findAllActive();
+        $employees = $this->employeeRepository->findAllActive();
         $total_count = count($employees);
         $success_count = 0;
         $failed_count = 0;
@@ -342,9 +342,9 @@ class LeaveService {
             throw new Exception("조정할 일수가 0일 수 없습니다.");
         }
 
-        $success = LeaveRepository::adjustEntitlement($employeeId, $year, $adjustedDays);
+        $success = $this->leaveRepository->adjustEntitlement($employeeId, $year, $adjustedDays);
         if ($success) {
-            LeaveRepository::logAdjustment($employeeId, $year, $adjustedDays, $reason, $adminId);
+            $this->leaveRepository->logAdjustment($employeeId, $year, $adjustedDays, $reason, $adminId);
         }
         return $success;
     }
@@ -357,7 +357,7 @@ class LeaveService {
      * @return array [성공 여부(bool), 메시지(string)]
      */
     public function approveCancellation(int $leaveId, int $adminUserId): array {
-        $leave = LeaveRepository::findById($leaveId);
+        $leave = $this->leaveRepository->findById($leaveId);
         if (!$leave || $leave['status'] !== 'cancellation_requested') {
             return [false, "승인할 수 없는 취소 요청입니다."];
         }
@@ -366,9 +366,9 @@ class LeaveService {
         
         // 1. 연차 상태를 'cancelled'로 변경
         $reason = "관리자 승인에 의한 취소";
-        if (LeaveRepository::updateStatus($leaveId, 'cancelled', $adminUserId, $reason)) {
+        if ($this->leaveRepository->updateStatus($leaveId, 'cancelled', $adminUserId, $reason)) {
             // 2. 사용했던 연차 일수 복원
-            LeaveRepository::updateUsedDays($leave['employee_id'], $year, -$leave['days_count']);
+            $this->leaveRepository->updateUsedDays($leave['employee_id'], $year, -$leave['days_count']);
             return [true, "연차 취소 요청이 승인되었습니다."];
         }
         
@@ -384,13 +384,13 @@ class LeaveService {
      * @return array [성공 여부(bool), 메시지(string)]
      */
     public function rejectCancellation(int $leaveId, int $adminUserId, string $reason): array {
-        $leave = LeaveRepository::findById($leaveId);
+        $leave = $this->leaveRepository->findById($leaveId);
         if (!$leave || $leave['status'] !== 'cancellation_requested') {
             return [false, "반려할 수 없는 취소 요청입니다."];
         }
 
         // 상태를 다시 'approved'로 변경하고 반려 사유를 기록
-        if (LeaveRepository::updateStatus($leaveId, 'approved', $adminUserId, $reason)) {
+        if ($this->leaveRepository->updateStatus($leaveId, 'approved', $adminUserId, $reason)) {
             return [true, "연차 취소 요청을 반려 처리했습니다."];
         }
         
@@ -406,8 +406,8 @@ class LeaveService {
      */
     public function getEmployeeLeaveStatistics(int $employeeId, int $year): array
     {
-        $entitlement = LeaveRepository::findEntitlement($employeeId, $year);
-        $leaveHistory = LeaveRepository::findByEmployeeAndYear($employeeId, $year);
+        $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
+        $leaveHistory = $this->leaveRepository->findByEmployeeAndYear($employeeId, $year);
         
         $stats = [
             'total_days' => $entitlement['total_days'] ?? 0,
@@ -493,7 +493,7 @@ class LeaveService {
             }
             
             // Check for overlapping leaves
-            if (LeaveRepository::findOverlappingLeaves($employeeId, $data['start_date'], $data['end_date'])) {
+            if ($this->leaveRepository->findOverlappingLeaves($employeeId, $data['start_date'], $data['end_date'])) {
                 $errors[] = "신청하신 기간에 이미 다른 연차 신청 내역이 존재합니다.";
             }
             
@@ -504,7 +504,7 @@ class LeaveService {
         }
         
         // Employee validation
-        $employee = EmployeeRepository::findById($employeeId);
+        $employee = $this->employeeRepository->findById($employeeId);
         if (!$employee) {
             $errors[] = "직원 정보를 찾을 수 없습니다.";
         } elseif ($employee['status'] !== 'active') {
@@ -521,11 +521,11 @@ class LeaveService {
      */
     public function getPendingLeaveRequests(): array
     {
-        $pendingLeaves = LeaveRepository::findByStatus('pending');
+        $pendingLeaves = $this->leaveRepository->findByStatus('pending');
         $enrichedLeaves = [];
         
         foreach ($pendingLeaves as $leave) {
-            $employee = EmployeeRepository::findById($leave['employee_id']);
+            $employee = $this->employeeRepository->findById($leave['employee_id']);
             $enrichedLeaves[] = array_merge($leave, [
                 'employee_name' => $employee['name'] ?? 'Unknown',
                 'employee_department' => $employee['department_name'] ?? 'Unknown',
@@ -545,8 +545,8 @@ class LeaveService {
      */
     public function calculateLeaveBalance(int $employeeId, int $year): array
     {
-        $entitlement = LeaveRepository::findEntitlement($employeeId, $year);
-        $pendingLeaves = LeaveRepository::findPendingByEmployee($employeeId, $year);
+        $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
+        $pendingLeaves = $this->leaveRepository->findPendingByEmployee($employeeId, $year);
         
         $totalDays = $entitlement['total_days'] ?? 0;
         $usedDays = $entitlement['used_days'] ?? 0;

@@ -2,17 +2,25 @@
 
 namespace App\Services;
 
+use App\Core\Database;
 use App\Repositories\MenuRepository;
 
 class MenuManagementService
 {
+    private MenuRepository $menuRepository;
+    private Database $db;
+
+    public function __construct() {
+        $this->db = \App\Core\Database::getInstance();
+        $this->menuRepository = new MenuRepository($this->db);
+    }
+
     /**
      * 모든 메뉴 목록 조회 (관리용)
      */
     public function getAllMenusForAdmin(): array
     {
-        // 이제 MenuRepository를 통해 조회
-        return MenuRepository::findAllForAdmin();
+        return $this->menuRepository->findAllForAdmin();
     }
 
     /**
@@ -20,7 +28,7 @@ class MenuManagementService
      */
     public function createMenu(array $menuData): string
     {
-        return MenuRepository::create($menuData);
+        return $this->menuRepository->create($menuData);
     }
 
     /**
@@ -28,7 +36,7 @@ class MenuManagementService
      */
     public function updateMenu(int $id, array $menuData): bool
     {
-        return MenuRepository::update($id, $menuData);
+        return $this->menuRepository->update($id, $menuData);
     }
 
     /**
@@ -36,7 +44,7 @@ class MenuManagementService
      */
     public function deleteMenu(int $id): bool
     {
-        return MenuRepository::delete($id);
+        return $this->menuRepository->delete($id);
     }
 
     /**
@@ -44,7 +52,7 @@ class MenuManagementService
      */
     public function getMenu(int $id): ?array
     {
-        return MenuRepository::findById($id);
+        return $this->menuRepository->findById($id);
     }
 
     /**
@@ -52,7 +60,7 @@ class MenuManagementService
      */
     public function updateMenuOrder(int $id, int $displayOrder): bool
     {
-        return MenuRepository::updateDisplayOrder($id, $displayOrder);
+        return $this->menuRepository->updateDisplayOrder($id, $displayOrder);
     }
 
     /**
@@ -60,7 +68,7 @@ class MenuManagementService
      */
     public function updateMenuParent(int $id, ?int $parentId): bool
     {
-        return MenuRepository::updateParent($id, $parentId);
+        return $this->menuRepository->updateParent($id, $parentId);
     }
 
     /**
@@ -71,7 +79,7 @@ class MenuManagementService
      */
     public function updateOrderAndHierarchy(array $updates): bool
     {
-        \App\Core\Database::beginTransaction();
+        $this->db->beginTransaction();
         try {
             foreach ($updates as $menuItem) {
                 $id = $menuItem['id'] ?? null;
@@ -80,16 +88,16 @@ class MenuManagementService
                 }
                 
                 $sql = "UPDATE sys_menus SET display_order = :display_order, parent_id = :parent_id WHERE id = :id";
-                \App\Core\Database::execute($sql, [
+                $this->db->execute($sql, [
                     ':display_order' => $menuItem['display_order'] ?? 0,
                     ':parent_id' => $menuItem['parent_id'] ?? null,
                     ':id' => $id
                 ]);
             }
-            \App\Core\Database::commit();
+            $this->db->commit();
             return true;
         } catch (\Exception $e) {
-            \App\Core\Database::rollBack();
+            $this->db->rollBack();
             // Re-throw the exception to be handled by the controller
             throw $e;
         }

@@ -4,12 +4,22 @@ namespace App\Middleware;
 
 use App\Core\View;
 use App\Services\AuthService;
+use App\Services\ViewDataService;
 
 class PermissionMiddleware extends BaseMiddleware
 {
+    private AuthService $authService;
+    private ViewDataService $viewDataService;
+
+    public function __construct()
+    {
+        $this->authService = new AuthService();
+        $this->viewDataService = new ViewDataService();
+    }
+
     public function handle($permission = null): void
     {
-        if (! (new AuthService())->check($permission)) {
+        if (! $this->authService->check($permission)) {
             if ($this->isApiRequest()) {
                 $this->jsonResponse(['error' => 'Forbidden'], 403);
             } else {
@@ -18,7 +28,7 @@ class PermissionMiddleware extends BaseMiddleware
                 // to provide a consistent user experience.
                 // To ensure the layout renders correctly with menus,
                 // we need to provide the common view data.
-                $commonData = \App\Services\ViewDataService::getCommonData();
+                $commonData = $this->viewDataService->getCommonData();
                 $viewData = array_merge($commonData, [
                     'pageTitle' => '접근 권한 없음',
                     'message' => '이 페이지에 접근할 수 있는 권한이 없습니다.'

@@ -4,8 +4,13 @@ namespace App\Repositories;
 use App\Core\Database;
 
 class WasteCollectionRepository {
+    private Database $db;
 
-    public static function createCollection(array $data): ?int {
+    public function __construct(Database $db) {
+        $this->db = $db;
+    }
+
+    public function createCollection(array $data): ?int {
         $query = 'INSERT INTO `waste_collections`
                     (`latitude`, `longitude`, `address`, `photo_path`, `user_id`, `employee_id`, `issue_date`,
                      `discharge_number`, `submitter_name`, `submitter_phone`, `fee`, `status`, `type`, `geocoding_status`, `created_at`)
@@ -28,21 +33,21 @@ class WasteCollectionRepository {
             $data['geocoding_status'] ?? 'success'
         ];
 
-        $newId = Database::insert($query, $params);
+        $newId = $this->db->insert($query, $params);
         return $newId > 0 ? $newId : null;
     }
 
-    public static function createCollectionItem(int $collectionId, string $itemName, int $quantity): bool {
+    public function createCollectionItem(int $collectionId, string $itemName, int $quantity): bool {
         $query = 'INSERT INTO `waste_collection_items` (`collection_id`, `item_name`, `quantity`) VALUES (?, ?, ?)';
-        return Database::execute($query, [$collectionId, $itemName, $quantity]) > 0;
+        return $this->db->execute($query, [$collectionId, $itemName, $quantity]) > 0;
     }
 
-    public static function deleteItemsByCollectionId(int $collectionId): bool {
+    public function deleteItemsByCollectionId(int $collectionId): bool {
         $query = "DELETE FROM `waste_collection_items` WHERE `collection_id` = ?";
-        return Database::execute($query, [$collectionId]) !== false;
+        return $this->db->execute($query, [$collectionId]) !== false;
     }
 
-    public static function findAllWithItems(): array {
+    public function findAllWithItems(): array {
         $query = "
             SELECT
                 wc.*,
@@ -55,10 +60,10 @@ class WasteCollectionRepository {
             WHERE wc.status = 'unprocessed'
             ORDER BY wc.created_at DESC
         ";
-        return Database::fetchAll($query);
+        return $this->db->fetchAll($query);
     }
 
-    public static function findAllForAdmin(array $filters): array {
+    public function findAllForAdmin(array $filters): array {
         $baseQuery = "
             SELECT
                 wc.*,
@@ -96,10 +101,10 @@ class WasteCollectionRepository {
 
         $baseQuery .= " ORDER BY wc.created_at DESC";
 
-        return Database::fetchAll($baseQuery, $params);
+        return $this->db->fetchAll($baseQuery, $params);
     }
 
-    public static function findById(int $id): ?array {
+    public function findById(int $id): ?array {
         $query = "
             SELECT
                 wc.*,
@@ -111,32 +116,32 @@ class WasteCollectionRepository {
             FROM `waste_collections` wc
             WHERE wc.id = ?
         ";
-        return Database::fetchOne($query, [$id]);
+        return $this->db->fetchOne($query, [$id]);
     }
 
-    public static function processByAddress(string $address): bool {
+    public function processByAddress(string $address): bool {
         $query = "UPDATE `waste_collections` SET `status` = 'processed' WHERE `address` = ? AND `status` = 'unprocessed'";
-        return Database::execute($query, [$address]) > 0;
+        return $this->db->execute($query, [$address]) > 0;
     }
 
-    public static function processById(int $id): bool {
+    public function processById(int $id): bool {
         $query = "UPDATE `waste_collections` SET `status` = 'processed' WHERE `id` = ? AND `status` = 'unprocessed'";
-        return Database::execute($query, [$id]) > 0;
+        return $this->db->execute($query, [$id]) > 0;
     }
 
-    public static function updateAdminMemo(int $id, string $memo): bool {
+    public function updateAdminMemo(int $id, string $memo): bool {
         $query = "UPDATE `waste_collections` SET `admin_memo` = ? WHERE `id` = ?";
-        return Database::execute($query, [$memo, $id]) > 0;
+        return $this->db->execute($query, [$memo, $id]) > 0;
     }
 
-    public static function clearOnlineSubmissions(): bool {
+    public function clearOnlineSubmissions(): bool {
         $query = "DELETE FROM `waste_collections` WHERE `type` = 'online'";
-        return Database::execute($query) !== false;
+        return $this->db->execute($query) !== false;
     }
 
-    public static function findByDischargeNumber(string $dischargeNumber): ?array {
+    public function findByDischargeNumber(string $dischargeNumber): ?array {
         $query = "SELECT * FROM `waste_collections` WHERE `discharge_number` = ? LIMIT 1";
-        $result = Database::fetchOne($query, [$dischargeNumber]);
+        $result = $this->db->fetchOne($query, [$dischargeNumber]);
         return $result === false ? null : $result;
     }
 }

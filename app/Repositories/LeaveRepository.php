@@ -9,6 +9,11 @@ use App\Core\Database;
  * 연차 부여, 연차 신청, 연차 조정과 관련된 모든 데이터 처리를 담당합니다.
  */
 class LeaveRepository {
+    private Database $db;
+
+    public function __construct(Database $db) {
+        $this->db = $db;
+    }
 
     // =================================================================
     // 연차 부여 (Leave Entitlements) 관련 메소드
@@ -21,9 +26,9 @@ class LeaveRepository {
      * @param int $year 조회할 연도
      * @return array|false 연차 부여 정보 배열 또는 정보가 없는 경우 false
      */
-    public static function findEntitlement(int $employeeId, int $year) {
+    public function findEntitlement(int $employeeId, int $year) {
         $sql = "SELECT * FROM hr_leave_entitlements WHERE employee_id = :employee_id AND year = :year";
-        return Database::fetchOne($sql, [':employee_id' => $employeeId, ':year' => $year]);
+        return $this->db->fetchOne($sql, [':employee_id' => $employeeId, ':year' => $year]);
     }
 
     /**
@@ -32,8 +37,8 @@ class LeaveRepository {
      * @param array $data 생성/수정할 데이터. ['employee_id', 'year', 'total_days'] 포함.
      * @return bool 작업 성공 여부
      */
-    public static function createOrUpdateEntitlement(array $data): bool {
-        $existing = self::findEntitlement($data['employee_id'], $data['year']);
+    public function createOrUpdateEntitlement(array $data): bool {
+        $existing = $this->findEntitlement($data['employee_id'], $data['year']);
 
         if ($existing) {
             // Update
@@ -48,7 +53,7 @@ class LeaveRepository {
                 ':total_days' => $data['total_days']
             ];
         }
-        return Database::execute($sql, $params) > 0;
+        return $this->db->execute($sql, $params) > 0;
     }
 
     /**
@@ -58,7 +63,7 @@ class LeaveRepository {
      * @param array $filters 필터 조건. e.g., ['year' => 2024, 'department_id' => 1]
      * @return array 직원별 연차 부여 현황 목록
      */
-    public static function getAllEntitlements(array $filters = []): array {
+    public function getAllEntitlements(array $filters = []): array {
         $year = $filters['year'] ?? date('Y');
 
         $sql = "SELECT
@@ -88,7 +93,7 @@ class LeaveRepository {
 
         $sql .= " ORDER BY e.name ASC";
 
-        return Database::query($sql, $params);
+        return $this->db->query($sql, $params);
     }
 
     /**
@@ -99,12 +104,12 @@ class LeaveRepository {
      * @param float $daysDelta 변경할 일수 (양수: 증가, 음수: 감소)
      * @return bool 업데이트 성공 여부
      */
-    public static function updateUsedDays(int $employeeId, int $year, float $daysDelta): bool {
+    public function updateUsedDays(int $employeeId, int $year, float $daysDelta): bool {
         $sql = "UPDATE hr_leave_entitlements
                 SET used_days = used_days + :days_delta
                 WHERE employee_id = :employee_id AND year = :year";
 
-        return Database::execute($sql, [
+        return $this->db->execute($sql, [
             ':days_delta' => $daysDelta,
             ':employee_id' => $employeeId,
             ':year' => $year
@@ -120,10 +125,10 @@ class LeaveRepository {
      * @param float $adjustment_days 조정할 일수 (양수: 추가, 음수: 차감)
      * @return bool 조정 성공 여부
      */
-    public static function adjustEntitlement(int $employeeId, int $year, float $adjustment_days): bool {
-        $existing = self::findEntitlement($employeeId, $year);
+    public function adjustEntitlement(int $employeeId, int $year, float $adjustment_days): bool {
+        $existing = $this->findEntitlement($employeeId, $year);
         if (!$existing) {
-            self::createOrUpdateEntitlement([
+            $this->createOrUpdateEntitlement([
                 'employee_id' => $employeeId,
                 'year' => $year,
                 'total_days' => 0
@@ -131,7 +136,7 @@ class LeaveRepository {
         }
 
         $sql = "UPDATE hr_leave_entitlements SET total_days = total_days + :adjustment WHERE employee_id = :employee_id AND year = :year";
-        return Database::execute($sql, [
+        return $this->db->execute($sql, [
             ':adjustment' => $adjustment_days,
             ':employee_id' => $employeeId,
             ':year' => $year
@@ -148,10 +153,10 @@ class LeaveRepository {
      * @param int $adminId 조정을 수행한 관리자의 ID
      * @return bool 로그 기록 성공 여부
      */
-    public static function logAdjustment(int $employeeId, int $year, float $adjustedDays, string $reason, int $adminId): bool {
+    public function logAdjustment(int $employeeId, int $year, float $adjustedDays, string $reason, int $adminId): bool {
         $sql = "INSERT INTO hr_leave_adjustments_log (employee_id, year, adjusted_days, reason, admin_id)
                 VALUES (:employee_id, :year, :adjusted_days, :reason, :admin_id)";
-        return Database::execute($sql, [
+        return $this->db->execute($sql, [
             ':employee_id' => $employeeId,
             ':year' => $year,
             ':adjusted_days' => $adjustedDays,
@@ -170,12 +175,12 @@ class LeaveRepository {
      * @param int $id 조회할 연차 신청 ID
      * @return array|false 연차 신청 정보 배열 또는 false
      */
-    public static function findById(int $id) {
+    public function findById(int $id) {
         $sql = "SELECT l.*, e.name as employee_name
                 FROM hr_leaves l
                 JOIN hr_employees e ON l.employee_id = e.id
                 WHERE l.id = :id";
-        return Database::fetchOne($sql, [':id' => $id]);
+        return $this->db->fetchOne($sql, [':id' => $id]);
     }
 
     /**
@@ -185,7 +190,7 @@ class LeaveRepository {
      * @param array $filters 필터 조건. e.g., ['year' => 2024]
      * @return array 해당 직원의 연차 신청 목록
      */
-    public static function findByEmployeeId(int $employeeId, array $filters = []): array {
+    public function findByEmployeeId(int $employeeId, array $filters = []): array {
          $sql = "SELECT l.*, u.nickname as approver_name
                 FROM hr_leaves l
                 LEFT JOIN sys_users u ON l.approved_by = u.id
@@ -200,7 +205,7 @@ class LeaveRepository {
 
         $sql .= " ORDER BY l.start_date DESC";
 
-        return Database::query($sql, $params);
+        return $this->db->query($sql, $params);
     }
 
     /**
@@ -209,11 +214,11 @@ class LeaveRepository {
      * @param array $data 생성할 연차 신청 데이터
      * @return string|null 생성된 연차 신청의 ID 또는 null
      */
-    public static function create(array $data): ?string {
+    public function create(array $data): ?string {
         $sql = "INSERT INTO hr_leaves (employee_id, leave_type, start_date, end_date, days_count, reason)
                 VALUES (:employee_id, :leave_type, :start_date, :end_date, :days_count, :reason)";
 
-        Database::execute($sql, [
+        $this->db->execute($sql, [
             ':employee_id' => $data['employee_id'],
             ':leave_type' => $data['leave_type'],
             ':start_date' => $data['start_date'],
@@ -221,7 +226,7 @@ class LeaveRepository {
             ':days_count' => $data['days_count'],
             ':reason' => $data['reason']
         ]);
-        return Database::lastInsertId();
+        return $this->db->lastInsertId();
     }
 
     /**
@@ -233,7 +238,7 @@ class LeaveRepository {
      * @param int|null $excludeLeaveId 검사에서 제외할 연차 ID (수정 시 사용)
      * @return bool 중복되는 경우 true, 그렇지 않으면 false
      */
-    public static function findOverlappingLeaves(int $employeeId, string $startDate, string $endDate, ?int $excludeLeaveId = null): bool {
+    public function findOverlappingLeaves(int $employeeId, string $startDate, string $endDate, ?int $excludeLeaveId = null): bool {
         $sql = "SELECT COUNT(*)
                 FROM hr_leaves
                 WHERE employee_id = :employee_id
@@ -252,7 +257,7 @@ class LeaveRepository {
             $params[':exclude_leave_id'] = $excludeLeaveId;
         }
 
-        $count = Database::fetchOne($sql, $params)['COUNT(*)'];
+        $count = $this->db->fetchOne($sql, $params)['COUNT(*)'];
         return $count > 0;
     }
 
@@ -265,12 +270,12 @@ class LeaveRepository {
      * @param string|null $rejectionReason 반려 사유 (반려 시에만 사용)
      * @return bool 업데이트 성공 여부
      */
-    public static function updateStatus(int $id, string $status, ?int $adminUserId, ?string $rejectionReason): bool {
+    public function updateStatus(int $id, string $status, ?int $adminUserId, ?string $rejectionReason): bool {
         $sql = "UPDATE hr_leaves
                 SET status = :status, approved_by = :approved_by, rejection_reason = :rejection_reason
                 WHERE id = :id";
 
-        return Database::execute($sql, [
+        return $this->db->execute($sql, [
             ':id' => $id,
             ':status' => $status,
             ':approved_by' => $adminUserId,
@@ -285,12 +290,12 @@ class LeaveRepository {
      * @param string $reason 취소 사유
      * @return bool 업데이트 성공 여부
      */
-    public static function requestCancellation(int $id, string $reason): bool {
+    public function requestCancellation(int $id, string $reason): bool {
         $sql = "UPDATE hr_leaves
                 SET status = 'cancellation_requested', cancellation_reason = :reason
                 WHERE id = :id AND status = 'approved'";
 
-        return Database::execute($sql, [
+        return $this->db->execute($sql, [
             ':id' => $id,
             ':reason' => $reason
         ]) > 0;
@@ -302,7 +307,7 @@ class LeaveRepository {
      * @param array $filters 필터 조건. e.g., ['status' => 'pending', 'start_date' => '2024-01-01']
      * @return array 필터링된 연차 신청 목록
      */
-    public static function getAll(array $filters = []): array {
+    public function getAll(array $filters = []): array {
         $sql = "SELECT l.*, e.name as employee_name, d.name as department_name
                 FROM hr_leaves l
                 JOIN hr_employees e ON l.employee_id = e.id
@@ -329,6 +334,6 @@ class LeaveRepository {
         }
         $sql .= " ORDER BY l.created_at DESC";
 
-        return Database::query($sql, $params);
+        return $this->db->query($sql, $params);
     }
 }
