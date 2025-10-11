@@ -34,7 +34,7 @@ class MapService {
             return;
         }
 
-        this.mapManager = new InteractiveMapManager(this.config);
+        this.mapManager = new InteractiveMap(this.config);
     }
 
     /**

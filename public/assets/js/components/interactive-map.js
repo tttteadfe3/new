@@ -8,7 +8,7 @@
  * - 마커 등록/처리/삭제 관리
  * - 모바일 터치 이벤트 처리
  */
-class InteractiveMapManager {
+class InteractiveMap {
     constructor(options = {}) {
         this.config = {
             // 지도 설정
