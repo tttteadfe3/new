@@ -46,6 +46,7 @@ class LitteringService
         $this->validateRegistration($postData, $files);
 
         $data = [
+            'status'      => 'pending', // Set default status for new reports
             'user_id'     => $userId,
             'employee_id' => $employeeId,
             'latitude'    => floatval($postData['lat']),
