@@ -1,4 +1,4 @@
-class UsersAdminApp extends BaseApp {
+class UsersAdminPage extends BasePage {
     constructor() {
         super({
             API_URL: '/users',
@@ -244,4 +244,4 @@ class UsersAdminApp extends BaseApp {
     }
 }
 
-new UsersAdminApp();
+new UsersAdminPage();
