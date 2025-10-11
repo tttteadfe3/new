@@ -1,10 +1,9 @@
 <?php
 use App\Core\View;
-use App\Core\SessionManager;
 
-// Get user info from session
-$currentUserNickname = SessionManager::get('user')['nickname'] ?? '사용자';
-$profileImageUrl = SessionManager::get('user')['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/images/users/avatar.png';
+// Data is now passed from ViewDataService, no need for static calls here.
+$currentUserNickname = $user['nickname'] ?? '사용자';
+$profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/images/users/avatar.png';
 ?>
 <!doctype html>
 <html lang="ko" data-layout="vertical" data-sidebar="dark" data-sidebar-size="lg" data-preloader="enable" data-theme="default">
@@ -19,6 +18,8 @@ $profileImageUrl = SessionManager::get('user')['profile_image_url'] ?? BASE_ASSE
     <?= View::yieldSection('css') ?>
 
     <!-- Default CSS -->
+    <!-- toastify-js Css -->
+    <link href="<?= BASE_ASSETS_URL ?>/assets/libs/toastify-js/src/toastify.css" rel="stylesheet" type="text/css" />
     <!-- sweetalert2 Css -->
     <link href="<?= BASE_ASSETS_URL ?>/assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
     <!-- Bootstrap Css -->
@@ -49,6 +50,19 @@ $profileImageUrl = SessionManager::get('user')['profile_image_url'] ?? BASE_ASSE
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">
+                    <?php if (isset($flash_success) && $flash_success): ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <?= e($flash_success) ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (isset($flash_error) && $flash_error): ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <?= e($flash_error) ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    <?php endif; ?>
+
                     <?= View::yieldSection('content') ?>
                 </div>
                 <!-- container-fluid -->
@@ -108,5 +122,6 @@ $profileImageUrl = SessionManager::get('user')['profile_image_url'] ?? BASE_ASSE
 
     <!-- App js -->
     <script src="<?= BASE_ASSETS_URL ?>/assets/js/app.js"></script>
+
 </body>
 </html>
