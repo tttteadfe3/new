@@ -28,7 +28,7 @@ class LitteringHistoryPage extends BasePage {
             markerSize: { width: 34, height: 40 },
             onMarkerClick: (marker, data) => this.openDetailsOffcanvas(data.address, data.items)
         };
-        this.initializeMapManager(mapOptions);
+        this.state.mapService = new MapService(mapOptions);
         this.setupOffcanvas();
         this.setupLightbox();
         this.loadInitialData();
@@ -92,7 +92,7 @@ class LitteringHistoryPage extends BasePage {
         Object.entries(this.state.groupedData).forEach(([address, items]) => {
             const firstItem = items[0];
             const dominantType = this.getDominantWasteType(items);
-            this.state.mapManager.addMarker({
+            this.state.mapService.mapManager.addMarker({
                 position: { lat: firstItem.latitude, lng: firstItem.longitude },
                 type: `${dominantType}_processed`,
                 data: { address, items },
@@ -171,6 +171,15 @@ class LitteringHistoryPage extends BasePage {
 
     formatDateTime(dateTimeString) {
         return dateTimeString ? new Date(dateTimeString).toLocaleString('ko-KR') : 'N/A';
+    }
+    /**
+     * @override
+     */
+    cleanup() {
+        super.cleanup();
+        if (this.state.mapService) {
+            this.state.mapService.destroy();
+        }
     }
 }
 

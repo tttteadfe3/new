@@ -20,7 +20,7 @@ class LitteringAdminPage extends BasePage {
                 document.getElementById('address').value = locationData.address;
             }
         };
-        this.initializeMapManager(mapOptions);
+        this.state.mapService = new MapService(mapOptions);
         this.setupEventListeners();
         this.loadInitialData();
     }
@@ -91,11 +91,11 @@ class LitteringAdminPage extends BasePage {
         this.renderExistingPhotos(selected);
 
         const position = { lat: selected.latitude, lng: selected.longitude };
-        this.state.mapManager.setCenter(position);
+        this.state.mapService.mapManager.setCenter(position);
 
-        if (this.state.currentMarker) this.state.mapManager.removeMarker(this.state.currentMarker);
+        if (this.state.currentMarker) this.state.mapService.mapManager.removeMarker(this.state.currentMarker);
 
-        this.state.currentMarker = this.state.mapManager.addMarker({
+        this.state.currentMarker = this.state.mapService.mapManager.addMarker({
             position: position,
             draggable: true,
             onDragEnd: (newPosition) => {
@@ -188,11 +188,20 @@ class LitteringAdminPage extends BasePage {
         document.getElementById('confirm-form').reset();
         this.state.selectedReport = null;
         if (this.state.currentMarker) {
-            this.state.mapManager.removeMarker(this.state.currentMarker);
+            this.state.mapService.mapManager.removeMarker(this.state.currentMarker);
             this.state.currentMarker = null;
         }
         const activeItem = document.querySelector('#pending-list .active');
         if (activeItem) activeItem.classList.remove('active');
+    }
+    /**
+     * @override
+     */
+    cleanup() {
+        super.cleanup();
+        if (this.state.mapService) {
+            this.state.mapService.destroy();
+        }
     }
 }
 

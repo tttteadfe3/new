@@ -26,8 +26,6 @@ class EmployeeController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.js');
 
         // Load BaseApp and dependencies
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
 
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
         
