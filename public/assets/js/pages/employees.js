@@ -1,4 +1,4 @@
-class EmployeesApp extends BaseApp {
+class EmployeesPage extends BasePage {
     constructor() {
         super(); // No specific config needed as we'll use resource-based URLs
 
@@ -276,4 +276,4 @@ class EmployeesApp extends BaseApp {
     };
 }
 
-new EmployeesApp();
+new EmployeesPage();

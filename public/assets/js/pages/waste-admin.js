@@ -1,4 +1,4 @@
-class WasteAdminApp extends BaseApp {
+class WasteAdminPage extends BasePage {
     constructor() {
         super();
 
@@ -178,4 +178,4 @@ class WasteAdminApp extends BaseApp {
     }
 }
 
-new WasteAdminApp();
+new WasteAdminPage();

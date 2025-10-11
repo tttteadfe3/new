@@ -1,4 +1,4 @@
-class MenuAdminApp extends BaseApp {
+class MenuAdminPage extends BasePage {
     constructor() {
         super({
             API_URL: '/menus'
@@ -210,4 +210,4 @@ class MenuAdminApp extends BaseApp {
     }
 }
 
-new MenuAdminApp();
+new MenuAdminPage();

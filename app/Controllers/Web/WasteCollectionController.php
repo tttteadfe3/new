@@ -33,8 +33,8 @@ class WasteCollectionController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map-manager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-collection-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/core/base-page.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-collection.js");
 
         $pageTitle = "대형폐기물 수거";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
@@ -59,8 +59,8 @@ class WasteCollectionController extends BaseController
     {
         // Refactored Scripts
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-admin-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/core/base-page.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-admin.js");
         
         $pageTitle = "대형폐기물 관리";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);

@@ -27,9 +27,9 @@ class EmployeeController extends BaseController
 
         // Load BaseApp and dependencies
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/components/base-app.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
 
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employees-app.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);

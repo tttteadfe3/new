@@ -30,8 +30,8 @@ class AdminController extends BaseController
     {
         $pageTitle = "부서/직급 관리";
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/components/base-app.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/organization-admin-app.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/organization-admin.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
@@ -48,8 +48,8 @@ class AdminController extends BaseController
     {
         $pageTitle = "역할 및 권한 관리";
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/components/base-app.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/roles-app.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/roles.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
@@ -66,8 +66,8 @@ class AdminController extends BaseController
     {
         $pageTitle = "사용자 관리";
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/components/base-app.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/users-app.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/users.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
@@ -85,8 +85,8 @@ class AdminController extends BaseController
         $pageTitle = "메뉴 관리";
         \App\Core\View::addJs("https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/components/base-app.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/menu-admin-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/menu-admin.js");
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);

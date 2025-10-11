@@ -1,4 +1,4 @@
-class HolidayAdminApp extends BaseApp {
+class HolidayAdminPage extends BasePage {
     constructor() {
         super({
             API_URL: '/holidays'
@@ -169,4 +169,4 @@ class HolidayAdminApp extends BaseApp {
     }
 }
 
-new HolidayAdminApp();
+new HolidayAdminPage();

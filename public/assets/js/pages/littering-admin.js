@@ -1,4 +1,4 @@
-class LitteringAdminApp extends BaseApp {
+class LitteringAdminPage extends BasePage {
     constructor() {
         super({
             API_URL: '/littering_admin/reports',
@@ -196,4 +196,4 @@ class LitteringAdminApp extends BaseApp {
     }
 }
 
-new LitteringAdminApp();
+new LitteringAdminPage();
