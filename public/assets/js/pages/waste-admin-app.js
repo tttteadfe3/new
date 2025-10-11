@@ -178,6 +178,4 @@ class WasteAdminApp extends BaseApp {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    new WasteAdminApp();
-});
+new WasteAdminApp();
