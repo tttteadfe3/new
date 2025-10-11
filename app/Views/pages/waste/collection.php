@@ -1,4 +1,4 @@
-<?php \App\Core\View::startSection('content'); ?>
+<?php \App\Core\\App\Core\View::getInstance()->startSection('content'); ?>
 <style type="text/css">
 	
 #map-crosshair {
@@ -107,4 +107,4 @@
         </div>
     </div>
 </div>
-<?php \App\Core\View::endSection(); ?>
+<?php \App\Core\\App\Core\View::getInstance()->endSection(); ?>

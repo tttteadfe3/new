@@ -4,38 +4,34 @@ namespace App\Core;
 
 class View
 {
-    private static array $sections = [];
-    private static ?string $currentSection = null;
-    private static ?string $layout = null;
-    private static array $layoutData = [];
+    private static ?View $instance = null;
+    private array $sections = [];
+    private ?string $currentSection = null;
+    private ?string $layout = null;
+    private array $layoutData = [];
+    private array $jsFiles = [];
+    private array $cssFiles = [];
 
-    /**
-     * Render a view file.
-     *
-     * @param string $view The view file to render.
-     * @param array $data The data to extract into variables for the view.
-     * @param string|null $layout The layout to use for rendering.
-     */
-    public static function render(string $view, array $data = [], ?string $layout = null): string
+    private function __construct() {}
+
+    public static function getInstance(): View
     {
-        // Preserve asset sections (css, js) before clearing for the new render.
-        $css = self::$sections['css'] ?? null;
-        $js = self::$sections['js'] ?? null;
-
-        // Reset sections for the new view rendering.
-        self::$sections = [];
-        self::$currentSection = null;
-
-        // Restore asset sections so they are available to the layout.
-        if ($css) {
-            self::$sections['css'] = $css;
+        if (self::$instance === null) {
+            self::$instance = new self();
         }
-        if ($js) {
-            self::$sections['js'] = $js;
-        }
+        return self::$instance;
+    }
 
-        self::$layout = $layout;
-        self::$layoutData = $data;
+    public function render(string $view, array $data = [], ?string $layout = null): string
+    {
+        // Reset per-render properties
+        $this->sections = [];
+        $this->currentSection = null;
+        $this->jsFiles = [];
+        $this->cssFiles = [];
+
+        $this->layout = $layout;
+        $this->layoutData = $data;
 
         $viewPath = ROOT_PATH . '/app/Views/' . str_replace('.', '/', $view) . '.php';
 
@@ -49,41 +45,26 @@ class View
         require $viewPath;
         $viewContent = ob_get_clean();
 
-        // If a layout is being used and the 'content' section was not explicitly defined
-        // by the view (using startSection), then we assume the entire view's
-        // output is the content.
-        if (self::$layout && !isset(self::$sections['content'])) {
-            self::$sections['content'] = $viewContent;
+        if ($this->layout && !isset($this->sections['content'])) {
+            $this->sections['content'] = $viewContent;
         }
 
-        // If a layout is specified, render it.
-        if (self::$layout) {
-            return self::renderWithLayout(self::$layout, self::$layoutData);
+        if ($this->layout) {
+            return $this->renderWithLayout($this->layout, $this->layoutData);
         }
 
-        // Otherwise, just return the content. If sections were used without a layout,
-        // this will correctly return the main content.
-        return self::$sections['content'] ?? $viewContent;
+        return $this->sections['content'] ?? $viewContent;
     }
 
-    /**
-     * Render a view with a layout.
-     *
-     * @param string $layout The layout file name.
-     * @param array $data The data to pass to the layout.
-     */
-    private static function renderWithLayout(string $layout, array $data = []): string
+    private function renderWithLayout(string $layout, array $data = []): string
     {
-        // Path should be relative to the /app/Views/ directory, same as regular views.
         $layoutPath = ROOT_PATH . '/app/Views/' . str_replace('.', '/', $layout) . '.php';
 
         if (!file_exists($layoutPath)) {
             throw new \Exception("Layout not found: {$layoutPath}");
         }
 
-        // The content is now consistently available via `yieldSection('content')`.
-        // We just need to make sure any other data is available to the layout.
-        $data['sections'] = self::$sections;
+        $data['sections'] = $this->sections;
         extract($data);
 
         ob_start();
@@ -91,87 +72,61 @@ class View
         return ob_get_clean();
     }
 
-    /**
-     * Start a section.
-     *
-     * @param string $name The section name.
-     */
-    public static function startSection(string $name): void
+    public function startSection(string $name): void
     {
-        if (self::$currentSection !== null) {
-            throw new \Exception("Cannot start section '{$name}' while section '" . self::$currentSection . "' is still open.");
+        if ($this->currentSection !== null) {
+            throw new \Exception("Cannot start section '{$name}' while section '" . $this->currentSection . "' is still open.");
         }
 
-        self::$currentSection = $name;
+        $this->currentSection = $name;
         ob_start();
     }
 
-    /**
-     * End the current section.
-     */
-    public static function endSection(): void
+    public function endSection(): void
     {
-        if (self::$currentSection === null) {
+        if ($this->currentSection === null) {
             throw new \Exception("No section to end.");
         }
 
         $content = ob_get_clean();
-        self::$sections[self::$currentSection] = $content;
-        self::$currentSection = null;
+        $this->sections[$this->currentSection] = $content;
+        $this->currentSection = null;
     }
 
-    /**
-     * Yield a section's content.
-     *
-     * @param string $name The section name.
-     * @param string $default Default content if section doesn't exist.
-     */
-    public static function yieldSection(string $name, string $default = ''): string
+    public function yieldSection(string $name, string $default = ''): string
     {
-        return self::$sections[$name] ?? $default;
+        if ($name === 'css') {
+            return implode("\n", $this->cssFiles);
+        }
+        if ($name === 'js') {
+            return implode("\n", $this->jsFiles);
+        }
+        return $this->sections[$name] ?? $default;
     }
 
-    /**
-     * Check if a section exists.
-     *
-     * @param string $name The section name.
-     */
-    public static function hasSection(string $name): bool
+    public function hasSection(string $name): bool
     {
-        return isset(self::$sections[$name]);
+        return isset($this->sections[$name]);
     }
 
-    /**
-     * Add CSS file to the page.
-     *
-     * @param string $path The CSS file path.
-     */
-    public static function addCss(string $path): void
+    public function addCss(string $path): void
     {
-        $currentCss = self::$sections['css'] ?? '';
-        $cssTag = '<link href="' . htmlspecialchars($path, ENT_QUOTES, 'UTF-8') . '" rel="stylesheet" type="text/css" />' . "\n";
-        self::$sections['css'] = $currentCss . $cssTag;
+        $cssTag = '<link href="' . htmlspecialchars($path, ENT_QUOTES, 'UTF-8') . '" rel="stylesheet" type="text/css" />';
+        if (!in_array($cssTag, $this->cssFiles)) {
+            $this->cssFiles[] = $cssTag;
+        }
     }
 
-    /**
-     * Add JS file to the page.
-     *
-     * @param string $path The JS file path.
-     */
-    public static function addJs(string $path): void
+    public function addJs(string $path): void
     {
-        $currentJs = self::$sections['js'] ?? '';
-        $jsTag = '<script src="' . htmlspecialchars($path, ENT_QUOTES, 'UTF-8') . '"></script>' . "\n";
-        self::$sections['js'] = $currentJs . $jsTag;
+        $jsTag = '<script src="' . htmlspecialchars($path, ENT_QUOTES, 'UTF-8') . '"></script>';
+        if (!in_array($jsTag, $this->jsFiles)) {
+            $this->jsFiles[] = $jsTag;
+        }
     }
 
-    /**
-     * Set the layout for the current view.
-     *
-     * @param string $layout The layout name.
-     */
-    public static function extends(string $layout): void
+    public function extends(string $layout): void
     {
-        self::$layout = $layout;
+        $this->layout = $layout;
     }
 }

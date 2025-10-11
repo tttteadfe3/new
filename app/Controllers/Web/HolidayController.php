@@ -22,12 +22,12 @@ class HolidayController extends BaseController
     public function index(): void
     {
         // Set page-specific CSS and JS
-        View::addCss(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.css');
-        View::addJs(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.js');
+        \App\Core\View::getInstance()->addCss(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.css');
+        \App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.js');
 
         // Load BaseApp and dependencies
 
-        View::addJs(BASE_ASSETS_URL . '/assets/js/pages/holiday-admin.js');
+        \App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/holiday-admin.js');
 
         $data = [
             'pageTitle' => '휴일/근무일 설정'

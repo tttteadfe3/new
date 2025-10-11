@@ -20,7 +20,7 @@ class DepartmentRepository {
 
     public function create(string $name): string {
         $sql = "INSERT INTO hr_departments (name) VALUES (:name)";
-        $this->db->execute($sql, [':name' => $name]) > 0;
+        $this->db->execute($sql, [':name' => $name]);
         return $this->db->lastInsertId();
     }
 

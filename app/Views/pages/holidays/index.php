@@ -1,7 +1,7 @@
 <?php
 use App\Core\View;
 
-View::startSection('content');
+\App\Core\View::getInstance()->startSection('content');
 ?>
 
 <!-- start page title -->
@@ -93,4 +93,4 @@ View::startSection('content');
     </div>
 </div>
 
-<?php View::endSection(); ?>
+<?php \App\Core\View::getInstance()->endSection(); ?>

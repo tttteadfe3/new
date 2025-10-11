@@ -43,7 +43,7 @@ abstract class BaseController
         // Merge controller-specific data with common data
         $viewData = array_merge($data, $commonData);
 
-        return View::render($view, $viewData, $layout);
+        return \App\Core\View::getInstance()->render($view, $viewData, $layout);
     }
 
     /**

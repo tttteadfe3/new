@@ -25,7 +25,7 @@ class LogController extends BaseController
 
         // Load BaseApp and dependencies
 
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/log-viewer.js');
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/log-viewer.js');
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         echo $this->render('pages/logs/index', [

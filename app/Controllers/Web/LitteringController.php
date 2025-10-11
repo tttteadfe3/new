@@ -23,17 +23,17 @@ class LitteringController extends BaseController
         $pageTitle = "부적정배출 확인";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/css/pages/split-layout.css");
+        \App\Core\\App\Core\View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/split-layout.css");
         
-        \App\Core\View::addJs("https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js");
-        \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
+        \App\Core\\App\Core\View::getInstance()->addJs("https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js");
+        \App\Core\\App\Core\View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
 
         // Refactored Scripts
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-admin.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-admin.js");
 
         echo $this->render('pages/littering/admin', ['pageTitle' => $pageTitle, 'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]], 'layouts/app');
     }
@@ -46,21 +46,21 @@ class LitteringController extends BaseController
         $pageTitle = "부적정배출 등록";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
-        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
-        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/css/pages/littering.css");
+        \App\Core\\App\Core\View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
+        \App\Core\\App\Core\View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
+        \App\Core\\App\Core\View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering.css");
         
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
-        \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
+        \App\Core\\App\Core\View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
 
         // Refactored Scripts
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-map.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-map.js");
 
         echo $this->render('pages/littering/map', ['pageTitle' => $pageTitle, 'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]], 'layouts/app');
     }
@@ -73,21 +73,21 @@ class LitteringController extends BaseController
         $pageTitle = "무단투기 처리 내역";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
-        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
-        \App\Core\View::addCss(BASE_ASSETS_URL . "/assets/css/pages/littering_history.css");
+        \App\Core\\App\Core\View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
+        \App\Core\\App\Core\View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
+        \App\Core\\App\Core\View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering_history.css");
         
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
-        \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
+        \App\Core\\App\Core\View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
 
         // Refactored Scripts
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-history.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-history.js");
 
         echo $this->render('pages/littering/history', ['pageTitle' => $pageTitle, 'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]], 'layouts/app');
     }
@@ -100,14 +100,14 @@ class LitteringController extends BaseController
         $pageTitle = "삭제된 부적정배출";
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
-        \App\Core\View::addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
+        \App\Core\\App\Core\View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . ($_ENV['KAKAO_MAP_API_KEY'] ?? '') . "&libraries=services");
 
         // Refactored Scripts
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-deleted-admin.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-deleted-admin.js");
 
         echo $this->render('pages/littering/deleted', ['pageTitle' => $pageTitle, 'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]], 'layouts/app');
     }
