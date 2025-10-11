@@ -1,4 +1,4 @@
-class OrganizationAdminApp extends BaseApp {
+class OrganizationAdminPage extends BasePage {
     constructor() {
         super({
             API_URL: '/organization'
@@ -148,4 +148,4 @@ class OrganizationAdminApp extends BaseApp {
     }
 }
 
-new OrganizationAdminApp();
+new OrganizationAdminPage();

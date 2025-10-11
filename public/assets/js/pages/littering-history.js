@@ -2,7 +2,7 @@
  * Application for the Littering History page.
  * Handles fetching and displaying processed littering reports on a map.
  */
-class LitteringHistoryApp extends BaseApp {
+class LitteringHistoryPage extends BasePage {
     constructor() {
         super({
             API_URL: '/littering',
@@ -174,4 +174,4 @@ class LitteringHistoryApp extends BaseApp {
     }
 }
 
-new LitteringHistoryApp();
+new LitteringHistoryPage();

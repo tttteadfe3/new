@@ -33,8 +33,8 @@ class LitteringController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map-manager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-admin-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/core/base-page.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-admin.js");
 
         echo $this->render('pages/littering/admin', compact('pageTitle'), 'layouts/app');
     }
@@ -61,8 +61,9 @@ class LitteringController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map-manager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-map-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/core/base-page.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-map.js");
 
         echo $this->render('pages/littering/map', compact('pageTitle'), 'layouts/app');
     }
@@ -89,8 +90,8 @@ class LitteringController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map-manager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-history-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/core/base-page.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-history.js");
 
         echo $this->render('pages/littering/history', compact('pageTitle'), 'layouts/app');
     }
@@ -110,8 +111,8 @@ class LitteringController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map-manager.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/base-app.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-deleted-admin-app.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/core/base-page.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-deleted-admin.js");
 
         echo $this->render('pages/littering/deleted', compact('pageTitle'), 'layouts/app');
     }

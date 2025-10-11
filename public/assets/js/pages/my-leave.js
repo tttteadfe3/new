@@ -1,4 +1,4 @@
-class MyLeaveApp extends BaseApp {
+class MyLeavePage extends BasePage {
     constructor() {
         super({
             API_URL: '/leaves'
@@ -217,4 +217,4 @@ class MyLeaveApp extends BaseApp {
     }
 }
 
-new MyLeaveApp();
+new MyLeavePage();

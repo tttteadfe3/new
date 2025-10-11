@@ -1,27 +1,18 @@
 /**
- * BaseApp - A base class for common application logic.
+ * BasePage - A base class for page-specific application logic.
  *
  * Key Features:
  * - Manages common configurations and state.
  * - Provides an application initialization flow (initializeApp).
  * - Instantiates ApiService for consistent API calls.
- * - Instantiates InteractiveMapManager if a map container is present.
  * - Provides utility methods for UI state (e.g., button loading).
  * - Handles resource cleanup on page unload (cleanup).
  */
-class BaseApp {
+class BasePage {
     constructor(config = {}) {
         // Merge base config with child class config
-        this.config = {
-            mapId: 'map',
-            ...config
-        };
-
-        this.state = {
-            mapManager: null
-        };
-
-        // Instantiate the ApiService for this app instance
+        this.config = { ...config };
+        this.state = {};
         this.apiService = new ApiService();
 
         // Run initialization after the DOM is fully loaded
@@ -37,36 +28,11 @@ class BaseApp {
 
     /**
      * Initializes the application. This can be extended by child classes.
-     * The default order is: initialize components, set up event listeners, then load data.
+     * The default order is: set up event listeners, then load data.
      */
     initializeApp() {
-        this.initializeMapManager();
         this.setupEventListeners();
         this.loadInitialData();
-    }
-
-    /**
-     * Initializes InteractiveMapManager if a map container element exists on the page.
-     * @param {object} options - Options to override the default map settings.
-     */
-    initializeMapManager(options = {}) {
-        const mapContainer = document.getElementById(this.config.mapId);
-        if (!mapContainer) {
-            // If there's no map container on the page, do not proceed.
-            return;
-        }
-
-        const defaultMapOptions = {
-            mapId: this.config.mapId,
-            center: { lat: 37.340187, lng: 126.743888 },
-            level: 3,
-            allowedRegions: this.config.ALLOWED_REGIONS || []
-        };
-
-        this.state.mapManager = new InteractiveMapManager({
-            ...defaultMapOptions,
-            ...options // Override with options from child class
-        });
     }
 
     /**
@@ -120,14 +86,10 @@ class BaseApp {
     }
 
     /**
-     * Cleans up application resources, like the map manager, to prevent memory leaks.
+     * Cleans up application resources to prevent memory leaks.
      */
     cleanup() {
         console.log(`Cleaning up ${this.constructor.name}...`);
-        if (this.state.mapManager && typeof this.state.mapManager.destroy === 'function') {
-            this.state.mapManager.destroy();
-            this.state.mapManager = null;
-        }
-        // Additional common cleanup tasks can be added here.
+        // Common cleanup tasks can be added here.
     }
 }

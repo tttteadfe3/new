@@ -1,4 +1,4 @@
-class ProfileApp extends BaseApp {
+class ProfilePage extends BasePage {
     constructor() {
         super({
             API_URL: '/profile'
@@ -141,4 +141,4 @@ class ProfileApp extends BaseApp {
     }
 }
 
-new ProfileApp();
+new ProfilePage();

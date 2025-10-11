@@ -1,4 +1,4 @@
-class LeaveHistoryAdminApp extends BaseApp {
+class LeaveHistoryAdminPage extends BasePage {
     constructor() {
         super({
             API_URL: '/leaves_admin/history'
@@ -85,4 +85,4 @@ class LeaveHistoryAdminApp extends BaseApp {
     }
 }
 
-new LeaveHistoryAdminApp();
+new LeaveHistoryAdminPage();

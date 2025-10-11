@@ -1,4 +1,4 @@
-class LogViewerApp extends BaseApp {
+class LogViewerPage extends BasePage {
     constructor() {
         super({
             API_URL: '/logs'
@@ -88,4 +88,4 @@ class LogViewerApp extends BaseApp {
     }
 }
 
-new LogViewerApp();
+new LogViewerPage();

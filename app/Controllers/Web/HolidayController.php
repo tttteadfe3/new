@@ -27,9 +27,9 @@ class HolidayController extends BaseController
 
         // Load BaseApp and dependencies
         View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        View::addJs(BASE_ASSETS_URL . '/assets/js/components/base-app.js');
+        View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
 
-        View::addJs(BASE_ASSETS_URL . '/assets/js/pages/holiday-admin-app.js');
+        View::addJs(BASE_ASSETS_URL . '/assets/js/pages/holiday-admin.js');
 
         $data = [
             'pageTitle' => '휴일/근무일 설정'

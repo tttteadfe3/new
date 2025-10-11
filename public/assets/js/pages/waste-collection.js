@@ -2,7 +2,7 @@
  * Application for the Waste Collection page.
  * Handles registration of large waste collections and displaying them on the map.
  */
-class WasteCollectionApp extends BaseApp {
+class WasteCollectionPage extends BasePage {
     constructor() {
         super({
             API_URL: '/waste-collections',
@@ -310,4 +310,4 @@ class WasteCollectionApp extends BaseApp {
     }
 }
 
-new WasteCollectionApp();
+new WasteCollectionPage();

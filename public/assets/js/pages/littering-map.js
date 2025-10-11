@@ -2,14 +2,14 @@
  * Application for the Littering Map page.
  * Handles registration and processing of littering reports.
  */
-class LitteringMapApp extends BaseApp {
+class LitteringMapPage extends BasePage {
     constructor() {
         super({
             API_URL: '/littering',
             WASTE_TYPES: ['생활폐기물', '음식물', '재활용', '대형', '소각'],
             FILE: { MAX_SIZE: 5 * 1024 * 1024, ALLOWED_TYPES: ['image/jpeg', 'image/png'], COMPRESS: { MAX_WIDTH: 1200, MAX_HEIGHT: 1200, QUALITY: 0.8 } }
         });
-        this.state = { ...this.state, reportList: [], modals: {}, currentReportIndex: null };
+        this.state = { ...this.state, reportList: [], modals: {}, currentReportIndex: null, mapService: null };
     }
 
     /**
@@ -29,11 +29,12 @@ class LitteringMapApp extends BaseApp {
             onRegionValidation: (isValid, message) => {
                 if (!isValid) {
                     Toast.error(message);
-                    this.state.mapManager.removeTempMarker();
+                    this.state.mapService.mapManager.removeTempMarker();
                 }
             }
         };
-        this.initializeMapManager(mapOptions);
+        this.state.mapService = new MapService(mapOptions);
+
         this.setupModals();
         this.setupEventListeners();
         this.setupPhotoSwiper();
@@ -66,7 +67,7 @@ class LitteringMapApp extends BaseApp {
             if (document.getElementById('mixed').checked) this.toggleSubWasteType();
         });
         document.querySelectorAll('input[name="corrected"]').forEach(el => el.addEventListener('change', () => this.updateProcessingPhotoRequirement()));
-        document.getElementById('currentLocationBtn').addEventListener('click', () => this.state.mapManager.setUserLocation());
+        document.getElementById('currentLocationBtn').addEventListener('click', () => this.state.mapService.mapManager.setUserLocation());
         document.getElementById('addCenterMarkerBtn').addEventListener('click', () => this.registerReportAtMapCenter());
 
         document.querySelectorAll('#regPhoto1, #regPhoto2, #procPhoto').forEach(input => {
@@ -110,7 +111,7 @@ class LitteringMapApp extends BaseApp {
 
             this.addReportMarkerToMap(response.data);
             this.state.modals.register.hide();
-            this.state.mapManager.removeTempMarker();
+            this.state.mapService.mapManager.removeTempMarker();
             Toast.success(response.message);
         } catch (error) {
             Toast.error(`등록 실패: ${error.message}`);
@@ -147,7 +148,7 @@ class LitteringMapApp extends BaseApp {
         const status = data.status || 'pending';
         const markerTypeKey = `${wasteType}_${status}`;
 
-        const markerInfo = this.state.mapManager.addMarker({
+        const markerInfo = this.state.mapService.mapManager.addMarker({
             position: { lat: data.latitude, lng: data.longitude },
             type: markerTypeKey,
             data: { ...data, id: data.id },
@@ -169,7 +170,7 @@ class LitteringMapApp extends BaseApp {
     removeProcessedMarkerFromMap() {
         const idx = this.state.currentReportIndex;
         if (this.state.reportList[idx]) {
-            this.state.mapManager.removeMarker(this.state.reportList[idx].mapManagerData);
+            this.state.mapService.mapManager.removeMarker(this.state.reportList[idx].mapManagerData);
             this.state.reportList.splice(idx, 1);
         }
     }
@@ -300,7 +301,7 @@ class LitteringMapApp extends BaseApp {
 
         const lat = parseFloat(document.getElementById('lat').value);
         const lng = parseFloat(document.getElementById('lng').value);
-        if (this.state.mapManager.checkDuplicateLocation({ lat, lng }, 1)) {
+        if (this.state.mapService.mapManager.checkDuplicateLocation({ lat, lng }, 1)) {
             return { isValid: false, message: '같은 위치에 이미 신고가 등록되어 있습니다.' };
         }
         return { isValid: true };
@@ -443,8 +444,8 @@ class LitteringMapApp extends BaseApp {
     }
 
     registerReportAtMapCenter() {
-        const center = this.state.mapManager.getMap().getCenter();
-        this.state.mapManager.handleLocationSelect(center);
+        const center = this.state.mapService.mapManager.getMap().getCenter();
+        this.state.mapService.mapManager.handleLocationSelect(center);
     }
 
     setupPhotoSwiper() {
@@ -496,6 +497,16 @@ class LitteringMapApp extends BaseApp {
             this.lightbox.reload();
         }
     }
+
+    /**
+     * @override
+     */
+    cleanup() {
+        super.cleanup(); // Call parent cleanup
+        if (this.state.mapService) {
+            this.state.mapService.destroy();
+        }
+    }
 }
 
-new LitteringMapApp();
+new LitteringMapPage();
