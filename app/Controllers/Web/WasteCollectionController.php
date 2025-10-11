@@ -36,7 +36,7 @@ class WasteCollectionController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-collection.js");
 
         $pageTitle = "대형폐기물 수거";
-        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
+        $this->activityLogger->logMenuAccess($pageTitle);
 
         echo $this->render('pages/waste/collection', [
             'pageTitle' => $pageTitle,
@@ -61,7 +61,7 @@ class WasteCollectionController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-admin.js");
         
         $pageTitle = "대형폐기물 관리";
-        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
+        $this->activityLogger->logMenuAccess($pageTitle);
 
         echo $this->render('pages/waste/admin', [
             'pageTitle' => $pageTitle

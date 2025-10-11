@@ -12,6 +12,7 @@ abstract class BaseApiController extends BaseController
 {
     protected AuthService $authService;
     protected EmployeeRepository $employeeRepository;
+    protected JsonResponse $jsonResponse;
 
     public function __construct()
     {
@@ -19,6 +20,7 @@ abstract class BaseApiController extends BaseController
         $this->authService = new AuthService();
         $db = Database::getInstance();
         $this->employeeRepository = new EmployeeRepository($db);
+        $this->jsonResponse = new JsonResponse();
         
         // Ensure all API requests are AJAX requests
         if (!$this->isAjaxRequest()) {
@@ -43,7 +45,7 @@ abstract class BaseApiController extends BaseController
      */
     protected function apiSuccess($data = null, string $message = 'Success'): void
     {
-        JsonResponse::success($data, $message);
+        $this->jsonResponse->success($data, $message);
     }
 
     /**
@@ -51,7 +53,7 @@ abstract class BaseApiController extends BaseController
      */
     protected function apiError(string $message, string $errorCode = null, int $httpStatus = 400): void
     {
-        JsonResponse::error($message, $errorCode, $httpStatus);
+        $this->jsonResponse->error($message, $errorCode, $httpStatus);
     }
 
     /**
@@ -59,7 +61,7 @@ abstract class BaseApiController extends BaseController
      */
     protected function apiNotFound(string $message = 'Resource not found'): void
     {
-        JsonResponse::notFound($message);
+        $this->jsonResponse->notFound($message);
     }
 
     /**
@@ -67,7 +69,7 @@ abstract class BaseApiController extends BaseController
      */
     protected function apiForbidden(string $message = 'Access forbidden'): void
     {
-        JsonResponse::forbidden($message);
+        $this->jsonResponse->forbidden($message);
     }
 
     /**
@@ -75,7 +77,7 @@ abstract class BaseApiController extends BaseController
      */
     protected function apiBadRequest(string $message = 'Bad request'): void
     {
-        JsonResponse::badRequest($message);
+        $this->jsonResponse->badRequest($message);
     }
 
     /**

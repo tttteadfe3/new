@@ -2,14 +2,22 @@
 
 namespace App\Controllers\Web;
 
+use App\Core\Database;
 use App\Services\KakaoAuthService;
-use App\Core\AuthManager;
 use App\Core\View;
 use App\Repositories\UserRepository;
 
 class AuthController extends BaseController
-    protected \App\Repositories\UserRepository $userRepository;
 {
+    protected UserRepository $userRepository;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $db = Database::getInstance();
+        $this->userRepository = new UserRepository($db);
+    }
+
     public function login()
     {
         // If the user is already logged in, redirect to the dashboard.
