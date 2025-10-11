@@ -15,7 +15,7 @@ class WasteCollectionService
      */
     public function getCollections(): array
     {
-        return WasteCollectionRepository::findAllWithItems();
+        return $this->wasteCollectionRepository->findAllWithItems();
     }
 
     /**
@@ -27,7 +27,7 @@ class WasteCollectionService
             throw new Exception("ID가 필요합니다.", 400);
         }
         
-        return WasteCollectionRepository::findById($id);
+        return $this->wasteCollectionRepository->findById($id);
     }
 
     /**
@@ -65,7 +65,7 @@ class WasteCollectionService
             }
 
             // Save collection
-            $collectionId = WasteCollectionRepository::createCollection($collection->toArray());
+            $collectionId = $this->wasteCollectionRepository->createCollection($collection->toArray());
             if ($collectionId === null) {
                 throw new Exception("수거 정보 등록에 실패했습니다.", 500);
             }
@@ -80,7 +80,7 @@ class WasteCollectionService
             foreach ($items as $item) {
                 $quantity = intval($item['quantity'] ?? 0);
                 if ($quantity > 0) {
-                    if (!WasteCollectionRepository::createCollectionItem($collectionId, $item['name'], $quantity)) {
+                    if (!$this->wasteCollectionRepository->createCollectionItem($collectionId, $item['name'], $quantity)) {
                         throw new Exception("품목 정보 저장에 실패했습니다: " . $item['name'], 500);
                     }
                     $itemAdded = true;
@@ -92,7 +92,7 @@ class WasteCollectionService
             }
 
             Database::commit();
-            return WasteCollectionRepository::findById($collectionId);
+            return $this->wasteCollectionRepository->findById($collectionId);
             
         } catch (Exception $e) {
             Database::rollBack();
@@ -115,7 +115,7 @@ class WasteCollectionService
             throw new Exception("주소가 필요합니다.", 400);
         }
         
-        return WasteCollectionRepository::processByAddress($address);
+        return $this->wasteCollectionRepository->processByAddress($address);
     }
 
     /**
@@ -127,7 +127,7 @@ class WasteCollectionService
             throw new Exception("ID가 필요합니다.", 400);
         }
         
-        return WasteCollectionRepository::processById($id);
+        return $this->wasteCollectionRepository->processById($id);
     }
 
     // === Admin Methods ===
@@ -142,7 +142,7 @@ class WasteCollectionService
             $sanitizedFilters[$key] = Validator::sanitizeString($value);
         }
         
-        return WasteCollectionRepository::findAllForAdmin($sanitizedFilters);
+        return $this->wasteCollectionRepository->findAllForAdmin($sanitizedFilters);
     }
 
     /**
@@ -212,7 +212,7 @@ class WasteCollectionService
             foreach ($collections as $collectionData) {
                 // Check for duplicates
                 if (!empty($collectionData['receiptNumber']) && 
-                    WasteCollectionRepository::findByDischargeNumber($collectionData['receiptNumber'])) {
+                    $this->wasteCollectionRepository->findByDischargeNumber($collectionData['receiptNumber'])) {
                     $duplicateCount++;
                     continue;
                 }
@@ -236,7 +236,7 @@ class WasteCollectionService
                     'type' => 'online'
                 ];
 
-                $newId = WasteCollectionRepository::createCollection($dataToSave);
+                $newId = $this->wasteCollectionRepository->createCollection($dataToSave);
                 if ($newId === null) {
                     $failedCount++;
                     error_log("Failed to save collection for receipt number: " . $collectionData['receiptNumber']);
@@ -277,7 +277,7 @@ class WasteCollectionService
         
         try {
             // Delete existing items
-            WasteCollectionRepository::deleteItemsByCollectionId($collectionId);
+            $this->wasteCollectionRepository->deleteItemsByCollectionId($collectionId);
 
             // Add new items
             if (!empty($items)) {
@@ -289,7 +289,7 @@ class WasteCollectionService
                         continue; // Skip invalid items
                     }
 
-                    if (!WasteCollectionRepository::createCollectionItem($collectionId, $itemName, $quantity)) {
+                    if (!$this->wasteCollectionRepository->createCollectionItem($collectionId, $itemName, $quantity)) {
                         throw new Exception("품목 정보 저장에 실패했습니다: " . $itemName, 500);
                     }
                 }
@@ -313,7 +313,7 @@ class WasteCollectionService
             throw new Exception("ID가 필요합니다.", 400);
         }
         
-        return WasteCollectionRepository::updateAdminMemo($id, $memo);
+        return $this->wasteCollectionRepository->updateAdminMemo($id, $memo);
     }
 
     /**
@@ -321,7 +321,7 @@ class WasteCollectionService
      */
     public function clearOnlineSubmissions(): bool
     {
-        return WasteCollectionRepository::clearOnlineSubmissions();
+        return $this->wasteCollectionRepository->clearOnlineSubmissions();
     }
 
     /**

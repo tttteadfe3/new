@@ -11,7 +11,7 @@ class RolePermissionService
      */
     public function getAllRolesWithUserCount(): array
     {
-        return RoleRepository::getAllRolesWithUserCount();
+        return $this->roleRepository->getAllRolesWithUserCount();
     }
 
     /**
@@ -19,7 +19,7 @@ class RolePermissionService
      */
     public function getAllPermissions(): array
     {
-        return RoleRepository::getAllPermissions();
+        return $this->roleRepository->getAllPermissions();
     }
 
     /**
@@ -27,7 +27,7 @@ class RolePermissionService
      */
     public function getRolePermissions(int $roleId): array
     {
-        return RoleRepository::getRolePermissions($roleId);
+        return $this->roleRepository->getRolePermissions($roleId);
     }
 
     /**
@@ -35,7 +35,7 @@ class RolePermissionService
      */
     public function updateRolePermissions(int $roleId, array $permissionIds): void
     {
-        RoleRepository::updateRolePermissions($roleId, $permissionIds);
+        $this->roleRepository->updateRolePermissions($roleId, $permissionIds);
     }
 
     /**
@@ -43,7 +43,7 @@ class RolePermissionService
      */
     public function getRole(int $roleId): ?array
     {
-        return RoleRepository::findById($roleId);
+        return $this->roleRepository->findById($roleId);
     }
 
     /**
@@ -51,7 +51,7 @@ class RolePermissionService
      */
     public function createRole(string $name, string $description): string
     {
-        return RoleRepository::create($name, $description);
+        return $this->roleRepository->create($name, $description);
     }
 
     /**
@@ -59,7 +59,7 @@ class RolePermissionService
      */
     public function updateRole(int $roleId, string $name, string $description): bool
     {
-        return RoleRepository::update($roleId, $name, $description);
+        return $this->roleRepository->update($roleId, $name, $description);
     }
 
     /**
@@ -67,7 +67,7 @@ class RolePermissionService
      */
     public function deleteRole(int $roleId): bool
     {
-        return RoleRepository::delete($roleId);
+        return $this->roleRepository->delete($roleId);
     }
 
     /**
@@ -75,7 +75,7 @@ class RolePermissionService
      */
     public function getUsersAssignedToRole(int $roleId): array
     {
-        return RoleRepository::getUsersAssignedToRole($roleId);
+        return $this->roleRepository->getUsersAssignedToRole($roleId);
     }
 
     /**
@@ -83,6 +83,6 @@ class RolePermissionService
      */
     public function isUserAssignedToRole(int $roleId): bool
     {
-        return RoleRepository::isUserAssigned($roleId);
+        return $this->roleRepository->isUserAssigned($roleId);
     }
 }

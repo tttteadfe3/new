@@ -18,10 +18,10 @@ class ActivityLogger
             $user = SessionManager::get('user');
             
             // UserRepository를 통해 최신 닉네임 조회 (선택사항이지만 더 정확함)
-            $currentUser = UserRepository::findById($user['id']);
+            $currentUser = $this->userRepository->findById($user['id']);
             $userName = $currentUser['nickname'] ?? $user['nickname'];
 
-            LogRepository::insert([
+            $this->logRepository->insert([
                 ':user_id' => $user['id'],
                 ':user_name' => $userName,
                 ':action' => '메뉴 접근',

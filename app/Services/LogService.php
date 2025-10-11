@@ -12,7 +12,7 @@ class LogService
      */
     public function searchLogs(array $filters = [], int $limit = 50): array
     {
-        return LogRepository::search($filters, $limit);
+        return $this->logRepository->search($filters, $limit);
     }
 
     /**
@@ -20,7 +20,7 @@ class LogService
      */
     public function clearLogs(): bool
     {
-        return LogRepository::truncate();
+        return $this->logRepository->truncate();
     }
 
     /**
@@ -28,6 +28,6 @@ class LogService
      */
     public function logActivity(array $logData): bool
     {
-        return LogRepository::insert($logData);
+        return $this->logRepository->insert($logData);
     }
 }

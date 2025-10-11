@@ -17,28 +17,28 @@ class LitteringService
 
     public function getActiveLittering(): array
     {
-        return LitteringRepository::findAllActive();
+        return $this->litteringRepository->findAllActive();
     }
 
     public function getPendingLittering(): array
     {
-        return LitteringRepository::findAllPending();
+        return $this->litteringRepository->findAllPending();
     }
 
     public function getProcessedLittering(): array
     {
-        return LitteringRepository::findAllProcessed();
+        return $this->litteringRepository->findAllProcessed();
     }
 
     public function getDeletedLittering(): array
     {
-        return LitteringRepository::findAllDeleted();
+        return $this->litteringRepository->findAllDeleted();
     }
 
     public function getLitteringById(int $id): ?array
     {
         // Fixed the inefficient implementation from the old service.
-        return LitteringRepository::findById($id);
+        return $this->litteringRepository->findById($id);
     }
 
     public function registerLittering(array $postData, array $files, int $userId, ?int $employeeId): array
@@ -61,7 +61,7 @@ class LitteringService
                 ? FileUploader::validateAndUpload($files['photo2'], 'littering', 'reg2_') : ''
         ];
 
-        $newId = LitteringRepository::save($data);
+        $newId = $this->litteringRepository->save($data);
         if ($newId === null) {
             throw new Exception("Failed to register littering report in the database.", 500);
         }
@@ -84,7 +84,7 @@ class LitteringService
             'subType'   => Validator::sanitizeString($postData['subType'] ?? '')
         ];
 
-        if (!LitteringRepository::confirm($caseId, $updateData, $adminId)) {
+        if (!$this->litteringRepository->confirm($caseId, $updateData, $adminId)) {
             throw new Exception("Failed to confirm report.", 500);
         }
 
@@ -98,7 +98,7 @@ class LitteringService
             throw new Exception("Invalid report ID.", 400);
         }
 
-        if (!LitteringRepository::softDelete($caseId, $adminId)) {
+        if (!$this->litteringRepository->softDelete($caseId, $adminId)) {
             throw new Exception("Failed to delete report.", 500);
         }
 
@@ -112,7 +112,7 @@ class LitteringService
             throw new Exception("Invalid report ID.", 400);
         }
 
-        if (!LitteringRepository::deletePermanently($caseId)) {
+        if (!$this->litteringRepository->deletePermanently($caseId)) {
             throw new Exception("Failed to permanently delete report.", 500);
         }
 
@@ -126,7 +126,7 @@ class LitteringService
             throw new Exception("Invalid report ID.", 400);
         }
 
-        if (!LitteringRepository::restore($caseId)) {
+        if (!$this->litteringRepository->restore($caseId)) {
             throw new Exception("Failed to restore report.", 500);
         }
 
@@ -155,7 +155,7 @@ class LitteringService
                 ? FileUploader::validateAndUpload($files['procPhoto'], 'littering', 'proc_') : ''
         ];
 
-        if (!LitteringRepository::process($data)) {
+        if (!$this->litteringRepository->process($data)) {
             throw new Exception("Failed to update report status in database.", 500);
         }
 

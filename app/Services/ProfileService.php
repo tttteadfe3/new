@@ -14,7 +14,7 @@ class ProfileService
     public function getUserProfile(int $userId): array
     {
         // Get basic user information
-        $user = UserRepository::findById($userId);
+        $user = $this->userRepository->findById($userId);
         if (!$user) {
             throw new Exception('User not found.');
         }
@@ -22,7 +22,7 @@ class ProfileService
         // Get employee information if linked
         $employee = null;
         if ($user['employee_id']) {
-            $employee = EmployeeRepository::findById($user['employee_id']);
+            $employee = $this->employeeRepository->findById($user['employee_id']);
         }
 
         return [
@@ -36,7 +36,7 @@ class ProfileService
      */
     public function requestProfileUpdate(int $userId, array $data): bool
     {
-        $employee = EmployeeRepository::findByUserId($userId);
+        $employee = $this->employeeRepository->findByUserId($userId);
 
         if (!$employee) {
             throw new Exception('수정할 직원 정보가 없습니다.');
@@ -46,6 +46,6 @@ class ProfileService
             throw new Exception('이미 프로필 변경 요청이 승인 대기 중입니다.');
         }
 
-        return EmployeeRepository::requestProfileUpdate($userId, $data);
+        return $this->employeeRepository->requestProfileUpdate($userId, $data);
     }
 }

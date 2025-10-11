@@ -5,33 +5,38 @@ namespace App\Repositories;
 use App\Core\Database;
 
 class EmployeeRepository {
+    private Database $db;
+
+    public function __construct(Database $db) {
+        $this->db = $db;
+    }
 
     /**
      * 직원의 고유 ID(PK)로 직원 정보를 조회합니다.
      * @param int $id 직원의 id
      * @return mixed
      */
-    public static function findById(int $id) {
+    public function findById(int $id) {
         $sql = "SELECT e.*, d.name as department_name, p.name as position_name
                 FROM hr_employees e
                 LEFT JOIN hr_departments d ON e.department_id = d.id
                 LEFT JOIN hr_positions p ON e.position_id = p.id
                 WHERE e.id = :id";
-        return Database::fetchOne($sql, [':id' => $id]);
+        return $this->db->fetchOne($sql, [':id' => $id]);
     }
 
     /**
      * Finds active employees who are not linked to any user account.
      * @return array
      */
-    public static function findUnlinked(): array
+    public function findUnlinked(): array
     {
         $sql = "SELECT e.*
                 FROM hr_employees e
                 LEFT JOIN sys_users u ON e.id = u.employee_id
                 WHERE u.employee_id IS NULL AND e.termination_date IS NULL
                 ORDER BY e.name ASC";
-        return Database::query($sql);
+        return $this->db->query($sql);
     }
 
     /**
@@ -39,14 +44,14 @@ class EmployeeRepository {
      * @param int $userId 사용자의 id
      * @return mixed
      */
-    public static function findByUserId(int $userId) {
+    public function findByUserId(int $userId) {
         $sql = "SELECT e.*, d.name as department_name, p.name as position_name
                 FROM hr_employees e
                 JOIN sys_users u ON e.id = u.employee_id 
                 LEFT JOIN hr_departments d ON e.department_id = d.id
                 LEFT JOIN hr_positions p ON e.position_id = p.id
                 WHERE u.id = :user_id";
-        return Database::fetchOne($sql, [':user_id' => $userId]);
+        return $this->db->fetchOne($sql, [':user_id' => $userId]);
     }
 
     /**
@@ -54,7 +59,7 @@ class EmployeeRepository {
      * @param array $filters 필터 조건 (예: ['department_id' => 1])
      * @return array
      */
-    public static function getAll(array $filters = []): array {
+    public function getAll(array $filters = []): array {
         $sql = "SELECT e.*, u.nickname, d.name as department_name, p.name as position_name
                 FROM hr_employees e
                 LEFT JOIN sys_users u ON e.id = u.employee_id
@@ -99,14 +104,14 @@ class EmployeeRepository {
             END,
             e.hire_date ASC";
 
-        return Database::query($sql, $params);
+        return $this->db->query($sql, $params);
     }
 
     /**
      * 모든 활성 직원 (퇴사일이 없는 직원) 목록을 조회합니다.
      * @return array
      */
-    public static function findAllActive(): array {
+    public function findAllActive(): array {
         $sql = "SELECT e.*, d.name as department_name, p.name as position_name
                 FROM hr_employees e
                 LEFT JOIN hr_departments d ON e.department_id = d.id
@@ -114,7 +119,7 @@ class EmployeeRepository {
                 WHERE e.termination_date IS NULL
                 ORDER BY e.name ASC";
 
-        return Database::query($sql);
+        return $this->db->query($sql);
     }
 
     /**
@@ -122,7 +127,7 @@ class EmployeeRepository {
      * @param array $data 저장할 데이터
      * @return string|null 저장된 직원의 ID
      */
-    public static function save(array $data): ?string {
+    public function save(array $data): ?string {
         $id = $data['id'] ?? null;
         
         // 신규 생성일 경우에만 사번 생성
@@ -132,7 +137,7 @@ class EmployeeRepository {
             $prefix = 'WS' . date('ym', strtotime($hireDate));
 
             $seqSql = "SELECT MAX(CAST(SUBSTRING(employee_number, 7) AS UNSIGNED)) as last_num FROM hr_employees WHERE employee_number LIKE :prefix";
-            $result = Database::fetchOne($seqSql, [':prefix' => $prefix . '%']);
+            $result = $this->db->fetchOne($seqSql, [':prefix' => $prefix . '%']);
             $nextSeq = ($result['last_num'] ?? 0) + 1;
             $data['employee_number'] = $prefix . str_pad($nextSeq, 3, '0', STR_PAD_LEFT);
         }
@@ -143,7 +148,7 @@ class EmployeeRepository {
             $sql = "INSERT INTO hr_employees (name, employee_number, hire_date, phone_number, address, emergency_contact_name, emergency_contact_relation, clothing_top_size, clothing_bottom_size, shoe_size, department_id, position_id) VALUES (:name, :employee_number, :hire_date, :phone_number, :address, :emergency_contact_name, :emergency_contact_relation, :clothing_top_size, :clothing_bottom_size, :shoe_size, :department_id, :position_id)";
         }
         
-        Database::execute($sql, [
+        $this->db->execute($sql, [
             ':id' => $id,
             ':name' => $data['name'],
             ':employee_number' => $data['employee_number'],
@@ -159,7 +164,7 @@ class EmployeeRepository {
             ':position_id' => $data['position_id'] ?: null,
         ]);
 
-        return $id ?: Database::lastInsertId();
+        return $id ?: $this->db->lastInsertId();
     }
 
     /**
@@ -167,14 +172,14 @@ class EmployeeRepository {
      * @param int $id 삭제할 직원의 id
      * @return bool
      */
-    public static function delete(int $id): bool {
-        return Database::execute("DELETE FROM hr_employees WHERE id = :id", [':id' => $id]);
+    public function delete(int $id): bool {
+        return $this->db->execute("DELETE FROM hr_employees WHERE id = :id", [':id' => $id]) > 0;
     }
 
     /**
      * [사용자용] 프로필 수정 요청을 받아 'pending_profile_data'에 JSON으로 저장합니다.
      */
-    public static function requestProfileUpdate(int $userId, array $data): bool {
+    public function requestProfileUpdate(int $userId, array $data): bool {
         $sql = "UPDATE hr_employees SET 
                     profile_update_status = 'pending',
                     profile_update_rejection_reason = NULL,
@@ -188,7 +193,7 @@ class EmployeeRepository {
             'shoe_size' => $data['shoe_size'],
         ];
 
-        return Database::execute($sql, [
+        return $this->db->execute($sql, [
             ':user_id' => $userId,
             ':pending_data' => json_encode($pendingData, JSON_UNESCAPED_UNICODE)
         ]);
@@ -197,7 +202,7 @@ class EmployeeRepository {
     /**
      * [관리자용] 프로필 변경을 최종 승인하고 실제 데이터를 업데이트합니다.
      */
-    public static function applyProfileUpdate(int $employeeId, array $newData): bool {
+    public function applyProfileUpdate(int $employeeId, array $newData): bool {
         $sql = "UPDATE hr_employees SET
                     phone_number = :phone_number, address = :address,
                     emergency_contact_name = :emergency_contact_name, emergency_contact_relation = :emergency_contact_relation,
@@ -208,7 +213,7 @@ class EmployeeRepository {
                     profile_update_rejection_reason = NULL
                 WHERE id = :id";
         
-        return Database::execute($sql, [
+        return $this->db->execute($sql, [
             ':id' => $employeeId,
             ':phone_number' => $newData['phone_number'], ':address' => $newData['address'],
             ':emergency_contact_name' => $newData['emergency_contact_name'], ':emergency_contact_relation' => $newData['emergency_contact_relation'],
@@ -220,20 +225,20 @@ class EmployeeRepository {
     /**
      * [관리자용] 프로필 수정을 반려 처리합니다.
      */
-    public static function rejectProfileUpdate(int $employeeId, string $reason): bool {
+    public function rejectProfileUpdate(int $employeeId, string $reason): bool {
         $sql = "UPDATE hr_employees SET 
                     profile_update_status = 'rejected',
                     profile_update_rejection_reason = :reason,
                     pending_profile_data = NULL
                 WHERE id = :id";
-        return Database::execute($sql, [':id' => $employeeId, ':reason' => $reason]);
+        return $this->db->execute($sql, [':id' => $employeeId, ':reason' => $reason]) > 0;
     }
 
     /**
      * [관리자용] 프로필 변경 요청을 승인 처리합니다. (상태만 변경)
      */
-    public static function approveProfileUpdateStatus(int $employeeId): bool {
+    public function approveProfileUpdateStatus(int $employeeId): bool {
         $sql = "UPDATE hr_employees SET profile_update_status = 'none' WHERE id = :id";
-        return Database::execute($sql, [':id' => $employeeId]);
+        return $this->db->execute($sql, [':id' => $employeeId]) > 0;
     }
 }

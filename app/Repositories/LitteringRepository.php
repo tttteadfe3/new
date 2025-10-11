@@ -4,20 +4,25 @@ namespace App\Repositories;
 use App\Core\Database;
 
 class LitteringRepository {
+    private Database $db;
+
+    public function __construct(Database $db) {
+        $this->db = $db;
+    }
     /**
      * 사용자가 보는 지도에 표시될 모든 활성 민원(처리 전)을 조회합니다.
      * @return array
      */
-    public static function findAllActive(): array {
+    public function findAllActive(): array {
         $query = "SELECT * FROM `illegal_disposal_cases2` WHERE `status` not in( 'processed', 'deleted' )ORDER BY `created_at` DESC";
-        return Database::fetchAll($query);
+        return $this->db->fetchAll($query);
     }
 
     /**
      * 관리자가 볼 '확인 대기(pending)' 상태의 민원만 조회합니다.
      * @return array
      */
-    public static function findAllPending(): array {
+    public function findAllPending(): array {
         $query = "
             SELECT 
                 idc.*, 
@@ -29,14 +34,14 @@ class LitteringRepository {
             WHERE idc.status = 'pending' AND idc.deleted_at IS NULL
             ORDER BY idc.created_at DESC
         ";
-        return Database::fetchAll($query);
+        return $this->db->fetchAll($query);
     }
 
     /**
      * 처리 완료된 민원만 조회합니다.
      * @return array
      */
-    public static function findAllProcessed(): array {
+    public function findAllProcessed(): array {
         $query = "
             SELECT 
                 idc.*, 
@@ -48,7 +53,7 @@ class LitteringRepository {
             WHERE idc.status = 'processed' 
             ORDER BY idc.updated_at DESC
         ";
-        return Database::fetchAll($query);
+        return $this->db->fetchAll($query);
     }
 
     /**
@@ -56,7 +61,7 @@ class LitteringRepository {
      * @param array $data
      * @return int|null
      */
-    public static function save(array $data): ?int {
+    public function save(array $data): ?int {
         $query = 'INSERT INTO `illegal_disposal_cases2` 
                     (`user_id`, `employee_id`, `status`, `latitude`, `longitude`, `address`, `waste_type`, `waste_type2`, 
                      `issue_date`, `reg_photo_path`, `reg_photo_path2`, `created_at`) 
@@ -69,7 +74,7 @@ class LitteringRepository {
             $data['fileName1'], $data['fileName2']
         ];
         
-        $newId = Database::insert($query, $params);
+        $newId = $this->db->insert($query, $params);
         return $newId > 0 ? $newId : null;
     }
 
@@ -80,7 +85,7 @@ class LitteringRepository {
      * @param int $adminId
      * @return bool
      */
-    public static function confirm(int $caseId, array $data, int $adminId): bool {
+    public function confirm(int $caseId, array $data, int $adminId): bool {
         $query = 'UPDATE `illegal_disposal_cases2` 
                   SET `latitude` = ?, `longitude` = ?, `address` = ?, `waste_type` = ?, `waste_type2` = ?, 
                       `status` = ?, `confirmed_by` = ?, `confirmed_at` = NOW()
@@ -90,12 +95,12 @@ class LitteringRepository {
             $data['mainType'], $data['subType'], 'confirmed',
             $adminId, $caseId
         ];
-        return Database::execute($query, $params) > 0;
+        return $this->db->execute($query, $params) > 0;
     }
 
-    public static function softDelete(int $caseId, int $adminId): bool {
+    public function softDelete(int $caseId, int $adminId): bool {
         $query = "UPDATE illegal_disposal_cases2 SET status = 'deleted', deleted_by = ?, deleted_at = NOW() WHERE id = ?";
-        return Database::execute($query, [$adminId, $caseId]) > 0;
+        return $this->db->execute($query, [$adminId, $caseId]) > 0;
     }
 
     /**
@@ -103,7 +108,7 @@ class LitteringRepository {
      * @param array $data (id 포함)
      * @return bool
      */
-    public static function process(array $data): bool {
+    public function process(array $data): bool {
         $updateFields = '`collect_date` = ?, `corrected` = ?, `note` = ?, `status` = ?';
         $params = [$data['collectDate'], $data['corrected'], $data['note'], 'processed'];
         if (!empty($data['procFileName'])) {
@@ -116,7 +121,7 @@ class LitteringRepository {
         
         $query = "UPDATE `illegal_disposal_cases2` SET {$updateFields}, `updated_at` = NOW() WHERE `id` = ?";
         
-        return Database::execute($query, $params) > 0;
+        return $this->db->execute($query, $params) > 0;
     }
 
     /**
@@ -124,11 +129,11 @@ class LitteringRepository {
      * @param int $id
      * @return array|null
      */
-    public static function findById(int $id): ?array {
-        return Database::fetchOne("SELECT * FROM illegal_disposal_cases2 WHERE id = ?", [$id]);
+    public function findById(int $id): ?array {
+        return $this->db->fetchOne("SELECT * FROM illegal_disposal_cases2 WHERE id = ?", [$id]);
     }
 
-    public static function findAllDeleted(): array {
+    public function findAllDeleted(): array {
         $query = "
             SELECT 
                 idc.*, 
@@ -140,16 +145,16 @@ class LitteringRepository {
             WHERE idc.status = 'deleted' 
             ORDER BY idc.deleted_at DESC
         ";
-        return Database::fetchAll($query);
+        return $this->db->fetchAll($query);
     }
 
-    public static function deletePermanently(int $caseId): bool {
+    public function deletePermanently(int $caseId): bool {
         $query = "DELETE FROM illegal_disposal_cases2 WHERE id = ?";
-        return Database::execute($query, [$caseId]) > 0;
+        return $this->db->execute($query, [$caseId]) > 0;
     }
 
-    public static function restore(int $caseId): bool {
+    public function restore(int $caseId): bool {
         $query = "UPDATE illegal_disposal_cases2 SET status = 'pending', deleted_by = NULL, deleted_at = NULL WHERE id = ?";
-        return Database::execute($query, [$caseId]) > 0;
+        return $this->db->execute($query, [$caseId]) > 0;
     }
 }

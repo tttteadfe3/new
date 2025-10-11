@@ -14,7 +14,7 @@ class HolidayService
      */
     public function getAllHolidays(): array
     {
-        return HolidayRepository::getAll();
+        return $this->holidayRepository->getAll();
     }
 
     /**
@@ -22,7 +22,7 @@ class HolidayService
      */
     public function getAllDepartments(): array
     {
-        return DepartmentRepository::getAll();
+        return $this->departmentRepository->getAll();
     }
 
     /**
@@ -30,7 +30,7 @@ class HolidayService
      */
     public function getHoliday(int $id): ?array
     {
-        return HolidayRepository::findById($id);
+        return $this->holidayRepository->findById($id);
     }
 
     /**
@@ -64,8 +64,8 @@ class HolidayService
             'deduct_leave' => $data['deduct_leave'] ? 1 : 0
         ];
 
-        $newId = HolidayRepository::create($holidayData);
-        return HolidayRepository::findById($newId);
+        $newId = $this->holidayRepository->create($holidayData);
+        return $this->holidayRepository->findById($newId);
     }
 
     /**
@@ -74,7 +74,7 @@ class HolidayService
     public function updateHoliday(int $id, array $data): array
     {
         // Check if holiday exists
-        $existingHoliday = HolidayRepository::findById($id);
+        $existingHoliday = $this->holidayRepository->findById($id);
         if (!$existingHoliday) {
             throw new Exception('Holiday not found.');
         }
@@ -105,8 +105,8 @@ class HolidayService
             'deduct_leave' => $data['deduct_leave'] ? 1 : 0
         ];
 
-        HolidayRepository::update($id, $holidayData);
-        return HolidayRepository::findById($id);
+        $this->holidayRepository->update($id, $holidayData);
+        return $this->holidayRepository->findById($id);
     }
 
     /**
@@ -115,12 +115,12 @@ class HolidayService
     public function deleteHoliday(int $id): bool
     {
         // Check if holiday exists
-        $existingHoliday = HolidayRepository::findById($id);
+        $existingHoliday = $this->holidayRepository->findById($id);
         if (!$existingHoliday) {
             throw new Exception('Holiday not found.');
         }
 
-        return HolidayRepository::delete($id);
+        return $this->holidayRepository->delete($id);
     }
 
     /**
@@ -128,7 +128,7 @@ class HolidayService
      */
     public function getHolidaysForDateRange(string $startDate, string $endDate, ?int $departmentId = null): array
     {
-        return HolidayRepository::findForDateRange($startDate, $endDate, $departmentId);
+        return $this->holidayRepository->findForDateRange($startDate, $endDate, $departmentId);
     }
 
     /**
@@ -136,7 +136,7 @@ class HolidayService
      */
     private function isDuplicateHoliday(string $date, ?int $departmentId = null, ?int $excludeId = null): bool
     {
-        $holidays = HolidayRepository::findForDateRange($date, $date, $departmentId);
+        $holidays = $this->holidayRepository->findForDateRange($date, $date, $departmentId);
         
         foreach ($holidays as $holiday) {
             // Skip if this is the same holiday we're updating

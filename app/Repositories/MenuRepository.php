@@ -6,15 +6,21 @@ use App\Core\Database;
 
 class MenuRepository 
 {
+    private Database $db;
+
+    public function __construct(Database $db) {
+        $this->db = $db;
+    }
+
     /**
      * 사용자가 볼 수 있는 모든 메뉴를 가져옵니다.
      * @param array $userPermissions 사용자의 퍼미션 키 배열
      * @return array
      */
-    private static function getVisibleMenus(array $userPermissions): array 
+    private function getVisibleMenus(array $userPermissions): array
     {
         $sql = "SELECT * FROM sys_menus ORDER BY parent_id ASC, display_order ASC, name ASC";
-        $allMenus = Database::query($sql);
+        $allMenus = $this->db->query($sql);
         
         $visibleMenus = [];
         
@@ -99,19 +105,19 @@ class MenuRepository
      * @param string $currentUrl 현재 URL (active 상태 표시용)
      * @return array
      */
-    public static function getTopLevelMenus(array $userPermissions, string $currentUrl = ''): array 
+    public function getTopLevelMenus(array $userPermissions, string $currentUrl = ''): array
     {
-        $visibleMenus = self::getVisibleMenus($userPermissions);
+        $visibleMenus = $this->getVisibleMenus($userPermissions);
         
         $topMenus = [];
         foreach ($visibleMenus as $menu) {
             if (is_null($menu['parent_id'])) {
-                $menu['is_active'] = self::isMenuActive($menu, $currentUrl);
-                $hasChildren = self::hasVisibleChildren($menu['id'], $visibleMenus);
+                $menu['is_active'] = $this->isMenuActive($menu, $currentUrl);
+                $hasChildren = $this->hasVisibleChildren($menu['id'], $visibleMenus);
                 $menu['has_children'] = $hasChildren;
 
                 if ($hasChildren && (!isset($menu['url']) || $menu['url'] === '#')) {
-                    $firstChildUrl = self::findFirstVisibleChildUrl($menu['id'], $visibleMenus);
+                    $firstChildUrl = $this->findFirstVisibleChildUrl($menu['id'], $visibleMenus);
                     if ($firstChildUrl) {
                         $menu['url'] = $firstChildUrl;
                     }
@@ -131,9 +137,9 @@ class MenuRepository
      * @param string $currentUrl 현재 URL (active 상태 표시용)
      * @return array
      */
-    public static function getSubMenus(int $parentMenuId, array $userPermissions, string $currentUrl = ''): array 
+    public function getSubMenus(int $parentMenuId, array $userPermissions, string $currentUrl = ''): array
     {
-        $visibleMenus = self::getVisibleMenus($userPermissions);
+        $visibleMenus = $this->getVisibleMenus($userPermissions);
         
         // 재귀적으로 모든 하위 메뉴 ID들을 찾는 함수
         $getAllDescendantIds = function($parentId, $menus) use (&$getAllDescendantIds) {
@@ -165,8 +171,8 @@ class MenuRepository
         
         // 먼저 모든 노드의 참조를 생성
         foreach ($subMenus as $key => &$node) {
-            $node['is_active'] = self::isMenuActive($node, $currentUrl);
-            $node['has_children'] = self::hasVisibleChildren($node['id'], $visibleMenus);
+            $node['is_active'] = $this->isMenuActive($node, $currentUrl);
+            $node['has_children'] = $this->hasVisibleChildren($node['id'], $visibleMenus);
             $node['children'] = []; // children 배열 초기화
             $references[$node['id']] = &$node;
         }
@@ -187,97 +193,97 @@ class MenuRepository
         return $tree;
     }
     
-/**
- * 현재 활성화된 최상위 메뉴 ID를 가져옵니다.
- * @param array $userPermissions 사용자의 퍼미션 키 배열
- * @param string $currentUrl 현재 URL
- * @return int|null
- */
-public static function getCurrentTopMenuId(array $userPermissions, string $currentUrl): ?int 
-{
-    $visibleMenus = self::getVisibleMenus($userPermissions);
-    
-    // 정확한 매칭을 위해 모든 메뉴를 검사하고 가장 구체적인 매칭을 찾습니다
-    $matchedMenus = [];
-    
-    foreach ($visibleMenus as $menu) {
-        if (self::isMenuActive($menu, $currentUrl)) {
-            $matchedMenus[] = $menu;
-        }
-    }
-    
-    if (empty($matchedMenus)) {
-        return null;
-    }
-    
-    // 가장 구체적인 매칭(URL이 가장 긴 것)을 선택
-    $currentMenu = null;
-    $longestUrlLength = 0;
-    
-    foreach ($matchedMenus as $menu) {
-        $urlLength = strlen(trim($menu['url'], '/'));
-        if ($urlLength > $longestUrlLength) {
-            $longestUrlLength = $urlLength;
-            $currentMenu = $menu;
-        }
-    }
-    
-    if (!$currentMenu) {
-        return null;
-    }
-    
-    // 최상위 메뉴까지 올라가기
-    $topMenuId = $currentMenu['id'];
-    $parentId = $currentMenu['parent_id'];
-    
-    while ($parentId !== null) {
+    /**
+     * 현재 활성화된 최상위 메뉴 ID를 가져옵니다.
+     * @param array $userPermissions 사용자의 퍼미션 키 배열
+     * @param string $currentUrl 현재 URL
+     * @return int|null
+     */
+    public function getCurrentTopMenuId(array $userPermissions, string $currentUrl): ?int
+    {
+        $visibleMenus = $this->getVisibleMenus($userPermissions);
+
+        // 정확한 매칭을 위해 모든 메뉴를 검사하고 가장 구체적인 매칭을 찾습니다
+        $matchedMenus = [];
+
         foreach ($visibleMenus as $menu) {
-            if ($menu['id'] == $parentId) {
-                $topMenuId = $menu['id'];
-                $parentId = $menu['parent_id'];
-                break;
+            if ($this->isMenuActive($menu, $currentUrl)) {
+                $matchedMenus[] = $menu;
             }
         }
-    }
-    
-    return $topMenuId;
-}
 
-/**
- * 메뉴가 현재 활성 상태인지 확인합니다. (개선된 버전)
- * @param array $menu 메뉴 정보
- * @param string $currentUrl 현재 URL
- * @return bool
- */
-private static function isMenuActive(array $menu, string $currentUrl): bool 
-{
-    if (empty($currentUrl) || empty($menu['url'])) {
+        if (empty($matchedMenus)) {
+            return null;
+        }
+
+        // 가장 구체적인 매칭(URL이 가장 긴 것)을 선택
+        $currentMenu = null;
+        $longestUrlLength = 0;
+
+        foreach ($matchedMenus as $menu) {
+            $urlLength = strlen(trim($menu['url'], '/'));
+            if ($urlLength > $longestUrlLength) {
+                $longestUrlLength = $urlLength;
+                $currentMenu = $menu;
+            }
+        }
+
+        if (!$currentMenu) {
+            return null;
+        }
+
+        // 최상위 메뉴까지 올라가기
+        $topMenuId = $currentMenu['id'];
+        $parentId = $currentMenu['parent_id'];
+
+        while ($parentId !== null) {
+            foreach ($visibleMenus as $menu) {
+                if ($menu['id'] == $parentId) {
+                    $topMenuId = $menu['id'];
+                    $parentId = $menu['parent_id'];
+                    break;
+                }
+            }
+        }
+
+        return $topMenuId;
+    }
+
+    /**
+     * 메뉴가 현재 활성 상태인지 확인합니다. (개선된 버전)
+     * @param array $menu 메뉴 정보
+     * @param string $currentUrl 현재 URL
+     * @return bool
+     */
+    private function isMenuActive(array $menu, string $currentUrl): bool
+    {
+        if (empty($currentUrl) || empty($menu['url'])) {
+            return false;
+        }
+
+        // URL 정규화 (앞뒤 슬래시 제거)
+        $currentUrl = trim($currentUrl, '/');
+        $menuUrl = trim($menu['url'], '/');
+
+        // 빈 URL이면 매칭하지 않음
+        if (empty($menuUrl)) {
+            return false;
+        }
+
+        // 정확한 일치 (우선순위 1)
+        if ($currentUrl === $menuUrl) {
+            return true;
+        }
+
+        // 하위 경로 포함 체크 (우선순위 2)
+        // 단, 메뉴 URL이 현재 URL보다 짧을 때만
+        if (strlen($menuUrl) < strlen($currentUrl) &&
+            strpos($currentUrl, $menuUrl . '/') === 0) {
+            return true;
+        }
+
         return false;
     }
-    
-    // URL 정규화 (앞뒤 슬래시 제거)
-    $currentUrl = trim($currentUrl, '/');
-    $menuUrl = trim($menu['url'], '/');
-    
-    // 빈 URL이면 매칭하지 않음
-    if (empty($menuUrl)) {
-        return false;
-    }
-    
-    // 정확한 일치 (우선순위 1)
-    if ($currentUrl === $menuUrl) {
-        return true;
-    }
-    
-    // 하위 경로 포함 체크 (우선순위 2)
-    // 단, 메뉴 URL이 현재 URL보다 짧을 때만
-    if (strlen($menuUrl) < strlen($currentUrl) && 
-        strpos($currentUrl, $menuUrl . '/') === 0) {
-        return true;
-    }
-    
-    return false;
-}
     
     /**
      * 메뉴가 보이는 하위 메뉴를 가지고 있는지 확인합니다.
@@ -285,7 +291,7 @@ private static function isMenuActive(array $menu, string $currentUrl): bool
      * @param array $visibleMenus 보이는 메뉴 목록
      * @return bool
      */
-    private static function hasVisibleChildren(int $menuId, array $visibleMenus): bool 
+    private function hasVisibleChildren(int $menuId, array $visibleMenus): bool
     {
         foreach ($visibleMenus as $menu) {
             if ($menu['parent_id'] == $menuId) {
@@ -295,14 +301,14 @@ private static function isMenuActive(array $menu, string $currentUrl): bool
         return false;
     }
 
-    private static function findFirstVisibleChildUrl(int $parentId, array $visibleMenus): ?string
+    private function findFirstVisibleChildUrl(int $parentId, array $visibleMenus): ?string
     {
         foreach ($visibleMenus as $menu) {
             if ($menu['parent_id'] == $parentId) {
                 // Since visibleMenus is sorted by display_order, this is the first child.
                 // If this child also has children, recurse to find the first leaf.
-                if (self::hasVisibleChildren($menu['id'], $visibleMenus)) {
-                    $descendantUrl = self::findFirstVisibleChildUrl($menu['id'], $visibleMenus);
+                if ($this->hasVisibleChildren($menu['id'], $visibleMenus)) {
+                    $descendantUrl = $this->findFirstVisibleChildUrl($menu['id'], $visibleMenus);
                     // If a valid URL is found in the descendants, return it.
                     if ($descendantUrl) {
                         return $descendantUrl;
@@ -322,10 +328,10 @@ private static function isMenuActive(array $menu, string $currentUrl): bool
     /**
      * 메뉴 생성
      */
-    public static function create(array $menuData): string {
+    public function create(array $menuData): string {
         $sql = "INSERT INTO sys_menus (name, url, icon, parent_id, display_order, permission_key) 
                 VALUES (:name, :url, :icon, :parent_id, :display_order, :permission_key)";
-        Database::execute($sql, [
+        $this->db->execute($sql, [
             ':name' => $menuData['name'],
             ':url' => $menuData['url'] ?? null,
             ':icon' => $menuData['icon'] ?? null,
@@ -333,13 +339,13 @@ private static function isMenuActive(array $menu, string $currentUrl): bool
             ':display_order' => $menuData['display_order'] ?? 0,
             ':permission_key' => $menuData['permission_key'] ?? null
         ]);
-        return Database::lastInsertId();
+        return $this->db->lastInsertId();
     }
 
     /**
      * 메뉴 수정
      */
-    public static function update(int $id, array $menuData): bool {
+    public function update(int $id, array $menuData): bool {
         $sql = "UPDATE sys_menus SET 
                 name = :name, 
                 url = :url, 
@@ -348,7 +354,7 @@ private static function isMenuActive(array $menu, string $currentUrl): bool
                 display_order = :display_order, 
                 permission_key = :permission_key 
                 WHERE id = :id";
-        return Database::execute($sql, [
+        return $this->db->execute($sql, [
             ':id' => $id,
             ':name' => $menuData['name'],
             ':url' => $menuData['url'] ?? null,
@@ -356,53 +362,53 @@ private static function isMenuActive(array $menu, string $currentUrl): bool
             ':parent_id' => $menuData['parent_id'] ?? null,
             ':display_order' => $menuData['display_order'] ?? 0,
             ':permission_key' => $menuData['permission_key'] ?? null
-        ]);
+        ]) > 0;
     }
 
     /**
      * 메뉴 삭제
      */
-    public static function delete(int $id): bool {
+    public function delete(int $id): bool {
         // 하위 메뉴가 있는지 확인
-        $hasChildren = Database::fetchOne("SELECT 1 FROM sys_menus WHERE parent_id = :id LIMIT 1", [':id' => $id]);
+        $hasChildren = $this->db->fetchOne("SELECT 1 FROM sys_menus WHERE parent_id = :id LIMIT 1", [':id' => $id]);
         if ($hasChildren) {
             return false; // 하위 메뉴가 있으면 삭제 불가
         }
         
-        return Database::execute("DELETE FROM sys_menus WHERE id = :id", [':id' => $id]);
+        return $this->db->execute("DELETE FROM sys_menus WHERE id = :id", [':id' => $id]) > 0;
     }
 
     /**
      * 메뉴 조회
      */
-    public static function findById(int $id): ?array {
-        return Database::fetchOne("SELECT * FROM sys_menus WHERE id = :id", [':id' => $id]);
+    public function findById(int $id): ?array {
+        return $this->db->fetchOne("SELECT * FROM sys_menus WHERE id = :id", [':id' => $id]);
     }
 
     /**
      * 메뉴 순서 변경
      */
-    public static function updateDisplayOrder(int $id, int $displayOrder): bool {
+    public function updateDisplayOrder(int $id, int $displayOrder): bool {
         $sql = "UPDATE sys_menus SET display_order = :display_order WHERE id = :id";
-        return Database::execute($sql, [':id' => $id, ':display_order' => $displayOrder]);
+        return $this->db->execute($sql, [':id' => $id, ':display_order' => $displayOrder]) > 0;
     }
 
     /**
      * 부모 메뉴 변경
      */
-    public static function updateParent(int $id, ?int $parentId): bool {
+    public function updateParent(int $id, ?int $parentId): bool {
         $sql = "UPDATE sys_menus SET parent_id = :parent_id WHERE id = :id";
-        return Database::execute($sql, [':id' => $id, ':parent_id' => $parentId]);
+        return $this->db->execute($sql, [':id' => $id, ':parent_id' => $parentId]) > 0;
     }
 
     /**
      * 관리자용으로 모든 메뉴를 가져옵니다.
      * @return array
      */
-    public static function findAllForAdmin(): array
+    public function findAllForAdmin(): array
     {
         $sql = "SELECT * FROM sys_menus ORDER BY parent_id ASC, display_order ASC, name ASC";
-        return Database::query($sql);
+        return $this->db->query($sql);
     }
 
     /**
@@ -411,9 +417,9 @@ private static function isMenuActive(array $menu, string $currentUrl): bool
      * @param string $currentUrl 현재 URL (active 상태 표시용)
      * @return array
      */
-    public static function getAllVisibleMenus(array $userPermissions, string $currentUrl = ''): array
+    public function getAllVisibleMenus(array $userPermissions, string $currentUrl = ''): array
     {
-        $visibleMenus = self::getVisibleMenus($userPermissions);
+        $visibleMenus = $this->getVisibleMenus($userPermissions);
 
         $tree = [];
         $references = [];
@@ -421,8 +427,8 @@ private static function isMenuActive(array $menu, string $currentUrl): bool
         // is_active와 has_children을 미리 계산하고 참조를 설정합니다.
         // &를 사용하여 배열의 실제 요소를 수정합니다.
         foreach ($visibleMenus as $key => &$menu) {
-            $menu['is_active'] = self::isMenuActive($menu, $currentUrl);
-            $menu['has_children'] = self::hasVisibleChildren($menu['id'], $visibleMenus);
+            $menu['is_active'] = $this->isMenuActive($menu, $currentUrl);
+            $menu['has_children'] = $this->hasVisibleChildren($menu['id'], $visibleMenus);
             $menu['children'] = []; // children 배열 초기화
             $references[$menu['id']] = &$menu;
         }

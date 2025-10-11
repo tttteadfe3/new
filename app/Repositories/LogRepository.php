@@ -5,13 +5,19 @@ namespace App\Repositories;
 use App\Core\Database;
 
 class LogRepository {
-    public static function insert(array $logData): bool {
-        $sql = "INSERT INTO sys_activity_logs (user_id, user_name, action, details, ip_address)
-                VALUES (:user_id, :user_name, :action, :details, :ip_address)";
-        return Database::execute($sql, $logData);
+    private Database $db;
+
+    public function __construct(Database $db) {
+        $this->db = $db;
     }
 
-    public static function search(array $filters = [], int $limit = 50): array {
+    public function insert(array $logData): bool {
+        $sql = "INSERT INTO sys_activity_logs (user_id, user_name, action, details, ip_address)
+                VALUES (:user_id, :user_name, :action, :details, :ip_address)";
+        return $this->db->execute($sql, $logData) > 0;
+    }
+
+    public function search(array $filters = [], int $limit = 50): array {
         $sql = "SELECT * FROM sys_activity_logs";
         $whereClauses = [];
         $params = [];
@@ -39,11 +45,11 @@ class LogRepository {
 
         $sql .= " ORDER BY created_at DESC LIMIT " . $limit;
 
-        return Database::query($sql, $params);
+        return $this->db->query($sql, $params);
     }
 
-    public static function truncate(): bool {
+    public function truncate(): bool {
         $sql = "TRUNCATE TABLE sys_activity_logs";
-        return Database::execute($sql);
+        return $this->db->execute($sql) > 0;
     }
 }

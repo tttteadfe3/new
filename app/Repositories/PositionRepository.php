@@ -5,34 +5,39 @@ namespace App\Repositories;
 use App\Core\Database;
 
 class PositionRepository {
-    public static function getAll() {
-        return Database::query("SELECT * FROM hr_positions ORDER BY name");
+    private Database $db;
+
+    public function __construct(Database $db) {
+        $this->db = $db;
+    }
+    public function getAll() {
+        return $this->db->query("SELECT * FROM hr_positions ORDER BY name");
     }
 
-    public static function findById(int $id) {
-        return Database::fetchOne("SELECT * FROM hr_positions WHERE id = :id", [':id' => $id]);
+    public function findById(int $id) {
+        return $this->db->fetchOne("SELECT * FROM hr_positions WHERE id = :id", [':id' => $id]);
     }
 
-    public static function create(string $name): string {
+    public function create(string $name): string {
         $sql = "INSERT INTO hr_positions (name) VALUES (:name)";
-        Database::execute($sql, [':name' => $name]);
-        return Database::lastInsertId();
+        $this->db->execute($sql, [':name' => $name]) > 0;
+        return $this->db->lastInsertId();
     }
 
-    public static function update(int $id, string $name): bool {
+    public function update(int $id, string $name): bool {
         $sql = "UPDATE hr_positions SET name = :name WHERE id = :id";
-        return Database::execute($sql, [':id' => $id, ':name' => $name]);
+        return $this->db->execute($sql, [':id' => $id, ':name' => $name]) > 0;
     }
 
-    public static function isEmployeeAssigned(int $id): bool {
+    public function isEmployeeAssigned(int $id): bool {
         $sql = "SELECT 1 FROM hr_employees WHERE position_id = :id LIMIT 1";
-        return (bool) Database::fetchOne($sql, [':id' => $id]);
+        return (bool) $this->db->fetchOne($sql, [':id' => $id]);
     }
 
-    public static function delete(int $id): bool {
-        if (self::isEmployeeAssigned($id)) {
+    public function delete(int $id): bool {
+        if ($this->isEmployeeAssigned($id)) {
             return false;
         }
-        return Database::execute("DELETE FROM hr_positions WHERE id = :id", [':id' => $id]);
+        return $this->db->execute("DELETE FROM hr_positions WHERE id = :id", [':id' => $id]) > 0;
     }
 }

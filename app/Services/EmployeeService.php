@@ -24,7 +24,7 @@ class EmployeeService
      */
     public function getUnlinkedEmployees(): array
     {
-        return EmployeeRepository::findUnlinked();
+        return $this->employeeRepository->findUnlinked();
     }
 
     /**
@@ -32,7 +32,7 @@ class EmployeeService
      */
     public function getAllEmployees(array $filters = []): array
     {
-        return EmployeeRepository::getAll($filters);
+        return $this->employeeRepository->getAll($filters);
     }
 
     /**
@@ -40,7 +40,7 @@ class EmployeeService
      */
     public function getEmployee(int $id): ?array
     {
-        return EmployeeRepository::findById($id);
+        return $this->employeeRepository->findById($id);
     }
 
     /**
@@ -48,7 +48,7 @@ class EmployeeService
      */
     public function getActiveEmployees(): array
     {
-        return EmployeeRepository::findAllActive();
+        return $this->employeeRepository->findAllActive();
     }
 
     /**
@@ -62,7 +62,7 @@ class EmployeeService
             throw new \InvalidArgumentException('Invalid employee data');
         }
 
-        return EmployeeRepository::save($data);
+        return $this->employeeRepository->save($data);
     }
 
     /**
@@ -70,7 +70,7 @@ class EmployeeService
      */
     public function updateEmployee(int $id, array $data): ?string
     {
-        $oldData = EmployeeRepository::findById($id);
+        $oldData = $this->employeeRepository->findById($id);
         if (!$oldData) {
             throw new \InvalidArgumentException('Employee not found');
         }
@@ -82,7 +82,7 @@ class EmployeeService
         }
 
         $data['id'] = $id;
-        $savedId = EmployeeRepository::save($data);
+        $savedId = $this->employeeRepository->save($data);
 
         // Log changes if update was successful
         if ($savedId && $oldData) {
@@ -100,12 +100,12 @@ class EmployeeService
      */
     public function deleteEmployee(int $id): bool
     {
-        $employee = EmployeeRepository::findById($id);
+        $employee = $this->employeeRepository->findById($id);
         if (!$employee) {
             throw new \InvalidArgumentException('Employee not found');
         }
 
-        return EmployeeRepository::delete($id);
+        return $this->employeeRepository->delete($id);
     }
 
     /**
@@ -114,7 +114,7 @@ class EmployeeService
     public function approveProfileUpdate(int $employeeId): bool
     {
         // Get current data before update
-        $oldData = EmployeeRepository::findById($employeeId);
+        $oldData = $this->employeeRepository->findById($employeeId);
         if (!$oldData || $oldData['profile_update_status'] !== 'pending' || empty($oldData['pending_profile_data'])) {
             return false;
         }
@@ -126,7 +126,7 @@ class EmployeeService
         $fullNewData = array_merge($oldData, $newDataFromRequest);
 
         // Apply the update
-        $success = EmployeeRepository::applyProfileUpdate($employeeId, $fullNewData);
+        $success = $this->employeeRepository->applyProfileUpdate($employeeId, $fullNewData);
         
         // Log changes if successful
         if ($success) {
@@ -134,7 +134,7 @@ class EmployeeService
             if ($adminUser) {
                 $this->logChanges($employeeId, $oldData, $newDataFromRequest, $adminUser['id']);
                 
-                LogRepository::insert([
+                $this->logRepository->insert([
                     ':user_id' => $adminUser['id'],
                     ':user_name' => $adminUser['nickname'],
                     ':action' => '프로필 변경 승인',
@@ -152,7 +152,7 @@ class EmployeeService
      */
     public function rejectProfileUpdate(int $employeeId, string $reason): bool
     {
-        return EmployeeRepository::rejectProfileUpdate($employeeId, $reason);
+        return $this->employeeRepository->rejectProfileUpdate($employeeId, $reason);
     }
 
     /**
@@ -160,7 +160,7 @@ class EmployeeService
      */
     public function requestProfileUpdate(int $userId, array $data): bool
     {
-        return EmployeeRepository::requestProfileUpdate($userId, $data);
+        return $this->employeeRepository->requestProfileUpdate($userId, $data);
     }
 
     /**
@@ -191,15 +191,15 @@ class EmployeeService
                 // Convert department and position IDs to names for logging
                 if ($key === 'department_id') {
                     $oldValue = $oldData['department_name'] ?? $oldValue;
-                    $department = DepartmentRepository::findById($newValue);
+                    $department = $this->departmentRepository->findById($newValue);
                     $newValue = $department['name'] ?? $newValue;
                 } elseif ($key === 'position_id') {
                     $oldValue = $oldData['position_name'] ?? $oldValue;
-                    $position = PositionRepository::findById($newValue);
+                    $position = $this->positionRepository->findById($newValue);
                     $newValue = $position['name'] ?? $newValue;
                 }
 
-                EmployeeChangeLogRepository::insert(
+                $this->employeeChangeLogRepository->insert(
                     $employeeId, 
                     $changerId, 
                     $label, 

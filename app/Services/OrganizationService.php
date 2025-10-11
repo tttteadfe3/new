@@ -12,7 +12,7 @@ class OrganizationService
      */
     public function getAllDepartments(): array
     {
-        return DepartmentRepository::getAll();
+        return $this->departmentRepository->getAll();
     }
 
     /**
@@ -20,7 +20,7 @@ class OrganizationService
      */
     public function createDepartment(string $name): string
     {
-        return DepartmentRepository::create($name);
+        return $this->departmentRepository->create($name);
     }
 
     /**
@@ -28,7 +28,7 @@ class OrganizationService
      */
     public function updateDepartment(int $id, string $name): bool
     {
-        return DepartmentRepository::update($id, $name);
+        return $this->departmentRepository->update($id, $name);
     }
 
     /**
@@ -36,7 +36,7 @@ class OrganizationService
      */
     public function deleteDepartment(int $id): bool
     {
-        return DepartmentRepository::delete($id);
+        return $this->departmentRepository->delete($id);
     }
 
     /**
@@ -44,7 +44,7 @@ class OrganizationService
      */
     public function getDepartment(int $id): ?array
     {
-        return DepartmentRepository::findById($id);
+        return $this->departmentRepository->findById($id);
     }
 
     /**
@@ -52,7 +52,7 @@ class OrganizationService
      */
     public function getAllPositions(): array
     {
-        return PositionRepository::getAll();
+        return $this->positionRepository->getAll();
     }
 
     /**
@@ -60,7 +60,7 @@ class OrganizationService
      */
     public function createPosition(string $name): string
     {
-        return PositionRepository::create($name);
+        return $this->positionRepository->create($name);
     }
 
     /**
@@ -68,7 +68,7 @@ class OrganizationService
      */
     public function updatePosition(int $id, string $name): bool
     {
-        return PositionRepository::update($id, $name);
+        return $this->positionRepository->update($id, $name);
     }
 
     /**
@@ -76,7 +76,7 @@ class OrganizationService
      */
     public function deletePosition(int $id): bool
     {
-        return PositionRepository::delete($id);
+        return $this->positionRepository->delete($id);
     }
 
     /**
@@ -84,6 +84,6 @@ class OrganizationService
      */
     public function getPosition(int $id): ?array
     {
-        return PositionRepository::findById($id);
+        return $this->positionRepository->findById($id);
     }
 }
