@@ -15,6 +15,7 @@ class LitteringAdminPage extends BasePage {
 
     initializeApp() {
         const mapOptions = {
+            ...this.config, // Pass all page configs to the map
             enableTempMarker: false,
             onAddressResolved: (locationData) => {
                 document.getElementById('address').value = locationData.address;
