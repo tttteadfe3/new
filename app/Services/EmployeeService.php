@@ -2,21 +2,33 @@
 
 namespace App\Services;
 
+use App\Core\Database;
+use App\Core\SessionManager;
 use App\Repositories\EmployeeRepository;
 use App\Repositories\EmployeeChangeLogRepository;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\PositionRepository;
 use App\Repositories\LogRepository;
-use App\Core\SessionManager;
 use App\Models\Employee;
 
 class EmployeeService
 {
     private EmployeeRepository $employeeRepository;
+    private EmployeeChangeLogRepository $employeeChangeLogRepository;
+    private DepartmentRepository $departmentRepository;
+    private PositionRepository $positionRepository;
+    private LogRepository $logRepository;
+    private SessionManager $sessionManager;
 
     public function __construct()
     {
-        $this->employeeRepository = new EmployeeRepository();
+        $db = Database::getInstance();
+        $this->employeeRepository = new EmployeeRepository($db);
+        $this->employeeChangeLogRepository = new EmployeeChangeLogRepository($db);
+        $this->departmentRepository = new DepartmentRepository($db);
+        $this->positionRepository = new PositionRepository($db);
+        $this->logRepository = new LogRepository($db);
+        $this->sessionManager = new SessionManager();
     }
 
     /**
@@ -86,7 +98,7 @@ class EmployeeService
 
         // Log changes if update was successful
         if ($savedId && $oldData) {
-            $adminUser = SessionManager::get('user');
+            $adminUser = $this->sessionManager->get('user');
             if ($adminUser) {
                 $this->logChanges($id, $oldData, $data, $adminUser['id']);
             }
@@ -130,7 +142,7 @@ class EmployeeService
         
         // Log changes if successful
         if ($success) {
-            $adminUser = SessionManager::get('user');
+            $adminUser = $this->sessionManager->get('user');
             if ($adminUser) {
                 $this->logChanges($employeeId, $oldData, $newDataFromRequest, $adminUser['id']);
                 
