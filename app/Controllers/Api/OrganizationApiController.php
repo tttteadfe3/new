@@ -2,15 +2,22 @@
 
 namespace App\Controllers\Api;
 
+use App\Core\Database;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\PositionRepository;
 use Exception;
 
 class OrganizationApiController extends BaseApiController
 {
+    protected DepartmentRepository $departmentRepository;
+    protected PositionRepository $positionRepository;
+
     public function __construct()
     {
         parent::__construct();
+        $db = Database::getInstance();
+        $this->departmentRepository = new DepartmentRepository($db);
+        $this->positionRepository = new PositionRepository($db);
     }
 
     /**
@@ -23,7 +30,7 @@ class OrganizationApiController extends BaseApiController
             $type = $_GET['type'] ?? '';
             $repository = $this->getRepositoryForType($type);
 
-            $entities = $repository::getAll();
+            $entities = $repository->getAll();
             $this->apiSuccess($entities);
         } catch (Exception $e) {
             $this->handleException($e);
@@ -48,7 +55,7 @@ class OrganizationApiController extends BaseApiController
                 $this->apiBadRequest($entityName . ' 이름은 필수입니다.');
             }
 
-            $newId = $repository::create($name);
+            $newId = $repository->create($name);
             $this->apiSuccess(['new_id' => $newId], '새 ' . $entityName . '(이)가 생성되었습니다.');
 
         } catch (Exception $e) {
@@ -74,7 +81,7 @@ class OrganizationApiController extends BaseApiController
                 $this->apiBadRequest($entityName . ' 이름은 필수입니다.');
             }
 
-            $repository::update($id, $name);
+            $repository->update($id, $name);
             $this->apiSuccess(null, $entityName . ' 정보가 수정되었습니다.');
 
         } catch (Exception $e) {
@@ -95,7 +102,7 @@ class OrganizationApiController extends BaseApiController
             $repository = $this->getRepositoryForType($type);
             $entityName = $type === 'department' ? '부서' : '직급';
 
-            if ($repository::delete($id)) {
+            if ($repository->delete($id)) {
                 $this->apiSuccess(null, $entityName . '(이)가 삭제되었습니다.');
             } else {
                 $this->apiError('직원이 할당된 ' . $entityName . '은(는) 삭제할 수 없습니다.');
@@ -106,15 +113,16 @@ class OrganizationApiController extends BaseApiController
     }
 
     /**
-     * Get the corresponding repository class based on the entity type.
+     * Get the corresponding repository instance based on the entity type.
+     * @return DepartmentRepository|PositionRepository
      * @throws Exception
      */
-    private function getRepositoryForType(string $type): string
+    private function getRepositoryForType(string $type)
     {
         if ($type === 'department') {
-            return DepartmentRepository::class;
+            return $this->departmentRepository;
         } elseif ($type === 'position') {
-            return PositionRepository::class;
+            return $this->positionRepository;
         }
         throw new Exception('Invalid entity type specified.');
     }

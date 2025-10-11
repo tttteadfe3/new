@@ -35,7 +35,7 @@ class WasteCollectionService
      */
     public function registerCollection(array $postData, array $files, int $userId, ?int $employeeId): array
     {
-        Database::beginTransaction();
+        $this->db->beginTransaction();
         
         try {
             // Handle photo upload
@@ -91,11 +91,11 @@ class WasteCollectionService
                 throw new Exception("수량이 1개 이상인 품목이 하나 이상 필요합니다.", 400);
             }
 
-            Database::commit();
+            $this->db->commit();
             return $this->wasteCollectionRepository->findById($collectionId);
             
         } catch (Exception $e) {
-            Database::rollBack();
+            $this->db->rollBack();
             
             // Clean up uploaded file on error
             if (isset($photoPath) && !empty($photoPath) && file_exists(UPLOADS_PATH . $photoPath)) {
@@ -202,7 +202,7 @@ class WasteCollectionService
      */
     public function batchRegisterCollections(array $collections, int $adminUserId): array
     {
-        Database::beginTransaction();
+        $this->db->beginTransaction();
         
         try {
             $newIds = [];
@@ -246,7 +246,7 @@ class WasteCollectionService
                 $newIds[] = $newId;
             }
 
-            Database::commit();
+            $this->db->commit();
             return [
                 'count' => count($newIds), 
                 'failures' => $failedCount, 
@@ -254,7 +254,7 @@ class WasteCollectionService
             ];
             
         } catch (Exception $e) {
-            Database::rollBack();
+            $this->db->rollBack();
             throw $e;
         }
     }
@@ -273,7 +273,7 @@ class WasteCollectionService
             throw new Exception("잘못된 품목 데이터 형식입니다.", 400);
         }
 
-        Database::beginTransaction();
+        $this->db->beginTransaction();
         
         try {
             // Delete existing items
@@ -295,11 +295,11 @@ class WasteCollectionService
                 }
             }
 
-            Database::commit();
+            $this->db->commit();
             return true;
             
         } catch (Exception $e) {
-            Database::rollBack();
+            $this->db->rollBack();
             throw $e;
         }
     }

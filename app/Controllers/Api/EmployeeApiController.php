@@ -44,8 +44,8 @@ class EmployeeApiController extends BaseApiController
     public function getInitialData(): void
     {
         try {
-            $departments = DepartmentRepository::getAll();
-            $positions = PositionRepository::getAll();
+            $departments = $this->departmentRepository->getAll();
+            $positions = $this->positionRepository->getAll();
 
             $this->apiSuccess([
                 'departments' => $departments,
@@ -137,7 +137,7 @@ class EmployeeApiController extends BaseApiController
     public function getChangeHistory(int $id): void
     {
         try {
-            $history = EmployeeChangeLogRepository::findByEmployeeId($id);
+            $history = $this->employeeChangeLogRepository->findByEmployeeId($id);
             $this->apiSuccess($history);
         } catch (Exception $e) {
             $this->handleException($e);
