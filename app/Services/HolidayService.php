@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Core\Database;
 use App\Repositories\HolidayRepository;
 use App\Repositories\DepartmentRepository;
 use App\Models\Holiday;
@@ -9,6 +10,16 @@ use Exception;
 
 class HolidayService
 {
+    private HolidayRepository $holidayRepository;
+    private DepartmentRepository $departmentRepository;
+
+    public function __construct()
+    {
+        $db = Database::getInstance();
+        $this->holidayRepository = new HolidayRepository($db);
+        $this->departmentRepository = new DepartmentRepository($db);
+    }
+
     /**
      * Get all holidays with department information.
      */

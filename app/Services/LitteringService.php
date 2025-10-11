@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Core\Database;
 use App\Repositories\LitteringRepository;
 use App\Core\Validator;
 use App\Core\FileUploader;
@@ -13,7 +14,13 @@ use Exception;
  */
 class LitteringService
 {
-    public function __construct() {}
+    private LitteringRepository $litteringRepository;
+
+    public function __construct()
+    {
+        $db = Database::getInstance();
+        $this->litteringRepository = new LitteringRepository($db);
+    }
 
     public function getActiveLittering(): array
     {

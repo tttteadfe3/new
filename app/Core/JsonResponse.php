@@ -12,7 +12,7 @@ class JsonResponse {
      * @param array $payload 전송할 데이터 배열
      * @param int $httpStatusCode HTTP 상태 코드
      */
-    private static function send(array $payload, int $httpStatusCode = 200) {
+    private function send(array $payload, int $httpStatusCode = 200) {
         // 이미 헤더가 전송되었는지 확인 (에러 방지)
         if (headers_sent()) {
             // 헤더가 이미 전송된 경우, 더 이상 아무것도 할 수 없으므로 종료
@@ -35,8 +35,8 @@ class JsonResponse {
      * @param mixed|null $data 클라이언트에게 전송할 데이터
      * @param string $message 성공 메시지
      */
-    public static function success($data = null, string $message = 'Success') {
-        self::send([
+    public function success($data = null, string $message = 'Success') {
+        $this->send([
             'success' => true,
             'message' => $message,
             'data' => $data
@@ -50,8 +50,8 @@ class JsonResponse {
      * @param string|null $errorCode 프론트엔드가 참고할 수 있는 커스텀 에러 코드
      * @param int $httpStatusCode HTTP 상태 코드 (기본값: 400 Bad Request)
      */
-    public static function error(string $message, ?string $errorCode = null, int $httpStatusCode = 400) {
-        self::send([
+    public function error(string $message, ?string $errorCode = null, int $httpStatusCode = 400) {
+        $this->send([
             'success' => false,
             'message' => $message,
             'error_code' => $errorCode,
@@ -64,8 +64,8 @@ class JsonResponse {
      *
      * @param string $message
      */
-    public static function notFound(string $message = 'Resource not found') {
-        self::error($message, 'NOT_FOUND', 404);
+    public function notFound(string $message = 'Resource not found') {
+        $this->error($message, 'NOT_FOUND', 404);
     }
 
     /**
@@ -73,8 +73,8 @@ class JsonResponse {
      *
      * @param string $message
      */
-    public static function forbidden(string $message = 'Forbidden') {
-        self::error($message, 'FORBIDDEN', 403);
+    public function forbidden(string $message = 'Forbidden') {
+        $this->error($message, 'FORBIDDEN', 403);
     }
 
     /**
@@ -82,7 +82,7 @@ class JsonResponse {
      *
      * @param string $message
      */
-    public static function badRequest(string $message = 'Bad Request') {
-        self::error($message, 'BAD_REQUEST', 400);
+    public function badRequest(string $message = 'Bad Request') {
+        $this->error($message, 'BAD_REQUEST', 400);
     }
 }
