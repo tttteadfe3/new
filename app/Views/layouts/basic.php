@@ -1,10 +1,9 @@
 <?php
 use App\Core\View;
-use App\Core\SessionManager;
 
-// Get user info from session
-$currentUserNickname = SessionManager::get('user')['nickname'] ?? '사용자';
-$profileImageUrl = SessionManager::get('user')['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/images/users/avatar.png';
+// User info is now passed from the controller/middleware via ViewDataService as the $user variable.
+$currentUserNickname = $user['nickname'] ?? '사용자';
+$profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/images/users/avatar.png';
 ?>
 <!doctype html>
 <html lang="ko" data-layout="vertical" data-sidebar="dark" data-sidebar-size="lg" data-preloader="enable" data-theme="default">
