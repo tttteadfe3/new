@@ -7,7 +7,8 @@ class LitteringMapPage extends BasePage {
         super({
             API_URL: '/littering',
             WASTE_TYPES: ['생활폐기물', '음식물', '재활용', '대형', '소각'],
-            FILE: { MAX_SIZE: 5 * 1024 * 1024, ALLOWED_TYPES: ['image/jpeg', 'image/png'], COMPRESS: { MAX_WIDTH: 1200, MAX_HEIGHT: 1200, QUALITY: 0.8 } }
+            FILE: { MAX_SIZE: 5 * 1024 * 1024, ALLOWED_TYPES: ['image/jpeg', 'image/png'], COMPRESS: { MAX_WIDTH: 1200, MAX_HEIGHT: 1200, QUALITY: 0.8 } },
+            allowedRegions: ['정왕1동'] // Add region restriction
         });
         this.state = { ...this.state, reportList: [], modals: {}, currentReportIndex: null, mapService: null };
     }
@@ -17,6 +18,7 @@ class LitteringMapPage extends BasePage {
      */
     initializeApp() {
         const mapOptions = {
+            ...this.config, // Pass all page configs to the map
             enableTempMarker: true,
             markerTypes: this.generateMarkerTypes(),
             markerSize: { width: 34, height: 40 },
@@ -151,13 +153,8 @@ class LitteringMapPage extends BasePage {
         const markerInfo = this.state.mapService.mapManager.addMarker({
             position: { lat: data.latitude, lng: data.longitude },
             type: markerTypeKey,
-            data: { ...data, id: data.id },
-            onClick: (marker, markerData) => {
-                const index = this.state.reportList.findIndex(item => item && item.data.id === markerData.id);
-                if (index !== -1) {
-                    this.openProcessingModal(index);
-                }
-            }
+            data: { ...data, id: data.id }
+            // No onClick handler for user-facing map
         });
 
         this.state.reportList.push({
@@ -224,7 +221,7 @@ class LitteringMapPage extends BasePage {
 
     generateMarkerTypes() {
         const markerTypes = {};
-        const statuses = ['pending', 'confirmed'];
+        const statuses = ['pending', 'confirmed', 'active'];
         const wasteTypeColors = {
             '생활폐기물': '#666666', '음식물': '#FF9800', '재활용': '#00A6FB',
             '대형': '#DC2626', '소각': '#FF5722'
