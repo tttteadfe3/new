@@ -1,8 +1,7 @@
 class LitteringAdminPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/littering_admin/reports',
-            allowedRegions: ['정왕1동']
+            API_URL: '/littering_admin/reports'
         });
 
         this.state = {

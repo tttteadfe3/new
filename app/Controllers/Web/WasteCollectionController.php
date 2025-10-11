@@ -39,7 +39,8 @@ class WasteCollectionController extends BaseController
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);
 
         echo $this->render('pages/waste/collection', [
-            'pageTitle' => $pageTitle
+            'pageTitle' => $pageTitle,
+            'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]
         ], 'layouts/app');
     }
 

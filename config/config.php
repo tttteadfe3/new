@@ -99,3 +99,9 @@ App\Core\SessionManager::regenerate();
 
 // 10. 공통 페이지 변수 설정은 ViewDataService로 이전되었습니다.
 // 이 파일은 이제 전역 설정 및 초기화만 담당합니다.
+
+// 11. 지도 관련 설정
+// .env 파일에서 ALLOWED_REGIONS 값을 읽어옵니다. 값이 없으면 기본값 '정왕1동'을 사용합니다.
+$allowedRegionsStr = $_ENV['ALLOWED_REGIONS'] ?? '정왕1동';
+$allowedRegionsArr = array_filter(array_map('trim', explode(',', $allowedRegionsStr)));
+define('ALLOWED_REGIONS', $allowedRegionsArr);
