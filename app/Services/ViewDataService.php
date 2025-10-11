@@ -29,19 +29,12 @@ class ViewDataService
         $userPermissions = $user['permissions'] ?? [];
         $currentUrlPath = Request::uri();
 
-        $currentTopMenuId = MenuRepository::getCurrentTopMenuId($userPermissions, $currentUrlPath);
-
-        $sideMenuItems = [];
-        if ($currentTopMenuId) {
-            $sideMenuItems = MenuRepository::getSubMenus($currentTopMenuId, $userPermissions, $currentUrlPath);
-        }
+        $allMenus = MenuRepository::getAllVisibleMenus($userPermissions, $currentUrlPath);
 
         return [
             'userPermissions' => $userPermissions,
             'currentUrlPath' => $currentUrlPath,
-            'topLevelMenus' => MenuRepository::getTopLevelMenus($userPermissions, $currentUrlPath),
-            'sideMenuItems' => $sideMenuItems,
-            'currentTopMenuId' => $currentTopMenuId,
+            'allMenus' => $allMenus,
         ];
     }
 }

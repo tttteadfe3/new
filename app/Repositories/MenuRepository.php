@@ -404,5 +404,42 @@ private static function isMenuActive(array $menu, string $currentUrl): bool
         $sql = "SELECT * FROM sys_menus ORDER BY parent_id ASC, display_order ASC, name ASC";
         return Database::query($sql);
     }
-    
+
+    /**
+     * 사용자가 접근할 수 있는 모든 메뉴를 계층 구조로 가져옵니다. (통합 메뉴용)
+     * @param array $userPermissions 사용자의 퍼미션 키 배열
+     * @param string $currentUrl 현재 URL (active 상태 표시용)
+     * @return array
+     */
+    public static function getAllVisibleMenus(array $userPermissions, string $currentUrl = ''): array
+    {
+        $visibleMenus = self::getVisibleMenus($userPermissions);
+
+        $tree = [];
+        $references = [];
+
+        // is_active와 has_children을 미리 계산하고 참조를 설정합니다.
+        // &를 사용하여 배열의 실제 요소를 수정합니다.
+        foreach ($visibleMenus as $key => &$menu) {
+            $menu['is_active'] = self::isMenuActive($menu, $currentUrl);
+            $menu['has_children'] = self::hasVisibleChildren($menu['id'], $visibleMenus);
+            $menu['children'] = []; // children 배열 초기화
+            $references[$menu['id']] = &$menu;
+        }
+        unset($menu); // 마지막 요소에 대한 참조를 해제합니다.
+
+        // 계층 구조를 만듭니다.
+        foreach ($visibleMenus as $key => &$menu) {
+            if ($menu['parent_id'] && isset($references[$menu['parent_id']])) {
+                // 부모가 있으면 부모의 children 배열에 추가합니다.
+                $references[$menu['parent_id']]['children'][] = &$menu;
+            } else {
+                // 최상위 메뉴
+                $tree[] = &$menu;
+            }
+        }
+        unset($menu); // 마지막 요소에 대한 참조를 해제합니다.
+
+        return $tree;
+    }
 }

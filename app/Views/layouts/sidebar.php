@@ -35,7 +35,7 @@ include_once __DIR__ . '/sidebar_menu_function.php';
             <div id="two-column-menu">
             </div>
             <ul class="navbar-nav" id="navbar-nav">
-                <?php renderBootstrapMenuItemsAdvanced($sideMenuItems ?? []); ?>
+                <?php renderBootstrapMenuItemsAdvanced($allMenus ?? []); ?>
             </ul>
         </div>
     </div>

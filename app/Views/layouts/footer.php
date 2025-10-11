@@ -1,14 +1,14 @@
-<?php
-use App\Core\SessionManager;
-use App\Repositories\MenuRepository;
-
-// Include footer menu functions
-include_once __DIR__ . '/footer_menu_function.php';
-
-// Get top menus for footer
-$topMenus = MenuRepository::getTopLevelMenus($userPermissions, $currentUrlPath);
-?>
-
 <footer class="footer">
-    <?php renderFooterMenu($topMenus); ?>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © Velzon.
+            </div>
+            <div class="col-sm-6">
+                <div class="text-sm-end d-none d-sm-block">
+                    Design & Develop by Themesbrand
+                </div>
+            </div>
+        </div>
+    </div>
 </footer>

@@ -56,7 +56,7 @@ function renderBootstrapMenuItems(array $items, int $level = 0) {
 }
 
 /**
- * 고급 Bootstrap 스타일 메뉴 아이템 렌더링 함수 (아이콘 기본값 포함)
+ * Velzon 테마 스타일에 맞게 메뉴 아이템을 렌더링하는 함수
  * @param array $items 렌더링할 메뉴 아이템 배열
  * @param int $level 메뉴 깊이 레벨
  */
@@ -64,53 +64,64 @@ function renderBootstrapMenuItemsAdvanced(array $items, int $level = 0) {
     foreach ($items as $index => $item) {
         $hasChildren = !empty($item['children']);
         $isActive = $item['is_active'] ?? false;
-        $hasVisibleChildren = $item['has_children'] ?? false;
         
-        // Generate unique IDs for collapsible elements
-        $collapseId = 'sidebar' . ucfirst(str_replace([' ', '.', '-'], '', $item['name'])) . $level . $index;
-        
-        if ($hasChildren) {
-            // 하위 메뉴가 있는 경우
-            $expandedClass = $isActive ? '' : 'collapsed';
+        // Generate a cleaner, more unique ID for collapsible elements
+        $safeName = preg_replace('/[^a-zA-Z0-9]/', '', $item['name']);
+        $collapseId = 'sidebar' . ucfirst($safeName) . $item['id'];
+
+        // 특별 요청: 최상위 부모 메뉴($level=0, $hasChildren=true)는 'menu-title'로 렌더링
+        if ($level === 0 && $hasChildren) {
+            echo '<li class="menu-title"><span data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">' . e($item['name']) . '</span></li>';
+
+            // 자식들을 직접 렌더링
+            renderBootstrapMenuItemsAdvanced($item['children'], $level + 1);
+
+        } elseif ($hasChildren) {
+            // --- 하위 부모 메뉴 아이템 ---
             $ariaExpanded = $isActive ? 'true' : 'false';
             $showClass = $isActive ? 'show' : '';
             
             echo '<li class="nav-item">';
-            echo '<a class="nav-link menu-link ' . $expandedClass . '" href="#' . $collapseId . '" data-bs-toggle="collapse" role="button" aria-expanded="' . $ariaExpanded . '" aria-controls="' . $collapseId . '">';
+            echo '<a class="nav-link menu-link" href="#' . $collapseId . '" data-bs-toggle="collapse" role="button" aria-expanded="' . $ariaExpanded . '" aria-controls="' . $collapseId . '">';
             
-            // Icon with default fallback
-            $iconClass = !empty($item['icon']) ? $item['icon'] : 'ri-folder-line';
-            echo '<i class="' . e($iconClass) . '"></i> ';
+            if (!empty($item['icon'])) {
+                echo '<i class="' . e($item['icon']) . '"></i> ';
+            }
             
             echo '<span data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">' . e($item['name']) . '</span>';
             echo '</a>';
             
-            // Collapsible dropdown - 활성 상태면 기본적으로 펼쳐짐
             echo '<div class="collapse menu-dropdown ' . $showClass . '" id="' . $collapseId . '">';
             echo '<ul class="nav nav-sm flex-column">';
-            
-            // Recursively render children
             renderBootstrapMenuItemsAdvanced($item['children'], $level + 1);
-            
             echo '</ul>';
             echo '</div>';
             echo '</li>';
             
         } else {
-            // 단일 메뉴 아이템
+            // --- 단일 메뉴 아이템 ---
             $activeClass = $isActive ? ' active' : '';
+            $url = (isset($item['url']) && $item['url'] !== '#') ? BASE_URL . e($item['url']) : 'javascript:void(0);';
+
             echo '<li class="nav-item">';
-            echo '<a href="' . BASE_URL . e($item['url']) . '" class="nav-link menu-link' . $activeClass . '" data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">';
-            
-            // Icon for top level or if specified
-            if (!empty($item['icon'])) {
-                echo '<i class="' . e($item['icon']) . '"></i> ';
-            } elseif ($level === 0) {
-                echo '<i class="ri-file-line"></i> ';
+
+            // 최상위 단일 메뉴
+            if ($level === 0) {
+                echo '<a class="nav-link menu-link' . $activeClass . '" href="' . $url . '">';
+                if (!empty($item['icon'])) {
+                    echo '<i class="' . e($item['icon']) . '"></i> ';
+                }
+                echo '<span data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">' . e($item['name']) . '</span>';
+                echo '</a>';
+            } else {
+            // 하위 단일 메뉴
+                echo '<a href="' . $url . '" class="nav-link' . $activeClass . '" data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">';
+                if (!empty($item['icon'])) {
+                    echo '<i class="' . e($item['icon']) . '"></i> ';
+                }
+                echo e($item['name']);
+                echo '</a>';
             }
-            
-            echo '<span data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">' . e($item['name']) . '</span>';
-            echo '</a>';
             echo '</li>';
         }
     }
