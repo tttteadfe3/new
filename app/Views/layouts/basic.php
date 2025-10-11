@@ -39,7 +39,7 @@ $profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/imag
                     <div class="col-xl-5">
                         <div class="card overflow-hidden card-bg-fill galaxy-border-none">
                             <div class="card-body p-4">
-                                <?= View::yieldSection('content') ?>
+                                <?= \App\Core\View::getInstance()->yieldSection('content') ?>
                             </div>
                         </div>
                         <!-- end card -->

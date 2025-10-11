@@ -9,7 +9,7 @@ use App\Core\View;
     <title><?= $pageTitle ?? '원진실업(주)' ?></title>
     
     <!-- Dynamic CSS Section -->
-    <?= View::yieldSection('css') ?>
+    <?= \App\Core\View::getInstance()->yieldSection('css') ?>
     
     <!-- Default CSS -->
     <link href="<?= BASE_ASSETS_URL ?>/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
@@ -23,6 +23,6 @@ use App\Core\View;
     <script src="<?= BASE_ASSETS_URL ?>/assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
     
     <!-- Dynamic JS Section -->
-    <?= View::yieldSection('js') ?>
+    <?= \App\Core\View::getInstance()->yieldSection('js') ?>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<?php \App\Core\View::startSection('content'); ?>
+<?php \App\Core\\App\Core\View::getInstance()->startSection('content'); ?>
 <div class="row">
     <div class="col-lg-12">
         <div class="card" id="leaveApprovalList">
@@ -104,4 +104,4 @@
         </div>
     </div>
 </div>
-<?php \App\Core\View::endSection(); ?>
+<?php \App\Core\\App\Core\View::getInstance()->endSection(); ?>

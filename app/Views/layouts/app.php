@@ -15,7 +15,7 @@ $profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/imag
     <link rel="shortcut icon" href="<?= BASE_ASSETS_URL ?>/assets/images/favicon.ico">
 
     <!-- Dynamic CSS Section -->
-    <?= View::yieldSection('css') ?>
+    <?= \App\Core\View::getInstance()->yieldSection('css') ?>
 
     <!-- Default CSS -->
     <!-- toastify-js Css -->
@@ -63,7 +63,7 @@ $profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/imag
                         </div>
                     <?php endif; ?>
 
-                    <?= View::yieldSection('content') ?>
+                    <?= \App\Core\View::getInstance()->yieldSection('content') ?>
                 </div>
                 <!-- container-fluid -->
             </div>
@@ -118,7 +118,7 @@ $profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/imag
     <?php endif; ?>
 
     <!-- Dynamic JS Section -->
-    <?= View::yieldSection('js') ?>
+    <?= \App\Core\View::getInstance()->yieldSection('js') ?>
 
     <!-- App js -->
     <script src="<?= BASE_ASSETS_URL ?>/assets/js/app.js"></script>

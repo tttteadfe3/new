@@ -33,7 +33,7 @@ class LeaveController extends BaseController
     public function my(): void
     {
         $pageTitle = "연차 신청/내역";
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/my-leave.js');
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/my-leave.js');
 
         // Check permission in the controller, not in the view.
         $can_request_leave = $this->authService->check('leave_request');
@@ -47,7 +47,7 @@ class LeaveController extends BaseController
     public function approval(): void
     {
         $pageTitle = "연차 신청 승인/반려";
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-approval.js');
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-approval.js');
 
         echo $this->render('pages/leaves/approval', compact('pageTitle'), 'layouts/app');
     }
@@ -58,7 +58,7 @@ class LeaveController extends BaseController
     public function granting(): void
     {
         $pageTitle = "연차 부여/계산";
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-granting.js');
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-granting.js');
 
         echo $this->render('pages/leaves/granting', compact('pageTitle'), 'layouts/app');
     }
@@ -69,7 +69,7 @@ class LeaveController extends BaseController
     public function history(): void
     {
         $pageTitle = "직원 연차 내역 조회";
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-history-admin.js');
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-history-admin.js');
 
         // Get all employees for the dropdown via the service layer
         $employees = $this->employeeService->getActiveEmployees();

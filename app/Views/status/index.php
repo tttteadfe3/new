@@ -2,7 +2,7 @@
 use App\Core\View;
 
 // Add custom CSS for this page
-View::startSection('css');
+\App\Core\View::getInstance()->startSection('css');
 ?>
 <style>
     body {
@@ -21,10 +21,10 @@ View::startSection('css');
     }
 </style>
 <?php
-View::endSection();
+\App\Core\View::getInstance()->endSection();
 
 // Define the main content for the layout
-View::startSection('content');
+\App\Core\View::getInstance()->startSection('content');
 ?>
 <div class="status-card">
     <h1 class="display-4">승인 대기 중</h1>
@@ -33,4 +33,4 @@ View::startSection('content');
     <p>Your account is pending approval. Please contact an administrator.</p>
     <a class="btn btn-primary btn-lg mt-3" href="/logout" role="button">로그아웃</a>
 </div>
-<?php View::endSection(); ?>
+<?php \App\Core\View::getInstance()->endSection(); ?>

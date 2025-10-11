@@ -33,7 +33,7 @@ class PermissionMiddleware extends BaseMiddleware
                     'pageTitle' => '접근 권한 없음',
                     'message' => '이 페이지에 접근할 수 있는 권한이 없습니다.'
                 ]);
-                echo View::render('errors/403', $viewData, 'layouts/basic');
+                echo \App\Core\View::getInstance()->render('errors/403', $viewData, 'layouts/basic');
             }
             exit();
         }

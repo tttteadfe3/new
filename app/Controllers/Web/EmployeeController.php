@@ -22,12 +22,12 @@ class EmployeeController extends BaseController
     public function index(): void
     {
         $pageTitle = "직원 목록";
-        \App\Core\View::addCss(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.css');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.js');
+        \App\Core\\App\Core\View::getInstance()->addCss(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.css');
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.js');
 
         // Load BaseApp and dependencies
 
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
+        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
         
         // Log menu access
         \App\Services\ActivityLogger::logMenuAccess($pageTitle);

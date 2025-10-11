@@ -2,7 +2,7 @@
 use App\Core\View;
 
 // Add page-specific CSS
-View::startSection('css');
+\App\Core\View::getInstance()->startSection('css');
 ?>
 <link href="<?= BASE_ASSETS_URL ?>/assets/libs/datatables.net-bs5/css/dataTables.bootstrap5.min.css" rel="stylesheet" type="text/css" />
 <style>
@@ -15,10 +15,10 @@ View::startSection('css');
     }
 </style>
 <?php
-View::endSection();
+\App\Core\View::getInstance()->endSection();
 
 // Add page-specific JavaScript
-View::startSection('js');
+\App\Core\View::getInstance()->startSection('js');
 ?>
 <script src="<?= BASE_ASSETS_URL ?>/assets/libs/datatables.net/js/jquery.dataTables.min.js"></script>
 <script>
@@ -35,7 +35,7 @@ View::startSection('js');
     });
 </script>
 <?php
-View::endSection();
+\App\Core\View::getInstance()->endSection();
 ?>
 
 <div class="row">
@@ -67,7 +67,7 @@ View::endSection();
 
                 <div class="demo-section">
                     <h6>2. Dynamic CSS Loading</h6>
-                    <p>Page-specific CSS is added using <code>View::startSection('css')</code> and <code>View::endSection()</code>.</p>
+                    <p>Page-specific CSS is added using <code>\App\Core\View::getInstance()->startSection('css')</code> and <code>\App\Core\View::getInstance()->endSection()</code>.</p>
                     <p>This allows each page to include its own stylesheets without modifying the layout.</p>
                 </div>
 
@@ -81,10 +81,10 @@ View::endSection();
                     <h6>4. Helper Methods</h6>
                     <p>The View class also provides helper methods:</p>
                     <ul>
-                        <li><code>View::addCss($path)</code> - Add CSS files programmatically</li>
-                        <li><code>View::addJs($path)</code> - Add JS files programmatically</li>
-                        <li><code>View::hasSection($name)</code> - Check if a section exists</li>
-                        <li><code>View::yieldSection($name, $default)</code> - Output section content</li>
+                        <li><code>\App\Core\View::getInstance()->addCss($path)</code> - Add CSS files programmatically</li>
+                        <li><code>\App\Core\View::getInstance()->addJs($path)</code> - Add JS files programmatically</li>
+                        <li><code>\App\Core\View::getInstance()->hasSection($name)</code> - Check if a section exists</li>
+                        <li><code>\App\Core\View::getInstance()->yieldSection($name, $default)</code> - Output section content</li>
                     </ul>
                 </div>
 

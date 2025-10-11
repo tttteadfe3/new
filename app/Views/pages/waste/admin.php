@@ -1,4 +1,4 @@
-<?php \App\Core\View::startSection('content'); ?>
+<?php \App\Core\\App\Core\View::getInstance()->startSection('content'); ?>
 <h2>대형폐기물 관리</h2>
 
 <form id="listForm" name="listForm">
@@ -98,4 +98,4 @@
         </div>
     </div>
 </div>
-<?php \App\Core\View::endSection(); ?>
+<?php \App\Core\\App\Core\View::getInstance()->endSection(); ?>

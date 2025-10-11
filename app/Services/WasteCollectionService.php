@@ -10,6 +10,15 @@ use Exception;
 
 class WasteCollectionService
 {
+    private WasteCollectionRepository $wasteCollectionRepository;
+    private Database $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance();
+        $this->wasteCollectionRepository = new WasteCollectionRepository($this->db);
+    }
+
     /**
      * Get all waste collections for user view
      */
@@ -290,7 +299,7 @@ class WasteCollectionService
                     }
 
                     if (!$this->wasteCollectionRepository->createCollectionItem($collectionId, $itemName, $quantity)) {
-                        throw new Exception("품목 정보 저장에 실패했습니다: " . $itemName, 500);
+                        throw new Exception("품목 정보 저장에 실패했습니다: " . $item['name'], 500);
                     }
                 }
             }

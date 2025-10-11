@@ -34,7 +34,7 @@ class HolidayRepository {
             ':deduct_leave' => $data['deduct_leave']
         ];
 
-        $this->db->execute($sql, $params) > 0;
+        $this->db->execute($sql, $params);
         return $this->db->lastInsertId();
     }
 
