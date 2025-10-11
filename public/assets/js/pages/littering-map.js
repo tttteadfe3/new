@@ -8,7 +8,7 @@ class LitteringMapPage extends BasePage {
             API_URL: '/littering',
             WASTE_TYPES: ['생활폐기물', '음식물', '재활용', '대형', '소각'],
             FILE: { MAX_SIZE: 5 * 1024 * 1024, ALLOWED_TYPES: ['image/jpeg', 'image/png'], COMPRESS: { MAX_WIDTH: 1200, MAX_HEIGHT: 1200, QUALITY: 0.8 } },
-            ALLOWED_REGIONS: ['정왕1동'] // Add region restriction
+            allowedRegions: ['정왕1동'] // Add region restriction
         });
         this.state = { ...this.state, reportList: [], modals: {}, currentReportIndex: null, mapService: null };
     }
@@ -221,7 +221,7 @@ class LitteringMapPage extends BasePage {
 
     generateMarkerTypes() {
         const markerTypes = {};
-        const statuses = ['pending', 'confirmed'];
+        const statuses = ['pending', 'confirmed', 'active'];
         const wasteTypeColors = {
             '생활폐기물': '#666666', '음식물': '#FF9800', '재활용': '#00A6FB',
             '대형': '#DC2626', '소각': '#FF5722'
