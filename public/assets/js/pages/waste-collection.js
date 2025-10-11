@@ -14,7 +14,8 @@ class WasteCollectionPage extends BasePage {
             ...this.state,
             collectionList: [],
             modals: {},
-            currentOverlay: null
+            currentOverlay: null,
+            mapService: null
         };
 
         // This is needed for the closeOverlay button in the custom overlay HTML.
@@ -34,7 +35,7 @@ class WasteCollectionPage extends BasePage {
             onRegionValidation: (isValid, message) => !isValid && Toast.error(message)
         };
 
-        this.initializeMapManager(mapOptions);
+        this.state.mapService = new MapService(mapOptions);
         this.setupModals();
         this.populateSelectableItems();
         this.setupEventListeners();
@@ -62,10 +63,10 @@ class WasteCollectionPage extends BasePage {
      */
     setupEventListeners() {
         document.getElementById('registerBtn').addEventListener('click', () => this.submitNewCollection());
-        document.getElementById('currentLocationBtn').addEventListener('click', () => this.state.mapManager.setUserLocation());
+        document.getElementById('currentLocationBtn').addEventListener('click', () => this.state.mapService.mapManager.setUserLocation());
         document.getElementById('addCenterMarkerBtn')?.addEventListener('click', () => {
-            const center = this.state.mapManager.getMap().getCenter();
-            this.state.mapManager.handleLocationSelect(center);
+            const center = this.state.mapService.mapManager.getMap().getCenter();
+            this.state.mapService.mapManager.handleLocationSelect(center);
         });
         document.getElementById('photo').addEventListener('change', (e) => this.handlePhotoUpload(e));
     }
@@ -88,7 +89,7 @@ class WasteCollectionPage extends BasePage {
             const response = await this.apiCall(this.config.API_URL, { method: 'POST', body: formData });
             this.addCollectionToMap(response.data);
             this.state.modals.register.hide();
-            this.state.mapManager.removeTempMarker();
+            this.state.mapService.mapManager.removeTempMarker();
             Toast.success('폐기물 수거 정보가 등록되었습니다.');
         } catch (error) {
             Toast.error(`등록 실패: ${error.message}`);
@@ -147,7 +148,7 @@ class WasteCollectionPage extends BasePage {
 
     addClusterMarker(group) {
         const firstItem = group[0];
-        const marker = this.state.mapManager.addMarker({
+        const marker = this.state.mapService.mapManager.addMarker({
             position: { lat: firstItem.latitude, lng: firstItem.longitude },
             type: 'online', // Cluster is always for online submissions
             data: { isCluster: true, collections: group },
@@ -158,7 +159,7 @@ class WasteCollectionPage extends BasePage {
 
     addCollectionToMap(data) {
         if (data.status === 'processed') return;
-        const collectionInfo = this.state.mapManager.addMarker({
+        const collectionInfo = this.state.mapService.mapManager.addMarker({
             position: { lat: data.latitude, lng: data.longitude },
             type: data.type,
             data: { isCluster: false, collections: [data], id: data.id },
@@ -185,7 +186,7 @@ class WasteCollectionPage extends BasePage {
         const headerTitle = isCluster ? `${first.address} (${collections.length}건)` : first.address;
         const content = `<div class="card shadow-sm" style="min-width:300px;"><div class="card-header bg-primary text-white p-2 d-flex justify-content-between"><h6>${headerTitle}</h6><button type="button" class="btn-close btn-close-white" onclick="window.wasteCollectionApp.closeOverlay()"></button></div><div class="card-body p-2" style="max-height:350px; overflow-y:auto;">${collectionsContent}</div></div>`;
         
-        this.state.currentOverlay = new kakao.maps.CustomOverlay({ content, map: this.state.mapManager.getMap(), position, yAnchor: 1.1 });
+        this.state.currentOverlay = new kakao.maps.CustomOverlay({ content, map: this.state.mapService.mapManager.getMap(), position, yAnchor: 1.1 });
     }
 
     closeOverlay() {
@@ -214,7 +215,7 @@ class WasteCollectionPage extends BasePage {
 
     async waitForMapReady() {
         return new Promise(resolve => {
-            const check = () => (this.state.mapManager?.getMap()) ? resolve() : setTimeout(check, 100);
+            const check = () => (this.state.mapService.mapManager?.getMap()) ? resolve() : setTimeout(check, 100);
             check();
         });
     }
@@ -240,7 +241,7 @@ class WasteCollectionPage extends BasePage {
         }
         const lat = parseFloat(document.getElementById('lat').value);
         const lng = parseFloat(document.getElementById('lng').value);
-        if (this.state.mapManager.checkDuplicateLocation({ lat, lng }, 5)) {
+        if (this.state.mapService.mapManager.checkDuplicateLocation({ lat, lng }, 5)) {
             Toast.error('같은 위치에 이미 수거 정보가 등록되어 있습니다.');
             return false;
         }
@@ -307,6 +308,17 @@ class WasteCollectionPage extends BasePage {
     setTodaysDate(selector) {
         const today = new Date();
         document.querySelector(selector).value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    }
+}
+
+    /**
+     * @override
+     */
+    cleanup() {
+        super.cleanup();
+        if (this.state.mapService) {
+            this.state.mapService.destroy();
+        }
     }
 }
 

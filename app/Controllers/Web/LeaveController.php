@@ -35,8 +35,6 @@ class LeaveController extends BaseController
         $pageTitle = "연차 신청/내역";
         \App\Core\View::addCss(BASE_ASSETS_URL . '/assets/libs/sweetalert2/sweetalert2.min.css');
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/libs/sweetalert2/sweetalert2.min.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/my-leave.js');
 
         // Check permission in the controller, not in the view.
@@ -51,8 +49,6 @@ class LeaveController extends BaseController
     public function approval(): void
     {
         $pageTitle = "연차 신청 승인/반려";
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-approval.js');
 
         echo $this->render('pages/leaves/approval', compact('pageTitle'), 'layouts/app');
@@ -64,8 +60,6 @@ class LeaveController extends BaseController
     public function granting(): void
     {
         $pageTitle = "연차 부여/계산";
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-granting.js');
 
         echo $this->render('pages/leaves/granting', compact('pageTitle'), 'layouts/app');
@@ -77,8 +71,6 @@ class LeaveController extends BaseController
     public function history(): void
     {
         $pageTitle = "직원 연차 내역 조회";
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
         \App\Core\View::addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-history-admin.js');
 
         // Get all employees for the dropdown via the service layer

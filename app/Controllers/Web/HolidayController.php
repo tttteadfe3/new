@@ -26,8 +26,6 @@ class HolidayController extends BaseController
         View::addJs(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.js');
 
         // Load BaseApp and dependencies
-        View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
-        View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
 
         View::addJs(BASE_ASSETS_URL . '/assets/js/pages/holiday-admin.js');
 

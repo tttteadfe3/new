@@ -21,8 +21,6 @@ class ProfileController extends BaseController
      */
     public function index(): void
     {
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/core/base-page.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/profile.js");
 
         $pageTitle = "내 프로필";

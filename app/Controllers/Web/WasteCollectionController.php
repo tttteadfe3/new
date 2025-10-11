@@ -31,9 +31,8 @@ class WasteCollectionController extends BaseController
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/core/base-page.js");
+        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-collection.js");
 
         $pageTitle = "대형폐기물 수거";
@@ -58,8 +57,6 @@ class WasteCollectionController extends BaseController
     public function admin(): void
     {
         // Refactored Scripts
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/services/api-service.js");
-        \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/core/base-page.js");
         \App\Core\View::addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-admin.js");
         
         $pageTitle = "대형폐기물 관리";
