@@ -1,4 +1,4 @@
-<?php \App\Core\\App\Core\View::getInstance()->startSection('content'); ?>
+<?php \App\Core\View::getInstance()->startSection('content'); ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800">역할 및 권한 관리 (비동기)</h1>
 </div>
@@ -51,4 +51,4 @@
         </div>
     </div>
 </div>
-<?php \App\Core\\App\Core\View::getInstance()->endSection(); ?>
+<?php \App\Core\View::getInstance()->endSection(); ?>
