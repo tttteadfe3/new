@@ -24,11 +24,9 @@ class View
 
     public function render(string $view, array $data = [], ?string $layout = null): string
     {
-        // Reset per-render properties
+        // Reset per-render properties, but keep jsFiles and cssFiles
         $this->sections = [];
         $this->currentSection = null;
-        $this->jsFiles = [];
-        $this->cssFiles = [];
 
         $this->layout = $layout;
         $this->layoutData = $data;
