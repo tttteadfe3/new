@@ -3,17 +3,25 @@
 namespace App\Controllers\Web;
 
 use App\Services\EmployeeService;
-use App\Repositories\EmployeeRepository;
-use App\Core\SessionManager;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Core\View;
 
 class EmployeeController extends BaseController
 {
     private EmployeeService $employeeService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->employeeService = new EmployeeService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeService $employeeService
+    ) {
+        parent::__construct($request, $authService, $viewDataService, $activityLogger);
+        $this->employeeService = $employeeService;
     }
 
     /**
@@ -22,15 +30,15 @@ class EmployeeController extends BaseController
     public function index(): void
     {
         $pageTitle = "직원 목록";
-        \App\Core\\App\Core\View::getInstance()->addCss(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.css');
-        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.js');
+        View::getInstance()->addCss(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.css');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.js');
 
         // Load BaseApp and dependencies
 
-        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
         
         // Log menu access
-        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
+        $this->activityLogger->logMenuAccess($pageTitle);
         
         echo $this->render('pages/employees/index', [
             'pageTitle' => $pageTitle

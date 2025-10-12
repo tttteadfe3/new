@@ -1,4 +1,4 @@
-<?php \App\Core\\App\Core\View::getInstance()->startSection('content'); ?>
+<?php \App\Core\View::getInstance()->startSection('content'); ?>
                     <div class="split-wrapper d-lg-flex gap-1 mx-n4 mt-n4 p-1">
                         <div class="split-layout-leftsidebar minimal-border">
                             <div class="px-4 pt-4 mb-3">
@@ -130,4 +130,4 @@
                             </div>
                         </div>
                     </div>
-<?php \App\Core\\App\Core\View::getInstance()->endSection(); ?>
+<?php \App\Core\View::getInstance()->endSection(); ?>

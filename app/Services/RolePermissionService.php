@@ -6,6 +6,13 @@ use App\Repositories\RoleRepository;
 
 class RolePermissionService
 {
+    private RoleRepository $roleRepository;
+
+    public function __construct(RoleRepository $roleRepository)
+    {
+        $this->roleRepository = $roleRepository;
+    }
+
     /**
      * 모든 역할 목록 조회 (사용자 수 포함)
      */

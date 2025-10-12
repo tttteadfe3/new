@@ -25,7 +25,7 @@ class LitteringRepository {
     public function findAllPending(): array {
         $query = "
             SELECT 
-                idc.*, 
+                idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
                 u.nickname as user_name, 
                 e.name as employee_name 
             FROM `illegal_disposal_cases2` idc
@@ -92,7 +92,7 @@ class LitteringRepository {
                   WHERE `id` = ?';
         $params = [
             $data['latitude'], $data['longitude'], $data['address'],
-            $data['mainType'], $data['subType'], 'confirmed',
+            $data['waste_type'], $data['waste_type2'], 'confirmed',
             $adminId, $caseId
         ];
         return $this->db->execute($query, $params) > 0;

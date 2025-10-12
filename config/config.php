@@ -28,7 +28,7 @@ date_default_timezone_set('Asia/Seoul');
 // 2. 경로 및 URL 상수 (.env 파일 사용 권장)
 // .env 파일에 APP_URL=http://yourdomain.com/your-app-root 형식으로 설정하는 것을 권장합니다.
 define('BASE_URL', rtrim($_ENV['APP_URL'] ?? 'http://localhost', '/'));
-define('BASE_ASSETS_URL', BASE_URL . '/assets');
+define('BASE_ASSETS_URL', BASE_URL);
 define('ROOT_PATH', dirname(__DIR__));
 
 // 3. 데이터베이스 설정 (.env 파일 사용)

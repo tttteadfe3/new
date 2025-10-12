@@ -7,6 +7,15 @@ use App\Repositories\PositionRepository;
 
 class OrganizationService
 {
+    private DepartmentRepository $departmentRepository;
+    private PositionRepository $positionRepository;
+
+    public function __construct(DepartmentRepository $departmentRepository, PositionRepository $positionRepository)
+    {
+        $this->departmentRepository = $departmentRepository;
+        $this->positionRepository = $positionRepository;
+    }
+
     /**
      * 모든 부서 목록 조회
      */

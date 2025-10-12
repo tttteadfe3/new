@@ -4,15 +4,35 @@ namespace App\Controllers\Api;
 
 use App\Services\HolidayService;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Repositories\EmployeeRepository;
+use App\Core\JsonResponse;
 
 class HolidayApiController extends BaseApiController
 {
     private HolidayService $holidayService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->holidayService = new HolidayService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
+        HolidayService $holidayService
+    ) {
+        parent::__construct(
+            $request,
+            $authService,
+            $viewDataService,
+            $activityLogger,
+            $employeeRepository,
+            $jsonResponse
+        );
+        $this->holidayService = $holidayService;
     }
 
     /**

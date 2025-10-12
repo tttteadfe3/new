@@ -2,22 +2,41 @@
 
 namespace App\Controllers\Api;
 
-use App\Core\Database;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\PositionRepository;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Repositories\EmployeeRepository;
+use App\Core\JsonResponse;
 
 class OrganizationApiController extends BaseApiController
 {
     protected DepartmentRepository $departmentRepository;
     protected PositionRepository $positionRepository;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $db = Database::getInstance();
-        $this->departmentRepository = new DepartmentRepository($db);
-        $this->positionRepository = new PositionRepository($db);
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
+        DepartmentRepository $departmentRepository,
+        PositionRepository $positionRepository
+    ) {
+        parent::__construct(
+            $request,
+            $authService,
+            $viewDataService,
+            $activityLogger,
+            $employeeRepository,
+            $jsonResponse
+        );
+        $this->departmentRepository = $departmentRepository;
+        $this->positionRepository = $positionRepository;
     }
 
     /**

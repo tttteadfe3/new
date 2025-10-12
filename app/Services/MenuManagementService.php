@@ -10,9 +10,9 @@ class MenuManagementService
     private MenuRepository $menuRepository;
     private Database $db;
 
-    public function __construct() {
-        $this->db = \App\Core\Database::getInstance();
-        $this->menuRepository = new MenuRepository($this->db);
+    public function __construct(MenuRepository $menuRepository, Database $db) {
+        $this->menuRepository = $menuRepository;
+        $this->db = $db;
     }
 
     /**

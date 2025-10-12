@@ -1,4 +1,4 @@
-<?php \App\Core\\App\Core\View::getInstance()->startSection('content'); ?>
+<?php \App\Core\View::getInstance()->startSection('content'); ?>
 <div class="row mt-2">
     <div class="card">
         <div class="card-body">
@@ -13,4 +13,4 @@
         </div>
     </div>
 </div>
-<?php \App\Core\\App\Core\View::getInstance()->endSection(); ?>
+<?php \App\Core\View::getInstance()->endSection(); ?>

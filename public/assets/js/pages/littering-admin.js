@@ -62,7 +62,7 @@ class LitteringAdminPage extends BasePage {
                     <small class="text-muted">등록자: ${registrantName}</small>
                 </a>
             `;
-            const itemNode = document.createRange().createContextualFragment(itemHtml).firstChild;
+            const itemNode = document.createRange().createContextualFragment(itemHtml).firstElementChild;
             itemNode.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.selectReport(parseInt(item.id));
@@ -143,8 +143,8 @@ class LitteringAdminPage extends BasePage {
             latitude: document.getElementById('latitude').value,
             longitude: document.getElementById('longitude').value,
             address: document.getElementById('address').value,
-            mainType: document.getElementById('mainType').value,
-            subType: document.getElementById('subType').value
+            waste_type: document.getElementById('mainType').value,
+            waste_type2: document.getElementById('subType').value
         };
 
         this.setButtonLoading('#confirm-btn', '저장 중...');

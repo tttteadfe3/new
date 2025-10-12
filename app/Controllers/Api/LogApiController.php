@@ -2,11 +2,39 @@
 
 namespace App\Controllers\Api;
 
-use App\Repositories\LogRepository;
+use App\Services\LogService;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Repositories\EmployeeRepository;
+use App\Core\JsonResponse;
 
 class LogApiController extends BaseApiController
 {
+    private LogService $logService;
+
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
+        LogService $logService
+    ) {
+        parent::__construct(
+            $request,
+            $authService,
+            $viewDataService,
+            $activityLogger,
+            $employeeRepository,
+            $jsonResponse
+        );
+        $this->logService = $logService;
+    }
+
     /**
      * Search and retrieve logs.
      * Corresponds to GET /api/logs
@@ -22,7 +50,7 @@ class LogApiController extends BaseApiController
                 'action' => $this->request->input('action', ''),
             ];
             
-            $logs = $this->logRepository->search(array_filter($filters));
+            $logs = $this->logService->searchLogs(array_filter($filters));
             $this->apiSuccess($logs);
         } catch (Exception $e) {
             $this->apiError('로그 검색 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
@@ -37,7 +65,7 @@ class LogApiController extends BaseApiController
     {
         
         try {
-            $this->logRepository->truncate();
+            $this->logService->clearLogs();
             $this->apiSuccess(null, '로그가 성공적으로 비워졌습니다.');
         } catch (Exception $e) {
             $this->apiError('로그를 비우는 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);

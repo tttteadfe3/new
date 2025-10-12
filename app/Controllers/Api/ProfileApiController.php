@@ -4,15 +4,35 @@ namespace App\Controllers\Api;
 
 use App\Services\ProfileService;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Repositories\EmployeeRepository;
+use App\Core\JsonResponse;
 
 class ProfileApiController extends BaseApiController
 {
     private ProfileService $profileService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->profileService = new ProfileService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
+        ProfileService $profileService
+    ) {
+        parent::__construct(
+            $request,
+            $authService,
+            $viewDataService,
+            $activityLogger,
+            $employeeRepository,
+            $jsonResponse
+        );
+        $this->profileService = $profileService;
     }
 
     /**

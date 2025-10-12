@@ -3,24 +3,32 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\Web\BaseController;
-use App\Core\Database;
 use App\Core\JsonResponse;
+use App\Core\Request;
+use App\Services\ActivityLogger;
 use App\Services\AuthService;
+use App\Services\ViewDataService;
 use App\Repositories\EmployeeRepository;
 
 abstract class BaseApiController extends BaseController
 {
-    protected AuthService $authService;
     protected EmployeeRepository $employeeRepository;
     protected JsonResponse $jsonResponse;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->authService = new AuthService();
-        $db = Database::getInstance();
-        $this->employeeRepository = new EmployeeRepository($db);
-        $this->jsonResponse = new JsonResponse();
+    public function __construct(
+        // Dependencies for parent BaseController
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        // Dependencies for BaseApiController
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse
+    ) {
+        parent::__construct($request, $authService, $viewDataService, $activityLogger);
+
+        $this->employeeRepository = $employeeRepository;
+        $this->jsonResponse = $jsonResponse;
         
         // Ensure all API requests are AJAX requests
         if (!$this->isAjaxRequest()) {

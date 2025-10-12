@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Core\Database;
 use App\Repositories\LitteringRepository;
 use App\Core\Validator;
 use App\Core\FileUploader;
@@ -16,10 +15,9 @@ class LitteringService
 {
     private LitteringRepository $litteringRepository;
 
-    public function __construct()
+    public function __construct(LitteringRepository $litteringRepository)
     {
-        $db = Database::getInstance();
-        $this->litteringRepository = new LitteringRepository($db);
+        $this->litteringRepository = $litteringRepository;
     }
 
     public function getActiveLittering(): array

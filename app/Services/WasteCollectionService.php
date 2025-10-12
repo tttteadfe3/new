@@ -13,10 +13,10 @@ class WasteCollectionService
     private WasteCollectionRepository $wasteCollectionRepository;
     private Database $db;
 
-    public function __construct()
+    public function __construct(WasteCollectionRepository $wasteCollectionRepository, Database $db)
     {
-        $this->db = Database::getInstance();
-        $this->wasteCollectionRepository = new WasteCollectionRepository($this->db);
+        $this->wasteCollectionRepository = $wasteCollectionRepository;
+        $this->db = $db;
     }
 
     /**

@@ -11,10 +11,10 @@ class PermissionMiddleware extends BaseMiddleware
     private AuthService $authService;
     private ViewDataService $viewDataService;
 
-    public function __construct()
+    public function __construct(AuthService $authService, ViewDataService $viewDataService)
     {
-        $this->authService = new AuthService();
-        $this->viewDataService = new ViewDataService();
+        $this->authService = $authService;
+        $this->viewDataService = $viewDataService;
     }
 
     public function handle($permission = null): void

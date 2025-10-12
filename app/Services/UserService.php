@@ -11,6 +11,15 @@ use App\Repositories\RoleRepository;
  */
 class UserService
 {
+    private UserRepository $userRepository;
+    private RoleRepository $roleRepository;
+
+    public function __construct(UserRepository $userRepository, RoleRepository $roleRepository)
+    {
+        $this->userRepository = $userRepository;
+        $this->roleRepository = $roleRepository;
+    }
+
     /**
      * Get all users with their roles.
      */

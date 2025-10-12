@@ -1,0 +1,53 @@
+[2025-10-12 21:22:20] Uncaught Exception: Call to a member function findById() on null
+in D:\Users\Documents\GitHub\new\app\Services\ProfileService.php:17
+#0 D:\Users\Documents\GitHub\new\app\Controllers\Api\ProfileApiController.php(47): App\Services\ProfileService->getUserProfile(1)
+#1 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\ProfileApiController->index()
+#2 D:\Users\Documents\GitHub\new\public\index.php(80): App\Core\Router->dispatch()
+#3 {main}
+
+[2025-10-12 21:22:34] Uncaught Exception: Call to a member function getAllWithRoles() on null
+in D:\Users\Documents\GitHub\new\app\Services\UserService.php:19
+#0 D:\Users\Documents\GitHub\new\app\Controllers\Api\UserApiController.php(53): App\Services\UserService->getAllUsers(Array)
+#1 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\UserApiController->index()
+#2 D:\Users\Documents\GitHub\new\public\index.php(80): App\Core\Router->dispatch()
+#3 {main}
+
+[2025-10-12 21:22:36] Uncaught Exception: Call to a member function getAllWithRoles() on null
+in D:\Users\Documents\GitHub\new\app\Services\UserService.php:19
+#0 D:\Users\Documents\GitHub\new\app\Controllers\Api\UserApiController.php(53): App\Services\UserService->getAllUsers(Array)
+#1 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\UserApiController->index()
+#2 D:\Users\Documents\GitHub\new\public\index.php(80): App\Core\Router->dispatch()
+#3 {main}
+
+[2025-10-12 21:22:42] Uncaught Exception: Call to a member function getAllWithRoles() on null
+in D:\Users\Documents\GitHub\new\app\Services\UserService.php:19
+#0 D:\Users\Documents\GitHub\new\app\Controllers\Api\UserApiController.php(53): App\Services\UserService->getAllUsers(Array)
+#1 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\UserApiController->index()
+#2 D:\Users\Documents\GitHub\new\public\index.php(80): App\Core\Router->dispatch()
+#3 {main}
+
+[2025-10-12 21:40:44] Uncaught Exception: Call to a member function findById() on null
+in D:\Users\Documents\GitHub\new\app\Services\ProfileService.php:17
+#0 D:\Users\Documents\GitHub\new\app\Controllers\Api\ProfileApiController.php(47): App\Services\ProfileService->getUserProfile(1)
+#1 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\ProfileApiController->index()
+#2 D:\Users\Documents\GitHub\new\public\index.php(80): App\Core\Router->dispatch()
+#3 {main}
+
+[2025-10-12 22:14:52] Uncaught Exception: Call to a member function search() on null
+in D:\Users\Documents\GitHub\new\app\Controllers\Api\LogApiController.php:25
+#0 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\LogApiController->index()
+#1 D:\Users\Documents\GitHub\new\public\index.php(80): App\Core\Router->dispatch()
+#2 {main}
+
+[2025-10-12 22:15:21] Uncaught Exception: Call to a member function search() on null
+in D:\Users\Documents\GitHub\new\app\Controllers\Api\LogApiController.php:25
+#0 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\LogApiController->index()
+#1 D:\Users\Documents\GitHub\new\public\index.php(80): App\Core\Router->dispatch()
+#2 {main}
+
+[2025-10-13 05:23:28] Uncaught Exception: Call to a member function search() on null
+in D:\Users\Documents\GitHub\new\app\Controllers\Api\LogApiController.php:25
+#0 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\LogApiController->index()
+#1 D:\Users\Documents\GitHub\new\public\index.php(80): App\Core\Router->dispatch()
+#2 {main}
+

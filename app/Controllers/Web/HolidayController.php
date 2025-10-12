@@ -5,15 +5,24 @@ namespace App\Controllers\Web;
 use App\Services\HolidayService;
 use App\Core\View;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
 
 class HolidayController extends BaseController
 {
     private HolidayService $holidayService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->holidayService = new HolidayService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        HolidayService $holidayService
+    ) {
+        parent::__construct($request, $authService, $viewDataService, $activityLogger);
+        $this->holidayService = $holidayService;
     }
 
     /**

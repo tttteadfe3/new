@@ -1,4 +1,4 @@
-<?php \App\Core\\App\Core\View::getInstance()->startSection('content'); ?>
+<?php \App\Core\View::getInstance()->startSection('content'); ?>
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -92,4 +92,4 @@
         </div>
     </div>
 </div>
-<?php \App\Core\\App\Core\View::getInstance()->endSection(); ?>
+<?php \App\Core\View::getInstance()->endSection(); ?>

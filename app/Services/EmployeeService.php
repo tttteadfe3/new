@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Core\Database;
 use App\Core\SessionManager;
 use App\Repositories\EmployeeRepository;
 use App\Repositories\EmployeeChangeLogRepository;
@@ -20,15 +19,20 @@ class EmployeeService
     private LogRepository $logRepository;
     private SessionManager $sessionManager;
 
-    public function __construct()
-    {
-        $db = Database::getInstance();
-        $this->employeeRepository = new EmployeeRepository($db);
-        $this->employeeChangeLogRepository = new EmployeeChangeLogRepository($db);
-        $this->departmentRepository = new DepartmentRepository($db);
-        $this->positionRepository = new PositionRepository($db);
-        $this->logRepository = new LogRepository($db);
-        $this->sessionManager = new SessionManager();
+    public function __construct(
+        EmployeeRepository $employeeRepository,
+        EmployeeChangeLogRepository $employeeChangeLogRepository,
+        DepartmentRepository $departmentRepository,
+        PositionRepository $positionRepository,
+        LogRepository $logRepository,
+        SessionManager $sessionManager
+    ) {
+        $this->employeeRepository = $employeeRepository;
+        $this->employeeChangeLogRepository = $employeeChangeLogRepository;
+        $this->departmentRepository = $departmentRepository;
+        $this->positionRepository = $positionRepository;
+        $this->logRepository = $logRepository;
+        $this->sessionManager = $sessionManager;
     }
 
     /**

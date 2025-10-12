@@ -6,10 +6,9 @@ use PDO;
 use PDOStatement;
 
 class Database {
-    private static ?Database $instance = null;
     private PDO $pdo;
 
-    private function __construct() {
+    public function __construct() {
         // Use $_ENV for consistency with the rest of the application
         $dsn = sprintf(
             'mysql:host=%s;dbname=%s;charset=utf8mb4',
@@ -23,13 +22,6 @@ class Database {
         ];
         // Use $_ENV for credentials
         $this->pdo = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS'], $options);
-    }
-
-    public static function getInstance(): Database {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
-        return self::$instance;
     }
 
     private function executeQuery(string $sql, array $params = []): PDOStatement {
@@ -74,8 +66,4 @@ class Database {
     public function rollBack() {
         $this->pdo->rollBack();
     }
-
-    // Prevent cloning and unserialization
-    private function __clone() {}
-    public function __wakeup() {}
 }
