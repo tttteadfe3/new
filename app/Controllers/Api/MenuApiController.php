@@ -4,15 +4,35 @@ namespace App\Controllers\Api;
 
 use App\Services\MenuManagementService;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Repositories\EmployeeRepository;
+use App\Core\JsonResponse;
 
 class MenuApiController extends BaseApiController
 {
     private MenuManagementService $menuManagementService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->menuManagementService = new MenuManagementService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
+        MenuManagementService $menuManagementService
+    ) {
+        parent::__construct(
+            $request,
+            $authService,
+            $viewDataService,
+            $activityLogger,
+            $employeeRepository,
+            $jsonResponse
+        );
+        $this->menuManagementService = $menuManagementService;
     }
 
     /**

@@ -4,16 +4,39 @@ namespace App\Controllers\Api;
 
 use App\Services\LeaveService;
 use App\Repositories\LeaveRepository;
+use App\Repositories\EmployeeRepository;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Core\JsonResponse;
 
 class LeaveAdminApiController extends BaseApiController
 {
     private LeaveService $leaveService;
+    private LeaveRepository $leaveRepository;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->leaveService = new LeaveService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
+        LeaveService $leaveService,
+        LeaveRepository $leaveRepository
+    ) {
+        parent::__construct(
+            $request,
+            $authService,
+            $viewDataService,
+            $activityLogger,
+            $employeeRepository,
+            $jsonResponse
+        );
+        $this->leaveService = $leaveService;
+        $this->leaveRepository = $leaveRepository;
     }
 
     /**

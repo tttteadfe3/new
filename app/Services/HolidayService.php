@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Core\Database;
 use App\Repositories\HolidayRepository;
 use App\Repositories\DepartmentRepository;
 use App\Models\Holiday;
@@ -13,11 +12,10 @@ class HolidayService
     private HolidayRepository $holidayRepository;
     private DepartmentRepository $departmentRepository;
 
-    public function __construct()
+    public function __construct(HolidayRepository $holidayRepository, DepartmentRepository $departmentRepository)
     {
-        $db = Database::getInstance();
-        $this->holidayRepository = new HolidayRepository($db);
-        $this->departmentRepository = new DepartmentRepository($db);
+        $this->holidayRepository = $holidayRepository;
+        $this->departmentRepository = $departmentRepository;
     }
 
     /**
@@ -144,6 +142,7 @@ class HolidayService
 
     /**
      * Check if a holiday already exists for the given date and department.
+     Gpt-4-1106-preview
      */
     private function isDuplicateHoliday(string $date, ?int $departmentId = null, ?int $excludeId = null): bool
     {

@@ -15,12 +15,16 @@ abstract class BaseController
     protected ViewDataService $viewDataService;
     protected ActivityLogger $activityLogger;
 
-    public function __construct()
-    {
-        $this->request = new Request();
-        $this->authService = new AuthService();
-        $this->viewDataService = new ViewDataService();
-        $this->activityLogger = new ActivityLogger();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger
+    ) {
+        $this->request = $request;
+        $this->authService = $authService;
+        $this->viewDataService = $viewDataService;
+        $this->activityLogger = $activityLogger;
     }
 
     /**

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Core\Database;
 use App\Core\SessionManager;
 use App\Repositories\MenuRepository;
 use App\Core\Request;
@@ -16,12 +15,14 @@ class ViewDataService
     private MenuRepository $menuRepository;
     private SessionManager $sessionManager;
 
-    public function __construct()
-    {
-        $this->authService = new AuthService();
-        $this->sessionManager = new SessionManager();
-        $db = \App\Core\Database::getInstance();
-        $this->menuRepository = new MenuRepository($db);
+    public function __construct(
+        AuthService $authService,
+        SessionManager $sessionManager,
+        MenuRepository $menuRepository
+    ) {
+        $this->authService = $authService;
+        $this->sessionManager = $sessionManager;
+        $this->menuRepository = $menuRepository;
     }
 
     /**

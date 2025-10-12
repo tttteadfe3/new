@@ -2,20 +2,30 @@
 
 namespace App\Controllers\Web;
 
-use App\Core\Database;
 use App\Services\KakaoAuthService;
 use App\Core\View;
 use App\Repositories\UserRepository;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
 
 class AuthController extends BaseController
 {
     protected UserRepository $userRepository;
+    protected KakaoAuthService $kakaoAuthService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $db = Database::getInstance();
-        $this->userRepository = new UserRepository($db);
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        UserRepository $userRepository,
+        KakaoAuthService $kakaoAuthService
+    ) {
+        parent::__construct($request, $authService, $viewDataService, $activityLogger);
+        $this->userRepository = $userRepository;
+        $this->kakaoAuthService = $kakaoAuthService;
     }
 
     public function login()
@@ -25,9 +35,8 @@ class AuthController extends BaseController
             $this->redirect('/dashboard');
         }
 
-        $kakaoAuthService = new KakaoAuthService();
         $data = [
-            'kakaoLoginUrl' => $kakaoAuthService->getAuthorizationUrl()
+            'kakaoLoginUrl' => $this->kakaoAuthService->getAuthorizationUrl()
         ];
 
         // The 'login' view will be created later.
@@ -42,10 +51,9 @@ class AuthController extends BaseController
             $this->redirect('/login?error=auth_failed');
         }
 
-        $kakaoAuthService = new KakaoAuthService();
         try {
-            $token = $kakaoAuthService->getAccessToken($code);
-            $kakaoUserInfo = $kakaoAuthService->getUserProfile($token['access_token']);
+            $token = $this->kakaoAuthService->getAccessToken($code);
+            $kakaoUserInfo = $this->kakaoAuthService->getUserProfile($token['access_token']);
 
             // Find or create the user in the database using the repository
             $user = $this->userRepository->findOrCreateFromKakao($kakaoUserInfo);

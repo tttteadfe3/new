@@ -8,15 +8,44 @@ use App\Services\EmployeeService;
 use App\Repositories\EmployeeChangeLogRepository;
 use Exception;
 use InvalidArgumentException;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Repositories\EmployeeRepository;
+use App\Core\JsonResponse;
 
 class EmployeeApiController extends BaseApiController
 {
     private EmployeeService $employeeService;
+    private DepartmentRepository $departmentRepository;
+    private PositionRepository $positionRepository;
+    private EmployeeChangeLogRepository $employeeChangeLogRepository;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->employeeService = new EmployeeService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
+        EmployeeService $employeeService,
+        DepartmentRepository $departmentRepository,
+        PositionRepository $positionRepository,
+        EmployeeChangeLogRepository $employeeChangeLogRepository
+    ) {
+        parent::__construct(
+            $request,
+            $authService,
+            $viewDataService,
+            $activityLogger,
+            $employeeRepository,
+            $jsonResponse
+        );
+        $this->employeeService = $employeeService;
+        $this->departmentRepository = $departmentRepository;
+        $this->positionRepository = $positionRepository;
+        $this->employeeChangeLogRepository = $employeeChangeLogRepository;
     }
 
     /**

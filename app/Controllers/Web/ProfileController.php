@@ -6,15 +6,24 @@ use App\Services\ProfileService;
 use App\Core\JsonResponse;
 use App\Core\View;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
 
 class ProfileController extends BaseController
 {
     private ProfileService $profileService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->profileService = new ProfileService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        ProfileService $profileService
+    ) {
+        parent::__construct($request, $authService, $viewDataService, $activityLogger);
+        $this->profileService = $profileService;
     }
 
     /**

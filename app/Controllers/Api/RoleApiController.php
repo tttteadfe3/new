@@ -4,12 +4,35 @@ namespace App\Controllers\Api;
 
 use App\Repositories\RoleRepository;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Repositories\EmployeeRepository;
+use App\Core\JsonResponse;
 
 class RoleApiController extends BaseApiController
 {
-    public function __construct()
-    {
-        parent::__construct();
+    private RoleRepository $roleRepository;
+
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
+        RoleRepository $roleRepository
+    ) {
+        parent::__construct(
+            $request,
+            $authService,
+            $viewDataService,
+            $activityLogger,
+            $employeeRepository,
+            $jsonResponse
+        );
+        $this->roleRepository = $roleRepository;
     }
 
     /**

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Core\Database;
 use App\Core\SessionManager;
 use App\Repositories\UserRepository;
 use App\Repositories\RoleRepository;
@@ -19,12 +18,16 @@ class AuthService {
     private RoleRepository $roleRepository;
     private LogRepository $logRepository;
 
-    public function __construct() {
-        $db = \App\Core\Database::getInstance();
-        $this->sessionManager = new SessionManager();
-        $this->userRepository = new UserRepository($db);
-        $this->roleRepository = new RoleRepository($db);
-        $this->logRepository = new LogRepository($db);
+    public function __construct(
+        SessionManager $sessionManager,
+        UserRepository $userRepository,
+        RoleRepository $roleRepository,
+        LogRepository $logRepository
+    ) {
+        $this->sessionManager = $sessionManager;
+        $this->userRepository = $userRepository;
+        $this->roleRepository = $roleRepository;
+        $this->logRepository = $logRepository;
     }
 
     /**

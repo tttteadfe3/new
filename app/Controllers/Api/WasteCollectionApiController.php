@@ -4,15 +4,35 @@ namespace App\Controllers\Api;
 
 use App\Services\WasteCollectionService;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Repositories\EmployeeRepository;
+use App\Core\JsonResponse;
 
 class WasteCollectionApiController extends BaseApiController
 {
     private WasteCollectionService $wasteCollectionService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->wasteCollectionService = new WasteCollectionService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
+        WasteCollectionService $wasteCollectionService
+    ) {
+        parent::__construct(
+            $request,
+            $authService,
+            $viewDataService,
+            $activityLogger,
+            $employeeRepository,
+            $jsonResponse
+        );
+        $this->wasteCollectionService = $wasteCollectionService;
     }
 
     /**

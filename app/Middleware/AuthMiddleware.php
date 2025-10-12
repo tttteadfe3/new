@@ -8,9 +8,9 @@ class AuthMiddleware extends BaseMiddleware
 {
     private AuthService $authService;
 
-    public function __construct()
+    public function __construct(AuthService $authService)
     {
-        $this->authService = new AuthService();
+        $this->authService = $authService;
     }
 
     public function handle($value = null): void

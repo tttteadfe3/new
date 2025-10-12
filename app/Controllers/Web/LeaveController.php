@@ -5,17 +5,28 @@ namespace App\Controllers\Web;
 use App\Services\LeaveService;
 use App\Services\EmployeeService;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Core\View;
 
 class LeaveController extends BaseController
 {
     private LeaveService $leaveService;
     private EmployeeService $employeeService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->leaveService = new LeaveService();
-        $this->employeeService = new EmployeeService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        LeaveService $leaveService,
+        EmployeeService $employeeService
+    ) {
+        parent::__construct($request, $authService, $viewDataService, $activityLogger);
+        $this->leaveService = $leaveService;
+        $this->employeeService = $employeeService;
     }
 
     /**
@@ -33,7 +44,7 @@ class LeaveController extends BaseController
     public function my(): void
     {
         $pageTitle = "연차 신청/내역";
-        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/my-leave.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/my-leave.js');
 
         // Check permission in the controller, not in the view.
         $can_request_leave = $this->authService->check('leave_request');
@@ -47,7 +58,7 @@ class LeaveController extends BaseController
     public function approval(): void
     {
         $pageTitle = "연차 신청 승인/반려";
-        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-approval.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-approval.js');
 
         echo $this->render('pages/leaves/approval', compact('pageTitle'), 'layouts/app');
     }
@@ -58,7 +69,7 @@ class LeaveController extends BaseController
     public function granting(): void
     {
         $pageTitle = "연차 부여/계산";
-        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-granting.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-granting.js');
 
         echo $this->render('pages/leaves/granting', compact('pageTitle'), 'layouts/app');
     }
@@ -69,7 +80,7 @@ class LeaveController extends BaseController
     public function history(): void
     {
         $pageTitle = "직원 연차 내역 조회";
-        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-history-admin.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-history-admin.js');
 
         // Get all employees for the dropdown via the service layer
         $employees = $this->employeeService->getActiveEmployees();

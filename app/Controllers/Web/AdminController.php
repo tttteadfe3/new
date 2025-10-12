@@ -6,6 +6,11 @@ use App\Services\OrganizationService;
 use App\Services\RolePermissionService;
 use App\Services\UserService;
 use App\Services\MenuManagementService;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Core\View;
 
 class AdminController extends BaseController
 {
@@ -14,13 +19,21 @@ class AdminController extends BaseController
     private UserService $userService;
     private MenuManagementService $menuManagementService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->organizationService = new OrganizationService();
-        $this->rolePermissionService = new RolePermissionService();
-        $this->userService = new UserService();
-        $this->menuManagementService = new MenuManagementService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        OrganizationService $organizationService,
+        RolePermissionService $rolePermissionService,
+        UserService $userService,
+        MenuManagementService $menuManagementService
+    ) {
+        parent::__construct($request, $authService, $viewDataService, $activityLogger);
+        $this->organizationService = $organizationService;
+        $this->rolePermissionService = $rolePermissionService;
+        $this->userService = $userService;
+        $this->menuManagementService = $menuManagementService;
     }
 
     /**
@@ -29,10 +42,10 @@ class AdminController extends BaseController
     public function organization(): void
     {
         $pageTitle = "부서/직급 관리";
-        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/organization-admin.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/organization-admin.js');
         
         // Log menu access
-        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
+        $this->activityLogger->logMenuAccess($pageTitle);
         
         echo $this->render('pages/admin/organization', [
             'pageTitle' => $pageTitle
@@ -45,10 +58,10 @@ class AdminController extends BaseController
     public function rolePermissions(): void
     {
         $pageTitle = "역할 및 권한 관리";
-        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/roles.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/roles.js');
         
         // Log menu access
-        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
+        $this->activityLogger->logMenuAccess($pageTitle);
         
         echo $this->render('pages/admin/role-permissions', [
             'pageTitle' => $pageTitle
@@ -61,10 +74,10 @@ class AdminController extends BaseController
     public function users(): void
     {
         $pageTitle = "사용자 관리";
-        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/users.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/users.js');
         
         // Log menu access
-        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
+        $this->activityLogger->logMenuAccess($pageTitle);
         
         echo $this->render('pages/admin/users', [
             'pageTitle' => $pageTitle
@@ -77,11 +90,11 @@ class AdminController extends BaseController
     public function menus(): void
     {
         $pageTitle = "메뉴 관리";
-        \App\Core\\App\Core\View::getInstance()->addJs("https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js");
-        \App\Core\\App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/menu-admin.js");
+        View::getInstance()->addJs("https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js");
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/menu-admin.js");
         
         // Log menu access
-        \App\Services\ActivityLogger::logMenuAccess($pageTitle);
+        $this->activityLogger->logMenuAccess($pageTitle);
         
         echo $this->render('pages/admin/menus', [
             'pageTitle' => $pageTitle

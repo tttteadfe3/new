@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Core\Database;
 use App\Core\SessionManager;
 use App\Repositories\LogRepository;
 use App\Repositories\UserRepository;
@@ -13,12 +12,14 @@ class ActivityLogger
     private LogRepository $logRepository;
     private UserRepository $userRepository;
 
-    public function __construct()
-    {
-        $this->sessionManager = new SessionManager();
-        $db = Database::getInstance();
-        $this->logRepository = new LogRepository($db);
-        $this->userRepository = new UserRepository($db);
+    public function __construct(
+        SessionManager $sessionManager,
+        LogRepository $logRepository,
+        UserRepository $userRepository
+    ) {
+        $this->sessionManager = $sessionManager;
+        $this->logRepository = $logRepository;
+        $this->userRepository = $userRepository;
     }
 
     /**

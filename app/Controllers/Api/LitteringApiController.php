@@ -4,15 +4,35 @@ namespace App\Controllers\Api;
 
 use App\Services\LitteringService;
 use Exception;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Repositories\EmployeeRepository;
+use App\Core\JsonResponse;
 
 class LitteringApiController extends BaseApiController
 {
     private LitteringService $litteringService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->litteringService = new LitteringService();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
+        LitteringService $litteringService
+    ) {
+        parent::__construct(
+            $request,
+            $authService,
+            $viewDataService,
+            $activityLogger,
+            $employeeRepository,
+            $jsonResponse
+        );
+        $this->litteringService = $litteringService;
     }
 
     /**
