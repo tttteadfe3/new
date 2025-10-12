@@ -42,8 +42,8 @@ CREATE TABLE `sys_activity_logs` (
 CREATE TABLE `hr_departments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL COMMENT '부서명',
-  `created_at` datetime DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='부서 정보';
 
 -- --------------------------------------------------------
@@ -87,7 +87,7 @@ CREATE TABLE `hr_employee_change_logs` (
   `field_name` varchar(100) NOT NULL COMMENT '변경된 필드명',
   `old_value` text DEFAULT NULL COMMENT '변경 전 값',
   `new_value` text DEFAULT NULL COMMENT '변경 후 값',
-  `changed_at` datetime NOT NULL DEFAULT current_timestamp()
+  `changed_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '변경일시'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원 정보 변경 이력';
 
 -- --------------------------------------------------------
@@ -103,8 +103,8 @@ CREATE TABLE `hr_holidays` (
   `type` enum('holiday','workday') NOT NULL COMMENT '유형 (holiday: 휴일, workday: 특정 근무일)',
   `department_id` int(11) DEFAULT NULL COMMENT '적용될 부서 ID (NULL인 경우 전체 부서 적용)',
   `deduct_leave` tinyint(1) NOT NULL DEFAULT 0 COMMENT '연차 차감 여부 (1: 차감, 0: 미차감, 휴일인 경우에만 의미있음)',
-  `created_at` datetime DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='휴일 및 특정 근무일 설정';
 
 -- --------------------------------------------------------
@@ -215,8 +215,8 @@ CREATE TABLE `sys_permissions` (
 CREATE TABLE `hr_positions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL COMMENT '직급명',
-  `created_at` datetime DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직급 정보';
 
 -- --------------------------------------------------------
