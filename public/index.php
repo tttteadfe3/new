@@ -21,7 +21,7 @@ $container = new Container();
 
 // Register core components
 $container->singleton(SessionManager::class, fn() => new SessionManager());
-$container->singleton(Database::class, fn() => Database::getInstance());
+$container->singleton(Database::class, fn() => new Database());
 $container->singleton(Request::class, fn() => new Request());
 $container->singleton(JsonResponse::class, fn() => new JsonResponse());
 
