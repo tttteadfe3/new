@@ -19,7 +19,7 @@ class Container
 
     public function singleton(string $abstract, Closure $concrete): void
     {
-        $this->bindings[$abstract] = function ($container) use ($concrete) {
+        $this->bindings[$abstract] = function ($container) use ($concrete, $abstract) {
             if (!isset($this->instances[$abstract])) {
                 $this->instances[$abstract] = $concrete($container);
             }
