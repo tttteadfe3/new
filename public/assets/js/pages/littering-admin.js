@@ -62,7 +62,7 @@ class LitteringAdminPage extends BasePage {
                     <small class="text-muted">등록자: ${registrantName}</small>
                 </a>
             `;
-            const itemNode = document.createRange().createContextualFragment(itemHtml).firstChild;
+            const itemNode = document.createRange().createContextualFragment(itemHtml).firstElementChild;
             itemNode.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.selectReport(parseInt(item.id));
