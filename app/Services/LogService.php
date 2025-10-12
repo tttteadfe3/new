@@ -7,6 +7,13 @@ use Exception;
 
 class LogService
 {
+    private LogRepository $logRepository;
+
+    public function __construct(LogRepository $logRepository)
+    {
+        $this->logRepository = $logRepository;
+    }
+
     /**
      * Search logs with filters
      */

@@ -8,6 +8,15 @@ use Exception;
 
 class ProfileService
 {
+    private UserRepository $userRepository;
+    private EmployeeRepository $employeeRepository;
+
+    public function __construct(UserRepository $userRepository, EmployeeRepository $employeeRepository)
+    {
+        $this->userRepository = $userRepository;
+        $this->employeeRepository = $employeeRepository;
+    }
+
     /**
      * Get user profile with employee information
      */

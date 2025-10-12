@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Repositories\LeaveRepository;
 use App\Repositories\EmployeeRepository;
 use App\Repositories\HolidayRepository;
+use App\Services\HolidayService;
+use App\Repositories\LogRepository;
 use DateTime;
 use DatePeriod;
 use DateInterval;
@@ -21,6 +23,23 @@ use Exception;
  * - Integration with employee and holiday systems
  */
 class LeaveService {
+    private LeaveRepository $leaveRepository;
+    private EmployeeRepository $employeeRepository;
+    private HolidayService $holidayService;
+    private LogRepository $logRepository;
+
+    public function __construct(
+        LeaveRepository $leaveRepository,
+        EmployeeRepository $employeeRepository,
+        HolidayService $holidayService,
+        LogRepository $logRepository
+    ) {
+        $this->leaveRepository = $leaveRepository;
+        $this->employeeRepository = $employeeRepository;
+        $this->holidayService = $holidayService;
+        $this->logRepository = $logRepository;
+    }
+
     /**
      * 직원의 근속 연수에 따라 연차를 계산하고 데이터베이스에 부여(저장)합니다.
      *
@@ -173,7 +192,7 @@ class LeaveService {
         $employee = $this->employeeRepository->findById($employeeId);
         $departmentId = $employee['department_id'] ?? null;
 
-        $holidaysRaw = $this->holidayRepository->findForDateRange($startDateStr, $endDateStr, $departmentId);
+        $holidaysRaw = $this->holidayService->getHolidaysForDateRange($startDateStr, $endDateStr, $departmentId);
         $holidays = [];
         foreach($holidaysRaw as $h) {
             if(!isset($holidays[$h['date']]) || $h['department_id'] !== null) {
