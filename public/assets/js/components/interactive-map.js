@@ -681,6 +681,12 @@ class InteractiveMap {
             originalPosition = this.state.tempMarker.getPosition();
         });
 
+        // 드래그 중: 핸들 위치 업데이트
+        addKakaoListener(this.state.tempMarker, 'drag', () => {
+            const newPosition = this.state.tempMarker.getPosition();
+            this.updateTempMarkerHandle(newPosition);
+        });
+
         // 드래그 종료: 위치 유효성 검사
         const dragEndHandler = async () => {
             const newPosition = this.state.tempMarker.getPosition();

@@ -21,7 +21,7 @@ class LitteringHistoryPage extends BasePage {
             ...scriptConfig,
             API_URL: '/littering',
             WASTE_TYPES: ['생활폐기물', '음식물', '재활용', '대형', '소각'],
-            UPLOADS_BASE_PATH: '/storage/'
+            UPLOADS_BASE_PATH: '/uploads/'
         });
 
         this.state = {

@@ -486,7 +486,7 @@ class LitteringMapPage extends BasePage {
     renderExistingPhotos(reportData) {
         const wrapper = document.getElementById('photoSwiperWrapper');
         wrapper.innerHTML = '';
-        const basePath = '/storage/';
+        const basePath = '/uploads/';
         const photos = [];
 
         if (reportData.reg_photo_path) photos.push({ src: basePath + reportData.reg_photo_path, title: '작업전' });
