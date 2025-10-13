@@ -20,8 +20,7 @@ class LitteringHistoryPage extends BasePage {
         super({
             ...scriptConfig,
             API_URL: '/littering',
-            WASTE_TYPES: ['생활폐기물', '음식물', '재활용', '대형', '소각'],
-            UPLOADS_BASE_PATH: '/storage/'
+            WASTE_TYPES: ['생활폐기물', '음식물', '재활용', '대형', '소각']
         });
 
         this.state = {
@@ -168,10 +167,9 @@ class LitteringHistoryPage extends BasePage {
 
     renderPhotoElements(item) {
         const photos = [];
-        const basePath = this.config.UPLOADS_BASE_PATH;
-        if (item.reg_photo_path) photos.push({ src: basePath + item.reg_photo_path, title: '작업전' });
-        if (item.reg_photo_path2) photos.push({ src: basePath + item.reg_photo_path2, title: '작업후' });
-        if (item.proc_photo_path) photos.push({ src: basePath + item.proc_photo_path, title: '처리' });
+        if (item.reg_photo_path) photos.push({ src: item.reg_photo_path, title: '작업전' });
+        if (item.reg_photo_path2) photos.push({ src: item.reg_photo_path2, title: '작업후' });
+        if (item.proc_photo_path) photos.push({ src: item.proc_photo_path, title: '처리' });
         return photos.map(photo => `
             <a href="${photo.src}" class="gallery-lightbox" data-gallery="gallery-${item.id}" title="${photo.title}">
                 <img src="${photo.src}" alt="${photo.title}" class="process-item-photo rounded">
