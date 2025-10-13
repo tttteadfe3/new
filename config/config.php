@@ -40,7 +40,9 @@ define('DB_CHARSET', $_ENV['DB_CHARSET'] ?? 'utf8mb4');
 
 // 4. 카카오 인증 설정 (.env 파일 사용)
 define('KAKAO_CLIENT_ID', $_ENV['KAKAO_CLIENT_ID'] ?? '');
+define('KAKAO_CLIENT_SECRET', $_ENV['KAKAO_CLIENT_SECRET'] ?? '');
 define('KAKAO_REDIRECT_URI', $_ENV['KAKAO_REDIRECT_URI'] ?? '');
+define('KAKAO_MAP_API_KEY', $_ENV['KAKAO_MAP_API_KEY'] ?? '');
 
 // 5. 파일 업로드 설정
 define('UPLOAD_DIR', ROOT_PATH . '/public/uploads/'); // 파일 시스템 절대 경로
