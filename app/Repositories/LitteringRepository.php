@@ -70,7 +70,7 @@ class LitteringRepository {
         $params = [
             $data['user_id'], $data['employee_id'], 'pending',
             $data['latitude'], $data['longitude'], $data['address'], 
-            $data['mainType'], $data['subType'], $data['issueDate'], 
+            $data['waste_type'], $data['waste_type2'], $data['issueDate'],
             $data['fileName1'], $data['fileName2']
         ];
         

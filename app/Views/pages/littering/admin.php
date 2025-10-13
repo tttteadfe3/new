@@ -72,8 +72,8 @@
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="mainType" class="form-label">주성상</label>
-                                                <select class="form-select form-select-sm" id="mainType">
+                                                <label for="waste_type" class="form-label">주성상</label>
+                                                <select class="form-select form-select-sm" id="waste_type">
                                                     <option value="생활폐기물">생활폐기물</option>
                                                     <option value="음식물">음식물</option>
                                                     <option value="재활용">재활용</option>
@@ -82,8 +82,8 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="subType" class="form-label">부성상 (혼합 시)</label>
-                                                <select class="form-select form-select-sm" id="subType">
+                                                <label for="waste_type2" class="form-label">부성상 (혼합 시)</label>
+                                                <select class="form-select form-select-sm" id="waste_type2">
                                                     <option value="">없음</option>
                                                     <option value="생활폐기물">생활폐기물</option>
                                                     <option value="음식물">음식물</option>

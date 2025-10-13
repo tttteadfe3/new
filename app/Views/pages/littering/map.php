@@ -128,7 +128,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label text-uppercase fw-semibold mb-2">주성상</label>
-                <select class="form-select" id="mainType">
+                <select class="form-select" id="waste_type">
                     <option value="">선택하세요</option>
                     <option value="생활폐기물">생활폐기물</option>
                     <option value="음식물">음식물</option>
@@ -143,10 +143,10 @@
                     <input class="form-check-input ms-auto" type="checkbox" role="switch" id="mixed">
                 </div>
             </div>
-            <div class="row mb-3" id="subTypeContainer" style="display:none;">
-                <label for="subType" class="col-3 col-form-label fw-semibold">부성상</label>
+            <div class="row mb-3" id="waste_type2Container" style="display:none;">
+                <label for="waste_type2" class="col-3 col-form-label fw-semibold">부성상</label>
                 <div class="col-9">
-                    <select class="form-select" id="subType" disabled>
+                    <select class="form-select" id="waste_type2" disabled>
                         <option value="">선택하세요</option>
                     </select>
                 </div>

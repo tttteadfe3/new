@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Repositories\LitteringRepository;
 use App\Core\Validator;
 use App\Core\FileUploader;
+use App\Core\Database;
 use Exception;
 
 /**
@@ -14,10 +15,12 @@ use Exception;
 class LitteringService
 {
     private LitteringRepository $litteringRepository;
+    private Database $db;
 
-    public function __construct(LitteringRepository $litteringRepository)
+    public function __construct(LitteringRepository $litteringRepository, Database $db)
     {
         $this->litteringRepository = $litteringRepository;
+        $this->db = $db;
     }
 
     public function getActiveLittering(): array
@@ -49,29 +52,58 @@ class LitteringService
     public function registerLittering(array $postData, array $files, int $userId, ?int $employeeId): array
     {
         $this->validateRegistration($postData, $files);
+        $this->db->beginTransaction();
 
-        $data = [
-            'status'      => 'pending', // Set default status for new reports
-            'user_id'     => $userId,
-            'employee_id' => $employeeId,
-            'latitude'    => floatval($postData['lat']),
-            'longitude'   => floatval($postData['lng']),
-            'address'     => Validator::sanitizeString($postData['address'] ?? ''),
-            'mainType'    => Validator::sanitizeString($postData['mainType'] ?? ''),
-            'subType'     => Validator::sanitizeString($postData['subType'] ?? ''),
-            'issueDate'   => $postData['issueDate'] ?? '',
-            'fileName1'   => (isset($files['photo1']) && $files['photo1']['error'] === UPLOAD_ERR_OK)
-                ? FileUploader::validateAndUpload($files['photo1'], 'littering', 'reg1_') : '',
-            'fileName2'   => (isset($files['photo2']) && $files['photo2']['error'] === UPLOAD_ERR_OK)
-                ? FileUploader::validateAndUpload($files['photo2'], 'littering', 'reg2_') : ''
-        ];
+        $fileName1 = null;
+        $fileName2 = null;
 
-        $newId = $this->litteringRepository->save($data);
-        if ($newId === null) {
-            throw new Exception("Failed to register littering report in the database.", 500);
+        try {
+            $fileName1 = (isset($files['photo1']) && $files['photo1']['error'] === UPLOAD_ERR_OK)
+                ? FileUploader::validateAndUpload($files['photo1'], 'littering', 'reg1_') : '';
+            $fileName2 = (isset($files['photo2']) && $files['photo2']['error'] === UPLOAD_ERR_OK)
+                ? FileUploader::validateAndUpload($files['photo2'], 'littering', 'reg2_') : '';
+
+            $data = [
+                'status'      => 'pending',
+                'user_id'     => $userId,
+                'employee_id' => $employeeId,
+                'latitude'    => floatval($postData['lat']),
+                'longitude'   => floatval($postData['lng']),
+                'address'     => Validator::sanitizeString($postData['address'] ?? ''),
+                'waste_type'  => Validator::sanitizeString($postData['waste_type'] ?? ''),
+                'waste_type2' => Validator::sanitizeString($postData['waste_type2'] ?? ''),
+                'issueDate'   => $postData['issueDate'] ?? '',
+                'fileName1'   => $fileName1,
+                'fileName2'   => $fileName2
+            ];
+
+            $newId = $this->litteringRepository->save($data);
+            if ($newId === null) {
+                throw new Exception("데이터베이스에 신고 등록을 실패했습니다.", 500);
+            }
+
+            $this->db->commit();
+            return $this->getLitteringById($newId);
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+
+            // Clean up uploaded files on error
+            foreach ([$fileName1, $fileName2] as $photoPath) {
+                if (isset($photoPath) && !empty($photoPath)) {
+                    $prefix = UPLOAD_URL_PATH . '/';
+                    if (strpos($photoPath, $prefix) === 0) {
+                        $relativeFilePath = substr($photoPath, strlen($prefix));
+                        $fullPath = UPLOAD_DIR . $relativeFilePath;
+                        if (file_exists($fullPath)) {
+                            unlink($fullPath);
+                        }
+                    }
+                }
+            }
+
+            throw $e;
         }
-
-        return $this->getLitteringById($newId);
     }
 
     public function confirmLittering(array $postData, int $adminId): array
@@ -82,11 +114,11 @@ class LitteringService
         }
 
         $updateData = [
-            'latitude'  => floatval($postData['latitude']),
-            'longitude' => floatval($postData['longitude']),
-            'address'   => Validator::sanitizeString($postData['address']),
-            'mainType'  => Validator::sanitizeString($postData['mainType']),
-            'subType'   => Validator::sanitizeString($postData['subType'] ?? '')
+            'latitude'  => floatval($postData['latitude'] ?? 0),
+            'longitude' => floatval($postData['longitude'] ?? 0),
+            'address'   => Validator::sanitizeString($postData['address'] ?? ''),
+            'waste_type'  => Validator::sanitizeString($postData['waste_type'] ?? ''),
+            'waste_type2' => Validator::sanitizeString($postData['waste_type2'] ?? '')
         ];
 
         if (!$this->litteringRepository->confirm($caseId, $updateData, $adminId)) {

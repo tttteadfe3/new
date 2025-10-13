@@ -29,25 +29,25 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="mainType" class="form-label">주성상</label>
-                            <select class="form-select" id="mainType" name="mainType" required>
+                            <label for="waste_type" class="form-label">주성상</label>
+                            <select class="form-select" id="waste_type" name="waste_type" required>
                                 <option value="">선택하세요</option>
-                                <option value="생활폐기물" <?= ($littering['mainType'] ?? '') === '생활폐기물' ? 'selected' : '' ?>>생활폐기물</option>
-                                <option value="음식물" <?= ($littering['mainType'] ?? '') === '음식물' ? 'selected' : '' ?>>음식물</option>
-                                <option value="재활용" <?= ($littering['mainType'] ?? '') === '재활용' ? 'selected' : '' ?>>재활용</option>
-                                <option value="대형" <?= ($littering['mainType'] ?? '') === '대형' ? 'selected' : '' ?>>대형</option>
-                                <option value="소각" <?= ($littering['mainType'] ?? '') === '소각' ? 'selected' : '' ?>>소각</option>
+                                <option value="생활폐기물" <?= ($littering['waste_type'] ?? '') === '생활폐기물' ? 'selected' : '' ?>>생활폐기물</option>
+                                <option value="음식물" <?= ($littering['waste_type'] ?? '') === '음식물' ? 'selected' : '' ?>>음식물</option>
+                                <option value="재활용" <?= ($littering['waste_type'] ?? '') === '재활용' ? 'selected' : '' ?>>재활용</option>
+                                <option value="대형" <?= ($littering['waste_type'] ?? '') === '대형' ? 'selected' : '' ?>>대형</option>
+                                <option value="소각" <?= ($littering['waste_type'] ?? '') === '소각' ? 'selected' : '' ?>>소각</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="subType" class="form-label">부성상 (혼합 시)</label>
-                            <select class="form-select" id="subType" name="subType">
+                            <label for="waste_type2" class="form-label">부성상 (혼합 시)</label>
+                            <select class="form-select" id="waste_type2" name="waste_type2">
                                 <option value="">없음</option>
-                                <option value="생활폐기물" <?= ($littering['subType'] ?? '') === '생활폐기물' ? 'selected' : '' ?>>생활폐기물</option>
-                                <option value="음식물" <?= ($littering['subType'] ?? '') === '음식물' ? 'selected' : '' ?>>음식물</option>
-                                <option value="재활용" <?= ($littering['subType'] ?? '') === '재활용' ? 'selected' : '' ?>>재활용</option>
-                                <option value="대형" <?= ($littering['subType'] ?? '') === '대형' ? 'selected' : '' ?>>대형</option>
-                                <option value="소각" <?= ($littering['subType'] ?? '') === '소각' ? 'selected' : '' ?>>소각</option>
+                                <option value="생활폐기물" <?= ($littering['waste_type2'] ?? '') === '생활폐기물' ? 'selected' : '' ?>>생활폐기물</option>
+                                <option value="음식물" <?= ($littering['waste_type2'] ?? '') === '음식물' ? 'selected' : '' ?>>음식물</option>
+                                <option value="재활용" <?= ($littering['waste_type2'] ?? '') === '재활용' ? 'selected' : '' ?>>재활용</option>
+                                <option value="대형" <?= ($littering['waste_type2'] ?? '') === '대형' ? 'selected' : '' ?>>대형</option>
+                                <option value="소각" <?= ($littering['waste_type2'] ?? '') === '소각' ? 'selected' : '' ?>>소각</option>
                             </select>
                         </div>
                     </div>
