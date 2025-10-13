@@ -4,21 +4,7 @@
  */
 class LitteringHistoryPage extends BasePage {
     constructor() {
-        const currentScript = document.currentScript;
-        let scriptConfig = {};
-        if (currentScript) {
-            const options = currentScript.getAttribute('data-options');
-            if (options) {
-                try {
-                    scriptConfig = JSON.parse(options);
-                } catch (e) {
-                    console.error('Failed to parse script options for LitteringHistoryPage:', e);
-                }
-            }
-        }
-
         super({
-            ...scriptConfig,
             API_URL: '/littering',
             WASTE_TYPES: ['생활폐기물', '음식물', '재활용', '대형', '소각'],
             UPLOADS_BASE_PATH: '/storage/'
