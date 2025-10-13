@@ -63,7 +63,7 @@ class LitteringDeletedAdminPage extends BasePage {
                     </td>
                 </tr>
             `;
-            const itemNode = document.createRange().createContextualFragment(itemHtml).firstChild;
+            const itemNode = document.createRange().createContextualFragment(itemHtml).firstElementChild;
 
             itemNode.querySelector('.restore-btn').addEventListener('click', () => this.restoreReport(item.id));
             itemNode.querySelector('.permanent-delete-btn').addEventListener('click', () => this.permanentlyDeleteReport(item.id));
