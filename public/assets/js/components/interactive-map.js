@@ -1,5 +1,5 @@
 /**
- * InteractiveMapManager - 지도 기반 위치 선택 및 마커 관리 컴포넌트
+ * InteractiveMap - 지도 기반 위치 선택 및 마커 관리 컴포넌트
  *
  * 주요 기능:
  * - 지도 초기화 및 사용자 위치 표시
@@ -11,30 +11,30 @@
 class InteractiveMap {
     constructor(options = {}) {
         this.config = {
-            // 지도 설정
+            // 吏��� �ㅼ젙
             mapId: options.mapId || 'map',
             center: options.center || { lat: 37.340187, lng: 126.743888 },
             level: options.level || 3,
 
-            // 지도 상태 저장 설정
+            // 吏��� �곹깭 ���� �ㅼ젙
             saveMapState: options.saveMapState !== false,
             storageKey: options.storageKey || 'wasteMapState',
 
-            // 임시 마커 생성 활성화/비활성화 설정
+            // �꾩떆 留덉빱 �앹꽦 �쒖꽦��/鍮꾪솢�깊솕 �ㅼ젙
             enableTempMarker: options.enableTempMarker !== false,
 
-            // 마커 설정
+            // 留덉빱 �ㅼ젙
             markerTypes: options.markerTypes || {},
             markerSize: options.markerSize || { width: 34, height: 40 },
 
-            // 터치 설정
+            // �곗튂 �ㅼ젙
             longPressDelay: options.longPressDelay || 800,
             duplicateThreshold: options.duplicateThreshold || 10,
 
-            // 지역 제한
+            // 吏��� �쒗븳
             allowedRegions: options.allowedRegions || [],
 
-            // 임시 마커 설정
+            // �꾩떆 留덉빱 �ㅼ젙
             tempMarker: {
                 color: options.tempMarkerColor || '#2563EB',
                 size: options.tempMarkerSize || 80,
@@ -52,7 +52,7 @@ class InteractiveMap {
             isMobile: window.innerWidth < 992,
             longPressTimer: null,
             isMarkerClick: false,
-            // 이벤트 리스너 참조 저장
+            // �대깽�� 由ъ뒪�� 李몄“ ����
             eventHandlers: {
                 resize: null,
                 beforeunload: null,
@@ -61,8 +61,10 @@ class InteractiveMap {
                 touchEnd: null,
                 touchMove: null,
             },
-            // 카카오맵 이벤트 리스너 저장
-            kakaoMapListeners: []
+            // 移댁뭅�ㅻ㏊ �대깽�� 由ъ뒪�� ����
+            kakaoMapListeners: [],
+            // Draggable �몄뒪�댁뒪�� destroy �⑥닔 ����
+            draggableDestroyer: null
         };
 
         this.callbacks = {
@@ -77,7 +79,7 @@ class InteractiveMap {
     }
 
     /**
-     * 컴포넌트 초기화
+     * 而댄룷�뚰듃 珥덇린��
      */
     async init() {
         try {
@@ -85,15 +87,15 @@ class InteractiveMap {
             this.initGeocoder();
             this.bindEvents();
             // 자동 위치 감지 제거 - 수동 버튼으로만 실행
-            console.log('InteractiveMapManager 초기화 완료');
+            console.log('InteractiveMap 초기화 완료');
         } catch (error) {
-            console.error('InteractiveMapManager 초기화 실패:', error);
+            console.error('InteractiveMap 초기화 실패:', error);
             throw error;
         }
     }
 
     /**
-     * 저장된 지도 상태 불러오기
+     * ���λ맂 吏��� �곹깭 遺덈윭�ㅺ린
      */
     loadMapState() {
         if (!this.config.saveMapState) return null;
@@ -102,17 +104,17 @@ class InteractiveMap {
             const savedState = localStorage.getItem(this.config.storageKey);
             if (savedState) {
                 const state = JSON.parse(savedState);
-                console.log('저장된 지도 상태 불러오기:', state);
+                console.log('���λ맂 吏��� �곹깭 遺덈윭�ㅺ린:', state);
                 return state;
             }
         } catch (error) {
-            console.error('지도 상태 불러오기 실패:', error);
+            console.error('吏��� �곹깭 遺덈윭�ㅺ린 �ㅽ뙣:', error);
         }
         return null;
     }
 
     /**
-     * 지도 상태 저장
+     * 吏��� �곹깭 ����
      */
     saveMapState() {
         if (!this.config.saveMapState || !this.state.map) return;
@@ -131,26 +133,26 @@ class InteractiveMap {
             };
 
             localStorage.setItem(this.config.storageKey, JSON.stringify(mapState));
-            console.log('지도 상태 저장됨:', mapState);
+            console.log('吏��� �곹깭 ���λ맖:', mapState);
         } catch (error) {
-            console.error('지도 상태 저장 실패:', error);
+            console.error('吏��� �곹깭 ���� �ㅽ뙣:', error);
         }
     }
 
     /**
-     * 저장된 지도 상태 초기화
+     * ���λ맂 吏��� �곹깭 珥덇린��
      */
     clearMapState() {
         try {
             localStorage.removeItem(this.config.storageKey);
-            console.log('저장된 지도 상태가 초기화되었습니다.');
+            console.log('���λ맂 吏��� �곹깭媛� 珥덇린�붾릺�덉뒿�덈떎.');
         } catch (error) {
-            console.error('지도 상태 초기화 실패:', error);
+            console.error('吏��� �곹깭 珥덇린�� �ㅽ뙣:', error);
         }
     }
 
     /**
-     * 지도를 기본 위치로 리셋
+     * 吏��꾨� 湲곕낯 �꾩튂濡� 由ъ뀑
      */
     resetToDefaultPosition() {
         this.clearMapState();
@@ -158,17 +160,17 @@ class InteractiveMap {
     }
 
     /**
-     * 지도 초기화
+     * 吏��� 珥덇린��
      */
     initMap() {
         return new Promise((resolve, reject) => {
             try {
                 const mapContainer = document.getElementById(this.config.mapId);
                 if (!mapContainer) {
-                    throw new Error(`지도 컨테이너를 찾을 수 없습니다: ${this.config.mapId}`);
+                    throw new Error(`吏��� 而⑦뀒�대꼫瑜� 李얠쓣 �� �놁뒿�덈떎: ${this.config.mapId}`);
                 }
 
-                // 저장된 지도 상태 불러오기
+                // ���λ맂 吏��� �곹깭 遺덈윭�ㅺ린
                 const savedState = this.loadMapState();
                 const initialCenter = savedState ? savedState.center : this.config.center;
                 const initialLevel = savedState ? savedState.level : this.config.level;
@@ -186,17 +188,17 @@ class InteractiveMap {
     }
 
     /**
-     * 지오코더 초기화
+     * 吏��ㅼ퐫�� 珥덇린��
      */
     initGeocoder() {
         this.state.geocoder = new kakao.maps.services.Geocoder();
     }
 
     /**
-     * 이벤트 바인딩
+     * �대깽�� 諛붿씤��
      */
     bindEvents() {
-        // 핸들러들을 state에 저장하여 나중에 제거할 수 있도록 함
+        // �몃뱾�щ뱾�� state�� ���ν븯�� �섏쨷�� �쒓굅�� �� �덈룄濡� ��
         this.state.eventHandlers.resize = () => {
             this.state.isMobile = window.innerWidth < 992;
         };
@@ -209,24 +211,24 @@ class InteractiveMap {
             }
         };
 
-        // 리사이즈 이벤트
+        // 由ъ궗�댁쫰 �대깽��
         window.addEventListener('resize', this.state.eventHandlers.resize);
 
-        // 페이지 종료 시 지도 상태 저장
+        // �섏씠吏� 醫낅즺 �� 吏��� �곹깭 ����
         window.addEventListener('beforeunload', this.state.eventHandlers.beforeunload);
 
-        // 페이지 숨김 시 지도 상태 저장 (모바일 대응)
+        // �섏씠吏� �④� �� 吏��� �곹깭 ���� (紐⑤컮�� ����)
         document.addEventListener('visibilitychange', this.state.eventHandlers.visibilitychange);
 
-        // 지도 이벤트
+        // 吏��� �대깽��
         this.bindMapEvents();
     }
 
     /**
-     * 지도 이벤트 바인딩
+     * 吏��� �대깽�� 諛붿씤��
      */
     bindMapEvents() {
-        // 기존 카카오맵 리스너 제거
+        // 湲곗〈 移댁뭅�ㅻ㏊ 由ъ뒪�� �쒓굅
         this.state.kakaoMapListeners.forEach(({ target, event, handler }) => {
             try {
                 kakao.maps.event.removeListener(target, event, handler);
@@ -238,13 +240,13 @@ class InteractiveMap {
 
         const mapContainer = document.getElementById(this.config.mapId);
 
-        // 지도 상태 변경 시 저장 (디바운스 적용)
+        // 吏��� �곹깭 蹂�寃� �� ���� (�붾컮�댁뒪 �곸슜)
         let saveStateTimeout;
         const debouncedSaveState = () => {
             clearTimeout(saveStateTimeout);
             saveStateTimeout = setTimeout(() => {
                 this.saveMapState();
-            }, 500); // 500ms 후 저장
+            }, 500); // 500ms �� ����
         };
 
         const addKakaoListener = (target, event, handler) => {
@@ -252,15 +254,15 @@ class InteractiveMap {
             this.state.kakaoMapListeners.push({ target, event, handler });
         };
 
-        // 지도 중심 이동 시 상태 저장
+        // 吏��� 以묒떖 �대룞 �� �곹깭 ����
         addKakaoListener(this.state.map, 'center_changed', debouncedSaveState);
 
-        // 지도 줌 레벨 변경 시 상태 저장
+        // 吏��� 以� �덈꺼 蹂�寃� �� �곹깭 ����
         addKakaoListener(this.state.map, 'zoom_changed', debouncedSaveState);
 
-        // 임시 마커 생성이 활성화된 경우에만 이벤트 바인딩
+        // �꾩떆 留덉빱 �앹꽦�� �쒖꽦�붾맂 寃쎌슦�먮쭔 �대깽�� 諛붿씤��
         if (this.config.enableTempMarker) {
-            // 데스크톱: 우클릭
+            // �곗뒪�ы넲: �고겢由�
             if (!this.state.isMobile) {
                 const rightClickHandler = (mouseEvent) => {
                     this.handleLocationSelect(mouseEvent.latLng);
@@ -268,13 +270,13 @@ class InteractiveMap {
                 addKakaoListener(this.state.map, 'rightclick', rightClickHandler);
             }
 
-            // 모바일: 롱프레스
+            // 紐⑤컮��: 濡깊봽�덉뒪
             if (this.state.isMobile) {
                 this.bindTouchEvents(mapContainer);
             }
         }
 
-        // 지도 클릭: 임시 마커 제거
+        // 吏��� �대┃: �꾩떆 留덉빱 �쒓굅
         let mapClickTimeout;
         const clickHandler = () => {
             clearTimeout(mapClickTimeout);
@@ -289,10 +291,10 @@ class InteractiveMap {
     }
 
     /**
-     * 터치 이벤트 바인딩 (모바일)
+     * �곗튂 �대깽�� 諛붿씤�� (紐⑤컮��)
      */
     bindTouchEvents(element) {
-        // 핸들러 저장
+        // �몃뱾�� ����
         this.state.eventHandlers.touchStart = (e) => this.handleTouchStart(e);
         this.state.eventHandlers.touchEnd = () => this.handleTouchEnd();
         this.state.eventHandlers.touchMove = () => this.handleTouchMove();
@@ -303,7 +305,7 @@ class InteractiveMap {
     }
 
     /**
-     * 터치 시작 처리
+     * �곗튂 �쒖옉 泥섎━
      */
     handleTouchStart(e) {
         if (e.touches.length !== 1) return;
@@ -312,10 +314,10 @@ class InteractiveMap {
 
         const touch = e.touches[0];
         this.state.longPressTimer = setTimeout(() => {
-            // 진동 피드백
+            // 吏꾨룞 �쇰뱶諛�
             if (navigator.vibrate) navigator.vibrate(100);
 
-            // 좌표 계산
+            // 醫뚰몴 怨꾩궛
             const rect = this.state.map.getNode().getBoundingClientRect();
             const point = new kakao.maps.Point(
                 touch.clientX - rect.left,
@@ -328,31 +330,31 @@ class InteractiveMap {
     }
 
     /**
-     * 터치 종료 처리
+     * �곗튂 醫낅즺 泥섎━
      */
     handleTouchEnd() {
         clearTimeout(this.state.longPressTimer);
     }
 
     /**
-     * 터치 이동 처리
+     * �곗튂 �대룞 泥섎━
      */
     handleTouchMove() {
         clearTimeout(this.state.longPressTimer);
     }
 
     /**
-     * 사용자 위치 설정 (수동 호출용)
+     * �ъ슜�� �꾩튂 �ㅼ젙 (�섎룞 �몄텧��)
      */
     setUserLocation() {
         return new Promise((resolve) => {
             if (!navigator.geolocation) {
-                alert('위치 정보를 지원하지 않는 브라우저입니다.');
+                alert('�꾩튂 �뺣낫瑜� 吏��먰븯吏� �딅뒗 釉뚮씪�곗��낅땲��.');
                 resolve(false);
                 return;
             }
 
-            // 로딩 상태 표시
+            // 濡쒕뵫 �곹깭 �쒖떆
             const btn = document.getElementById('currentLocationBtn');
             if (btn) {
                 btn.innerHTML = '<i class="ri-loader-4-line" style="font-size: 20px; animation: spin 1s linear infinite;"></i>';
@@ -364,7 +366,7 @@ class InteractiveMap {
                     const { latitude, longitude } = position.coords;
                     const currentPos = new kakao.maps.LatLng(latitude, longitude);
 
-                    // 기존 사용자 위치 마커 제거
+                    // 湲곗〈 �ъ슜�� �꾩튂 留덉빱 �쒓굅
                     if (this.state.userLocationMarker) {
                         this.state.userLocationMarker.setMap(null);
                     }
@@ -372,13 +374,13 @@ class InteractiveMap {
                         this.state.userLocationInfo.setMap(null);
                     }
 
-                    // 지도 중심 이동
+                    // 吏��� 以묒떖 �대룞
                     this.state.map.setCenter(currentPos);
 
-                    // 사용자 위치 마커 생성
+                    // �ъ슜�� �꾩튂 留덉빱 �앹꽦
                     this.createUserLocationMarker(currentPos);
 
-                    // 버튼 상태 복원
+                    // 踰꾪듉 �곹깭 蹂듭썝
                     if (btn) {
                         btn.innerHTML = '<i class="ri-navigation-line" style="font-size: 20px;"></i>';
                         btn.disabled = false;
@@ -387,10 +389,10 @@ class InteractiveMap {
                     resolve(true);
                 },
                 (error) => {
-                    console.log('위치 정보를 가져올 수 없습니다:', error);
-                    alert('위치 정보를 가져올 수 없습니다. GPS가 활성화되어 있는지 확인해주세요.');
+                    console.log('�꾩튂 �뺣낫瑜� 媛��몄삱 �� �놁뒿�덈떎:', error);
+                    alert('�꾩튂 �뺣낫瑜� 媛��몄삱 �� �놁뒿�덈떎. GPS媛� �쒖꽦�붾릺�� �덈뒗吏� �뺤씤�댁＜�몄슂.');
 
-                    // 버튼 상태 복원
+                    // 踰꾪듉 �곹깭 蹂듭썝
                     if (btn) {
                         btn.innerHTML = '<i class="ri-navigation-line" style="font-size: 20px;"></i>';
                         btn.disabled = false;
@@ -403,7 +405,7 @@ class InteractiveMap {
     }
 
     /**
-     * 사용자 위치 마커 생성
+     * �ъ슜�� �꾩튂 留덉빱 �앹꽦
      */
     createUserLocationMarker(position) {
         const markerContent = `
@@ -425,7 +427,7 @@ class InteractiveMap {
 
         this.state.userLocationMarker.setMap(this.state.map);
 
-        // 위치 정보 오버레이
+        // �꾩튂 �뺣낫 �ㅻ쾭�덉씠
         this.state.userLocationInfo = new kakao.maps.CustomOverlay({
             position,
             content: `
@@ -441,7 +443,7 @@ class InteractiveMap {
                     color: #333;
                     white-space: nowrap;
                 ">
-                    <strong>현재 위치</strong>
+                    <strong>�꾩옱 �꾩튂</strong>
                     <div style="
                         position: absolute;
                         bottom: -10px;
@@ -475,7 +477,7 @@ class InteractiveMap {
 
 
     /**
-     * 표준 locationData 객체 생성
+     * �쒖� locationData 媛앹껜 �앹꽦
      */
     createLocationData(position, addressData = null) {
         const latlng = position instanceof kakao.maps.LatLng
@@ -483,29 +485,29 @@ class InteractiveMap {
             : new kakao.maps.LatLng(position.lat || position.latitude, position.lng || position.longitude);
 
         return {
-            position: latlng,               // kakao.maps.LatLng 객체
-            latitude: latlng.getLat(),      // 숫자
-            longitude: latlng.getLng(),     // 숫자
-            address: addressData?.address || null,     // 문자열 또는 null
-            region: addressData?.region || null       // 문자열 또는 null
+            position: latlng,               // kakao.maps.LatLng 媛앹껜
+            latitude: latlng.getLat(),      // �レ옄
+            longitude: latlng.getLng(),     // �レ옄
+            address: addressData?.address || null,     // 臾몄옄�� �먮뒗 null
+            region: addressData?.region || null       // 臾몄옄�� �먮뒗 null
         };
     }
 
     /**
-     * 위치 선택 처리 (우클릭/롱프레스)
+     * �꾩튂 �좏깮 泥섎━ (�고겢由�/濡깊봽�덉뒪)
      */
     async handleLocationSelect(latlng) {
-        // 임시 마커 생성이 비활성화된 경우 처리하지 않음
+        // �꾩떆 留덉빱 �앹꽦�� 鍮꾪솢�깊솕�� 寃쎌슦 泥섎━�섏� �딆쓬
         if (!this.config.enableTempMarker) {
-            console.log('임시 마커 생성이 비활성화되었습니다.');
+            console.log('�꾩떆 留덉빱 �앹꽦�� 鍮꾪솢�깊솕�섏뿀�듬땲��.');
             return;
         }
 
         try {
-            // 기존 임시 마커 제거
+            // 湲곗〈 �꾩떆 留덉빱 �쒓굅
             this.removeTempMarker();
 
-            // 주소 검증
+            // 二쇱냼 寃�利�
             const addressData = await this.resolveAddress(latlng);
 
             if (!addressData.isValid) {
@@ -513,27 +515,27 @@ class InteractiveMap {
                 return;
             }
 
-            // 임시 마커 생성
+            // �꾩떆 留덉빱 �앹꽦
             await this.createTempMarker(latlng);
 
             const locationData = this.createLocationData(latlng, addressData);
 
-            // 임시 마커 생성 콜백 호출
+            // �꾩떆 留덉빱 �앹꽦 肄쒕갚 �몄텧
             this.callbacks.onTempMarkerCreate(locationData);
 
         } catch (error) {
-            console.error('위치 선택 처리 오류:', error);
-            this.callbacks.onRegionValidation(false, '위치 처리 중 오류가 발생했습니다.');
+            console.error('�꾩튂 �좏깮 泥섎━ �ㅻ쪟:', error);
+            this.callbacks.onRegionValidation(false, '�꾩튂 泥섎━ 以� �ㅻ쪟媛� 諛쒖깮�덉뒿�덈떎.');
         }
     }
 
     /**
-     * 주소 변환 및 검증
+     * 二쇱냼 蹂��� 諛� 寃�利�
      */
     resolveAddress(latlng) {
         return new Promise((resolve) => {
 			console.log(this.config.allowedRegions);
-            // 1단계: 행정동 확인
+            // 1�④퀎: �됱젙�� �뺤씤
             this.state.geocoder.coord2RegionCode(latlng.getLng(), latlng.getLat(), (regionResult, regionStatus) => {
                 if (regionStatus === kakao.maps.services.Status.OK) {
                     const hRegion = regionResult.find(item => item.region_type === "H");
@@ -541,22 +543,22 @@ class InteractiveMap {
                     if (hRegion) {
                         const region = hRegion.region_3depth_name;
 
-                        // 지역 검증
+                        // 吏��� 寃�利�
                         if (this.config.allowedRegions.length > 0 && !this.config.allowedRegions.includes(region)) {
                             resolve({
                                 isValid: false,
-                                message: '허용되지 않은 지역입니다.',
+                                message: '�덉슜�섏� �딆� 吏���엯�덈떎.',
                                 region
                             });
                             return;
                         }
 
-                        // 2단계: 상세 주소 가져오기
+                        // 2�④퀎: �곸꽭 二쇱냼 媛��몄삤湲�
                         this.state.geocoder.coord2Address(latlng.getLng(), latlng.getLat(), (addressResult, addressStatus) => {
                             if (addressStatus === kakao.maps.services.Status.OK) {
                                 const address = addressResult[0].address ?
                                     addressResult[0].address.address_name :
-                                    addressResult[0].road_address?.address_name || '주소 정보 없음';
+                                    addressResult[0].road_address?.address_name || '二쇱냼 �뺣낫 �놁쓬';
 
                                 resolve({
                                     isValid: true,
@@ -566,7 +568,7 @@ class InteractiveMap {
                             } else {
                                 resolve({
                                     isValid: false,
-                                    message: '상세 주소를 가져올 수 없습니다.',
+                                    message: '�곸꽭 二쇱냼瑜� 媛��몄삱 �� �놁뒿�덈떎.',
                                     region
                                 });
                             }
@@ -574,13 +576,13 @@ class InteractiveMap {
                     } else {
                         resolve({
                             isValid: false,
-                            message: '지역 정보를 찾을 수 없습니다.'
+                            message: '吏��� �뺣낫瑜� 李얠쓣 �� �놁뒿�덈떎.'
                         });
                     }
                 } else {
                     resolve({
                         isValid: false,
-                        message: '행정동 확인에 실패했습니다.'
+                        message: '�됱젙�� �뺤씤�� �ㅽ뙣�덉뒿�덈떎.'
                     });
                 }
             });
@@ -588,42 +590,42 @@ class InteractiveMap {
     }
 
     /**
-     * 임시 마커 생성 활성화/비활성화
+     * �꾩떆 留덉빱 �앹꽦 �쒖꽦��/鍮꾪솢�깊솕
      */
     setTempMarkerEnabled(enabled) {
         const wasEnabled = this.config.enableTempMarker;
         this.config.enableTempMarker = enabled;
 
-        // 상태가 변경된 경우 이벤트 재바인딩
+        // �곹깭媛� 蹂�寃쎈맂 寃쎌슦 �대깽�� �щ컮�몃뵫
         if (wasEnabled !== enabled) {
             this.rebindMapEvents();
 
-            // 비활성화시 기존 임시 마커 제거
+            // 鍮꾪솢�깊솕�� 湲곗〈 �꾩떆 留덉빱 �쒓굅
             if (!enabled) {
                 this.removeTempMarker();
             }
 
-            console.log(`임시 마커 생성이 ${enabled ? '활성화' : '비활성화'}되었습니다.`);
+            console.log(`�꾩떆 留덉빱 �앹꽦�� ${enabled ? '�쒖꽦��' : '鍮꾪솢�깊솕'}�섏뿀�듬땲��.`);
         }
     }
 
     /**
-     * 임시 마커 생성 활성화 상태 확인
+     * �꾩떆 留덉빱 �앹꽦 �쒖꽦�� �곹깭 �뺤씤
      */
     isTempMarkerEnabled() {
         return this.config.enableTempMarker;
     }
 
     /**
-     * 설정 업데이트
+     * �ㅼ젙 �낅뜲�댄듃
      */
     updateConfig(newConfig) {
         const oldTempMarkerEnabled = this.config.enableTempMarker;
 
-        // 설정 병합
+        // �ㅼ젙 蹂묓빀
         Object.assign(this.config, newConfig);
 
-        // 임시 마커 활성화 상태가 변경된 경우
+        // �꾩떆 留덉빱 �쒖꽦�� �곹깭媛� 蹂�寃쎈맂 寃쎌슦
         if (oldTempMarkerEnabled !== this.config.enableTempMarker) {
             this.rebindMapEvents();
 
@@ -634,15 +636,15 @@ class InteractiveMap {
     }
 
     /**
-     * 지도 이벤트 재바인딩
+     * 吏��� �대깽�� �щ컮�몃뵫
      */
     rebindMapEvents() {
-        // bindMapEvents 내부에서 기존 리스너를 제거하고 새로 바인딩합니다.
+        // bindMapEvents �대��먯꽌 湲곗〈 由ъ뒪�덈� �쒓굅�섍퀬 �덈줈 諛붿씤�⑺빀�덈떎.
         this.bindMapEvents();
     }
 
     /**
-     * 임시 마커 생성 토글
+     * �꾩떆 留덉빱 �앹꽦 �좉�
      */
     toggleTempMarker() {
         this.setTempMarkerEnabled(!this.config.enableTempMarker);
@@ -650,7 +652,7 @@ class InteractiveMap {
     }
 
     /**
-     * 임시 마커 생성 - 수정된 버전
+     * �꾩떆 留덉빱 �앹꽦 - �섏젙�� 踰꾩쟾
      */
     async createTempMarker(latlng) {
         const tempMarkerImage = new kakao.maps.MarkerImage(
@@ -662,64 +664,15 @@ class InteractiveMap {
             position: latlng,
             map: this.state.map,
             image: tempMarkerImage,
-            draggable: true
+            draggable: false // The marker itself is not draggable
         });
 
-        // 드래그 핸들 생성
+        // The handle is created and made draggable inside this function
         this.createTempMarkerHandle(latlng);
-
-        const addKakaoListener = (target, event, handler) => {
-            kakao.maps.event.addListener(target, event, handler);
-            this.state.kakaoMapListeners.push({ target, event, handler });
-        };
-
-        // --- 네이티브 마커 이벤트 핸들링 ---
-        let originalPosition = null;
-
-        // 드래그 시작: 원래 위치 저장
-        addKakaoListener(this.state.tempMarker, 'dragstart', () => {
-            originalPosition = this.state.tempMarker.getPosition();
-        });
-
-        // 드래그 중: 핸들 위치 업데이트
-        addKakaoListener(this.state.tempMarker, 'drag', () => {
-            const newPosition = this.state.tempMarker.getPosition();
-            this.updateTempMarkerHandle(newPosition);
-        });
-
-        // 드래그 종료: 위치 유효성 검사
-        const dragEndHandler = async () => {
-            const newPosition = this.state.tempMarker.getPosition();
-            this.updateTempMarkerHandle(newPosition);
-            const addressData = await this.resolveAddress(newPosition);
-
-            if (!addressData.isValid) {
-                this.callbacks.onRegionValidation(false, addressData.message);
-                if (originalPosition) {
-                    this.state.tempMarker.setPosition(originalPosition);
-                    this.updateTempMarkerHandle(originalPosition);
-                }
-                return;
-            }
-
-            const locationData = this.createLocationData(newPosition, addressData);
-            this.callbacks.onAddressResolved(locationData, addressData);
-        };
-        addKakaoListener(this.state.tempMarker, 'dragend', dragEndHandler);
-
-        // 클릭 이벤트: 모달 열기 콜백 호출
-        const clickHandler = async () => {
-            this.state.isMarkerClick = true;
-            const currentPosition = this.state.tempMarker.getPosition();
-            const addressData = await this.resolveAddress(currentPosition);
-            const locationData = this.createLocationData(currentPosition, addressData);
-            this.callbacks.onTempMarkerClick(locationData);
-        };
-        addKakaoListener(this.state.tempMarker, 'click', clickHandler);
     }
 
     /**
-     * 임시 마커 드래그 핸들 생성
+     * �꾩떆 留덉빱 �쒕옒洹� �몃뱾 �앹꽦
      */
     createTempMarkerHandle(latlng) {
         const handleContent = `
@@ -741,7 +694,6 @@ class InteractiveMap {
                 z-index: 999;
                 user-select: none;
                 touch-action: none;
-                pointer-events: none; /* Pass clicks to the marker below */
             ">
                 <div style="
                     width: 24px;
@@ -775,19 +727,136 @@ class InteractiveMap {
 
         this.state.tempMarkerHandle.setMap(this.state.map);
 
-        this.state.tempMarkerHandle.setMap(this.state.map);
+        // �쒕옒洹� �대깽�� �ㅼ젙
+        setTimeout(() => {
+            const handleElement = document.querySelector('.temp-marker-handle');
+            if (handleElement) {
+                // 湲곗〈 draggable destroyer媛� �덉쑝硫� �뚭눼
+                if (this.state.draggableDestroyer) {
+                    this.state.draggableDestroyer();
+                }
+                // �덈줈 留뚮뱾怨� destroyer ����
+                this.state.draggableDestroyer = this.makeDraggable(handleElement);
+            }
+        }, 100);
     }
 
     /**
-     * 임시 마커 핸들 위치 업데이트
+     * �꾩떆 留덉빱 �몃뱾 �꾩튂 �낅뜲�댄듃
      */
     updateTempMarkerHandle(position) {
         if (this.state.tempMarkerHandle) {
             this.state.tempMarkerHandle.setPosition(position);
         }
     }
+
     /**
-     * 현재 임시 마커의 완전한 정보 가져오기
+     * �쒕옒洹� �몃뱾 �쒕옒洹�/�대┃ 泥섎━
+     */
+    makeDraggable(handleElement) {
+        let isDragging = false;
+        let hasMoved = false;
+        let startPos = null;
+        let initialMarkerPos = null;
+
+        const getEventPos = (e) => {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        };
+
+        const handleStart = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            isDragging = true;
+            hasMoved = false;
+            startPos = getEventPos(e);
+
+            if (this.state.tempMarker) {
+                initialMarkerPos = this.state.tempMarker.getPosition();
+            }
+
+            handleElement.style.cursor = 'grabbing';
+            handleElement.style.transform = 'scale(1.1)';
+
+            if (navigator.vibrate) navigator.vibrate(50);
+        };
+
+        const handleMove = (e) => {
+            if (!isDragging || !startPos || !initialMarkerPos) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const currentPos = getEventPos(e);
+            const deltaX = currentPos.x - startPos.x;
+            const deltaY = currentPos.y - startPos.y;
+
+            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                hasMoved = true;
+            }
+
+            const initialPoint = this.state.map.getProjection().containerPointFromCoords(initialMarkerPos);
+            const newPoint = new kakao.maps.Point(initialPoint.x + deltaX, initialPoint.y + deltaY);
+            const latlng = this.state.map.getProjection().coordsFromContainerPoint(newPoint);
+
+            if (this.state.tempMarker) {
+                this.state.tempMarker.setPosition(latlng);
+                this.updateTempMarkerHandle(latlng);
+            }
+        };
+
+        const handleEnd = async (e) => {
+            if (!isDragging) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const wasDragging = isDragging && hasMoved;
+
+            isDragging = false;
+            startPos = null;
+            handleElement.style.cursor = 'grab';
+            handleElement.style.transform = 'scale(1)';
+
+            if (!this.state.tempMarker) return; // 留덉빱媛� �녿뒗 寃쎌슦 醫낅즺
+
+            const currentPosition = this.state.tempMarker.getPosition();
+            const addressData = await this.resolveAddress(currentPosition);
+            const locationData = this.createLocationData(currentPosition, addressData);
+
+            if (wasDragging) {
+                this.callbacks.onAddressResolved(locationData, addressData);
+            } else {
+                this.callbacks.onTempMarkerClick(locationData);
+            }
+
+            hasMoved = false;
+        };
+
+        // �대깽�� 由ъ뒪�� �깅줉
+        handleElement.addEventListener('mousedown', handleStart);
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleEnd);
+
+        handleElement.addEventListener('touchstart', handleStart, { passive: false });
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('touchend', handleEnd, { passive: false });
+
+        // �쒓굅 �⑥닔 諛섑솚
+        return () => {
+            handleElement.removeEventListener('mousedown', handleStart);
+            document.removeEventListener('mousemove', handleMove);
+            document.removeEventListener('mouseup', handleEnd);
+            handleElement.removeEventListener('touchstart', handleStart);
+            document.removeEventListener('touchmove', handleMove);
+            document.removeEventListener('touchend', handleEnd);
+        };
+    }
+    /**
+     * �꾩옱 �꾩떆 留덉빱�� �꾩쟾�� �뺣낫 媛��몄삤湲�
      */
     async getTempMarkerData() {
         if (!this.state.tempMarker) {
@@ -800,7 +869,7 @@ class InteractiveMap {
         return this.createLocationData(position, addressData);
     }
     /**
-     * 임시 마커 제거
+     * �꾩떆 留덉빱 �쒓굅
      */
     removeTempMarker() {
         if (this.state.tempMarker) {
@@ -811,19 +880,24 @@ class InteractiveMap {
             this.state.tempMarkerHandle.setMap(null);
             this.state.tempMarkerHandle = null;
         }
+        // �쒕옒洹� �몃뱾�щ룄 �뚭눼
+        if (this.state.draggableDestroyer) {
+            this.state.draggableDestroyer();
+            this.state.draggableDestroyer = null;
+        }
     }
 
     /**
-     * 일반 마커 추가
+     * �쇰컲 留덉빱 異붽�
      */
     addMarker(options) {
         const {
             position,
             type = 'default',
             data = {},
-            draggable = false, // draggable 기본값 설정
+            draggable = false, // draggable 湲곕낯媛� �ㅼ젙
             onClick = null,
-            onDragEnd = null   // onDragEnd 콜백 추가
+            onDragEnd = null   // onDragEnd 肄쒕갚 異붽�
         } = options;
 
         const latlng = position instanceof kakao.maps.LatLng
@@ -833,10 +907,10 @@ class InteractiveMap {
         const marker = new kakao.maps.Marker({
             position: latlng,
             map: this.state.map,
-            draggable: draggable // draggable 속성 적용
+            draggable: draggable // draggable �띿꽦 �곸슜
         });
 
-        // 마커 타입별 이미지 설정
+        // 留덉빱 ���낅퀎 �대�吏� �ㅼ젙
         if (this.config.markerTypes[type]) {
             const markerImage = new kakao.maps.MarkerImage(
                 this.config.markerTypes[type],
@@ -850,7 +924,7 @@ class InteractiveMap {
             this.state.kakaoMapListeners.push({ target, event, handler });
         };
 
-        // 클릭 이벤트
+        // �대┃ �대깽��
         if (onClick) {
             const clickHandler = () => {
                 this.state.isMarkerClick = true;
@@ -859,41 +933,33 @@ class InteractiveMap {
             addKakaoListener(marker, 'click', clickHandler);
         }
 
-        // 드래그 종료 이벤트
+        // �쒕옒洹� 醫낅즺 �대깽��
         if (draggable && onDragEnd) {
-            let originalPosition = null;
-
-            addKakaoListener(marker, 'dragstart', () => {
-                originalPosition = marker.getPosition();
-            });
-
-            const dragEndHandler = async () => {
+            const dragEndHandler = () => {
                 const newPosition = marker.getPosition();
-                const addressData = await this.resolveAddress(newPosition);
 
-                if (!addressData.isValid) {
-                    this.callbacks.onRegionValidation(false, addressData.message);
-                    if (originalPosition) {
-                        marker.setPosition(originalPosition);
+                (async () => {
+                    const addressData = await this.resolveAddress(newPosition);
+					console.log(addressData);
+
+                    if (!addressData.isValid) {
+                        this.callbacks.onRegionValidation(false, addressData.message);
+                        return;
                     }
-                    // Notify caller that drag ended, but position was reverted
+
+                    const locationData = this.createLocationData(newPosition, addressData);
+
+                    if (this.callbacks.onAddressResolved) {
+                        this.callbacks.onAddressResolved(locationData);
+                    }
+                })();
+
+                if (onDragEnd) {
                     onDragEnd({
-                        lat: (originalPosition || newPosition).getLat(),
-                        lng: (originalPosition || newPosition).getLng()
+                        lat: newPosition.getLat(),
+                        lng: newPosition.getLng()
                     });
-                    return;
                 }
-
-                const locationData = this.createLocationData(newPosition, addressData);
-                if (this.callbacks.onAddressResolved) {
-                    this.callbacks.onAddressResolved(locationData, addressData);
-                }
-
-                // Notify caller of the new valid position
-                onDragEnd({
-                    lat: newPosition.getLat(),
-                    lng: newPosition.getLng()
-                });
             };
             addKakaoListener(marker, 'dragend', dragEndHandler);
         }
@@ -910,7 +976,7 @@ class InteractiveMap {
     }
 
     /**
-     * 마커 제거
+     * 留덉빱 �쒓굅
      */
     removeMarker(markerData) {
         if (markerData && markerData.marker) {
@@ -923,7 +989,7 @@ class InteractiveMap {
     }
 
     /**
-     * 모든 마커 제거
+     * 紐⑤뱺 留덉빱 �쒓굅
      */
     clearMarkers() {
         this.state.markers.forEach(markerData => {
@@ -935,22 +1001,43 @@ class InteractiveMap {
     }
 
     /**
-     * 중복 위치 확인
+     * 以묐났 �꾩튂 �뺤씤
      */
     checkDuplicateLocation(position, threshold = null) {
         const checkThreshold = threshold || this.config.duplicateThreshold;
-        const targetCoords = LocationUtils.normalizeCoords(position);
+        const targetLat = position.lat || position.latitude || position.getLat();
+        const targetLng = position.lng || position.longitude || position.getLng();
 
         return this.state.markers.some(markerData => {
-            const markerCoords = LocationUtils.normalizeCoords(markerData.position);
-            const distance = LocationUtils.calculateDistance(targetCoords, markerCoords);
+            const markerPos = markerData.position;
+            const distance = this.calculateDistance(
+                targetLat, targetLng,
+                markerPos.getLat(), markerPos.getLng()
+            );
             return distance < checkThreshold;
         });
     }
 
+    /**
+     * 嫄곕━ 怨꾩궛 (誘명꽣)
+     */
+    calculateDistance(lat1, lng1, lat2, lng2) {
+        const R = 6371e3;
+        const φ1 = lat1 * Math.PI/180;
+        const φ2 = lat2 * Math.PI/180;
+        const Δφ = (lat2-lat1) * Math.PI/180;
+        const Δλ = (lng2-lng1) * Math.PI/180;
+
+        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                  Math.cos(φ1) * Math.cos(φ2) *
+                  Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        return R * c;
+    }
 
     /**
-     * 지도 중심 이동
+     * 吏��� 以묒떖 �대룞
      */
     setCenter(position, level = null) {
         const latlng = position instanceof kakao.maps.LatLng
@@ -963,28 +1050,28 @@ class InteractiveMap {
             this.state.map.setLevel(level);
         }
 
-        // 상태 저장 (약간의 지연 후)
+        // �곹깭 ���� (�쎄컙�� 吏��� ��)
         setTimeout(() => {
             this.saveMapState();
         }, 100);
     }
 
     /**
-     * 현재 임시 마커 위치 가져오기
+     * �꾩옱 �꾩떆 留덉빱 �꾩튂 媛��몄삤湲�
      */
     getTempMarkerPosition() {
         return this.state.tempMarker ? this.state.tempMarker.getPosition() : null;
     }
 
     /**
-     * 지도 인스턴스 가져오기
+     * 吏��� �몄뒪�댁뒪 媛��몄삤湲�
      */
     getMap() {
         return this.state.map;
     }
 
     /**
-     * 모든 마커 가져오기
+     * 紐⑤뱺 留덉빱 媛��몄삤湲�
      */
     getMarkers() {
         return [...this.state.markers];
@@ -994,13 +1081,19 @@ class InteractiveMap {
      * 컴포넌트 정리
      */
     destroy() {
-        console.log('Destroying InteractiveMapManager...');
+        console.log('Destroying InteractiveMap...');
 
-        // 1. 모든 마커 제거
+        // 1. Draggable 이벤트 리스너 제거
+        if (this.state.draggableDestroyer) {
+            this.state.draggableDestroyer();
+            this.state.draggableDestroyer = null;
+        }
+
+        // 2. 紐⑤뱺 留덉빱 �쒓굅
         this.clearMarkers();
         this.removeTempMarker();
 
-        // 3. 사용자 위치 마커 및 정보창 제거
+        // 3. �ъ슜�� �꾩튂 留덉빱 諛� �뺣낫李� �쒓굅
         if (this.state.userLocationMarker) {
             this.state.userLocationMarker.setMap(null);
             this.state.userLocationMarker = null;
@@ -1010,13 +1103,13 @@ class InteractiveMap {
             this.state.userLocationInfo = null;
         }
 
-        // 4. 타이머 정리
+        // 4. ���대㉧ �뺣━
         if (this.state.longPressTimer) {
             clearTimeout(this.state.longPressTimer);
             this.state.longPressTimer = null;
         }
 
-        // 5. Kakao Map 이벤트 리스너 제거
+        // 5. Kakao Map �대깽�� 由ъ뒪�� �쒓굅
         this.state.kakaoMapListeners.forEach(({ target, event, handler }) => {
             try {
                 kakao.maps.event.removeListener(target, event, handler);
@@ -1026,7 +1119,7 @@ class InteractiveMap {
         });
         this.state.kakaoMapListeners = [];
 
-        // 6. 전역(window, document) 이벤트 리스너 제거
+        // 6. �꾩뿭(window, document) �대깽�� 由ъ뒪�� �쒓굅
         if (this.state.eventHandlers.resize) {
             window.removeEventListener('resize', this.state.eventHandlers.resize);
         }
@@ -1037,7 +1130,7 @@ class InteractiveMap {
             document.removeEventListener('visibilitychange', this.state.eventHandlers.visibilitychange);
         }
 
-        // 7. Touch 이벤트 리스너 제거
+        // 7. Touch �대깽�� 由ъ뒪�� �쒓굅
         const mapContainer = document.getElementById(this.config.mapId);
         if (mapContainer) {
             if (this.state.eventHandlers.touchStart) {
@@ -1051,10 +1144,10 @@ class InteractiveMap {
             }
         }
 
-        // 8. 지도 객체 참조 해제
+        // 8. 吏��� 媛앹껜 李몄“ �댁젣
         this.state.map = null;
         this.state.geocoder = null;
 
-        console.log('InteractiveMapManager destroyed.');
+        console.log('InteractiveMap destroyed.');
     }
 }
