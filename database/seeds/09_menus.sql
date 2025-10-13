@@ -17,6 +17,7 @@ INSERT INTO `sys_menus` (`id`, `parent_id`, `name`, `url`, `icon`, `permission_k
 (911, 910, '직원 관리', '/employees', 'ri-user-star-line', 'employee.view', 10),
 (912, 910, '사용자 목록', '/admin/users', 'ri-user-3-line', 'user.view', 20),
 (913, 910, '역할 및 권한', '/admin/role-permissions', 'ri-shield-user-line', 'role.assign_permissions', 30),
+(915, 910, '조직도', '/organization/chart', 'ri-node-tree', 'organization.view', 35),
 (914, 910, '부서/직급 관리', '/admin/organization', 'ri-building-4-line', 'organization.manage', 40),
 (920, 900, '인사 관리', '#', 'ri-briefcase-4-line', '', 20),
 (921, 920, '연차 부여/계산', '/leaves/granting', 'ri-user-add-line', 'leave.manage_entitlement', 10),

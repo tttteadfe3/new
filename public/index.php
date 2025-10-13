@@ -41,7 +41,14 @@ $container->register(\App\Repositories\WasteCollectionRepository::class, fn($c) 
 
 // Register all services with their correct dependencies
 $container->register(\App\Services\ActivityLogger::class, fn($c) => new \App\Services\ActivityLogger($c->resolve(SessionManager::class), $c->resolve(\App\Repositories\LogRepository::class), $c->resolve(\App\Repositories\UserRepository::class)));
-$container->register(\App\Services\AuthService::class, fn($c) => new \App\Services\AuthService($c->resolve(SessionManager::class), $c->resolve(\App\Repositories\UserRepository::class), $c->resolve(\App\Repositories\RoleRepository::class), $c->resolve(\App\Repositories\LogRepository::class)));
+$container->register(\App\Services\AuthService::class, fn($c) => new \App\Services\AuthService(
+    $c->resolve(SessionManager::class),
+    $c->resolve(\App\Repositories\UserRepository::class),
+    $c->resolve(\App\Repositories\RoleRepository::class),
+    $c->resolve(\App\Repositories\LogRepository::class),
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class)
+));
 $container->register(\App\Services\EmployeeService::class, fn($c) => new \App\Services\EmployeeService($c->resolve(\App\Repositories\EmployeeRepository::class), $c->resolve(\App\Repositories\EmployeeChangeLogRepository::class), $c->resolve(\App\Repositories\DepartmentRepository::class), $c->resolve(\App\Repositories\PositionRepository::class), $c->resolve(\App\Repositories\LogRepository::class), $c->resolve(SessionManager::class)));
 $container->register(\App\Services\HolidayService::class, fn($c) => new \App\Services\HolidayService($c->resolve(\App\Repositories\HolidayRepository::class), $c->resolve(\App\Repositories\DepartmentRepository::class)));
 $container->register(\App\Services\KakaoAuthService::class, fn() => new \App\Services\KakaoAuthService());

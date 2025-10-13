@@ -44,6 +44,17 @@ class Database {
     public function fetchAll(string $sql, array $params = []): array {
         return $this->executeQuery($sql, $params)->fetchAll();
     }
+
+    public function fetchAllAs(string $className, string $sql, array $params = []): array {
+        $stmt = $this->executeQuery($sql, $params);
+        return $stmt->fetchAll(PDO::FETCH_CLASS, $className);
+    }
+
+    public function fetchOneAs(string $className, string $sql, array $params = []) {
+        $stmt = $this->executeQuery($sql, $params);
+        $stmt->setFetchMode(PDO::FETCH_CLASS, $className);
+        return $stmt->fetch();
+    }
     
     public function insert(string $sql, array $params = []): int {
         $this->executeQuery($sql, $params);

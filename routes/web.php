@@ -22,10 +22,15 @@ $router->get('/logout', [AuthController::class, 'logout'])->name('logout');
 $router->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('auth')->middleware('permission', 'dashboard.view');
 $router->get('/status', [StatusController::class, 'index'])->name('status')->middleware('auth');
 
+use App\Controllers\Web\OrganizationController;
+
 // --- 직원 관리 ---
 $router->get('/employees', [EmployeeController::class, 'index'])->name('employees.index')->middleware('auth')->middleware('permission', 'employee.view');
 $router->get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create')->middleware('auth')->middleware('permission', 'employee.create');
 $router->get('/employees/edit', [EmployeeController::class, 'edit'])->name('employees.edit')->middleware('auth')->middleware('permission', 'employee.update');
+
+// --- 조직 관리 ---
+$router->get('/organization/chart', [OrganizationController::class, 'chart'])->name('organization.chart')->middleware('auth')->middleware('permission', 'organization.view');
 
 // --- 휴일 관리 ---
 $router->get('/holidays', [HolidayController::class, 'index'])->name('holidays.index')->middleware('auth')->middleware('permission', 'holiday.manage');

@@ -29,6 +29,8 @@ INSERT INTO `sys_role_permissions` (`role_id`, `permission_id`) VALUES
 (1, 63),  -- role.delete
 (1, 64),  -- role.assign_permissions
 (1, 70),  -- organization.manage
+(1, 71),  -- organization.view
+(1, 72),  -- department.manage_manager
 (1, 80),  -- holiday.manage
 (1, 90),  -- menu.manage
 (1, 100), -- log.view

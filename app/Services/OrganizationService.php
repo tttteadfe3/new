@@ -3,96 +3,78 @@
 namespace App\Services;
 
 use App\Repositories\DepartmentRepository;
-use App\Repositories\PositionRepository;
 
 class OrganizationService
 {
     private DepartmentRepository $departmentRepository;
-    private PositionRepository $positionRepository;
 
-    public function __construct(DepartmentRepository $departmentRepository, PositionRepository $positionRepository)
+    public function __construct(DepartmentRepository $departmentRepository)
     {
         $this->departmentRepository = $departmentRepository;
-        $this->positionRepository = $positionRepository;
     }
 
     /**
-     * 모든 부서 목록 조회
+     * 조직도 데이터를 계층 구조로 가공하여 반환합니다.
+     * @return array
      */
-    public function getAllDepartments(): array
+    public function getOrganizationChartData(): array
     {
-        return $this->departmentRepository->getAll();
+        $flatData = $this->departmentRepository->findAllWithEmployees();
+
+        if (empty($flatData)) {
+            return [];
+        }
+
+        $departments = [];
+
+        // 1단계: 부서를 초기화하고 직원들을 각 부서에 할당합니다.
+        foreach ($flatData as $row) {
+            $deptId = $row['id'];
+            if (!isset($departments[$deptId])) {
+                $departments[$deptId] = [
+                    'id' => $deptId,
+                    'name' => $row['name'],
+                    'parent_id' => $row['parent_id'],
+                    'manager_id' => $row['manager_id'],
+                    'manager_name' => $row['manager_name'],
+                    'children' => [],
+                    'employees' => []
+                ];
+            }
+
+            if ($row['employee_id']) {
+                 $departments[$deptId]['employees'][] = [
+                    'id' => $row['employee_id'],
+                    'name' => $row['employee_name'],
+                    'position' => $row['position_name']
+                ];
+            }
+        }
+
+        // 2단계: 부모-자식 관계를 설정하여 트리 구조를 만듭니다.
+        $tree = [];
+        foreach ($departments as $id => &$dept) {
+            if ($dept['parent_id'] && isset($departments[$dept['parent_id']])) {
+                // 자식 노드를 부모의 'children' 배열에 참조로 추가합니다.
+                $departments[$dept['parent_id']]['children'][] = &$dept;
+            } else {
+                // 부모가 없는 최상위 노드를 트리의 루트로 추가합니다.
+                $tree[] = &$dept;
+            }
+        }
+        unset($dept); // 마지막 요소에 대한 참조를 해제합니다.
+
+        return $tree;
     }
 
     /**
-     * 부서 생성
+     * 특정 부서의 부서장을 업데이트합니다.
+     * @param int $departmentId
+     * @param int|null $managerId
+     * @return bool
      */
-    public function createDepartment(string $name): string
+    public function updateDepartmentManager(int $departmentId, ?int $managerId): bool
     {
-        return $this->departmentRepository->create($name);
-    }
-
-    /**
-     * 부서 수정
-     */
-    public function updateDepartment(int $id, string $name): bool
-    {
-        return $this->departmentRepository->update($id, $name);
-    }
-
-    /**
-     * 부서 삭제
-     */
-    public function deleteDepartment(int $id): bool
-    {
-        return $this->departmentRepository->delete($id);
-    }
-
-    /**
-     * 부서 조회
-     */
-    public function getDepartment(int $id): ?array
-    {
-        return $this->departmentRepository->findById($id);
-    }
-
-    /**
-     * 모든 직급 목록 조회
-     */
-    public function getAllPositions(): array
-    {
-        return $this->positionRepository->getAll();
-    }
-
-    /**
-     * 직급 생성
-     */
-    public function createPosition(string $name): string
-    {
-        return $this->positionRepository->create($name);
-    }
-
-    /**
-     * 직급 수정
-     */
-    public function updatePosition(int $id, string $name): bool
-    {
-        return $this->positionRepository->update($id, $name);
-    }
-
-    /**
-     * 직급 삭제
-     */
-    public function deletePosition(int $id): bool
-    {
-        return $this->positionRepository->delete($id);
-    }
-
-    /**
-     * 직급 조회
-     */
-    public function getPosition(int $id): ?array
-    {
-        return $this->positionRepository->findById($id);
+        return $this->departmentRepository->updateManager($departmentId, $managerId);
     }
 }
