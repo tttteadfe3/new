@@ -41,11 +41,7 @@ class LitteringMapPage extends BasePage {
             onAddressResolved: (addressData) => {
                 document.getElementById('address').textContent = addressData.isValid ? addressData.address : '주소를 가져올 수 없습니다.';
             },
-            onRegionValidation: (isValid, message) => {
-                if (!isValid) {
-                    Toast.error(message);
-                }
-            }
+            onRegionValidation: (isValid, message) => !isValid && Toast.error(message)
         };
         this.state.mapService = new MapService(mapOptions);
 

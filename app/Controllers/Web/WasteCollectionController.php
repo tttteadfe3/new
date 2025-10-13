@@ -42,14 +42,27 @@ class WasteCollectionController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-collection.js");
+
+        $scriptOptions = [
+            'ITEMS' => ['매트리스', '침대틀', '장롱', '쇼파', '의자', '책상', '기타(가구)', '건폐', '소각', '변기', '캐리어', '기타'],
+            'FILE' => [
+                'MAX_SIZE' => 5 * 1024 * 1024, // 5MB
+                'ALLOWED_TYPES' => ['image/jpeg', 'image/png'],
+                'COMPRESS' => ['MAX_WIDTH' => 1200, 'MAX_HEIGHT' => 1200, 'QUALITY' => 0.8]
+            ],
+            'allowedRegions' => defined('ALLOWED_REGIONS') ? ALLOWED_REGIONS : []
+        ];
+
+        View::getInstance()->addJs(
+            BASE_ASSETS_URL . "/assets/js/pages/waste-collection.js",
+            ['options' => $scriptOptions]
+        );
 
         $pageTitle = "대형폐기물 수거";
         $this->activityLogger->logMenuAccess($pageTitle);
 
         echo $this->render('pages/waste/collection', [
-            'pageTitle' => $pageTitle,
-            'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]
+            'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
 

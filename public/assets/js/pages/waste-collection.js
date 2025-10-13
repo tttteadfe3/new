@@ -4,10 +4,22 @@
  */
 class WasteCollectionPage extends BasePage {
     constructor() {
+        const currentScript = document.currentScript;
+        let scriptConfig = {};
+        if (currentScript) {
+            const options = currentScript.getAttribute('data-options');
+            if (options) {
+                try {
+                    scriptConfig = JSON.parse(options);
+                } catch (e) {
+                    console.error('Failed to parse script options for WasteCollectionPage:', e);
+                }
+            }
+        }
+
         super({
-            API_URL: '/waste-collections',
-            ITEMS: ['매트리스', '침대틀', '장롱', '쇼파', '의자', '책상', '기타(가구)', '건폐', '소각', '변기', '캐리어', '기타'],
-            FILE: { MAX_SIZE: 5 * 1024 * 1024, ALLOWED_TYPES: ['image/jpeg', 'image/png'], COMPRESS: { MAX_WIDTH: 1200, MAX_HEIGHT: 1200, QUALITY: 0.8 } }
+            ...scriptConfig,
+            API_URL: '/waste-collections'
         });
 
         this.state = {
@@ -81,7 +93,11 @@ class WasteCollectionPage extends BasePage {
     }
 
     async submitNewCollection() {
-        if (!this.validateRegistrationForm()) return;
+        const validation = this.validateRegistrationForm();
+        if (!validation.isValid) {
+            Toast.error(validation.message);
+            return;
+        }
 
         const formData = this.buildRegistrationFormData();
         this.setButtonLoading('#registerBtn', '등록 중...');
@@ -236,48 +252,69 @@ class WasteCollectionPage extends BasePage {
     validateRegistrationForm() {
         const items = Array.from(document.querySelectorAll('.item-quantity-input')).filter(i => parseInt(i.value) > 0);
         if (items.length === 0) {
-            Toast.error('수량이 1 이상인 품목을 하나 이상 추가해주세요.');
-            return false;
+            return { isValid: false, message: '수량이 1 이상인 품목을 하나 이상 추가해주세요.' };
         }
         const lat = parseFloat(document.getElementById('lat').value);
         const lng = parseFloat(document.getElementById('lng').value);
         if (this.state.mapService.mapManager.checkDuplicateLocation({ lat, lng }, 5)) {
-            Toast.error('같은 위치에 이미 수거 정보가 등록되어 있습니다.');
-            return false;
+            return { isValid: false, message: '같은 위치에 이미 수거 정보가 등록되어 있습니다.' };
         }
         const photoFile = document.getElementById('photo').files[0];
-        if (photoFile && !this.validateFile(photoFile)) {
-            return false;
+        if (photoFile) {
+            const fileValidation = this.validateFile(photoFile);
+            if (!fileValidation.isValid) {
+                // Prepend the field name to the message
+                return { ...fileValidation, message: `사진: ${fileValidation.message}` };
+            }
         }
-        return true;
+        return { isValid: true };
     }
 
     validateFile(file) {
         if (!this.config.FILE.ALLOWED_TYPES.includes(file.type)) {
-            Toast.error('이미지 파일만 업로드 가능합니다.');
-            return false;
+            return { isValid: false, message: '이미지 파일만 업로드 가능합니다.' };
         }
         if (file.size > this.config.FILE.MAX_SIZE) {
-            Toast.error('파일 크기는 5MB 이하여야 합니다.');
-            return false;
+            return { isValid: false, message: `파일 크기는 ${this.config.FILE.MAX_SIZE / 1024 / 1024}MB 이하여야 합니다.` };
         }
-        return true;
+        return { isValid: true };
     }
 
     async handlePhotoUpload(e) {
         const file = e.target.files[0];
-        if (!file) return;
         const statusEl = document.getElementById('photoStatus');
-        if (!this.validateFile(file)) { e.target.value = ''; return; }
-        statusEl.innerHTML = '<i class="ri-loader-4-line"></i> 압축 중...';
+        if (!file) return;
+
+        const validation = this.validateFile(file);
+        if (!validation.isValid) {
+            Toast.error(validation.message);
+            e.target.value = '';
+            statusEl.innerHTML = `<i class="ri-error-warning-line text-danger"></i> ${validation.message}`;
+            return;
+        }
+
+        statusEl.innerHTML = '<i class="ri-loader-4-line"></i> 이미지 압축 중...';
+        statusEl.classList.remove('text-success', 'text-danger');
+        statusEl.classList.add('text-info');
+
         try {
             const compressedFile = await this.compressImageFile(file);
             const dt = new DataTransfer();
             dt.items.add(compressedFile);
             e.target.files = dt.files;
-            statusEl.innerHTML = `<i class="ri-check-line text-success"></i> 압축 완료: ${(file.size/1024/1024).toFixed(2)}MB → ${(compressedFile.size/1024/1024).toFixed(2)}MB`;
+
+            const oSize = (file.size / 1024 / 1024).toFixed(2);
+            const cSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+            const reduction = ((1 - compressedFile.size / file.size) * 100).toFixed(0);
+
+            statusEl.innerHTML = `<i class="ri-check-line text-success"></i> 압축 완료: ${oSize}MB → ${cSize}MB (${reduction}% 감소)`;
+            statusEl.classList.remove('text-info');
+            statusEl.classList.add('text-success');
         } catch (error) {
+            console.error('Image compression failed:', error);
             statusEl.innerHTML = '<i class="ri-error-warning-line text-danger"></i> 압축 실패, 원본 사용';
+            statusEl.classList.remove('text-info');
+            statusEl.classList.add('text-danger');
         }
     }
 
