@@ -9,7 +9,7 @@ class View
     private ?string $currentSection = null;
     private ?string $layout = null;
     private array $layoutData = [];
-    private array $jsFiles = [];
+    private array $jsFiles = []; // path => tag
     private array $cssFiles = [];
 
     private function __construct() {}
@@ -97,7 +97,7 @@ class View
             return implode("\n", $this->cssFiles);
         }
         if ($name === 'js') {
-            return implode("\n", $this->jsFiles);
+            return implode("\n", array_values($this->jsFiles));
         }
         return $this->sections[$name] ?? $default;
     }
@@ -115,12 +115,15 @@ class View
         }
     }
 
-    public function addJs(string $path): void
+    public function addJs(string $path, array $options = []): void
     {
-        $jsTag = '<script src="' . htmlspecialchars($path, ENT_QUOTES, 'UTF-8') . '"></script>';
-        if (!in_array($jsTag, $this->jsFiles)) {
-            $this->jsFiles[] = $jsTag;
+        $attributes = '';
+        if (!empty($options)) {
+            $attributes = ' data-options=\'' . htmlspecialchars(json_encode($options), ENT_QUOTES, 'UTF-8') . '\'';
         }
+        $jsTag = '<script src="' . htmlspecialchars($path, ENT_QUOTES, 'UTF-8') . '"' . $attributes . '></script>';
+        // Use path as key to prevent duplicates, last one wins
+        $this->jsFiles[$path] = $jsTag;
     }
 
     public function extends(string $layout): void
