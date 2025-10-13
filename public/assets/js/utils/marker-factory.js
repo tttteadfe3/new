@@ -71,31 +71,25 @@ class MarkerFactory {
      * @returns {string} - SVG 그래픽 요소 문자열
      */
     static getStatusIconSVG(status) {
-        const iconSpecs = {
-            'pending': {
-                fill: '#ffc107', // 노란색 (대기)
-                path: '' // 시계 아이콘 등 추가 가능
-            },
-            'confirmed': {
-                fill: '#0d6efd', // 파란색 (확인)
-                path: '<path d="M21 8L23 10L27 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-            },
-            'processed': {
-                fill: '#28a745', // 녹색 (처리 완료)
-                path: '<path d="M21 8L23 10L27 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-            }
-        };
-
-        if (!status || !iconSpecs[status]) {
-            return '';
+        switch(status) {
+            case 'pending':
+                return `
+                    <circle cx="24" cy="8" r="6" fill="#FFA500"/>
+                    <circle cx="24" cy="8" r="4" fill="#fff"/>
+                    <path d="M24 6L24 8L25.5 9.5" stroke="#FFA500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                `;
+            case 'confirmed':
+                return `
+                    <circle cx="24" cy="8" r="6" fill="#28a745"/>
+                    <path d="M21 8L23 10L27 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                `;
+            case 'processed':
+                 return `
+                    <circle cx="24" cy="8" r="6" fill="#0d6efd"/>
+                    <path d="M21 8L23 10L27 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                `;
+            default:
+                return '';
         }
-        const spec = iconSpecs[status];
-        // 아이콘 위치는 기본 마커(width: 34) 기준으로 우측 상단에 위치시킴
-        return `
-            <g transform="translate(5, -2)">
-                <circle cx="24" cy="8" r="7" fill="${spec.fill}" stroke="#fff" stroke-width="1.5"/>
-                ${spec.path}
-            </g>
-        `;
     }
 }

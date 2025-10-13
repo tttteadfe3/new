@@ -4,7 +4,21 @@
  */
 class LitteringMapPage extends BasePage {
     constructor() {
+        const currentScript = document.currentScript;
+        let scriptConfig = {};
+        if (currentScript) {
+            const options = currentScript.getAttribute('data-options');
+            if (options) {
+                try {
+                    scriptConfig = JSON.parse(options);
+                } catch (e) {
+                    console.error('Failed to parse script options for LitteringMapPage:', e);
+                }
+            }
+        }
+
         super({
+            ...scriptConfig,
             API_URL: '/littering',
             WASTE_TYPES: ['생활폐기물', '음식물', '재활용', '대형', '소각'],
             FILE: { MAX_SIZE: 5 * 1024 * 1024, ALLOWED_TYPES: ['image/jpeg', 'image/png'], COMPRESS: { MAX_WIDTH: 1200, MAX_HEIGHT: 1200, QUALITY: 0.8 } }
@@ -152,8 +166,13 @@ class LitteringMapPage extends BasePage {
         const markerInfo = this.state.mapService.mapManager.addMarker({
             position: { lat: data.latitude, lng: data.longitude },
             type: markerTypeKey,
-            data: { ...data, id: data.id }
-            // No onClick handler for user-facing map
+            data: { ...data, id: data.id },
+            onClick: (marker, markerData) => {
+                const index = this.state.reportList.findIndex(item => item && item.data.id === markerData.id);
+                if (index !== -1) {
+                    this.openProcessingModal(index);
+                }
+            }
         });
 
         this.state.reportList.push({

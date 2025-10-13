@@ -50,7 +50,7 @@ class LitteringRepository {
             FROM `illegal_disposal_cases2` idc
             LEFT JOIN `sys_users` u ON idc.user_id = u.id
             LEFT JOIN `hr_employees` e ON idc.employee_id = e.id
-            WHERE idc.status = 'processed' 
+            WHERE idc.status = 'pending' AND idc.deleted_at IS NULL
             ORDER BY idc.updated_at DESC
         ";
         return $this->db->fetchAll($query);
