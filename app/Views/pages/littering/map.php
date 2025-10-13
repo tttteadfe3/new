@@ -180,7 +180,8 @@
         <h5 class="offcanvas-title"><i class="ri-settings-4-line me-2"></i>처리 등록</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
-    <div class="offcanvas-body p-4">
+    <div class="alert alert-warning rounded-0 mb-0" id="procStatusMessage" style="display: none;"></div>
+    <div class="offcanvas-body p-4" id="processFormFields">
         <form onsubmit="return false;">
             <input type="hidden" id="procIndex">
             <div class="mb-3">
