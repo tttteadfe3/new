@@ -70,8 +70,8 @@ class LitteringService
                 'latitude'    => floatval($postData['lat']),
                 'longitude'   => floatval($postData['lng']),
                 'address'     => Validator::sanitizeString($postData['address'] ?? ''),
-                'mainType'    => Validator::sanitizeString($postData['mainType'] ?? ''),
-                'subType'     => Validator::sanitizeString($postData['subType'] ?? ''),
+                'waste_type'  => Validator::sanitizeString($postData['waste_type'] ?? ''),
+                'waste_type2' => Validator::sanitizeString($postData['waste_type2'] ?? ''),
                 'issueDate'   => $postData['issueDate'] ?? '',
                 'fileName1'   => $fileName1,
                 'fileName2'   => $fileName2
@@ -114,11 +114,11 @@ class LitteringService
         }
 
         $updateData = [
-            'latitude'  => floatval($postData['latitude']),
-            'longitude' => floatval($postData['longitude']),
-            'address'   => Validator::sanitizeString($postData['address']),
-            'mainType'  => Validator::sanitizeString($postData['mainType']),
-            'subType'   => Validator::sanitizeString($postData['subType'] ?? '')
+            'latitude'  => floatval($postData['latitude'] ?? 0),
+            'longitude' => floatval($postData['longitude'] ?? 0),
+            'address'   => Validator::sanitizeString($postData['address'] ?? ''),
+            'waste_type'  => Validator::sanitizeString($postData['waste_type'] ?? ''),
+            'waste_type2' => Validator::sanitizeString($postData['waste_type2'] ?? '')
         ];
 
         if (!$this->litteringRepository->confirm($caseId, $updateData, $adminId)) {

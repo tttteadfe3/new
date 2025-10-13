@@ -64,7 +64,7 @@ class LitteringMapPage extends BasePage {
         document.getElementById('registerBtn').addEventListener('click', () => this.submitNewReport());
         document.getElementById('processBtn').addEventListener('click', () => this.submitReportProcessing());
         document.getElementById('mixed').addEventListener('change', () => this.toggleSubWasteType());
-        document.getElementById('mainType').addEventListener('change', () => {
+        document.getElementById('waste_type').addEventListener('change', () => {
             if (document.getElementById('mixed').checked) this.toggleSubWasteType();
         });
         document.querySelectorAll('input[name="corrected"]').forEach(el => el.addEventListener('change', () => this.updateProcessingPhotoRequirement()));
@@ -271,7 +271,7 @@ class LitteringMapPage extends BasePage {
     }
 
     validateRegistrationForm() {
-        if (!document.getElementById('mainType').value) {
+        if (!document.getElementById('waste_type').value) {
             return { isValid: false, message: '주성상을 선택하세요.' };
         }
         const photoFile2 = document.getElementById('regPhoto2').files[0];
@@ -291,7 +291,7 @@ class LitteringMapPage extends BasePage {
             }
         }
 
-        if (document.getElementById('mixed').checked && !document.getElementById('subType').value) {
+        if (document.getElementById('mixed').checked && !document.getElementById('waste_type2').value) {
             return { isValid: false, message: '혼합 배출 시 부성상을 선택해주세요.' };
         }
 
@@ -405,14 +405,14 @@ class LitteringMapPage extends BasePage {
 
     toggleSubWasteType() {
         const isChecked = document.getElementById('mixed').checked;
-        const subTypeContainer = document.getElementById('subTypeContainer');
-        const subTypeEl = document.getElementById('subType');
+        const subTypeContainer = document.getElementById('waste_type2Container');
+        const subTypeEl = document.getElementById('waste_type2');
 
         subTypeContainer.style.display = isChecked ? '' : 'none';
         subTypeEl.disabled = !isChecked;
 
         if (isChecked) {
-            const mainType = document.getElementById('mainType').value;
+            const mainType = document.getElementById('waste_type').value;
             const availableTypes = this.config.WASTE_TYPES.filter(type => type !== mainType);
             const options = availableTypes.map(type => `<option value="${type}">${type}</option>`).join('');
             subTypeEl.innerHTML = '<option value="">선택하세요</option>' + options;

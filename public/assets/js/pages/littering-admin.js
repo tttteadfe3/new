@@ -84,8 +84,8 @@ class LitteringAdminPage extends BasePage {
         document.getElementById('latitude').value = selected.latitude;
         document.getElementById('longitude').value = selected.longitude;
         document.getElementById('address').value = selected.address;
-        document.getElementById('mainType').value = selected.waste_type;
-        document.getElementById('subType').value = selected.waste_type2;
+        document.getElementById('waste_type').value = selected.waste_type;
+        document.getElementById('waste_type2').value = selected.waste_type2;
         document.getElementById('registrant-info').textContent = `등록자: ${selected.employee_name || selected.user_name || '알 수 없음'} (${selected.employee_name ? '직원' : '일반'})`;
         
         this.renderExistingPhotos(selected);
@@ -143,8 +143,8 @@ class LitteringAdminPage extends BasePage {
             latitude: document.getElementById('latitude').value,
             longitude: document.getElementById('longitude').value,
             address: document.getElementById('address').value,
-            waste_type: document.getElementById('mainType').value,
-            waste_type2: document.getElementById('subType').value
+            waste_type: document.getElementById('waste_type').value,
+            waste_type2: document.getElementById('waste_type2').value
         };
 
         this.setButtonLoading('#confirm-btn', '저장 중...');
