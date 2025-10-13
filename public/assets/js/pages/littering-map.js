@@ -166,8 +166,13 @@ class LitteringMapPage extends BasePage {
         const markerInfo = this.state.mapService.mapManager.addMarker({
             position: { lat: data.latitude, lng: data.longitude },
             type: markerTypeKey,
-            data: { ...data, id: data.id }
-            // No onClick handler for user-facing map
+            data: { ...data, id: data.id },
+            onClick: (marker, markerData) => {
+                const index = this.state.reportList.findIndex(item => item && item.data.id === markerData.id);
+                if (index !== -1) {
+                    this.openProcessingModal(index);
+                }
+            }
         });
 
         this.state.reportList.push({
