@@ -486,12 +486,11 @@ class LitteringMapPage extends BasePage {
     renderExistingPhotos(reportData) {
         const wrapper = document.getElementById('photoSwiperWrapper');
         wrapper.innerHTML = '';
-        const basePath = '/uploads/';
         const photos = [];
 
-        if (reportData.reg_photo_path) photos.push({ src: basePath + reportData.reg_photo_path, title: '작업전' });
-        if (reportData.reg_photo_path2) photos.push({ src: basePath + reportData.reg_photo_path2, title: '작업후' });
-        if (reportData.proc_photo_path) photos.push({ src: basePath + reportData.proc_photo_path, title: '처리 사진' });
+        if (reportData.reg_photo_path) photos.push({ src: reportData.reg_photo_path, title: '작업전' });
+        if (reportData.reg_photo_path2) photos.push({ src: reportData.reg_photo_path2, title: '작업후' });
+        if (reportData.proc_photo_path) photos.push({ src: reportData.proc_photo_path, title: '처리 사진' });
 
         if (photos.length > 0) {
             photos.forEach(photo => {
