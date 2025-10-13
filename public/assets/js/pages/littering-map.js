@@ -44,7 +44,6 @@ class LitteringMapPage extends BasePage {
             onRegionValidation: (isValid, message) => {
                 if (!isValid) {
                     Toast.error(message);
-                    this.state.mapService.mapManager.removeTempMarker();
                 }
             }
         };

@@ -947,31 +947,39 @@ class InteractiveMap {
 
         // 드래그 종료 이벤트
         if (draggable && onDragEnd) {
-            const dragEndHandler = () => {
+            let originalPosition = null;
+
+            addKakaoListener(marker, 'dragstart', () => {
+                originalPosition = marker.getPosition();
+            });
+
+            const dragEndHandler = async () => {
                 const newPosition = marker.getPosition();
+                const addressData = await this.resolveAddress(newPosition);
 
-                (async () => {
-                    const addressData = await this.resolveAddress(newPosition);
-					console.log(addressData);
-
-                    if (!addressData.isValid) {
-                        this.callbacks.onRegionValidation(false, addressData.message);
-                        return;
+                if (!addressData.isValid) {
+                    this.callbacks.onRegionValidation(false, addressData.message);
+                    if (originalPosition) {
+                        marker.setPosition(originalPosition);
                     }
-
-                    const locationData = this.createLocationData(newPosition, addressData);
-
-                    if (this.callbacks.onAddressResolved) {
-                        this.callbacks.onAddressResolved(locationData);
-                    }
-                })();
-
-                if (onDragEnd) {
+                    // Notify caller that drag ended, but position was reverted
                     onDragEnd({
-                        lat: newPosition.getLat(),
-                        lng: newPosition.getLng()
+                        lat: (originalPosition || newPosition).getLat(),
+                        lng: (originalPosition || newPosition).getLng()
                     });
+                    return;
                 }
+
+                const locationData = this.createLocationData(newPosition, addressData);
+                if (this.callbacks.onAddressResolved) {
+                    this.callbacks.onAddressResolved(locationData, addressData);
+                }
+
+                // Notify caller of the new valid position
+                onDragEnd({
+                    lat: newPosition.getLat(),
+                    lng: newPosition.getLng()
+                });
             };
             addKakaoListener(marker, 'dragend', dragEndHandler);
         }
