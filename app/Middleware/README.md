@@ -13,114 +13,59 @@ This directory contains the middleware classes for the MVC application. Middlewa
 
 ### PermissionMiddleware
 - **Purpose**: Ensures the user has a specific permission
-- **Usage**: `'permission:permission_name'`
-- **Parameters**: Requires a permission name (e.g., `employee_admin`, `leave_view`)
+- **Usage**: `'permission:resource.action'`
+- **Parameters**: Requires a permission key (e.g., `employee.view`, `user.update`)
 - **Behavior**:
   - Returns 403 error for web/API requests if user lacks permission
   - Assumes user is already authenticated (should be used after AuthMiddleware)
 
 ## Usage in Routes
 
-### Basic Usage
+### Fluent Usage (Recommended)
 ```php
 // Route with authentication only
-'dashboard' => [
-    'action' => 'DashboardController@index',
-    'middleware' => ['auth']
-],
+$router->get('/dashboard', [DashboardController::class, 'index'])->middleware('auth');
 
 // Route with authentication and permission
-'employees' => [
-    'action' => 'EmployeeController@index',
-    'middleware' => ['auth', 'permission:employee_admin']
-],
-```
+$router->get('/employees', [EmployeeController::class, 'index'])
+       ->middleware('auth')
+       ->middleware('permission', 'employee.view');
 
-### Route Groups (Future Enhancement)
-```php
-// Group routes with common middleware
-$router->group(['middleware' => ['auth']], function($router) {
-    $router->web('dashboard', 'DashboardController@index');
-    $router->web('profile', 'ProfileController@index');
-});
-
-$router->group(['middleware' => ['auth', 'permission:admin']], function($router) {
-    $router->web('admin/users', 'AdminController@users');
-    $router->web('admin/roles', 'AdminController@roles');
-});
+$router->post('/employees', [EmployeeController::class, 'store'])
+       ->middleware('auth')
+       ->middleware('permission', 'employee.create');
 ```
 
 ## Creating Custom Middleware
 
-1. Create a new class extending `BaseMiddleware`
-2. Implement the `handle($parameter = null)` method
-3. Use the provided helper methods for responses
+1. Create a new class implementing the `handle` method.
+2. Register it in `public/index.php` using `$router->addMiddleware('key', YourClass::class)`.
+3. Use it in your routes via `->middleware('key')`.
 
 ```php
 <?php
 
 namespace App\Middleware;
 
-class CustomMiddleware extends BaseMiddleware
+class CustomMiddleware
 {
     public function handle($parameter = null): void
     {
         // Your middleware logic here
-        
         if ($someCondition) {
-            if ($this->isApiRequest()) {
-                $this->jsonResponse(['error' => 'Custom error'], 400);
-            } else {
-                $this->htmlError(400, 'Bad Request', 'Custom error message');
-            }
+            // Handle error, e.g., by throwing an exception or redirecting
         }
     }
 }
 ```
 
-## Migration from BaseController::requireAuth()
+## Deprecation of `requireAuth()`
 
-The old `requireAuth()` method in BaseController is now deprecated. Instead of:
-
-```php
-// Old way (deprecated)
-public function index()
-{
-    $this->requireAuth('employee_admin');
-    // ... controller logic
-}
-```
-
-Use middleware in routes:
-
-```php
-// New way (recommended)
-'employees' => [
-    'action' => 'EmployeeController@index',
-    'middleware' => ['auth', 'permission:employee_admin']
-],
-```
+The old `requireAuth()` method in BaseController is now deprecated. Middleware defined fluently on routes is the standard.
 
 ## Error Handling
 
-- **Web requests**: Redirects to login or shows HTML error pages
-- **API requests**: Returns JSON responses with appropriate HTTP status codes
+- **Web requests**: Redirects to login or shows HTML error pages.
+- **API requests**: Returns JSON responses with appropriate HTTP status codes.
 - **Authentication errors**: 401 Unauthorized
 - **Permission errors**: 403 Forbidden
-
-## Response Formats
-
-### API Error Responses
-```json
-{
-    "success": false,
-    "message": "Error message",
-    "errors": {
-        "field": "Specific error details"
-    }
-}
-```
-
-### Web Error Responses
-- Redirects to `/login` for authentication errors
-- HTML error pages for permission errors

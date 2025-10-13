@@ -47,7 +47,7 @@ class LeaveController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/my-leave.js');
 
         // Check permission in the controller, not in the view.
-        $can_request_leave = $this->authService->check('leave_request');
+        $can_request_leave = $this->authService->check('leave.request');
 
         echo $this->render('pages/leaves/my', compact('pageTitle', 'can_request_leave'), 'layouts/app');
     }
