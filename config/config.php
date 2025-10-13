@@ -43,7 +43,9 @@ define('KAKAO_CLIENT_ID', $_ENV['KAKAO_CLIENT_ID'] ?? '');
 define('KAKAO_REDIRECT_URI', $_ENV['KAKAO_REDIRECT_URI'] ?? '');
 
 // 5. 파일 업로드 설정
-define('UPLOAD_DIR', ROOT_PATH . '/storage/'); // 절대 경로 사용
+define('UPLOAD_DIR', ROOT_PATH . '/public/uploads/'); // 파일 시스템 절대 경로
+define('UPLOAD_URL_PATH', '/uploads');                // 웹 루트 기준 상대 경로
+define('UPLOAD_URL', BASE_URL . UPLOAD_URL_PATH);     // 전체 웹 URL
 define('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB
 define('ALLOWED_MIMES', ['image/jpeg', 'image/png', 'image/gif']);
 

@@ -107,8 +107,17 @@ class WasteCollectionService
             $this->db->rollBack();
             
             // Clean up uploaded file on error
-            if (isset($photoPath) && !empty($photoPath) && file_exists(UPLOADS_PATH . $photoPath)) {
-                unlink(UPLOADS_PATH . $photoPath);
+            if (isset($photoPath) && !empty($photoPath)) {
+                // $photoPath is a URL like '/uploads/waste/photo.jpg'.
+                // We need to convert it to a full filesystem path using UPLOAD_DIR.
+                $prefix = UPLOAD_URL_PATH . '/';
+                if (strpos($photoPath, $prefix) === 0) {
+                    $relativeFilePath = substr($photoPath, strlen($prefix));
+                    $fullPath = UPLOAD_DIR . $relativeFilePath;
+                    if (file_exists($fullPath)) {
+                        unlink($fullPath);
+                    }
+                }
             }
             
             throw $e;

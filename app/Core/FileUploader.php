@@ -58,7 +58,7 @@ class FileUploader {
             throw new Exception("파일 업로드에 실패했습니다.", 500);
         }
 
-        // 하위 디렉토리를 포함한 상대 경로 반환
-        return rtrim($subDirectory, '/') . '/' . $fileName;
+        // 웹 접근이 가능한 상대 URL 경로 반환 (예: /uploads/littering/image.jpg)
+        return UPLOAD_URL_PATH . '/' . rtrim($subDirectory, '/') . '/' . $fileName;
     }
 }
