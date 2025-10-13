@@ -825,18 +825,6 @@ class InteractiveMap {
 
             const currentPosition = this.state.tempMarker.getPosition();
             const addressData = await this.resolveAddress(currentPosition);
-
-            // 드래그 후 위치 유효성 검사
-            if (wasDragging && !addressData.isValid) {
-                this.callbacks.onRegionValidation(false, addressData.message);
-                if (initialMarkerPos) {
-                    this.state.tempMarker.setPosition(initialMarkerPos);
-                    this.updateTempMarkerHandle(initialMarkerPos);
-                }
-                hasMoved = false;
-                return; // 유효하지 않은 위치이므로 여기서 종료
-            }
-
             const locationData = this.createLocationData(currentPosition, addressData);
 
             if (wasDragging) {
