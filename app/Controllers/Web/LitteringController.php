@@ -43,9 +43,9 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-admin.js");
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-admin.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/admin', ['pageTitle' => $pageTitle, 'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]], 'layouts/app');
+        echo $this->render('pages/littering/admin', ['pageTitle' => $pageTitle], 'layouts/app');
     }
 
     /**
@@ -70,9 +70,9 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-map.js");
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-map.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/map', ['pageTitle' => $pageTitle, 'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]], 'layouts/app');
+        echo $this->render('pages/littering/map', ['pageTitle' => $pageTitle], 'layouts/app');
     }
 
     /**
@@ -97,9 +97,9 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-history.js");
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-history.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/history', ['pageTitle' => $pageTitle, 'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]], 'layouts/app');
+        echo $this->render('pages/littering/history', ['pageTitle' => $pageTitle], 'layouts/app');
     }
 
     /**
@@ -117,9 +117,9 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-deleted-admin.js");
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-deleted-admin.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/deleted', ['pageTitle' => $pageTitle, 'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]], 'layouts/app');
+        echo $this->render('pages/littering/deleted', ['pageTitle' => $pageTitle], 'layouts/app');
     }
 
     /**

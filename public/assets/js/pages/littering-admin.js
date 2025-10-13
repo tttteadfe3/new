@@ -1,6 +1,20 @@
 class LitteringAdminPage extends BasePage {
     constructor() {
+        const currentScript = document.currentScript;
+        let scriptConfig = {};
+        if (currentScript) {
+            const options = currentScript.getAttribute('data-options');
+            if (options) {
+                try {
+                    scriptConfig = JSON.parse(options);
+                } catch (e) {
+                    console.error('Failed to parse script options for LitteringAdminPage:', e);
+                }
+            }
+        }
+
         super({
+            ...scriptConfig,
             API_URL: '/littering_admin/reports'
         });
 

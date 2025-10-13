@@ -851,24 +851,37 @@ class InteractiveMap {
 
             const wasDragging = isDragging && hasMoved;
 
+            // Reset UI state first
             isDragging = false;
             startPos = null;
             handleElement.style.cursor = 'grab';
             handleElement.style.transform = 'scale(1)';
+            hasMoved = false;
 
-            if (!this.state.tempMarker) return; // 마커가 없는 경우 종료
+            if (!this.state.tempMarker) return;
 
             const currentPosition = this.state.tempMarker.getPosition();
             const addressData = await this.resolveAddress(currentPosition);
+
+            // Validate region after drag
+            if (wasDragging && !addressData.isValid) {
+                this.callbacks.onRegionValidation(false, addressData.message);
+                if (initialMarkerPos) {
+                    this.state.tempMarker.setPosition(initialMarkerPos);
+                    this.updateTempMarkerHandle(initialMarkerPos);
+                }
+                return; // Stop further processing
+            }
+
             const locationData = this.createLocationData(currentPosition, addressData);
 
             if (wasDragging) {
+                // Address resolved callback on successful drag
                 this.callbacks.onAddressResolved(locationData, addressData);
             } else {
+                // Click callback if not dragged
                 this.callbacks.onTempMarkerClick(locationData);
             }
-
-            hasMoved = false;
         };
 
         // 이벤트 리스너 등록
@@ -970,31 +983,39 @@ class InteractiveMap {
 
         // 드래그 종료 이벤트
         if (draggable && onDragEnd) {
-            const dragEndHandler = () => {
+            let originalPosition = null;
+
+            addKakaoListener(marker, 'dragstart', () => {
+                originalPosition = marker.getPosition();
+            });
+
+            const dragEndHandler = async () => {
                 const newPosition = marker.getPosition();
+                const addressData = await this.resolveAddress(newPosition);
 
-                (async () => {
-                    const addressData = await this.resolveAddress(newPosition);
-					console.log(addressData);
-
-                    if (!addressData.isValid) {
-                        this.callbacks.onRegionValidation(false, addressData.message);
-                        return;
+                if (!addressData.isValid) {
+                    this.callbacks.onRegionValidation(false, addressData.message);
+                    if (originalPosition) {
+                        marker.setPosition(originalPosition);
                     }
-
-                    const locationData = this.createLocationData(newPosition, addressData);
-
-                    if (this.callbacks.onAddressResolved) {
-                        this.callbacks.onAddressResolved(locationData);
-                    }
-                })();
-
-                if (onDragEnd) {
+                    // Notify caller that drag ended, but position was reverted
                     onDragEnd({
-                        lat: newPosition.getLat(),
-                        lng: newPosition.getLng()
+                        lat: (originalPosition || newPosition).getLat(),
+                        lng: (originalPosition || newPosition).getLng()
                     });
+                    return;
                 }
+
+                const locationData = this.createLocationData(newPosition, addressData);
+                if (this.callbacks.onAddressResolved) {
+                    this.callbacks.onAddressResolved(locationData, addressData);
+                }
+
+                // Notify caller of the new valid position
+                onDragEnd({
+                    lat: newPosition.getLat(),
+                    lng: newPosition.getLng()
+                });
             };
             addKakaoListener(marker, 'dragend', dragEndHandler);
         }
