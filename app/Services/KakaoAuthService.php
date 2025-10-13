@@ -10,9 +10,9 @@ class KakaoAuthService
 
     public function __construct()
     {
-        $this->clientId = $_ENV['KAKAO_CLIENT_ID'];
-        $this->clientSecret = $_ENV['KAKAO_CLIENT_SECRET'];
-        $this->redirectUri = $_ENV['KAKAO_REDIRECT_URI'];
+        $this->clientId = KAKAO_CLIENT_ID;
+        $this->clientSecret = KAKAO_CLIENT_SECRET;
+        $this->redirectUri = KAKAO_REDIRECT_URI;
     }
 
     public function getAuthorizationUrl(): string
