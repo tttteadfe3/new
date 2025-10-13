@@ -267,6 +267,11 @@ class LitteringMapPage extends BasePage {
         formData.append('lat', document.getElementById('lat').value);
         formData.append('lng', document.getElementById('lng').value);
         formData.append('address', document.getElementById('address').textContent);
+        formData.append('waste_type', document.getElementById('waste_type').value);
+        if (document.getElementById('mixed').checked) {
+            formData.append('waste_type2', document.getElementById('waste_type2').value);
+        }
+
 
         const photo1Input = document.getElementById('regPhoto1');
         if (photo1Input.files.length > 0) formData.set('photo1', photo1Input.files[0]);

@@ -186,7 +186,7 @@ class LitteringService
         $data = [
             'id'          => $caseId,
             'corrected'   => Validator::sanitizeString($postData['corrected']),
-            'collectDate' => $postData['collectDate'],
+            'collectDate' => $postData['collectDate'] ?? null,
             'note'        => Validator::sanitizeString($postData['note'] ?? ''),
             'procFileName' => (isset($files['procPhoto']) && $files['procPhoto']['error'] === UPLOAD_ERR_OK)
                 ? FileUploader::validateAndUpload($files['procPhoto'], 'littering', 'proc_') : ''
