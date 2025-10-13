@@ -18,8 +18,7 @@ class WasteCollectionPage extends BasePage {
         }
 
         super({
-            ...scriptConfig,
-            API_URL: '/waste-collections'
+            ...scriptConfig
         });
 
         this.state = {

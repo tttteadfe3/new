@@ -18,10 +18,7 @@ class LitteringMapPage extends BasePage {
         }
 
         super({
-            ...scriptConfig,
-            API_URL: '/littering',
-            WASTE_TYPES: ['생활폐기물', '음식물', '재활용', '대형', '소각'],
-            FILE: { MAX_SIZE: 5 * 1024 * 1024, ALLOWED_TYPES: ['image/jpeg', 'image/png'], COMPRESS: { MAX_WIDTH: 1200, MAX_HEIGHT: 1200, QUALITY: 0.8 } }
+            ...scriptConfig
         });
         this.state = { ...this.state, reportList: [], modals: {}, currentReportIndex: null, mapService: null };
     }

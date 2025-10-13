@@ -70,7 +70,22 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-map.js", ['allowedRegions' => ALLOWED_REGIONS]);
+
+        $scriptOptions = [
+            'API_URL' => '/littering',
+            'WASTE_TYPES' => ['생활폐기물', '음식물', '재활용', '대형', '소각'],
+            'FILE' => [
+                'MAX_SIZE' => 5 * 1024 * 1024, // 5MB
+                'ALLOWED_TYPES' => ['image/jpeg', 'image/png'],
+                'COMPRESS' => ['MAX_WIDTH' => 1200, 'MAX_HEIGHT' => 1200, 'QUALITY' => 0.8]
+            ],
+            'allowedRegions' => defined('ALLOWED_REGIONS') ? ALLOWED_REGIONS : []
+        ];
+
+        View::getInstance()->addJs(
+            BASE_ASSETS_URL . "/assets/js/pages/littering-map.js",
+            ['options' => $scriptOptions]
+        );
 
         echo $this->render('pages/littering/map', ['pageTitle' => $pageTitle], 'layouts/app');
     }
@@ -97,7 +112,16 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-history.js", ['allowedRegions' => ALLOWED_REGIONS]);
+
+        $scriptOptions = [
+            'API_URL' => '/littering',
+            'WASTE_TYPES' => ['생활폐기물', '음식물', '재활용', '대형', '소각'],
+            'allowedRegions' => defined('ALLOWED_REGIONS') ? ALLOWED_REGIONS : []
+        ];
+        View::getInstance()->addJs(
+            BASE_ASSETS_URL . "/assets/js/pages/littering-history.js",
+            ['options' => $scriptOptions]
+        );
 
         echo $this->render('pages/littering/history', ['pageTitle' => $pageTitle], 'layouts/app');
     }

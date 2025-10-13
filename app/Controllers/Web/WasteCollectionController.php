@@ -44,6 +44,7 @@ class WasteCollectionController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
 
         $scriptOptions = [
+            'API_URL' => '/waste-collections',
             'ITEMS' => ['매트리스', '침대틀', '장롱', '쇼파', '의자', '책상', '기타(가구)', '건폐', '소각', '변기', '캐리어', '기타'],
             'FILE' => [
                 'MAX_SIZE' => 5 * 1024 * 1024, // 5MB
