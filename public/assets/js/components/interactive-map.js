@@ -62,7 +62,9 @@ class InteractiveMap {
                 touchMove: null,
             },
             // 카카오맵 이벤트 리스너 저장
-            kakaoMapListeners: []
+            kakaoMapListeners: [],
+            // Draggable 인스턴스의 destroy 함수 저장
+            draggableDestroyer: null
         };
 
         this.callbacks = {
@@ -673,40 +675,32 @@ class InteractiveMap {
             this.state.kakaoMapListeners.push({ target, event, handler });
         };
 
-        // --- 네이티브 마커 이벤트 핸들링 ---
-        let originalPosition = null;
-
-        // 드래그 시작: 원래 위치 저장
-        addKakaoListener(this.state.tempMarker, 'dragstart', () => {
-            originalPosition = this.state.tempMarker.getPosition();
-        });
-
-        // 드래그 종료: 위치 유효성 검사
+        // 드래그 이벤트
         const dragEndHandler = async () => {
             const newPosition = this.state.tempMarker.getPosition();
             this.updateTempMarkerHandle(newPosition);
+
+            // 드래그 후 주소 업데이트
             const addressData = await this.resolveAddress(newPosition);
 
-            if (!addressData.isValid) {
-                this.callbacks.onRegionValidation(false, addressData.message);
-                if (originalPosition) {
-                    this.state.tempMarker.setPosition(originalPosition);
-                    this.updateTempMarkerHandle(originalPosition);
-                }
-                return;
-            }
-
+            // 표준 locationData로 콜백 호출
             const locationData = this.createLocationData(newPosition, addressData);
             this.callbacks.onAddressResolved(locationData, addressData);
         };
         addKakaoListener(this.state.tempMarker, 'dragend', dragEndHandler);
 
-        // 클릭 이벤트: 모달 열기 콜백 호출
+        // 클릭 이벤트 - 수정된 부분
         const clickHandler = async () => {
             this.state.isMarkerClick = true;
+
+            // 현재 위치의 주소 정보 가져오기
             const currentPosition = this.state.tempMarker.getPosition();
             const addressData = await this.resolveAddress(currentPosition);
+
+            // 표준 locationData 생성
             const locationData = this.createLocationData(currentPosition, addressData);
+
+            // 임시 마커 클릭 콜백 호출
             this.callbacks.onTempMarkerClick(locationData);
         };
         addKakaoListener(this.state.tempMarker, 'click', clickHandler);
@@ -735,7 +729,6 @@ class InteractiveMap {
                 z-index: 999;
                 user-select: none;
                 touch-action: none;
-                pointer-events: none; /* Pass clicks to the marker below */
             ">
                 <div style="
                     width: 24px;
@@ -769,7 +762,18 @@ class InteractiveMap {
 
         this.state.tempMarkerHandle.setMap(this.state.map);
 
-        this.state.tempMarkerHandle.setMap(this.state.map);
+        // 드래그 이벤트 설정
+        setTimeout(() => {
+            const handleElement = document.querySelector('.temp-marker-handle');
+            if (handleElement) {
+                // 기존 draggable destroyer가 있으면 파괴
+                if (this.state.draggableDestroyer) {
+                    this.state.draggableDestroyer();
+                }
+                // 새로 만들고 destroyer 저장
+                this.state.draggableDestroyer = this.makeDraggable(handleElement);
+            }
+        }, 100);
     }
 
     /**
@@ -779,6 +783,125 @@ class InteractiveMap {
         if (this.state.tempMarkerHandle) {
             this.state.tempMarkerHandle.setPosition(position);
         }
+    }
+
+    /**
+     * 드래그 핸들 드래그/클릭 처리
+     */
+    makeDraggable(handleElement) {
+        let isDragging = false;
+        let hasMoved = false;
+        let startPos = null;
+        let initialMarkerPos = null;
+
+        const getEventPos = (e) => {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        };
+
+        const handleStart = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            isDragging = true;
+            hasMoved = false;
+            startPos = getEventPos(e);
+
+            if (this.state.tempMarker) {
+                initialMarkerPos = this.state.tempMarker.getPosition();
+            }
+
+            handleElement.style.cursor = 'grabbing';
+            handleElement.style.transform = 'scale(1.1)';
+
+            if (navigator.vibrate) navigator.vibrate(50);
+        };
+
+        const handleMove = (e) => {
+            if (!isDragging || !startPos || !initialMarkerPos) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const currentPos = getEventPos(e);
+            const deltaX = currentPos.x - startPos.x;
+            const deltaY = currentPos.y - startPos.y;
+
+            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                hasMoved = true;
+            }
+
+            const initialPoint = this.state.map.getProjection().containerPointFromCoords(initialMarkerPos);
+            const newPoint = new kakao.maps.Point(initialPoint.x + deltaX, initialPoint.y + deltaY);
+            const latlng = this.state.map.getProjection().coordsFromContainerPoint(newPoint);
+
+            if (this.state.tempMarker) {
+                this.state.tempMarker.setPosition(latlng);
+                this.updateTempMarkerHandle(latlng);
+            }
+        };
+
+        const handleEnd = async (e) => {
+            if (!isDragging) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const wasDragging = isDragging && hasMoved;
+
+            // Reset UI state first
+            isDragging = false;
+            startPos = null;
+            handleElement.style.cursor = 'grab';
+            handleElement.style.transform = 'scale(1)';
+            hasMoved = false;
+
+            if (!this.state.tempMarker) return;
+
+            const currentPosition = this.state.tempMarker.getPosition();
+            const addressData = await this.resolveAddress(currentPosition);
+
+            // Validate region after drag
+            if (wasDragging && !addressData.isValid) {
+                this.callbacks.onRegionValidation(false, addressData.message);
+                if (initialMarkerPos) {
+                    this.state.tempMarker.setPosition(initialMarkerPos);
+                    this.updateTempMarkerHandle(initialMarkerPos);
+                }
+                return; // Stop further processing
+            }
+
+            const locationData = this.createLocationData(currentPosition, addressData);
+
+            if (wasDragging) {
+                // Address resolved callback on successful drag
+                this.callbacks.onAddressResolved(locationData, addressData);
+            } else {
+                // Click callback if not dragged
+                this.callbacks.onTempMarkerClick(locationData);
+            }
+        };
+
+        // 이벤트 리스너 등록
+        handleElement.addEventListener('mousedown', handleStart);
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleEnd);
+
+        handleElement.addEventListener('touchstart', handleStart, { passive: false });
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('touchend', handleEnd, { passive: false });
+
+        // 제거 함수 반환
+        return () => {
+            handleElement.removeEventListener('mousedown', handleStart);
+            document.removeEventListener('mousemove', handleMove);
+            document.removeEventListener('mouseup', handleEnd);
+            handleElement.removeEventListener('touchstart', handleStart);
+            document.removeEventListener('touchmove', handleMove);
+            document.removeEventListener('touchend', handleEnd);
+        };
     }
     /**
      * 현재 임시 마커의 완전한 정보 가져오기
@@ -804,6 +927,11 @@ class InteractiveMap {
         if (this.state.tempMarkerHandle) {
             this.state.tempMarkerHandle.setMap(null);
             this.state.tempMarkerHandle = null;
+        }
+        // 드래그 핸들러도 파괴
+        if (this.state.draggableDestroyer) {
+            this.state.draggableDestroyer();
+            this.state.draggableDestroyer = null;
         }
     }
 
@@ -990,7 +1118,13 @@ class InteractiveMap {
     destroy() {
         console.log('Destroying InteractiveMapManager...');
 
-        // 1. 모든 마커 제거
+        // 1. Draggable 이벤트 리스너 제거
+        if (this.state.draggableDestroyer) {
+            this.state.draggableDestroyer();
+            this.state.draggableDestroyer = null;
+        }
+
+        // 2. 모든 마커 제거
         this.clearMarkers();
         this.removeTempMarker();
 
