@@ -46,34 +46,63 @@ class AuthService {
     }
 
     public function login(array $user) {
-        // ... (existing login logic)
+        if ($user['status'] === 'blocked') {
+            throw new Exception("Blocked accounts cannot log in.");
+        }
+
+        $this->_refreshSessionPermissions($user);
+
+        $this->logRepository->insert([
+            ':user_id' => $user['id'],
+            ':user_name' => $user['nickname'],
+            ':action' => 'Login Success',
+            ':details' => null,
+            ':ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
+        ]);
     }
 
     public function logout() {
-        // ... (existing logout logic)
+        if ($this->isLoggedIn()) {
+            $user = $this->user();
+            $latestUser = $this->userRepository->findById($user['id']);
+            $nickname = $latestUser['nickname'] ?? $user['nickname'];
+
+            $this->logRepository->insert([
+                ':user_id' => $user['id'],
+                ':user_name' => $nickname,
+                ':action' => 'Logout',
+                ':details' => null,
+                ':ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
+            ]);
+        }
+        $this->sessionManager->destroy();
+        header('Location: /login');
+        exit();
     }
 
     public function check(string $permission_key): bool {
-        // ... (existing check logic)
+        if (!$this->isLoggedIn()) {
+            return false;
+        }
+
+        $permissions_last_updated_file = ROOT_PATH . '/storage/permissions_last_updated.txt';
+        $global_permissions_last_updated = file_exists($permissions_last_updated_file) ? (int)file_get_contents($permissions_last_updated_file) : 0;
+        $user_permissions_cached_at = $this->sessionManager->get('permissions_cached_at', 0);
+
+        if ($user_permissions_cached_at < $global_permissions_last_updated) {
+            $this->_refreshSessionPermissions($this->user());
+        }
+
+        $permissions = $this->user()['permissions'] ?? [];
+        return in_array($permission_key, $permissions);
     }
 
-    /**
-     * Checks if the current user has permission to manage a target employee.
-     * Permission is granted if:
-     * 1. They have a global 'employee.manage_all' permission.
-     * 2. They are the manager of the target employee's department.
-     * 3. They are the manager of any parent department of the target employee's department.
-     *
-     * @param int $targetEmployeeId The ID of the employee to be managed.
-     * @return bool True if the user has management permission, false otherwise.
-     */
     public function canManageEmployee(int $targetEmployeeId): bool
     {
         if (!$this->isLoggedIn()) {
             return false;
         }
 
-        // Global admin/manager permission overrides hierarchical checks.
         if ($this->check('employee.manage_all')) {
             return true;
         }
@@ -82,16 +111,16 @@ class AuthService {
         $managerEmployeeId = $currentUser['employee_id'] ?? null;
 
         if (!$managerEmployeeId) {
-            return false; // Current user is not linked to an employee.
+            return false;
         }
 
         if ($managerEmployeeId === $targetEmployeeId) {
-            return true; // Users can always manage themselves.
+            return true;
         }
 
         $targetEmployee = $this->employeeRepository->findById($targetEmployeeId);
         if (!$targetEmployee || !$targetEmployee['department_id']) {
-            return false; // Target employee not found or not in a department.
+            return false;
         }
 
         $this->loadDepartmentMap();
@@ -99,15 +128,14 @@ class AuthService {
         $targetDeptId = $targetEmployee['department_id'];
         $currentDeptId = $targetDeptId;
 
-        // Traverse up the department hierarchy from the target employee's department.
         while ($currentDeptId) {
             $department = $this->departmentMap[$currentDeptId] ?? null;
             if (!$department) {
-                break; // Should not happen in consistent data.
+                break;
             }
 
             if ($department->manager_id === $managerEmployeeId) {
-                return true; // Found a manager in the hierarchy.
+                return true;
             }
 
             $currentDeptId = $department->parent_id;
@@ -116,9 +144,6 @@ class AuthService {
         return false;
     }
 
-    /**
-     * Loads all departments into a map for efficient hierarchy traversal.
-     */
     private function loadDepartmentMap(): void
     {
         if ($this->departmentMap === null) {
@@ -130,14 +155,53 @@ class AuthService {
         }
     }
 
-    // ... (rest of the existing methods like checkAccess, checkStatus, _refreshSessionPermissions)
-    private function checkAccess() {
-        // ...
+    public function checkAccess() {
+        $realtime_status = $this->checkStatus();
+        if ($realtime_status === 'active') {
+            return;
+        }
+
+        if (strpos($_SERVER['REQUEST_URI'], '/status') !== false) {
+            return;
+        }
+
+        switch ($realtime_status) {
+            case 'pending':
+                header('Location: /status');
+                exit();
+
+            case 'blocked':
+            default:
+                $this->logout();
+                break;
+        }
     }
+
     private function checkStatus(): string {
-       // ...
+        if (!$this->isLoggedIn()) {
+            $this->logout();
+        }
+
+        $user = $this->user();
+        if (!$user || !isset($user['id'])) {
+            $this->logout();
+        }
+
+        $currentUser = $this->userRepository->findById($user['id']);
+
+        if (!$currentUser || !isset($currentUser['status'])) {
+            $this->logout();
+        }
+
+        return $currentUser['status'];
     }
+
     private function _refreshSessionPermissions(array $user): void {
-        // ...
+        $user['roles'] = $this->roleRepository->getUserRoles($user['id']);
+        $permissions = $this->userRepository->getPermissions($user['id']);
+        $user['permissions'] = array_column($permissions, 'key');
+
+        $this->sessionManager->set('user', $user);
+        $this->sessionManager->set('permissions_cached_at', time());
     }
 }
