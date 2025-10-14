@@ -53,7 +53,7 @@
                     </div>
                     
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="/littering" class="btn btn-secondary">취소</a>
+                        <a href="/littering/manage" class="btn btn-secondary">취소</a>
                         <button type="submit" class="btn btn-primary">
                             <i class="ri-save-line me-1"></i>저장
                         </button>

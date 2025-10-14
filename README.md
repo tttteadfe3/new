@@ -44,6 +44,20 @@ project_root/
 \`\`\`
 
 ---
+## 4. 코딩 규칙
+
+### 4.1. 명명 규칙
+- **PHP 클래스**: `PascalCase` (예: `LitteringController`, `UserService`)
+- **PHP 메서드**: `camelCase` (예: `getLitteringById`, `updateUser`)
+- **JavaScript 파일**: `kebab-case.js` (예: `littering-manage.js`)
+- **JavaScript 클래스**: `PascalCase` (예: `LitteringManagePage`)
+- **CSS 파일**: `kebab-case.css` (예: `littering-manage.css`)
+- **View 파일**: `kebab-case.php` (예: `littering-manage.php`)
+
+### 4.2. 스타일 가이드
+- **CSS**: View 파일 내에 `<style>` 태그나 인라인 스타일 사용을 금지합니다. 모든 스타일은 `public/assets/css/pages` 내의 CSS 파일로 분리해야 합니다.
+
+---
 
 ## 수동 설치 가이드
 

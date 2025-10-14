@@ -30,7 +30,7 @@ class WasteCollectionController extends BaseController
     {
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
-        View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering.css");
+        View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering-index.css");
 
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");

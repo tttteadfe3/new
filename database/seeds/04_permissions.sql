@@ -18,12 +18,14 @@ INSERT INTO `sys_permissions` (`id`, `key`, `description`) VALUES
 (24, 'leave.manage_entitlement', '연차 부여 및 수동 조정'),
 
 -- Littering Management (6)
+-- Littering Management (7)
 (30, 'littering.view', '부적정배출 현황 조회'),
 (31, 'littering.create', '부적정배출 신규 등록'),
 (32, 'littering.process', '부적정배출 처리(개선)'),
 (33, 'littering.confirm', '관리자의 신고 내용 확인/승인'),
 (34, 'littering.delete', '부적정배출 정보 삭제'),
 (35, 'littering.restore', '삭제된 부적정배출 정보 복원'),
+(36, 'littering.force_delete', '부적정배출 정보 영구 삭제'),
 
 -- Waste Collection Management (2)
 (40, 'waste.view', '대형폐기물 수거 현황 조회'),
