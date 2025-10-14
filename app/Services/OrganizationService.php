@@ -26,8 +26,6 @@ class OrganizationService
         }
 
         $departments = [];
-
-        // 1단계: 부서를 초기화하고 직원들을 각 부서에 할당합니다.
         foreach ($flatData as $row) {
             $deptId = $row['id'];
             if (!isset($departments[$deptId])) {
@@ -41,7 +39,6 @@ class OrganizationService
                     'employees' => []
                 ];
             }
-
             if ($row['employee_id']) {
                  $departments[$deptId]['employees'][] = [
                     'id' => $row['employee_id'],
@@ -51,30 +48,48 @@ class OrganizationService
             }
         }
 
-        // 2단계: 부모-자식 관계를 설정하여 트리 구조를 만듭니다.
         $tree = [];
         foreach ($departments as $id => &$dept) {
             if ($dept['parent_id'] && isset($departments[$dept['parent_id']])) {
-                // 자식 노드를 부모의 'children' 배열에 참조로 추가합니다.
                 $departments[$dept['parent_id']]['children'][] = &$dept;
             } else {
-                // 부모가 없는 최상위 노드를 트리의 루트로 추가합니다.
                 $tree[] = &$dept;
             }
         }
-        unset($dept); // 마지막 요소에 대한 참조를 해제합니다.
+        unset($dept);
 
         return $tree;
     }
 
     /**
      * 특정 부서의 부서장을 업데이트합니다.
-     * @param int $departmentId
-     * @param int|null $managerId
-     * @return bool
      */
     public function updateDepartmentManager(int $departmentId, ?int $managerId): bool
     {
         return $this->departmentRepository->updateManager($departmentId, $managerId);
+    }
+
+    // ===================================================
+    // CRUD Methods restored for OrganizationApiController
+    // ===================================================
+
+    public function getAllDepartments(): array
+    {
+        return $this->departmentRepository->getAll();
+    }
+
+    public function createDepartment(array $data): string
+    {
+        return $this->departmentRepository->create($data);
+    }
+
+    public function updateDepartment(int $id, array $data): bool
+    {
+        return $this->departmentRepository->update($id, $data);
+    }
+
+    public function deleteDepartment(int $id): bool
+    {
+        return $this->departmentRepository->delete($id);
     }
 }
