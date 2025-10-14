@@ -70,6 +70,16 @@ $container->register(\App\Services\UserService::class, fn($c) => new \App\Servic
 $container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Services\ViewDataService($c->resolve(\App\Services\AuthService::class), $c->resolve(SessionManager::class), $c->resolve(\App\Repositories\MenuRepository::class)));
 $container->register(\App\Services\WasteCollectionService::class, fn($c) => new \App\Services\WasteCollectionService($c->resolve(\App\Repositories\WasteCollectionRepository::class), $c->resolve(Database::class)));
 
+// Register Web Controllers that have dependencies
+$container->register(\App\Controllers\Web\LeaveController::class, fn($c) => new \App\Controllers\Web\LeaveController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Services\LeaveService::class),
+    $c->resolve(\App\Services\EmployeeService::class)
+));
+
 // Register EmployeeApiController explicitly with its new dependencies
 $container->register(\App\Controllers\Api\EmployeeApiController::class, fn($c) => new \App\Controllers\Api\EmployeeApiController(
     $c->resolve(Request::class),
