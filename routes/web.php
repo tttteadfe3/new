@@ -3,6 +3,7 @@
 use App\Controllers\Web\AdminController;
 use App\Controllers\Web\AuthController;
 use App\Controllers\Web\DashboardController;
+use App\Controllers\Web\MyPageController;
 use App\Controllers\Web\EmployeeController;
 use App\Controllers\Web\HolidayController;
 use App\Controllers\Web\LeaveController;
@@ -14,12 +15,13 @@ use App\Controllers\Web\WasteCollectionController;
 
 // --- 공용 및 인증 ---
 $router->get('/', [AuthController::class, 'login'])->name('home');
+$router->get('/my-page', [MyPageController::class, 'index'])->name('my-page')->middleware('auth');
 $router->get('/login', [AuthController::class, 'login'])->name('login');
 $router->get('/auth/kakao/callback', [AuthController::class, 'kakaoCallback'])->name('kakao.callback');
 $router->get('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // --- 대시보드 및 상태 ---
-$router->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('auth')->middleware('permission', 'dashboard.view');
+$router->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('auth');
 $router->get('/status', [StatusController::class, 'index'])->name('status')->middleware('auth');
 
 use App\Controllers\Web\OrganizationController;
@@ -37,7 +39,6 @@ $router->get('/holidays', [HolidayController::class, 'index'])->name('holidays.i
 
 // --- 휴가 관리 ---
 $router->get('/leaves', [LeaveController::class, 'index'])->name('leaves.index')->middleware('auth')->middleware('permission', 'leave.view_all');
-$router->get('/leaves/my', [LeaveController::class, 'my'])->name('leaves.my')->middleware('auth')->middleware('permission', 'leave.view_own');
 $router->get('/leaves/approval', [LeaveController::class, 'approval'])->name('leaves.approval')->middleware('auth')->middleware('permission', 'leave.approve');
 $router->get('/leaves/granting', [LeaveController::class, 'granting'])->name('leaves.granting')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
 $router->get('/leaves/history', [LeaveController::class, 'history'])->name('leaves.history')->middleware('auth')->middleware('permission', 'leave.view_all');
@@ -61,7 +62,6 @@ $router->get('/admin/users', [AdminController::class, 'users'])->name('admin.use
 $router->get('/admin/menus', [AdminController::class, 'menus'])->name('admin.menus')->middleware('auth')->middleware('permission', 'menu.manage');
 
 // --- 프로필 및 로그 ---
-$router->get('/profile', [ProfileController::class, 'index'])->name('profile.index')->middleware('auth');
 $router->get('/logs', [LogController::class, 'index'])->name('logs.index')->middleware('auth')->middleware('permission', 'log.view');
 
 // --- 유틸리티 ---

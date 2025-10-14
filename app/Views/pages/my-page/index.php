@@ -1,42 +1,13 @@
 <?php \App\Core\View::getInstance()->startSection('content'); ?>
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header align-items-center d-flex">
-                <h4 class="card-title mb-0 flex-grow-1">나의 연차 현황</h4>
-                <div class="flex-shrink-0">
-                    <button id="request-leave-btn" class="btn btn-primary" <?= !$can_request_leave ? 'disabled' : '' ?>>
-                        <i class="bx bx-plus"></i> 연차 신청하기
-                    </button>
-                </div>
-            </div>
-
-            <div class="card-body">
-                <div class="row mb-4">
-                    <div class="col-lg-4">
-                        <div class="card border shadow-sm">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">잔여 연차</h5>
-                                <p id="summary-remaining" class="display-5 fw-bold text-primary">--</p>
-                                <small id="summary-total" class="text-muted">(총 --일 중 --일 사용)</small>
-                            </div>
-                        </div>
+<div class="row mt-2">
+    <div class="card">
+        <div class="card-body">
+            <div id="profile-container">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                     <div class="col-lg-8">
-                        <div class="card border shadow-sm">
-                            <div class="card-body">
-                                <h5 class="card-title">연차 사용 내역</h5>
-                                <p>현재 연도: <strong id="current-year"></strong></p>
-                                <div id="leave-history-container" style="max-height: 200px; overflow-y: auto;">
-                                    <table class="table table-sm">
-                                        <tbody id="leave-history-body">
-                                            <!-- history loaded by js -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <p class="mt-2">프로필 정보를 불러오는 중...</p>
                 </div>
             </div>
         </div>
