@@ -66,17 +66,12 @@ class OrganizationApiController extends BaseApiController
         }
     }
 
-    // ===================================================
-    // 기존 부서/직급 관리 기능 (서비스 레이어 사용하도록 일부 수정)
-    // ===================================================
-
     public function index(): void
     {
         try {
             $type = $_GET['type'] ?? '';
             $data = [];
             if ($type === 'department') {
-                // To-do: This should ideally use the service layer too
                 $data = $this->organizationService->getAllDepartments();
             } elseif ($type === 'position') {
                 $data = $this->positionRepository->getAll();
@@ -100,13 +95,11 @@ class OrganizationApiController extends BaseApiController
                 $this->apiBadRequest('이름은 필수입니다.');
             }
 
-            $newId = null;
             $entityName = '';
 
             if ($type === 'department') {
                 $entityName = '부서';
-                // The service layer expects an array now
-                $newId = $this->organizationService->createDepartment(['name' => $name]);
+                $newId = $this->organizationService->createDepartment($input); // Pass the whole payload
             } elseif ($type === 'position') {
                 $entityName = '직급';
                 $newId = $this->positionRepository->create($name);
@@ -135,8 +128,7 @@ class OrganizationApiController extends BaseApiController
             $entityName = '';
             if ($type === 'department') {
                 $entityName = '부서';
-                 // The service layer expects an array now
-                $this->organizationService->updateDepartment($id, ['name' => $name]);
+                $this->organizationService->updateDepartment($id, $input); // Pass the whole payload
             } elseif ($type === 'position') {
                 $entityName = '직급';
                 $this->positionRepository->update($id, $name);
@@ -154,7 +146,7 @@ class OrganizationApiController extends BaseApiController
     public function destroy(int $id): void
     {
         try {
-            $type = $_GET['type'] ?? '';
+            $type = $this->getJsonInput()['type'] ?? $_GET['type'] ?? '';
             $entityName = '';
             $result = false;
 
