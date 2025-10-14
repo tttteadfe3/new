@@ -11,11 +11,17 @@ class OrganizationController extends BaseController
      */
     public function chart(): void
     {
-        // Call addJs() on the View instance obtained via getInstance()
+        $pageTitle = '조직도';
+
+        // 1. Add page-specific JavaScript using the singleton instance
         View::getInstance()->addJs('/assets/js/pages/organization-chart.js');
 
-        $this->render('organization/chart', [
-            'title' => '조직도'
-        ]);
+        // 2. Log menu access
+        $this->activityLogger->logMenuAccess($pageTitle);
+
+        // 3. Render the view with echo and specify the layout
+        echo $this->render('organization/chart', [
+            'pageTitle' => $pageTitle
+        ], 'layouts/app');
     }
 }
