@@ -2,7 +2,7 @@ class DashboardPage extends BasePage {
     constructor() {
         super({
             API_URL_PROFILE: '/profile',
-            API_URL_LEAVE: '/leaves/my'
+            API_URL_LEAVE: '/leaves'
         });
         this.elements = {};
         this.state = {
@@ -372,7 +372,7 @@ class DashboardPage extends BasePage {
         const form = document.getElementById('profile-form');
         const data = Object.fromEntries(new FormData(form).entries());
         try {
-            const result = await this.apiCall(this.config.API_URL, { method: 'PUT', body: data });
+            const result = await this.apiCall(this.config.API_URL_PROFILE, { method: 'PUT', body: data });
             Toast.success(result.message);
             this.loadInitialData();
         } catch (error) {
