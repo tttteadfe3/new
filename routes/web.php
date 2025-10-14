@@ -38,7 +38,6 @@ $router->get('/holidays', [HolidayController::class, 'index'])->name('holidays.i
 
 // --- 휴가 관리 ---
 $router->get('/leaves', [LeaveController::class, 'index'])->name('leaves.index')->middleware('auth')->middleware('permission', 'leave.view_all');
-$router->get('/leaves/my', [LeaveController::class, 'my'])->name('leaves.my')->middleware('auth')->middleware('permission', 'leave.view_own');
 $router->get('/leaves/approval', [LeaveController::class, 'approval'])->name('leaves.approval')->middleware('auth')->middleware('permission', 'leave.approve');
 $router->get('/leaves/granting', [LeaveController::class, 'granting'])->name('leaves.granting')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
 $router->get('/leaves/history', [LeaveController::class, 'history'])->name('leaves.history')->middleware('auth')->middleware('permission', 'leave.view_all');
@@ -63,7 +62,6 @@ $router->get('/admin/users', [AdminController::class, 'users'])->name('admin.use
 $router->get('/admin/menus', [AdminController::class, 'menus'])->name('admin.menus')->middleware('auth')->middleware('permission', 'menu.manage');
 
 // --- 프로필 및 로그 ---
-$router->get('/profile', [ProfileController::class, 'index'])->name('profile.index')->middleware('auth');
 $router->get('/logs', [LogController::class, 'index'])->name('logs.index')->middleware('auth')->middleware('permission', 'log.view');
 
 // --- 유틸리티 ---

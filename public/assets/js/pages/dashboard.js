@@ -140,16 +140,16 @@ class DashboardPage extends BasePage {
         this.elements.container.innerHTML = `
             ${statusMessage}
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0 text-gray-800">대시보드</h1>
+                <h1 class="h3 mb-0 text-gray-800">마이페이지</h1>
                 <div id="action-buttons"></div>
             </div>
             <div class="row">
+                <div class="col-xl-4">
+                    ${leaveCard}
+                </div>
                 <div class="col-xl-8">
                     ${employeeCard}
                     ${userCard}
-                </div>
-                <div class="col-xl-4">
-                    ${leaveCard}
                 </div>
             </div>`;
 

@@ -26,7 +26,7 @@ class DashboardController extends BaseController
     {
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/dashboard.js");
 
-        $pageTitle = "대시보드";
+        $pageTitle = "마이페이지";
         $this->activityLogger->logMenuAccess($pageTitle);
 
         echo $this->render('pages/dashboard/index', [
