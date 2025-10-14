@@ -3,6 +3,7 @@
 use App\Controllers\Web\AdminController;
 use App\Controllers\Web\AuthController;
 use App\Controllers\Web\DashboardController;
+use App\Controllers\Web\MyPageController;
 use App\Controllers\Web\EmployeeController;
 use App\Controllers\Web\HolidayController;
 use App\Controllers\Web\LeaveController;
@@ -20,6 +21,7 @@ $router->get('/auth/kakao/callback', [AuthController::class, 'kakaoCallback'])->
 $router->get('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // --- 대시보드 및 상태 ---
+$router->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('auth');
 $router->get('/status', [StatusController::class, 'index'])->name('status')->middleware('auth');
 
 use App\Controllers\Web\OrganizationController;
