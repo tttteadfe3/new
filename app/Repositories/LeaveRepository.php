@@ -307,11 +307,12 @@ class LeaveRepository {
      * @param array $filters 필터 조건. e.g., ['status' => 'pending', 'start_date' => '2024-01-01']
      * @return array 필터링된 연차 신청 목록
      */
-    public function getAll(array $filters = []): array {
-        $sql = "SELECT l.*, e.name as employee_name, d.name as department_name
+    public function findAll(array $filters = []): array {
+        $sql = "SELECT l.*, e.name as employee_name, d.name as department_name, p.name as position_name
                 FROM hr_leaves l
                 JOIN hr_employees e ON l.employee_id = e.id
-                LEFT JOIN hr_departments d ON e.department_id = d.id";
+                LEFT JOIN hr_departments d ON e.department_id = d.id
+                LEFT JOIN hr_positions p ON e.position_id = p.id";
 
         $whereClauses = [];
         $params = [];
@@ -328,6 +329,10 @@ class LeaveRepository {
             $whereClauses[] = "l.end_date <= :end_date";
             $params[':end_date'] = $filters['end_date'];
         }
+        if (!empty($filters['department_id'])) {
+            $whereClauses[] = "e.department_id = :department_id";
+            $params[':department_id'] = $filters['department_id'];
+        }
 
         if (!empty($whereClauses)) {
             $sql .= " WHERE " . implode(" AND ", $whereClauses);
@@ -335,5 +340,18 @@ class LeaveRepository {
         $sql .= " ORDER BY l.created_at DESC";
 
         return $this->db->query($sql, $params);
+    }
+
+    /**
+     * 특정 상태의 휴가 신청 목록을 필터와 함께 조회합니다.
+     *
+     * @param string $status 조회할 휴가 상태
+     * @param array $filters 추가 필터 (e.g., department_id)
+     * @return array
+     */
+    public function findByStatus(string $status, array $filters = []): array
+    {
+        $filters['status'] = $status;
+        return $this->findAll($filters);
     }
 }

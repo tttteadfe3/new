@@ -27,17 +27,23 @@ class LeaveService {
     private EmployeeRepository $employeeRepository;
     private HolidayService $holidayService;
     private LogRepository $logRepository;
+    private AuthService $authService;
+    private DepartmentRepository $departmentRepository;
 
     public function __construct(
         LeaveRepository $leaveRepository,
         EmployeeRepository $employeeRepository,
         HolidayService $holidayService,
-        LogRepository $logRepository
+        LogRepository $logRepository,
+        AuthService $authService,
+        \App\Repositories\DepartmentRepository $departmentRepository
     ) {
         $this->leaveRepository = $leaveRepository;
         $this->employeeRepository = $employeeRepository;
         $this->holidayService = $holidayService;
         $this->logRepository = $logRepository;
+        $this->authService = $authService;
+        $this->departmentRepository = $departmentRepository;
     }
 
     /**
@@ -534,25 +540,98 @@ class LeaveService {
     }
 
     /**
-     * Enhanced method to get pending leave requests with detailed information
+     * Checks if the current user has permission to view all employee leaves.
+     * This can be granted via a global permission or a department-specific flag.
+     *
+     * @return boolean
+     */
+    private function canViewAllLeaves(): bool
+    {
+        // 1. Check for the global 'leave.view_all' permission first.
+        if ($this->authService->check('leave.view_all')) {
+            return true;
+        }
+
+        // 2. Get the current user and their employee info.
+        $user = $this->authService->user();
+        if (!$user || empty($user['employee_id'])) {
+            return false;
+        }
+
+        $employee = $this->employeeRepository->findById($user['employee_id']);
+        if (!$employee || empty($employee['department_id'])) {
+            return false;
+        }
+
+        // 3. Check if the user's department has the special permission.
+        // This assumes the 'can_view_all_leaves' column will be added to the hr_departments table.
+        $department = $this->departmentRepository->findById($employee['department_id']);
+        if ($department && !empty($department['can_view_all_leaves']) && $department['can_view_all_leaves'] == 1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get leave history with filters, applying department-level visibility.
+     *
+     * @param array $filters
+     * @return array
+     */
+    public function getLeaveHistory(array $filters = []): array
+    {
+        $finalFilters = $filters;
+
+        if (!$this->canViewAllLeaves()) {
+            $user = $this->authService->user();
+            if ($user && !empty($user['employee_id'])) {
+                $employee = $this->employeeRepository->findById($user['employee_id']);
+                if ($employee && !empty($employee['department_id'])) {
+                    // Add/overwrite department_id in filters
+                    $finalFilters['department_id'] = $employee['department_id'];
+                } else {
+                    // No department, no history for others.
+                    return [];
+                }
+            } else {
+                return [];
+            }
+        }
+
+        // This requires a new or modified findAll method in LeaveRepository
+        return $this->leaveRepository->findAll($finalFilters);
+    }
+
+    /**
+     * Enhanced method to get pending leave requests with detailed information.
+     * Applies department-level visibility filtering.
      * 
      * @return array List of pending leave requests with employee details
      */
     public function getPendingLeaveRequests(): array
     {
-        $pendingLeaves = $this->leaveRepository->findByStatus('pending');
-        $enrichedLeaves = [];
-        
-        foreach ($pendingLeaves as $leave) {
-            $employee = $this->employeeRepository->findById($leave['employee_id']);
-            $enrichedLeaves[] = array_merge($leave, [
-                'employee_name' => $employee['name'] ?? 'Unknown',
-                'employee_department' => $employee['department_name'] ?? 'Unknown',
-                'employee_position' => $employee['position'] ?? 'Unknown'
-            ]);
+        $filters = [];
+        if (!$this->canViewAllLeaves()) {
+            $user = $this->authService->user();
+            if ($user && !empty($user['employee_id'])) {
+                $employee = $this->employeeRepository->findById($user['employee_id']);
+                if ($employee && !empty($employee['department_id'])) {
+                    $filters['department_id'] = $employee['department_id'];
+                } else {
+                    // If user has no department, they can't see any requests.
+                    return [];
+                }
+            } else {
+                return [];
+            }
         }
+
+        // Assumes leaveRepository->findByStatus will be updated to accept filters
+        $pendingLeaves = $this->leaveRepository->findByStatus('pending', $filters);
         
-        return $enrichedLeaves;
+        // The new findByStatus should already join employee details, so no extra enrichment needed.
+        return $pendingLeaves;
     }
 
     /**
