@@ -34,11 +34,11 @@ class DepartmentRepository {
             FROM
                 hr_departments d
             LEFT JOIN
-                hr_employees e ON d.id = e.department_id
+                hr_employees e ON d.id = e.department_id AND e.termination_date IS NULL
             LEFT JOIN
                 hr_positions p ON e.position_id = p.id
             LEFT JOIN
-                hr_employees manager ON d.manager_id = manager.id
+                hr_employees manager ON d.manager_id = manager.id AND manager.termination_date IS NULL
             ORDER BY
                 d.parent_id ASC, d.name ASC, e.name ASC
         ";
