@@ -11,7 +11,9 @@ class OrganizationController extends BaseController
      */
     public function chart(): void
     {
-        View::addJs('/assets/js/pages/organization-chart.js');
+        // Call addJs() on the View instance obtained via getInstance()
+        View::getInstance()->addJs('/assets/js/pages/organization-chart.js');
+
         $this->render('organization/chart', [
             'title' => '조직도'
         ]);
