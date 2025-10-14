@@ -1,5 +1,5 @@
 INSERT INTO `sys_menus` (`id`, `parent_id`, `name`, `url`, `icon`, `permission_key`, `display_order`) VALUES
-(100, NULL, '마이페이지', '/dashboard', 'ri-dashboard-line', NULL, 10),
+(100, NULL, '마이페이지', '/my-page', 'ri-dashboard-line', NULL, 10),
 (200, NULL, '운행노선', '#', 'ri-route-line', '', 20),
 (300, NULL, '대형폐기물', '/waste', 'ri-truck-line', 'waste.view', 30),
 (301, 300, '대형폐기물 수거', '/waste', 'ri-truck-line', 'waste.view', 10),

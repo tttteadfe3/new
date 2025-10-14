@@ -1,4 +1,4 @@
-class DashboardPage extends BasePage {
+class MyPage extends BasePage {
     constructor() {
         super({
             API_URL_PROFILE: '/profile',
@@ -388,4 +388,4 @@ class DashboardPage extends BasePage {
     }
 }
 
-new DashboardPage();
+new MyPage();

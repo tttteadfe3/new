@@ -8,7 +8,7 @@ use App\Services\ViewDataService;
 use App\Services\ActivityLogger;
 use App\Core\View;
 
-class DashboardController extends BaseController
+class MyPageController extends BaseController
 {
     public function __construct(
         Request $request,
@@ -24,12 +24,12 @@ class DashboardController extends BaseController
      */
     public function index(): void
     {
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/dashboard.js");
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/my-page.js");
 
         $pageTitle = "마이페이지";
         $this->activityLogger->logMenuAccess($pageTitle);
 
-        echo $this->render('pages/dashboard/index', [
+        echo $this->render('pages/my-page/index', [
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
