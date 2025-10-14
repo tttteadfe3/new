@@ -201,6 +201,4 @@ class OrganizationAdminPage extends BasePage {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
     new OrganizationAdminPage();
-});

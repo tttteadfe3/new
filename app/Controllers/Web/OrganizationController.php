@@ -14,7 +14,7 @@ class OrganizationController extends BaseController
         $pageTitle = '조직도';
 
         // 1. Add page-specific JavaScript using the singleton instance
-        View::getInstance()->addJs('/assets/js/pages/organization-chart.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/organization-chart.js");
 
         // 2. Log menu access
         $this->activityLogger->logMenuAccess($pageTitle);

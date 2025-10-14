@@ -51,3 +51,33 @@ in D:\Users\Documents\GitHub\new\app\Controllers\Api\LogApiController.php:25
 #1 D:\Users\Documents\GitHub\new\public\index.php(80): App\Core\Router->dispatch()
 #2 {main}
 
+[2025-10-14 09:59:35] Uncaught Exception: Call to undefined method App\Core\Request::getQueryParams()
+in D:\Users\Documents\GitHub\new\app\Controllers\Api\EmployeeApiController.php:34
+#0 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\EmployeeApiController->index()
+#1 D:\Users\Documents\GitHub\new\public\index.php(87): App\Core\Router->dispatch()
+#2 {main}
+
+[2025-10-14 09:59:53] Uncaught Exception: Call to undefined method App\Core\Request::getQueryParams()
+in D:\Users\Documents\GitHub\new\app\Controllers\Api\EmployeeApiController.php:34
+#0 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\EmployeeApiController->index()
+#1 D:\Users\Documents\GitHub\new\public\index.php(87): App\Core\Router->dispatch()
+#2 {main}
+
+[2025-10-14 09:59:58] Uncaught Exception: Call to undefined method App\Core\Request::getQueryParams()
+in D:\Users\Documents\GitHub\new\app\Controllers\Api\EmployeeApiController.php:34
+#0 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\EmployeeApiController->index()
+#1 D:\Users\Documents\GitHub\new\public\index.php(87): App\Core\Router->dispatch()
+#2 {main}
+
+[2025-10-14 10:02:43] Uncaught Exception: Call to undefined function App\Controllers\Api\handleException()
+in D:\Users\Documents\GitHub\new\app\Controllers\Api\OrganizationApiController.php:142
+#0 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\OrganizationApiController->update(3)
+#1 D:\Users\Documents\GitHub\new\public\index.php(87): App\Core\Router->dispatch()
+#2 {main}
+
+[2025-10-14 10:05:12] Uncaught Exception: Call to undefined function App\Controllers\Api\handleException()
+in D:\Users\Documents\GitHub\new\app\Controllers\Api\OrganizationApiController.php:142
+#0 D:\Users\Documents\GitHub\new\app\Core\Router.php(194): App\Controllers\Api\OrganizationApiController->update(3)
+#1 D:\Users\Documents\GitHub\new\public\index.php(87): App\Core\Router->dispatch()
+#2 {main}
+
