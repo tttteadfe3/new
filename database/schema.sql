@@ -13,10 +13,14 @@ SET time_zone = "+00:00";
 CREATE TABLE `hr_departments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL COMMENT '부서명',
+  `parent_id` int(11) DEFAULT NULL COMMENT '상위 부서 ID',
+  `manager_id` int(11) DEFAULT NULL COMMENT '부서장 직원 ID',
   `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`)
+  UNIQUE KEY `name` (`name`),
+  KEY `fk_department_parent` (`parent_id`),
+  KEY `fk_department_manager` (`manager_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='부서 정보';
 
 -- --------------------------------------------------------
@@ -97,7 +101,7 @@ CREATE TABLE `sys_role_permissions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='역할-권한 매핑';
 
 -- ========================================
--- 2단계: hr_employees 생성 (부서, 직급 참조)
+-- 2단계: hr_employees 생성 (부서, 직급 참조) 및 hr_departments 제약조건 추가
 -- ========================================
 
 --
@@ -395,5 +399,15 @@ CREATE TABLE `waste_collection_items` (
   KEY `fk_waste_item_collection_id` (`collection_id`),
   CONSTRAINT `fk_waste_item_collection_id` FOREIGN KEY (`collection_id`) REFERENCES `waste_collections` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='대형폐기물 수거 품목';
+
+-- ========================================
+-- 최종 단계: 제약 조건 추가
+-- ========================================
+
+-- `hr_departments` 테이블의 외래 키 제약 조건 추가
+-- (참조하는 테이블들이 모두 생성된 후에 추가)
+ALTER TABLE `hr_departments`
+  ADD CONSTRAINT `fk_department_parent` FOREIGN KEY (`parent_id`) REFERENCES `hr_departments` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_department_manager` FOREIGN KEY (`manager_id`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL;
 
 COMMIT;

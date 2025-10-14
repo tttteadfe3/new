@@ -51,6 +51,23 @@
                         <label for="org-name" class="form-label" id="org-name-label">이름</label>
                         <input type="text" class="form-control" id="org-name" name="name" required>
                     </div>
+                    <!-- Fields specific to Department -->
+                    <div id="department-fields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="parent-id" class="form-label">상위 부서</label>
+                            <select class="form-select" id="parent-id" name="parent_id">
+                                <option value="">(없음)</option>
+                                <!-- Department options will be populated by JS -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="manager-id" class="form-label">부서장</label>
+                            <select class="form-select" id="manager-id" name="manager_id">
+                                <option value="">(없음)</option>
+                                <!-- Employee options will be populated by JS -->
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>

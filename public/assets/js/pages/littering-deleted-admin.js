@@ -12,12 +12,10 @@ class LitteringDeletedAdminPage extends BasePage {
                 }
             }
         }
-
         super({
             ...scriptConfig,
             API_URL: '/littering_admin/reports'
         });
-
         this.state = {
             ...this.state,
             deletedList: []
@@ -35,12 +33,22 @@ class LitteringDeletedAdminPage extends BasePage {
             this.renderDeletedList();
         } catch (error) {
             console.error('삭제 목록 로드 실패:', error);
-            document.getElementById('deleted-items-list').innerHTML = `<tr><td colspan="6" class="text-center text-danger">목록을 불러오는데 실패했습니다: ${error.message}</td></tr>`;
+            const listContainer = document.getElementById('deleted-items-list');
+            if (listContainer) {
+                listContainer.innerHTML = `<tr><td colspan="6" class="text-center text-danger">목록을 불러오는데 실패했습니다: ${error.message}</td></tr>`;
+            }
         }
     }
 
     renderDeletedList() {
         const listContainer = document.getElementById('deleted-items-list');
+        
+        // 컨테이너가 존재하는지 확인
+        if (!listContainer) {
+            console.error('deleted-items-list 요소를 찾을 수 없습니다.');
+            return;
+        }
+
         listContainer.innerHTML = '';
 
         if (this.state.deletedList.length === 0) {
@@ -50,8 +58,7 @@ class LitteringDeletedAdminPage extends BasePage {
 
         this.state.deletedList.forEach(item => {
             const registrantName = item.employee_name || item.user_name || '알 수 없음';
-            const itemHtml = `
-                <tr data-id="${item.id}">
+            const itemHtml = `<tr data-id="${item.id}">
                     <td>${item.id}</td>
                     <td>${item.address}</td>
                     <td>${item.waste_type}</td>
@@ -61,13 +68,34 @@ class LitteringDeletedAdminPage extends BasePage {
                         <button class="btn btn-sm btn-warning restore-btn">복원</button>
                         <button class="btn btn-sm btn-danger permanent-delete-btn">영구 삭제</button>
                     </td>
-                </tr>
-            `;
-            const itemNode = document.createRange().createContextualFragment(itemHtml).firstChild;
-
-            itemNode.querySelector('.restore-btn').addEventListener('click', () => this.restoreReport(item.id));
-            itemNode.querySelector('.permanent-delete-btn').addEventListener('click', () => this.permanentlyDeleteReport(item.id));
-
+                </tr>`;
+            
+            // table에 직접 innerHTML 할당 (div가 아닌 table에!)
+            const tempTable = document.createElement('table');
+            tempTable.innerHTML = itemHtml;
+            const itemNode = tempTable.querySelector('tr');
+            
+            if (!itemNode) {
+                console.error('tr 요소를 찾을 수 없습니다!');
+                return;
+            }
+            
+            // 버튼 요소 존재 확인 후 이벤트 리스너 추가
+            const restoreBtn = itemNode.querySelector('.restore-btn');
+            const deleteBtn = itemNode.querySelector('.permanent-delete-btn');
+            
+            if (restoreBtn) {
+                restoreBtn.addEventListener('click', () => this.restoreReport(item.id));
+            } else {
+                console.warn(`복원 버튼을 찾을 수 없습니다 (ID: ${item.id})`);
+            }
+            
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => this.permanentlyDeleteReport(item.id));
+            } else {
+                console.warn(`삭제 버튼을 찾을 수 없습니다 (ID: ${item.id})`);
+            }
+            
             listContainer.appendChild(itemNode);
         });
     }

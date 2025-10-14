@@ -1,8 +1,8 @@
 <?php
-// app/Repositories/DepartmentRepository.php
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Models\Department;
 
 class DepartmentRepository {
     private Database $db;
@@ -10,23 +10,66 @@ class DepartmentRepository {
     public function __construct(Database $db) {
         $this->db = $db;
     }
-    public function getAll() {
-        return $this->db->query("SELECT * FROM hr_departments ORDER BY name");
+
+    /**
+     * @return Department[]
+     */
+    public function getAll(): array {
+        return $this->db->fetchAllAs(Department::class, "SELECT * FROM hr_departments ORDER BY name");
     }
 
-    public function findById(int $id) {
-        return $this->db->fetchOne("SELECT * FROM hr_departments WHERE id = :id", [':id' => $id]);
+    public function findById(int $id): ?Department {
+        $result = $this->db->fetchOneAs(Department::class, "SELECT * FROM hr_departments WHERE id = :id", [':id' => $id]);
+        return $result ?: null;
     }
 
-    public function create(string $name): string {
-        $sql = "INSERT INTO hr_departments (name) VALUES (:name)";
-        $this->db->execute($sql, [':name' => $name]);
+    public function findAllWithEmployees(): array {
+        $sql = "
+            SELECT
+                d.id, d.name, d.parent_id, d.manager_id,
+                e.id as employee_id,
+                e.name as employee_name,
+                p.name as position_name,
+                manager.name as manager_name
+            FROM
+                hr_departments d
+            LEFT JOIN
+                hr_employees e ON d.id = e.department_id AND e.termination_date IS NULL
+            LEFT JOIN
+                hr_positions p ON e.position_id = p.id
+            LEFT JOIN
+                hr_employees manager ON d.manager_id = manager.id AND manager.termination_date IS NULL
+            ORDER BY
+                d.parent_id ASC, d.name ASC, e.name ASC
+        ";
+        return $this->db->query($sql);
+    }
+
+    public function create(array $data): string {
+        $sql = "INSERT INTO hr_departments (name, parent_id, manager_id) VALUES (:name, :parent_id, :manager_id)";
+        $params = [
+            ':name' => $data['name'],
+            ':parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null,
+            ':manager_id' => !empty($data['manager_id']) ? $data['manager_id'] : null
+        ];
+        $this->db->execute($sql, $params);
         return $this->db->lastInsertId();
     }
 
-    public function update(int $id, string $name): bool {
-        $sql = "UPDATE hr_departments SET name = :name WHERE id = :id";
-        return $this->db->execute($sql, [':id' => $id, ':name' => $name]) > 0;
+    public function update(int $id, array $data): bool {
+        $sql = "UPDATE hr_departments SET name = :name, parent_id = :parent_id, manager_id = :manager_id WHERE id = :id";
+        $params = [
+            ':id' => $id,
+            ':name' => $data['name'],
+            ':parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null,
+            ':manager_id' => !empty($data['manager_id']) ? $data['manager_id'] : null
+        ];
+        return $this->db->execute($sql, $params) > 0;
+    }
+
+    public function updateManager(int $departmentId, ?int $managerId): bool {
+        $sql = "UPDATE hr_departments SET manager_id = :manager_id WHERE id = :id";
+        return $this->db->execute($sql, [':id' => $departmentId, ':manager_id' => $managerId]) > 0;
     }
 
     public function isEmployeeAssigned(int $id): bool {

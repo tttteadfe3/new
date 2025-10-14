@@ -42,7 +42,10 @@ INSERT INTO `sys_permissions` (`id`, `key`, `description`) VALUES
 (64, 'role.assign_permissions', '역할에 권한 매핑'),
 
 -- Organization Management (1)
+-- Organization Management (3)
 (70, 'organization.manage', '부서 및 직급 관리'),
+(71, 'organization.view', '조직도 조회'),
+(72, 'department.manage_manager', '부서장 임명'),
 
 -- Holiday Management (1)
 (80, 'holiday.manage', '휴일 및 특정 근무일 관리'),

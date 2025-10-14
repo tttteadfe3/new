@@ -6,49 +6,45 @@ use App\Core\SessionManager;
 use App\Repositories\UserRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\LogRepository;
+use App\Repositories\DepartmentRepository;
+use App\Repositories\EmployeeRepository;
 use Exception;
 
-/**
- * Provides a unified, instance-based service for all authentication,
- * authorization, and session management tasks.
- */
 class AuthService {
     private SessionManager $sessionManager;
     private UserRepository $userRepository;
     private RoleRepository $roleRepository;
     private LogRepository $logRepository;
+    private DepartmentRepository $departmentRepository;
+    private EmployeeRepository $employeeRepository;
+    private ?array $departmentMap = null;
 
     public function __construct(
         SessionManager $sessionManager,
         UserRepository $userRepository,
         RoleRepository $roleRepository,
-        LogRepository $logRepository
+        LogRepository $logRepository,
+        DepartmentRepository $departmentRepository,
+        EmployeeRepository $employeeRepository
     ) {
         $this->sessionManager = $sessionManager;
         $this->userRepository = $userRepository;
         $this->roleRepository = $roleRepository;
         $this->logRepository = $logRepository;
+        $this->departmentRepository = $departmentRepository;
+        $this->employeeRepository = $employeeRepository;
     }
 
-    /**
-     * Get the currently authenticated user from the session.
-     */
     public function user(): ?array
     {
         return $this->sessionManager->get('user');
     }
 
-    /**
-     * Check if a user is currently logged in.
-     */
     public function isLoggedIn(): bool
     {
         return $this->sessionManager->has('user');
     }
 
-    /**
-     * Establishes a user session after successful login.
-     */
     public function login(array $user) {
         if ($user['status'] === 'blocked') {
             throw new Exception("Blocked accounts cannot log in.");
@@ -65,9 +61,6 @@ class AuthService {
         ]);
     }
 
-    /**
-     * Logs the user out and destroys the session.
-     */
     public function logout() {
         if ($this->isLoggedIn()) {
             $user = $this->user();
@@ -87,9 +80,6 @@ class AuthService {
         exit();
     }
 
-    /**
-     * Checks if the currently logged-in user has a specific permission.
-     */
     public function check(string $permission_key): bool {
         if (!$this->isLoggedIn()) {
             return false;
@@ -107,9 +97,64 @@ class AuthService {
         return in_array($permission_key, $permissions);
     }
 
-    /**
-     * Checks the user's real-time status and redirects if not active.
-     */
+    public function canManageEmployee(int $targetEmployeeId): bool
+    {
+        if (!$this->isLoggedIn()) {
+            return false;
+        }
+
+        if ($this->check('employee.manage_all')) {
+            return true;
+        }
+
+        $currentUser = $this->user();
+        $managerEmployeeId = $currentUser['employee_id'] ?? null;
+
+        if (!$managerEmployeeId) {
+            return false;
+        }
+
+        if ($managerEmployeeId === $targetEmployeeId) {
+            return true;
+        }
+
+        $targetEmployee = $this->employeeRepository->findById($targetEmployeeId);
+        if (!$targetEmployee || !$targetEmployee['department_id']) {
+            return false;
+        }
+
+        $this->loadDepartmentMap();
+
+        $targetDeptId = $targetEmployee['department_id'];
+        $currentDeptId = $targetDeptId;
+
+        while ($currentDeptId) {
+            $department = $this->departmentMap[$currentDeptId] ?? null;
+            if (!$department) {
+                break;
+            }
+
+            if ($department->manager_id === $managerEmployeeId) {
+                return true;
+            }
+
+            $currentDeptId = $department->parent_id;
+        }
+
+        return false;
+    }
+
+    private function loadDepartmentMap(): void
+    {
+        if ($this->departmentMap === null) {
+            $allDepartments = $this->departmentRepository->getAll();
+            $this->departmentMap = [];
+            foreach ($allDepartments as $dept) {
+                $this->departmentMap[$dept->id] = $dept;
+            }
+        }
+    }
+
     public function checkAccess() {
         $realtime_status = $this->checkStatus();
         if ($realtime_status === 'active') {
@@ -132,9 +177,6 @@ class AuthService {
         }
     }
 
-    /**
-     * Fetches the user's current status from the database.
-     */
     private function checkStatus(): string {
         if (!$this->isLoggedIn()) {
             $this->logout();
@@ -154,9 +196,6 @@ class AuthService {
         return $currentUser['status'];
     }
 
-    /**
-     * Refreshes the user's roles and permissions in the session.
-     */
     private function _refreshSessionPermissions(array $user): void {
         $user['roles'] = $this->roleRepository->getUserRoles($user['id']);
         $permissions = $this->userRepository->getPermissions($user['id']);
