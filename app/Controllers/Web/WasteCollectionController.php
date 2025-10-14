@@ -42,37 +42,29 @@ class WasteCollectionController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-collection.js");
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-index.js");
 
         $pageTitle = "대형폐기물 수거";
         $this->activityLogger->logMenuAccess($pageTitle);
 
-        echo $this->render('pages/waste/collection', [
+        echo $this->render('pages/waste/index', [
             'pageTitle' => $pageTitle,
             'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]
         ], 'layouts/app');
     }
 
     /**
-     * Display waste collection map page (alias for index)
-     */
-    public function collection(): void
-    {
-        $this->index();
-    }
-
-    /**
      * Display waste admin page
      */
-    public function admin(): void
+    public function manage(): void
     {
         // Refactored Scripts
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-admin.js");
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-manage.js");
         
         $pageTitle = "대형폐기물 관리";
         $this->activityLogger->logMenuAccess($pageTitle);
 
-        echo $this->render('pages/waste/admin', [
+        echo $this->render('pages/waste/manage', [
             'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
