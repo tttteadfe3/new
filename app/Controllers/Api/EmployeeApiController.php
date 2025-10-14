@@ -31,7 +31,7 @@ class EmployeeApiController extends BaseApiController
     public function index(): void
     {
         try {
-            $filters = $this->request->getQueryParams();
+            $filters = $this->request->all();
             $employees = $this->employeeService->getAllEmployees($filters);
             $this->apiSuccess($employees);
         } catch (Exception $e) {
