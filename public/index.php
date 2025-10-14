@@ -63,6 +63,18 @@ $container->register(\App\Services\UserService::class, fn($c) => new \App\Servic
 $container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Services\ViewDataService($c->resolve(\App\Services\AuthService::class), $c->resolve(SessionManager::class), $c->resolve(\App\Repositories\MenuRepository::class)));
 $container->register(\App\Services\WasteCollectionService::class, fn($c) => new \App\Services\WasteCollectionService($c->resolve(\App\Repositories\WasteCollectionRepository::class), $c->resolve(Database::class)));
 
+// Register EmployeeApiController explicitly with its new dependencies
+$container->register(\App\Controllers\Api\EmployeeApiController::class, fn($c) => new \App\Controllers\Api\EmployeeApiController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(JsonResponse::class),
+    $c->resolve(\App\Services\EmployeeService::class),
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(\App\Repositories\PositionRepository::class)
+));
 
 // Start and regenerate session
 $sessionManager = $container->resolve(SessionManager::class);

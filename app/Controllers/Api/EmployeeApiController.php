@@ -3,6 +3,8 @@
 namespace App\Controllers\Api;
 
 use App\Services\EmployeeService;
+use App\Repositories\DepartmentRepository;
+use App\Repositories\PositionRepository;
 use Exception;
 use App\Core\Request;
 use App\Services\AuthService;
@@ -14,6 +16,8 @@ use App\Core\JsonResponse;
 class EmployeeApiController extends BaseApiController
 {
     private EmployeeService $employeeService;
+    private DepartmentRepository $departmentRepository;
+    private PositionRepository $positionRepository;
 
     public function __construct(
         Request $request,
@@ -22,10 +26,27 @@ class EmployeeApiController extends BaseApiController
         ActivityLogger $activityLogger,
         EmployeeRepository $employeeRepository,
         JsonResponse $jsonResponse,
-        EmployeeService $employeeService
+        EmployeeService $employeeService,
+        DepartmentRepository $departmentRepository,
+        PositionRepository $positionRepository
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->employeeService = $employeeService;
+        $this->departmentRepository = $departmentRepository;
+        $this->positionRepository = $positionRepository;
+    }
+
+    public function getInitialData(): void
+    {
+        try {
+            $data = [
+                'departments' => $this->departmentRepository->getAll(),
+                'positions' => $this->positionRepository->getAll(),
+            ];
+            $this->apiSuccess($data);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
     }
 
     public function index(): void

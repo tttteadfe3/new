@@ -49,8 +49,8 @@ class DepartmentRepository {
         $sql = "INSERT INTO hr_departments (name, parent_id, manager_id) VALUES (:name, :parent_id, :manager_id)";
         $params = [
             ':name' => $data['name'],
-            ':parent_id' => $data['parent_id'] ?? null,
-            ':manager_id' => $data['manager_id'] ?? null
+            ':parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null,
+            ':manager_id' => !empty($data['manager_id']) ? $data['manager_id'] : null
         ];
         $this->db->execute($sql, $params);
         return $this->db->lastInsertId();
@@ -61,8 +61,8 @@ class DepartmentRepository {
         $params = [
             ':id' => $id,
             ':name' => $data['name'],
-            ':parent_id' => $data['parent_id'] ?? null,
-            ':manager_id' => $data['manager_id'] ?? null
+            ':parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null,
+            ':manager_id' => !empty($data['manager_id']) ? $data['manager_id'] : null
         ];
         return $this->db->execute($sql, $params) > 0;
     }
