@@ -43,8 +43,8 @@ $router->get('/leaves/granting', [LeaveController::class, 'granting'])->name('le
 $router->get('/leaves/history', [LeaveController::class, 'history'])->name('leaves.history')->middleware('auth')->middleware('permission', 'leave.view_all');
 
 // --- 무단투기 관리 ---
-$router->get('/littering', [LitteringController::class, 'index'])->name('littering.index')->middleware('auth')->middleware('permission', 'littering.view');
-$router->get('/littering/map', [LitteringController::class, 'map'])->name('littering.map')->middleware('auth')->middleware('permission', 'littering.process');
+$router->get('/littering/manage', [LitteringController::class, 'manage'])->name('littering.manage')->middleware('auth')->middleware('permission', 'littering.view');
+$router->get('/littering/index', [LitteringController::class, 'index'])->name('littering.index')->middleware('auth')->middleware('permission', 'littering.process');
 $router->get('/littering/history', [LitteringController::class, 'history'])->name('littering.history')->middleware('auth')->middleware('permission', 'littering.view');
 $router->get('/littering/deleted', [LitteringController::class, 'deleted'])->name('littering.deleted')->middleware('auth')->middleware('permission', 'littering.restore');
 $router->get('/littering/create', [LitteringController::class, 'create'])->name('littering.create')->middleware('auth')->middleware('permission', 'littering.create');

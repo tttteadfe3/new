@@ -28,7 +28,7 @@ class LitteringController extends BaseController
     /**
      * Display the littering admin page (검토 및 승인)
      */
-    public function index(): void
+    public function manage(): void
     {
         $pageTitle = "부적정배출 확인";
         $this->activityLogger->logMenuAccess($pageTitle);
@@ -43,22 +43,22 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-admin.js", ['allowedRegions' => ALLOWED_REGIONS]);
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-manage.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/admin', ['pageTitle' => $pageTitle], 'layouts/app');
+        echo $this->render('pages/littering/manage', ['pageTitle' => $pageTitle], 'layouts/app');
     }
 
     /**
      * Display the littering map page (무단투기 신고/처리)
      */
-    public function map(): void
+    public function index(): void
     {
         $pageTitle = "부적정배출 등록";
         $this->activityLogger->logMenuAccess($pageTitle);
 
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
-        View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering.css");
+        View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering-index.css");
         
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
@@ -70,9 +70,9 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-map.js", ['allowedRegions' => ALLOWED_REGIONS]);
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-index.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/map', ['pageTitle' => $pageTitle], 'layouts/app');
+        echo $this->render('pages/littering/index', ['pageTitle' => $pageTitle], 'layouts/app');
     }
 
     /**
@@ -138,7 +138,7 @@ class LitteringController extends BaseController
     {
         $id = $this->request->get('id');
         if (!$id) {
-            $this->redirect('/littering');
+            $this->redirect('/littering/manage');
             return;
         }
         
@@ -146,7 +146,7 @@ class LitteringController extends BaseController
             $littering = $this->litteringService->getLitteringById($id);
             echo $this->render('pages/littering/edit', compact('littering'), 'layouts/app');
         } catch (Exception $e) {
-            $this->redirect('/littering?error=' . urlencode($e->getMessage()));
+            $this->redirect('/littering/manage?error=' . urlencode($e->getMessage()));
             return;
         }
     }
