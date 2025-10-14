@@ -14,6 +14,7 @@ use App\Controllers\Web\WasteCollectionController;
 
 // --- 공용 및 인증 ---
 $router->get('/', [AuthController::class, 'login'])->name('home');
+$router->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('auth');
 $router->get('/login', [AuthController::class, 'login'])->name('login');
 $router->get('/auth/kakao/callback', [AuthController::class, 'kakaoCallback'])->name('kakao.callback');
 $router->get('/logout', [AuthController::class, 'logout'])->name('logout');

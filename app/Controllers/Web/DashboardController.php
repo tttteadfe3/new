@@ -2,19 +2,35 @@
 
 namespace App\Controllers\Web;
 
-use App\Core\AuthManager;
+use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
 use App\Core\View;
 
 class DashboardController extends BaseController
 {
-    public function index()
-    {
-        $user = $this->user();
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger
+    ) {
+        parent::__construct($request, $authService, $viewDataService, $activityLogger);
+    }
 
-        // Render the dashboard view within the main application layout.
-        echo $this->render('pages/dashboard', [
-            'pageTitle' => 'Dashboard',
-            'nickname' => $user['properties']['nickname'] ?? 'User'
+    /**
+     * Display the dashboard page
+     */
+    public function index(): void
+    {
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/dashboard.js");
+
+        $pageTitle = "대시보드";
+        $this->activityLogger->logMenuAccess($pageTitle);
+
+        echo $this->render('pages/dashboard/index', [
+            'pageTitle' => $pageTitle
         ], 'layouts/app');
     }
 }

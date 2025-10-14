@@ -1,8 +1,5 @@
 INSERT INTO `sys_menus` (`id`, `parent_id`, `name`, `url`, `icon`, `permission_key`, `display_order`) VALUES
-(100, NULL, '메인', '/profile', 'ri-home-line', NULL, 10),
-(101, 100, '대시보드', '/dashboard', 'ri-dashboard-line', 'dashboard.view', 10),
-(102, 100, '내 정보', '/profile', 'ri-user-line', NULL, 20),
-(103, 100, '연차 신청/내역', '/leaves/my', 'ri-calendar-check-line', 'leave.request', 30),
+(100, NULL, '대시보드', '/dashboard', 'ri-dashboard-line', NULL, 10),
 (200, NULL, '운행노선', '#', 'ri-route-line', '', 20),
 (300, NULL, '대형폐기물', '/waste', 'ri-truck-line', 'waste.view', 30),
 (301, 300, '대형폐기물 수거', '/waste', 'ri-truck-line', 'waste.view', 10),
