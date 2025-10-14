@@ -51,9 +51,8 @@ $router->get('/littering/create', [LitteringController::class, 'create'])->name(
 $router->get('/littering/edit', [LitteringController::class, 'edit'])->name('littering.edit')->middleware('auth')->middleware('permission', 'littering.confirm');
 
 // --- 폐기물 수거 ---
-$router->get('/waste', [WasteCollectionController::class, 'index'])->name('waste.index')->middleware('auth')->middleware('permission', 'waste.view');
-$router->get('/waste/collection', [WasteCollectionController::class, 'collection'])->name('waste.collection')->middleware('auth')->middleware('permission', 'waste.view');
-$router->get('/waste/admin', [WasteCollectionController::class, 'admin'])->name('waste.admin')->middleware('auth')->middleware('permission', 'waste.manage_admin');
+$router->get('/waste/index', [WasteCollectionController::class, 'index'])->name('waste.index')->middleware('auth')->middleware('permission', 'waste.view');
+$router->get('/waste/manage', [WasteCollectionController::class, 'manage'])->name('waste.manage')->middleware('auth')->middleware('permission', 'waste.manage_admin');
 
 // --- 관리자 ---
 $router->get('/admin/organization', [AdminController::class, 'organization'])->name('admin.organization')->middleware('auth')->middleware('permission', 'organization.manage');
