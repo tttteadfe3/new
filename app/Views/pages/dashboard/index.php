@@ -14,3 +14,11 @@
     </div>
 </div>
 <?php \App\Core\View::getInstance()->endSection(); ?>
+<!-- Leave Request Modal -->
+<div class="modal fade" id="leave-request-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">연차 신청</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
