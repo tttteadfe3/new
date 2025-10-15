@@ -330,8 +330,18 @@ class LeaveRepository {
             $params[':end_date'] = $filters['end_date'];
         }
         if (!empty($filters['department_id'])) {
-            $whereClauses[] = "e.department_id = :department_id";
-            $params[':department_id'] = $filters['department_id'];
+            if (is_array($filters['department_id'])) {
+                if (count($filters['department_id']) > 0) {
+                    $deptIds = array_map('intval', $filters['department_id']);
+                    $inClause = implode(',', $deptIds);
+                    $whereClauses[] = "e.department_id IN ($inClause)";
+                } else {
+                    $whereClauses[] = "1=0";
+                }
+            } else {
+                $whereClauses[] = "e.department_id = :department_id";
+                $params[':department_id'] = $filters['department_id'];
+            }
         }
 
         if (!empty($whereClauses)) {
