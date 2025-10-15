@@ -14,6 +14,8 @@ class LeaveApprovalPage extends BasePage {
 
     cacheDOMElements() {
         this.elements.tabs = document.querySelectorAll('a[data-bs-toggle="tab"]');
+        this.elements.yearFilter = document.getElementById('year-filter');
+        this.elements.departmentFilter = document.getElementById('department-filter');
         this.elements.bodies = {
             pending: document.getElementById('pending-requests-body'),
             approved: document.getElementById('approved-requests-body'),
@@ -30,6 +32,14 @@ class LeaveApprovalPage extends BasePage {
             });
         });
 
+        [this.elements.yearFilter, this.elements.departmentFilter].forEach(filter => {
+            filter.addEventListener('change', () => {
+                const activeTab = document.querySelector('.nav-link.active');
+                const status = this.getStatusFromTab(activeTab);
+                this.loadRequestsByStatus(status);
+            });
+        });
+
         Object.values(this.elements.bodies).forEach(body => {
             if(body) {
                 body.addEventListener('click', (e) => this.handleTableClick(e));
@@ -38,7 +48,21 @@ class LeaveApprovalPage extends BasePage {
     }
 
     loadInitialData() {
+        this.loadFilterOptions();
         this.loadRequestsByStatus('pending');
+    }
+
+    async loadFilterOptions() {
+        try {
+            const response = await this.apiCall('/organization?type=department');
+            response.data.forEach(dept => {
+                const option = new Option(dept.name, dept.id);
+                this.elements.departmentFilter.add(option);
+            });
+        } catch (error) {
+            console.error('Failed to load departments:', error);
+            Toast.error('부서 목록을 불러오는데 실패했습니다.');
+        }
     }
 
     async loadRequestsByStatus(status) {
@@ -46,8 +70,11 @@ class LeaveApprovalPage extends BasePage {
         if (!tableBody) return;
         tableBody.innerHTML = `<tr><td colspan="7" class="text-center"><span class="spinner-border spinner-border-sm"></span> 목록을 불러오는 중...</td></tr>`;
 
+        const year = this.elements.yearFilter.value;
+        const departmentId = this.elements.departmentFilter.value;
+
         try {
-            const response = await this.apiCall(`${this.config.API_URL}/requests?status=${status}`);
+            const response = await this.apiCall(`${this.config.API_URL}/requests?status=${status}&year=${year}&department_id=${departmentId}`);
             this.renderTable(status, response.data);
         } catch (error) {
             console.error(`Error loading ${status} requests:`, error);

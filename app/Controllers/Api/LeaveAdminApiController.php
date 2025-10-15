@@ -45,17 +45,13 @@ class LeaveAdminApiController extends BaseApiController
      */
     public function listRequests(): void
     {
-        $status = $this->request->input('status', 'pending');
-
         try {
-            if ($status === 'cancellation') {
-                $data = $this->leaveRepository->getAll(['status' => 'cancellation_requested']);
-            } else {
-                $data = $this->leaveRepository->getAll(['status' => $status]);
-            }
+            // This now uses the service layer, which correctly handles permissions.
+            // The service method defaults to 'pending' and is specifically for the approval page's needs.
+            $data = $this->leaveService->getPendingLeaveRequests();
             $this->apiSuccess($data);
         } catch (Exception $e) {
-            $this->apiError('요청 목록을 불러오는 중 오류 발생', 'SERVER_ERROR', 500);
+            $this->handleException($e);
         }
     }
 
@@ -191,10 +187,32 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
+     * Get leave history for all employees with filters.
+     * Corresponds to GET /api/leaves_admin/history
+     */
+    public function history(): void
+    {
+        try {
+            $filters = [
+                'year' => $this->request->input('year', date('Y')),
+                'department_id' => $this->request->input('department_id'),
+                'status' => $this->request->input('status')
+            ];
+            // Remove any empty filters
+            $filters = array_filter($filters);
+
+            $data = $this->leaveService->getLeaveHistory($filters);
+            $this->apiSuccess($data);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
      * Get leave history for a specific employee.
      * Corresponds to GET /api/leaves_admin/history/{employeeId}
      */
-    public function getHistory(int $employeeId): void
+    public function getHistoryForEmployee(int $employeeId): void
     {
         $year = (int)$this->request->input('year', date('Y'));
 
