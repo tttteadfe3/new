@@ -129,7 +129,7 @@ class OrganizationApiController extends BaseApiController
             $this->apiSuccess(null, $entityName . ' 정보가 수정되었습니다.');
 
         } catch (Exception $e) {
-            $this.handleException($e);
+            $this->handleException($e);
         }
     }
 
