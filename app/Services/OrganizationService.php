@@ -41,7 +41,7 @@ class OrganizationService
                     'id' => $deptId,
                     'name' => $row['name'],
                     'parent_id' => $row['parent_id'],
-                    'manager_name' => $row['manager_name'],
+                    'manager_name' => $row['manager_names'],
                     'children' => [],
                     'employees' => []
                 ];
@@ -70,26 +70,40 @@ class OrganizationService
 
     public function getManagableDepartments(): array
     {
-        $visibleDepartments = $this->getVisibleDepartmentIdsForCurrentUser();
-
-        // if null, user can see all departments
-        if ($visibleDepartments === null) {
-            return $this->getFormattedDepartmentListForAll();
+        $user = $this->authService->user();
+        if (!$user || !$user['employee_id']) {
+            return $this->departmentRepository->getAll();
         }
 
-        if (empty($visibleDepartments)) {
-            return [];
+        // Check if user has global permission to see all departments
+        if ($this->authService->check('department.manage_all')) { // Assuming a permission key
+            return $this->departmentRepository->getAll();
         }
 
-        $allDepartments = $this->departmentRepository->findAllWithManagers();
+        $managedDeptIds = $this->departmentRepository->findManagedDepartmentIdsByEmployee($user['employee_id']);
+        if (empty($managedDeptIds)) {
+            // If not a manager of any department, maybe just show their own?
+            $employee = $this->employeeRepository->findById($user['employee_id']);
+            return $employee ? [$this->departmentRepository->findById($employee['department_id'])] : [];
+        }
+
+        $allDepartments = $this->departmentRepository->getAll();
         $departmentMap = [];
         foreach ($allDepartments as $dept) {
             $departmentMap[$dept->id] = $dept;
         }
 
-        $visibleDepartmentObjects = array_intersect_key($departmentMap, array_flip($visibleDepartments));
+        $visibleDepartments = [];
+        foreach ($managedDeptIds as $managedDeptId) {
+            $this->findSubtreeRecursive($managedDeptId, $departmentMap, $visibleDepartments);
+        }
 
-        return $this->formatDepartmentList($visibleDepartmentObjects, $departmentMap);
+        // Format names hierarchically
+        foreach ($visibleDepartments as &$dept) {
+            $dept->name = $this->getHierarchicalName($dept->id, $departmentMap);
+        }
+
+        return array_values($visibleDepartments);
     }
 
     private function findSubtreeRecursive(int $deptId, array &$map, array &$visible)
@@ -166,6 +180,7 @@ class OrganizationService
 
         return array_unique($allVisibleIds);
     }
+
 
     // ===================================================
     // CRUD Methods restored for OrganizationApiController
