@@ -263,14 +263,10 @@ class OrganizationService
             if (isset($rootDeptIdsSet[$formattedDept->id]) || ($parentId !== null && isset($rootDeptIdsSet[$parentId]))) {
                 // Name is already simple
             }
-            // For all other descendants, display as "ParentName(ChildName)"
+            // For all other descendants, display as "ChildName(ParentName)"
             else if ($parentId !== null && isset($departmentMap[$parentId])) {
                 $parentName = $departmentMap[$parentId]->name;
-                // To prevent overly long names like "Grandparent(Parent(Child))",
-                // we check if the parent name is already formatted.
-                if (strpos($parentName, '(') === false) {
-                     $formattedDept->name = "{$parentName} ({$formattedDept->name})";
-                }
+                $formattedDept->name = "{$formattedDept->name} ({$parentName})";
             }
 
             $formattedDepartments[] = $formattedDept;
