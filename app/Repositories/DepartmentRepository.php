@@ -64,7 +64,8 @@ class DepartmentRepository {
                 e.id as employee_id,
                 e.name as employee_name,
                 p.name as position_name,
-                (SELECT GROUP_CONCAT(m.name SEPARATOR ', ') FROM hr_department_managers dm JOIN hr_employees m ON dm.employee_id = m.id WHERE dm.department_id = d.id) as manager_name
+                (SELECT GROUP_CONCAT(m.name SEPARATOR ', ') FROM hr_department_managers dm JOIN hr_employees m ON dm.employee_id = m.id WHERE dm.department_id = d.id) as manager_names,
+                (SELECT GROUP_CONCAT(dm.employee_id SEPARATOR ',') FROM hr_department_managers dm WHERE dm.department_id = d.id) as manager_ids
             FROM
                 hr_departments d
             LEFT JOIN
@@ -75,6 +76,22 @@ class DepartmentRepository {
                 d.parent_id ASC, d.name ASC, e.name ASC
         ";
         return $this->db->query($sql);
+    }
+
+    public function findAllWithManagers(): array
+    {
+        $sql = "
+            SELECT
+                d.*,
+                GROUP_CONCAT(m.name SEPARATOR ', ') as manager_names,
+                GROUP_CONCAT(dm.employee_id SEPARATOR ',') as manager_ids
+            FROM hr_departments d
+            LEFT JOIN hr_department_managers dm ON d.id = dm.department_id
+            LEFT JOIN hr_employees m ON dm.employee_id = m.id
+            GROUP BY d.id
+            ORDER BY d.name
+        ";
+        return $this->db->fetchAllAs(Department::class, $sql);
     }
 
     public function create(array $data): string {

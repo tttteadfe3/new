@@ -60,13 +60,19 @@ class OrganizationApiController extends BaseApiController
     {
         try {
             $type = $_GET['type'] ?? '';
+            $context = $_GET['context'] ?? 'default'; // default, management
             $data = [];
+
             if ($type === 'department') {
-                $data = $this->organizationService->getFormattedDepartmentListForAll();
+                if ($context === 'management') {
+                    $data = $this->organizationService->getFormattedDepartmentListForAll();
+                } else {
+                    $data = $this->organizationService->getAllDepartments();
+                }
             } elseif ($type === 'position') {
                 $data = $this->positionRepository->getAll();
             } else {
-                 throw new Exception('Invalid entity type specified.');
+                throw new Exception('Invalid entity type specified.');
             }
             $this->apiSuccess($data);
         } catch (Exception $e) {
