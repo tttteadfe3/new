@@ -251,7 +251,7 @@ class OrganizationService
 
         $departmentMap = [];
         foreach ($allDepartments as $dept) {
-            $departmentMap[$dept->id] = $dept;
+            $departmentMap[$dept['id']] = $dept;
         }
 
         return $this->formatDepartmentList($allDepartments, $departmentMap);
@@ -262,8 +262,8 @@ class OrganizationService
         // Identify true root departments (those without a parent in the full map)
         $rootDeptIds = [];
         foreach ($departmentMap as $dept) {
-            if ($dept->parent_id === null) {
-                $rootDeptIds[] = $dept->id;
+            if ($dept['parent_id'] === null) {
+                $rootDeptIds[] = $dept['id'];
             }
         }
         $rootDeptIdsSet = array_flip($rootDeptIds);
@@ -271,21 +271,24 @@ class OrganizationService
         // Format names based on the display rule
         $formattedDepartments = [];
         foreach ($departments as $dept) {
-            $formattedDept = clone $dept; // Clone to avoid modifying original data
-            $parentId = $formattedDept->parent_id;
+            $formattedDept = $dept; // Work with a copy of the array
+            $parentId = $formattedDept['parent_id'];
 
             // Display simple name if it's a root or a direct child of a root
-            if (isset($rootDeptIdsSet[$formattedDept->id]) || ($parentId !== null && isset($rootDeptIdsSet[$parentId]))) {
+            if (isset($rootDeptIdsSet[$formattedDept['id']]) || ($parentId !== null && isset($rootDeptIdsSet[$parentId]))) {
                 // Name is already simple
             }
-            // For all other descendants, display as "ChildName(ParentName)"
+            // For all other descendants, display as "ParentName(ChildName)"
             else if ($parentId !== null && isset($departmentMap[$parentId])) {
-                $parentName = $departmentMap[$parentId]->name;
-                // Check if the department name already ends with the parent name in parentheses.
-                $expectedSuffix = " ({$parentName})";
-                if (substr($formattedDept->name, -strlen($expectedSuffix)) !== $expectedSuffix) {
-                    $formattedDept->name .= $expectedSuffix;
-                }
+                $parentName = $departmentMap[$parentId]['name'];
+
+                // Clean the child name by removing a "(Parent)" suffix if it already exists in the database.
+                $cleanedChildName = preg_replace('/ \(' . preg_quote($parentName, '/') . '\)$/', '', $formattedDept['name']);
+
+                // Check if the parent name itself is already formatted. If so, use the simple name.
+                $simpleParentName = preg_replace('/ \(.*\)$/', '', $parentName);
+
+                $formattedDept['name'] = "{$simpleParentName} ({$cleanedChildName})";
             }
 
             $formattedDepartments[] = $formattedDept;

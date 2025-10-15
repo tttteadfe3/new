@@ -21,7 +21,7 @@ class DepartmentRepository {
             LEFT JOIN hr_department_managers m ON d.id = m.department_id
             ORDER BY d.name
         ";
-        return $this->db->fetchAllAs(Department::class, $sql);
+        return $this->db->fetchAll($sql);
     }
 
     public function findById(int $id): ?Department {
@@ -83,6 +83,7 @@ class DepartmentRepository {
         $sql = "
             SELECT
                 d.*,
+                d.name as simple_name,
                 GROUP_CONCAT(m.name SEPARATOR ', ') as manager_names,
                 GROUP_CONCAT(dm.employee_id SEPARATOR ',') as manager_ids
             FROM hr_departments d
@@ -91,7 +92,7 @@ class DepartmentRepository {
             GROUP BY d.id
             ORDER BY d.name
         ";
-        return $this->db->fetchAllAs(Department::class, $sql);
+        return $this->db->fetchAll($sql);
     }
 
     public function create(array $data): string {

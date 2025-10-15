@@ -103,6 +103,7 @@ class OrganizationAdminPage extends BasePage {
             container.innerHTML = response.data.map(item => {
                 let dataAttrs = `data-id="${item.id}" data-name="${this._sanitizeHTML(item.name)}" data-type="${type}"`;
                 if (type === 'department') {
+                    dataAttrs += ` data-simple-name="${this._sanitizeHTML(item.simple_name)}"`;
                     dataAttrs += ` data-parent-id="${item.parent_id || ''}"`;
                     // Note: manager_ids is a comma-separated string from the server
                     dataAttrs += ` data-manager-ids="${item.manager_ids || ''}"`;
@@ -147,7 +148,7 @@ class OrganizationAdminPage extends BasePage {
         if (data) { // Editing
             this.elements.modalTitle.textContent = `${entityName} 정보 수정`;
             this.elements.orgIdInput.value = data.id;
-            this.elements.orgNameInput.value = data.name;
+            this.elements.orgNameInput.value = data.simpleName || data.name; // Use simple_name for editing
             if (type === 'department') {
                 this.elements.parentIdSelect.value = data.parentId || '';
                 const managerIds = data.managerIds ? data.managerIds.split(',').map(id => id.trim()) : [];
@@ -205,13 +206,13 @@ class OrganizationAdminPage extends BasePage {
     handleActionClick(e) {
         const target = e.target;
         // Destructure all potential data attributes
-        const { id, name, type, parentId, managerIds, canViewAllEmployees } = target.dataset;
+        const { id, name, type, parentId, managerIds, canViewAllEmployees, simpleName } = target.dataset;
 
         if (!type || !id) return;
 
         if (target.classList.contains('edit-btn')) {
             // Pass all relevant data to the modal
-            const data = { id, name, parentId, managerIds, canViewAllEmployees };
+            const data = { id, name, type, parentId, managerIds, canViewAllEmployees, simpleName };
             this.openModal(type, data);
         } else if (target.classList.contains('delete-btn')) {
             const entityName = type === 'department' ? '부서' : '직급';
