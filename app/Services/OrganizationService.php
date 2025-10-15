@@ -235,4 +235,51 @@ class OrganizationService
     {
         return $this->departmentRepository->delete($id);
     }
+
+    /**
+     * Gets all departments and formats their names contextually for display in lists.
+     * @return array
+     */
+    public function getFormattedDepartmentListForAll(): array
+    {
+        $allDepartments = $this->departmentRepository->getAll();
+        if (empty($allDepartments)) {
+            return [];
+        }
+
+        $departmentMap = [];
+        foreach ($allDepartments as $dept) {
+            $departmentMap[$dept->id] = $dept;
+        }
+
+        // Identify true root departments (those without a parent)
+        $rootDeptIds = [];
+        foreach ($allDepartments as $dept) {
+            if ($dept->parent_id === null) {
+                $rootDeptIds[] = $dept->id;
+            }
+        }
+        $rootDeptIdsSet = array_flip($rootDeptIds);
+
+        // Format names based on the display rule
+        $formattedDepartments = [];
+        foreach ($allDepartments as $dept) {
+            $formattedDept = clone $dept; // Clone to avoid modifying original data
+            $parentId = $formattedDept->parent_id;
+
+            // Display simple name if it's a root or a direct child of a root
+            if (isset($rootDeptIdsSet[$formattedDept->id]) || ($parentId !== null && isset($rootDeptIdsSet[$parentId]))) {
+                // Name is already simple
+            }
+            // For all other descendants, display as "ChildName(ParentName)"
+            else if ($parentId !== null && isset($departmentMap[$parentId])) {
+                $parentName = $departmentMap[$parentId]->name;
+                $formattedDept->name = "{$formattedDept->name} ({$parentName})";
+            }
+
+            $formattedDepartments[] = $formattedDept;
+        }
+
+        return $formattedDepartments;
+    }
 }
