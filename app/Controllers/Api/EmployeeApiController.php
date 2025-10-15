@@ -40,7 +40,7 @@ class EmployeeApiController extends BaseApiController
     {
         try {
             $data = [
-                'departments' => $this->departmentRepository->getAll(),
+                'departments' => $this->organizationService->getFormattedDepartmentListForAll(),
                 'positions' => $this->positionRepository->getAll(),
             ];
             $this->apiSuccess($data);
