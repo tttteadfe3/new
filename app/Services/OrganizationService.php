@@ -98,12 +98,16 @@ class OrganizationService
             $this->findSubtreeRecursive($managedDeptId, $departmentMap, $visibleDepartments);
         }
 
-        // Format names hierarchically
-        foreach ($visibleDepartments as &$dept) {
-            $dept->name = $this->getHierarchicalName($dept->id, $departmentMap);
+        // Format names hierarchically without modifying the original map data
+        $formattedDepartments = [];
+        foreach ($visibleDepartments as $dept) {
+            // Clone the department object to avoid modifying the original in the map
+            $formattedDept = clone $dept;
+            $formattedDept->name = $this->getHierarchicalName($dept->id, $departmentMap);
+            $formattedDepartments[] = $formattedDept;
         }
 
-        return array_values($visibleDepartments);
+        return $formattedDepartments;
     }
 
     private function findSubtreeRecursive(int $deptId, array &$map, array &$visible)
@@ -142,9 +146,10 @@ class OrganizationService
      */
     public function getVisibleDepartmentIdsForCurrentUser(): ?array
     {
+        // 1. Check for global permissions first.
         $user = $this->authService->user();
-        if (!$user) {
-            return [];
+        if (!$user || $this->authService->check('employee.view_all')) { // A new global permission
+            return null;
         }
 
         if (empty($user['employee_id'])) {
@@ -162,17 +167,6 @@ class OrganizationService
 
         // 3. Determine visibility based on manager status.
         $managedDeptIds = $this->departmentRepository->findManagedDepartmentIdsByEmployee($user['employee_id']);
-
-        // A manager of a 'view all' department should also get 'view all'
-        if (!empty($managedDeptIds)) {
-            foreach ($managedDeptIds as $deptId) {
-                $dept = $this->departmentRepository->findById($deptId);
-                if ($dept && $dept->can_view_all_employees) {
-                    return null; // This manager can see everything.
-                }
-            }
-        }
-
         $allVisibleIds = [];
 
         if (empty($managedDeptIds)) {
@@ -185,10 +179,6 @@ class OrganizationService
             foreach ($managedDeptIds as $deptId) {
                 $subtreeIds = $this->departmentRepository->findSubtreeIds($deptId);
                 $allVisibleIds = array_merge($allVisibleIds, $subtreeIds);
-            }
-            // Also include their own department if it's different from their managed ones.
-            if ($employee && $employee['department_id']) {
-                $allVisibleIds[] = $employee['department_id'];
             }
         }
 
