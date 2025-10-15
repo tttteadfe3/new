@@ -98,12 +98,25 @@ class OrganizationService
             $this->findSubtreeRecursive($managedDeptId, $departmentMap, $visibleDepartments);
         }
 
-        // Format names hierarchically without modifying the original map data
+        // Format names based on the new display rule
         $formattedDepartments = [];
+        $managedDeptIdsSet = array_flip($managedDeptIds); // Use a set for faster lookups
+
         foreach ($visibleDepartments as $dept) {
-            // Clone the department object to avoid modifying the original in the map
-            $formattedDept = clone $dept;
-            $formattedDept->name = $this->getHierarchicalName($dept->id, $departmentMap);
+            $formattedDept = clone $dept; // Clone to avoid modifying original data
+            $parentId = $formattedDept->parent_id;
+
+            // Display simple name if the department is a managed root itself,
+            // or if its direct parent is a managed root.
+            if (isset($managedDeptIdsSet[$formattedDept->id]) || ($parentId !== null && isset($managedDeptIdsSet[$parentId]))) {
+                // The name is already the simple name, so no change is needed.
+            }
+            // For all other descendants, display as "ChildName(ParentName)"
+            else if ($parentId !== null && isset($departmentMap[$parentId])) {
+                $parentName = $departmentMap[$parentId]->name; // Get the parent's simple name
+                $formattedDept->name = $formattedDept->name . " ({$parentName})";
+            }
+
             $formattedDepartments[] = $formattedDept;
         }
 
