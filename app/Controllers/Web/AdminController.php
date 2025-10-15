@@ -42,6 +42,11 @@ class AdminController extends BaseController
     public function organization(): void
     {
         $pageTitle = "부서/직급 관리";
+
+        // Add Choices.js CSS and JS
+        View::getInstance()->addCss('https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css');
+        View::getInstance()->addJs('https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js');
+
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/organization-admin.js');
         
         // Log menu access
