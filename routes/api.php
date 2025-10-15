@@ -49,7 +49,8 @@ $router->group('/api', function($router) {
     $router->post('/leaves_admin/cancellations/{id}/reject', [LeaveAdminApiController::class, 'rejectCancellation'])->name('api.leaves_admin.cancellations.reject')->middleware('auth')->middleware('permission', 'leave.approve');
     $router->get('/leaves_admin/entitlements', [LeaveAdminApiController::class, 'listEntitlements'])->name('api.leaves_admin.entitlements')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
     $router->post('/leaves_admin/grant-all', [LeaveAdminApiController::class, 'grantForAll'])->name('api.leaves_admin.grant-all')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
-    $router->get('/leaves_admin/history/{employeeId}', [LeaveAdminApiController::class, 'getHistory'])->name('api.leaves_admin.history')->middleware('auth')->middleware('permission', 'leave.view_all');
+    $router->get('/leaves_admin/history', [LeaveAdminApiController::class, 'history'])->name('api.leaves_admin.history')->middleware('auth')->middleware('permission', 'leave.view_all');
+    $router->get('/leaves_admin/history/{employeeId}', [LeaveAdminApiController::class, 'getHistoryForEmployee'])->name('api.leaves_admin.history.employee')->middleware('auth')->middleware('permission', 'leave.view_all');
     $router->post('/leaves_admin/adjust', [LeaveAdminApiController::class, 'manualAdjustment'])->name('api.leaves_admin.adjust')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
     $router->post('/leaves_admin/calculate', [LeaveAdminApiController::class, 'calculateLeaves'])->name('api.leaves_admin.calculate')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
     $router->post('/leaves_admin/save-entitlements', [LeaveAdminApiController::class, 'saveEntitlements'])->name('api.leaves_admin.save-entitlements')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
@@ -72,7 +73,7 @@ $router->group('/api', function($router) {
     $router->put('/organization/{id}', [OrganizationApiController::class, 'update'])->name('api.organization.update')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->delete('/organization/{id}', [OrganizationApiController::class, 'destroy'])->name('api.organization.destroy')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->get('/organization/chart', [OrganizationApiController::class, 'getChart'])->name('api.organization.chart')->middleware('auth')->middleware('permission', 'organization.view');
-    $router->put('/departments/{id}/manager', [OrganizationApiController::class, 'updateManager'])->name('api.departments.updateManager')->middleware('auth')->middleware('permission', 'department.manage_manager');
+    $router->get('/organization/managable-departments', [OrganizationApiController::class, 'getManagableDepartments'])->name('api.organization.managable-departments')->middleware('auth');
 
     // Role and Permission API routes
     $router->get('/roles', [RoleApiController::class, 'index'])->name('api.roles.index')->middleware('auth')->middleware('permission', 'role.view');

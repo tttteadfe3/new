@@ -14,16 +14,19 @@ use App\Core\View;
 class LeaveController extends BaseController
 {
     private LeaveService $leaveService;
+    private EmployeeService $employeeService;
 
     public function __construct(
         Request $request,
         AuthService $authService,
         ViewDataService $viewDataService,
         ActivityLogger $activityLogger,
-        LeaveService $leaveService
+        LeaveService $leaveService,
+        EmployeeService $employeeService
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger);
         $this->leaveService = $leaveService;
+        $this->employeeService = $employeeService;
     }
 
     /**

@@ -9,76 +9,76 @@ class LeaveHistoryAdminPage extends BasePage {
     initializeApp() {
         this.cacheDOMElements();
         this.setupEventListeners();
-        // Initial load is triggered by the employee dropdown change, so no initial data load here.
+        this.loadInitialData();
     }
 
     cacheDOMElements() {
         this.elements = {
-            employeeSelect: document.getElementById('employee-select'),
-            yearSelect: document.getElementById('year-select'),
-            historyDisplay: document.getElementById('history-display'),
-            entitlementSummary: document.getElementById('entitlement-summary'),
+            yearFilter: document.getElementById('filter-year'),
+            departmentFilter: document.getElementById('filter-department'),
+            statusFilter: document.getElementById('filter-status'),
+            filterBtn: document.getElementById('filter-btn'),
             leaveHistoryBody: document.getElementById('leave-history-body'),
         };
     }
 
     setupEventListeners() {
-        this.elements.employeeSelect.addEventListener('change', () => this.loadHistory());
-        this.elements.yearSelect.addEventListener('change', () => this.loadHistory());
+        this.elements.filterBtn.addEventListener('click', () => this.loadHistory());
+    }
+
+    async loadInitialData() {
+        await this.loadDepartments();
+        await this.loadHistory();
+    }
+
+    async loadDepartments() {
+        try {
+            const response = await this.apiCall('/organization/managable-departments');
+            response.data.forEach(dept => {
+                const option = new Option(dept.name, dept.id);
+                this.elements.departmentFilter.add(option);
+            });
+        } catch (error) {
+            console.error('Failed to load departments:', error);
+            Toast.error('부서 목록을 불러오는데 실패했습니다.');
+        }
     }
 
     async loadHistory() {
-        const employeeId = this.elements.employeeSelect.value;
-        const year = this.elements.yearSelect.value;
+        const year = this.elements.yearFilter.value;
+        const departmentId = this.elements.departmentFilter.value;
+        const status = this.elements.statusFilter.value;
 
-        if (!employeeId) {
-            this.elements.historyDisplay.classList.add('d-none');
-            return;
-        }
-
-        this.elements.historyDisplay.classList.remove('d-none');
-        this.elements.entitlementSummary.innerHTML = `<span class="spinner-border spinner-border-sm"></span> 불러오는 중...`;
-        this.elements.leaveHistoryBody.innerHTML = `<tr><td colspan="6" class="text-center"><span class="spinner-border spinner-border-sm"></span></td></tr>`;
+        this.elements.leaveHistoryBody.innerHTML = `<tr><td colspan="7" class="text-center"><span class="spinner-border spinner-border-sm"></span> 목록을 불러오는 중...</td></tr>`;
 
         try {
-            const response = await this.apiCall(`${this.config.API_URL}/${employeeId}?year=${year}`);
+            // Note: The API URL is now just /history, not /history/{id}
+            const response = await this.apiCall(`${this.config.API_URL}?year=${year}&department_id=${departmentId}&status=${status}`);
             this.renderHistory(response.data);
         } catch (error) {
             console.error('Error loading history:', error);
-            this.elements.entitlementSummary.innerHTML = `<span class="text-danger">오류: ${error.message}</span>`;
-            this.elements.leaveHistoryBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">내역 로딩 실패</td></tr>`;
+            this.elements.leaveHistoryBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">내역 로딩 실패: ${error.message}</td></tr>`;
         }
     }
 
     renderHistory(data) {
-        if (data.entitlement) {
-            const { total_days, used_days } = data.entitlement;
-            const remaining_days = parseFloat(total_days) - parseFloat(used_days);
-            this.elements.entitlementSummary.innerHTML = `
-                총 <strong>${total_days}</strong>일 부여 /
-                <strong>${used_days}</strong>일 사용 /
-                <span class="fw-bold ${remaining_days < 0 ? 'text-danger' : 'text-primary'}">${remaining_days.toFixed(1)}</span>일 남음
-            `;
-        } else {
-            this.elements.entitlementSummary.innerHTML = `<span class="text-muted">${this.elements.yearSelect.value}년 부여 내역 없음</span>`;
-        }
-
-        if (!data.leaves || data.leaves.length === 0) {
-            this.elements.leaveHistoryBody.innerHTML = `<tr><td colspan="6" class="text-center">사용 내역이 없습니다.</td></tr>`;
+        if (!data || data.length === 0) {
+            this.elements.leaveHistoryBody.innerHTML = `<tr><td colspan="7" class="text-center">조회된 내역이 없습니다.</td></tr>`;
             return;
         }
 
         const statusBadges = { pending: 'bg-warning', approved: 'bg-success', rejected: 'bg-danger', cancelled: 'bg-secondary', cancellation_requested: 'bg-info' };
         const statusText = { pending: '대기', approved: '승인', rejected: '반려', cancelled: '취소', cancellation_requested: '취소요청' };
 
-        const rowsHtml = data.leaves.map(leave => `
+        const rowsHtml = data.map(leave => `
             <tr>
+                <td>${leave.employee_name || ''}</td>
+                <td>${leave.department_name || ''}</td>
                 <td>${leave.leave_type}</td>
                 <td>${leave.start_date} ~ ${leave.end_date}</td>
                 <td>${leave.days_count}</td>
                 <td><span class="badge ${statusBadges[leave.status] || 'bg-light text-dark'}">${statusText[leave.status] || leave.status}</span></td>
                 <td>${new Date(leave.created_at).toLocaleDateString()}</td>
-                <td>${leave.reason || ''}</td>
             </tr>
         `).join('');
         this.elements.leaveHistoryBody.innerHTML = rowsHtml;

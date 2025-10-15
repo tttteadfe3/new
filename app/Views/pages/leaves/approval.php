@@ -5,11 +5,24 @@
             <div class="card-header border-bottom-dashed">
                 <div class="row g-4 align-items-center">
                     <div class="col-sm">
-                        <div>
-                            <h5 class="card-title mb-0">연차 신청 승인/반려</h5>
+                        <h5 class="card-title mb-0">연차 신청 승인/반려</h5>
+                    </div>
+                    <div class="col-sm-auto ms-auto">
+                        <div class="d-flex gap-2">
+                            <select class="form-select" id="year-filter" style="width: 100px;">
+                                <?php for ($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
+                                    <option value="<?php echo $y; ?>"><?php echo $y; ?>년</option>
+                                <?php endfor; ?>
+                            </select>
+                            <select class="form-select" id="department-filter" style="width: 150px;">
+                                <option value="">전체 부서</option>
+                                <!-- 부서 목록은 JS로 채웁니다 -->
+                            </select>
                         </div>
                     </div>
-                    <div class="col-sm-auto">
+                </div>
+                <div class="row g-4 align-items-center mt-2">
+                     <div class="col-sm-auto">
                         <ul class="nav nav-pills card-header-pills" role="tablist">
                             <li class="nav-item">
                                 <a class="nav-link active" data-bs-toggle="tab" href="#pending-tab" role="tab">대기중</a>

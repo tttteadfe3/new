@@ -27,17 +27,26 @@ class LeaveService {
     private EmployeeRepository $employeeRepository;
     private HolidayService $holidayService;
     private LogRepository $logRepository;
+    private AuthService $authService;
+    private \App\Repositories\DepartmentRepository $departmentRepository;
+    private OrganizationService $organizationService;
 
     public function __construct(
         LeaveRepository $leaveRepository,
         EmployeeRepository $employeeRepository,
         HolidayService $holidayService,
-        LogRepository $logRepository
+        LogRepository $logRepository,
+        AuthService $authService,
+        \App\Repositories\DepartmentRepository $departmentRepository,
+        OrganizationService $organizationService
     ) {
         $this->leaveRepository = $leaveRepository;
         $this->employeeRepository = $employeeRepository;
         $this->holidayService = $holidayService;
         $this->logRepository = $logRepository;
+        $this->authService = $authService;
+        $this->departmentRepository = $departmentRepository;
+        $this->organizationService = $organizationService;
     }
 
     /**
@@ -534,25 +543,58 @@ class LeaveService {
     }
 
     /**
-     * Enhanced method to get pending leave requests with detailed information
-     * 
-     * @return array List of pending leave requests with employee details
+     * Get leave history with filters, applying department-level visibility.
+     *
+     * @param array $filters
+     * @return array
+     */
+    public function getLeaveHistory(array $filters = []): array
+    {
+        $finalFilters = $filters;
+
+        // Centralized logic from OrganizationService will determine which department IDs are visible.
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+
+        // If the user can see all employees, visibleDeptIds will be null.
+        if ($visibleDeptIds !== null) {
+            if (empty($visibleDeptIds)) {
+                return []; // User has no departments they can see.
+            }
+             // If a department filter is set, ensure it's a subset of what the user is allowed to see.
+            if (!empty($finalFilters['department_id'])) {
+                if (in_array($finalFilters['department_id'], $visibleDeptIds)) {
+                    // Filter is valid, but we need its subtree.
+                    $finalFilters['department_id'] = $this->departmentRepository->findSubtreeIds($finalFilters['department_id']);
+                } else {
+                    return []; // Trying to access a forbidden department.
+                }
+            } else {
+                // No specific filter, so use all visible departments.
+                $finalFilters['department_id'] = $visibleDeptIds;
+            }
+        }
+        // If visibleDeptIds is null, it means user is admin-like and no department filter should be applied unless specified.
+
+        return $this->leaveRepository->findAll($finalFilters);
+    }
+
+    /**
+     * Get pending leave requests with department-level visibility.
      */
     public function getPendingLeaveRequests(): array
     {
-        $pendingLeaves = $this->leaveRepository->findByStatus('pending');
-        $enrichedLeaves = [];
-        
-        foreach ($pendingLeaves as $leave) {
-            $employee = $this->employeeRepository->findById($leave['employee_id']);
-            $enrichedLeaves[] = array_merge($leave, [
-                'employee_name' => $employee['name'] ?? 'Unknown',
-                'employee_department' => $employee['department_name'] ?? 'Unknown',
-                'employee_position' => $employee['position'] ?? 'Unknown'
-            ]);
+        $filters = [];
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+
+        // If the result is not null, apply the department filter.
+        if ($visibleDeptIds !== null) {
+            if (empty($visibleDeptIds)) {
+                return [];
+            }
+            $filters['department_id'] = $visibleDeptIds;
         }
-        
-        return $enrichedLeaves;
+
+        return $this->leaveRepository->findByStatus('pending', $filters);
     }
 
     /**

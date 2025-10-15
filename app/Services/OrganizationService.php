@@ -3,14 +3,22 @@
 namespace App\Services;
 
 use App\Repositories\DepartmentRepository;
+use App\Repositories\EmployeeRepository;
 
 class OrganizationService
 {
     private DepartmentRepository $departmentRepository;
+    private AuthService $authService;
+    private EmployeeRepository $employeeRepository;
 
-    public function __construct(DepartmentRepository $departmentRepository)
-    {
+    public function __construct(
+        DepartmentRepository $departmentRepository,
+        AuthService $authService,
+        \App\Repositories\EmployeeRepository $employeeRepository
+    ) {
         $this->departmentRepository = $departmentRepository;
+        $this->authService = $authService;
+        $this->employeeRepository = $employeeRepository;
     }
 
     /**
@@ -33,7 +41,6 @@ class OrganizationService
                     'id' => $deptId,
                     'name' => $row['name'],
                     'parent_id' => $row['parent_id'],
-                    'manager_id' => $row['manager_id'],
                     'manager_name' => $row['manager_name'],
                     'children' => [],
                     'employees' => []
@@ -61,12 +68,117 @@ class OrganizationService
         return $tree;
     }
 
-    /**
-     * 특정 부서의 부서장을 업데이트합니다.
-     */
-    public function updateDepartmentManager(int $departmentId, ?int $managerId): bool
+    public function getManagableDepartments(): array
     {
-        return $this->departmentRepository->updateManager($departmentId, $managerId);
+        $user = $this->authService->user();
+        if (!$user || !$user['employee_id']) {
+            return $this->departmentRepository->getAll();
+        }
+
+        // Check if user has global permission to see all departments
+        if ($this->authService->check('department.manage_all')) { // Assuming a permission key
+            return $this->departmentRepository->getAll();
+        }
+
+        $managedDeptIds = $this->departmentRepository->findManagedDepartmentIdsByEmployee($user['employee_id']);
+        if (empty($managedDeptIds)) {
+            // If not a manager of any department, maybe just show their own?
+            $employee = $this->employeeRepository->findById($user['employee_id']);
+            return $employee ? [$this->departmentRepository->findById($employee['department_id'])] : [];
+        }
+
+        $allDepartments = $this->departmentRepository->getAll();
+        $departmentMap = [];
+        foreach ($allDepartments as $dept) {
+            $departmentMap[$dept->id] = $dept;
+        }
+
+        $visibleDepartments = [];
+        foreach ($managedDeptIds as $managedDeptId) {
+            $this->findSubtreeRecursive($managedDeptId, $departmentMap, $visibleDepartments);
+        }
+
+        // Format names hierarchically
+        foreach ($visibleDepartments as &$dept) {
+            $dept->name = $this->getHierarchicalName($dept->id, $departmentMap);
+        }
+
+        return array_values($visibleDepartments);
+    }
+
+    private function findSubtreeRecursive(int $deptId, array &$map, array &$visible)
+    {
+        if (!isset($map[$deptId]) || isset($visible[$deptId])) {
+            return;
+        }
+        $visible[$deptId] = $map[$deptId];
+
+        foreach ($map as $child) {
+            if ($child->parent_id == $deptId) {
+                $this->findSubtreeRecursive($child->id, $map, $visible);
+            }
+        }
+    }
+
+    private function getHierarchicalName(int $deptId, array &$map, string $separator = '->'): string
+    {
+        if (!isset($map[$deptId])) {
+            return '';
+        }
+
+        $path = [];
+        $current = $map[$deptId];
+        while ($current) {
+            array_unshift($path, $current->name);
+            $current = $current->parent_id ? ($map[$current->parent_id] ?? null) : null;
+        }
+        return implode($separator, $path);
+    }
+
+    /**
+     * Get the list of department IDs that the current user is allowed to view.
+     * Returns null if the user has global "view all" permissions.
+     * Returns an array of department IDs otherwise.
+     */
+    public function getVisibleDepartmentIdsForCurrentUser(): ?array
+    {
+        // 1. Check for global permissions first.
+        $user = $this->authService->user();
+        if (!$user || $this->authService->check('employee.view_all')) { // A new global permission
+            return null;
+        }
+
+        if (empty($user['employee_id'])) {
+            return []; // Not an employee, can't see anyone.
+        }
+
+        // 2. Check for department-level "view all" permission.
+        $employee = $this->employeeRepository->findById($user['employee_id']);
+        if ($employee && !empty($employee['department_id'])) {
+            $department = $this->departmentRepository->findById($employee['department_id']);
+            if ($department && $department->can_view_all_employees) {
+                return null;
+            }
+        }
+
+        // 3. Determine visibility based on manager status.
+        $managedDeptIds = $this->departmentRepository->findManagedDepartmentIdsByEmployee($user['employee_id']);
+        $allVisibleIds = [];
+
+        if (empty($managedDeptIds)) {
+            // Not a manager, can only see their own department.
+            if ($employee && $employee['department_id']) {
+                $allVisibleIds[] = $employee['department_id'];
+            }
+        } else {
+            // Is a manager, get all sub-departments of all managed departments.
+            foreach ($managedDeptIds as $deptId) {
+                $subtreeIds = $this->departmentRepository->findSubtreeIds($deptId);
+                $allVisibleIds = array_merge($allVisibleIds, $subtreeIds);
+            }
+        }
+
+        return array_unique($allVisibleIds);
     }
 
     // ===================================================
@@ -80,12 +192,43 @@ class OrganizationService
 
     public function createDepartment(array $data): string
     {
-        return $this->departmentRepository->create($data);
+        $this->departmentRepository->beginTransaction();
+        try {
+            $managerId = $data['manager_id'] ?? null;
+            unset($data['manager_id']); // Ensure it's not passed to the create method
+
+            $newDeptId = $this->departmentRepository->create($data);
+
+            if ($managerId) {
+                $this->departmentRepository->replaceManagers($newDeptId, [$managerId]);
+            }
+
+            $this->departmentRepository->commit();
+            return $newDeptId;
+        } catch (\Exception $e) {
+            $this->departmentRepository->rollBack();
+            throw $e;
+        }
     }
 
     public function updateDepartment(int $id, array $data): bool
     {
-        return $this->departmentRepository->update($id, $data);
+        $this->departmentRepository->beginTransaction();
+        try {
+            $managerId = $data['manager_id'] ?? null;
+            unset($data['manager_id']);
+
+            $result = $this->departmentRepository->update($id, $data);
+
+            // Replace managers - if managerId is empty/null, it will remove all managers
+            $this->departmentRepository->replaceManagers($id, $managerId ? [$managerId] : []);
+
+            $this->departmentRepository->commit();
+            return $result;
+        } catch (\Exception $e) {
+            $this->departmentRepository->rollBack();
+            throw $e;
+        }
     }
 
     public function deleteDepartment(int $id): bool

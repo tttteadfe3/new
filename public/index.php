@@ -49,19 +49,49 @@ $container->register(\App\Services\AuthService::class, fn($c) => new \App\Servic
     $c->resolve(\App\Repositories\DepartmentRepository::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class)
 ));
-$container->register(\App\Services\EmployeeService::class, fn($c) => new \App\Services\EmployeeService($c->resolve(\App\Repositories\EmployeeRepository::class), $c->resolve(\App\Repositories\EmployeeChangeLogRepository::class), $c->resolve(\App\Repositories\DepartmentRepository::class), $c->resolve(\App\Repositories\PositionRepository::class), $c->resolve(\App\Repositories\LogRepository::class), $c->resolve(SessionManager::class)));
+$container->register(\App\Services\EmployeeService::class, fn($c) => new \App\Services\EmployeeService(
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(\App\Repositories\EmployeeChangeLogRepository::class),
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(\App\Repositories\PositionRepository::class),
+    $c->resolve(\App\Repositories\LogRepository::class),
+    $c->resolve(SessionManager::class),
+    $c->resolve(\App\Services\OrganizationService::class)
+));
 $container->register(\App\Services\HolidayService::class, fn($c) => new \App\Services\HolidayService($c->resolve(\App\Repositories\HolidayRepository::class), $c->resolve(\App\Repositories\DepartmentRepository::class)));
 $container->register(\App\Services\KakaoAuthService::class, fn() => new \App\Services\KakaoAuthService());
-$container->register(\App\Services\LeaveService::class, fn($c) => new \App\Services\LeaveService($c->resolve(\App\Repositories\LeaveRepository::class), $c->resolve(\App\Repositories\EmployeeRepository::class), $c->resolve(\App\Services\HolidayService::class), $c->resolve(\App\Repositories\LogRepository::class)));
+$container->register(\App\Services\LeaveService::class, fn($c) => new \App\Services\LeaveService(
+    $c->resolve(\App\Repositories\LeaveRepository::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(\App\Services\HolidayService::class),
+    $c->resolve(\App\Repositories\LogRepository::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(\App\Services\OrganizationService::class)
+));
 $container->register(\App\Services\LitteringService::class, fn($c) => new \App\Services\LitteringService($c->resolve(\App\Repositories\LitteringRepository::class), $c->resolve(Database::class)));
 $container->register(\App\Services\LogService::class, fn($c) => new \App\Services\LogService($c->resolve(\App\Repositories\LogRepository::class)));
 $container->register(\App\Services\MenuManagementService::class, fn($c) => new \App\Services\MenuManagementService($c->resolve(\App\Repositories\MenuRepository::class), $c->resolve(Database::class)));
-$container->register(\App\Services\OrganizationService::class, fn($c) => new \App\Services\OrganizationService($c->resolve(\App\Repositories\DepartmentRepository::class)));
+$container->register(\App\Services\OrganizationService::class, fn($c) => new \App\Services\OrganizationService(
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class)
+));
 $container->register(\App\Services\ProfileService::class, fn($c) => new \App\Services\ProfileService($c->resolve(\App\Repositories\UserRepository::class), $c->resolve(\App\Repositories\EmployeeRepository::class)));
 $container->register(\App\Services\RolePermissionService::class, fn($c) => new \App\Services\RolePermissionService($c->resolve(\App\Repositories\RoleRepository::class)));
 $container->register(\App\Services\UserService::class, fn($c) => new \App\Services\UserService($c->resolve(\App\Repositories\UserRepository::class), $c->resolve(\App\Repositories\RoleRepository::class)));
 $container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Services\ViewDataService($c->resolve(\App\Services\AuthService::class), $c->resolve(SessionManager::class), $c->resolve(\App\Repositories\MenuRepository::class)));
 $container->register(\App\Services\WasteCollectionService::class, fn($c) => new \App\Services\WasteCollectionService($c->resolve(\App\Repositories\WasteCollectionRepository::class), $c->resolve(Database::class)));
+
+// Register Web Controllers that have dependencies
+$container->register(\App\Controllers\Web\LeaveController::class, fn($c) => new \App\Controllers\Web\LeaveController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Services\LeaveService::class),
+    $c->resolve(\App\Services\EmployeeService::class)
+));
 
 // Register EmployeeApiController explicitly with its new dependencies
 $container->register(\App\Controllers\Api\EmployeeApiController::class, fn($c) => new \App\Controllers\Api\EmployeeApiController(
