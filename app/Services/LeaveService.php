@@ -28,7 +28,7 @@ class LeaveService {
     private HolidayService $holidayService;
     private LogRepository $logRepository;
     private AuthService $authService;
-    private DepartmentRepository $departmentRepository;
+    private \App\Repositories\DepartmentRepository $departmentRepository;
 
     public function __construct(
         LeaveRepository $leaveRepository,
