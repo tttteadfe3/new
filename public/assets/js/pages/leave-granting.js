@@ -70,7 +70,7 @@ class LeaveGrantingPage extends BasePage {
 
     async loadDepartments() {
         try {
-            const response = await this.apiCall(`${this.config.ORG_API_URL}?type=department`);
+            const response = await this.apiCall(`/organization/managable-departments`);
             this.elements.departmentFilter.innerHTML = '<option value="">전체 부서</option>';
             response.data.forEach(dep => {
                 this.elements.departmentFilter.insertAdjacentHTML('beforeend', `<option value="${dep.id}">${this._sanitizeHTML(dep.name)}</option>`);

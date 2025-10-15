@@ -33,7 +33,7 @@ class LeaveHistoryAdminPage extends BasePage {
 
     async loadDepartments() {
         try {
-            const response = await this.apiCall('/organization?type=department');
+            const response = await this.apiCall('/organization/managable-departments');
             response.data.forEach(dept => {
                 const option = new Option(dept.name, dept.id);
                 this.elements.departmentFilter.add(option);

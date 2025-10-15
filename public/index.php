@@ -63,7 +63,11 @@ $container->register(\App\Services\LeaveService::class, fn($c) => new \App\Servi
 $container->register(\App\Services\LitteringService::class, fn($c) => new \App\Services\LitteringService($c->resolve(\App\Repositories\LitteringRepository::class), $c->resolve(Database::class)));
 $container->register(\App\Services\LogService::class, fn($c) => new \App\Services\LogService($c->resolve(\App\Repositories\LogRepository::class)));
 $container->register(\App\Services\MenuManagementService::class, fn($c) => new \App\Services\MenuManagementService($c->resolve(\App\Repositories\MenuRepository::class), $c->resolve(Database::class)));
-$container->register(\App\Services\OrganizationService::class, fn($c) => new \App\Services\OrganizationService($c->resolve(\App\Repositories\DepartmentRepository::class)));
+$container->register(\App\Services\OrganizationService::class, fn($c) => new \App\Services\OrganizationService(
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class)
+));
 $container->register(\App\Services\ProfileService::class, fn($c) => new \App\Services\ProfileService($c->resolve(\App\Repositories\UserRepository::class), $c->resolve(\App\Repositories\EmployeeRepository::class)));
 $container->register(\App\Services\RolePermissionService::class, fn($c) => new \App\Services\RolePermissionService($c->resolve(\App\Repositories\RoleRepository::class)));
 $container->register(\App\Services\UserService::class, fn($c) => new \App\Services\UserService($c->resolve(\App\Repositories\UserRepository::class), $c->resolve(\App\Repositories\RoleRepository::class)));

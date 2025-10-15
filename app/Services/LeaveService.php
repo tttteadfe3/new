@@ -585,53 +585,77 @@ class LeaveService {
 
         if (!$this->canViewAllLeaves()) {
             $user = $this->authService->user();
-            if ($user && !empty($user['employee_id'])) {
-                $employee = $this->employeeRepository->findById($user['employee_id']);
-                if ($employee && !empty($employee['department_id'])) {
-                    // Add/overwrite department_id in filters
-                    $finalFilters['department_id'] = $employee['department_id'];
+            if (!$user || empty($user['employee_id'])) {
+                return []; // Not logged in or not an employee, show nothing.
+            }
+
+            // Find all departments this user can see (their own, managed, and all sub-departments)
+            $visibleDeptIds = $this->getVisibleDepartmentIds($user['employee_id']);
+
+            if (empty($visibleDeptIds)) {
+                return []; // No departments to view.
+            }
+
+            // If a department filter is already set, we need to respect it, but only if it's within the visible scope.
+            if (!empty($finalFilters['department_id'])) {
+                if(in_array($finalFilters['department_id'], $visibleDeptIds)) {
+                    // The user is filtering to a specific sub-department they are allowed to see.
+                    // We also need to fetch all sub-departments of this *filtered* department.
+                     $finalFilters['department_id'] = $this->departmentRepository->findSubtreeIds($finalFilters['department_id']);
                 } else {
-                    // No department, no history for others.
+                    // User is trying to filter for a department they cannot see. Return empty.
                     return [];
                 }
             } else {
-                return [];
+                 $finalFilters['department_id'] = $visibleDeptIds;
             }
         }
 
-        // This requires a new or modified findAll method in LeaveRepository
         return $this->leaveRepository->findAll($finalFilters);
     }
 
     /**
-     * Enhanced method to get pending leave requests with detailed information.
-     * Applies department-level visibility filtering.
-     * 
-     * @return array List of pending leave requests with employee details
+     * Get pending leave requests with department-level visibility.
      */
     public function getPendingLeaveRequests(): array
     {
         $filters = [];
         if (!$this->canViewAllLeaves()) {
-            $user = $this->authService->user();
-            if ($user && !empty($user['employee_id'])) {
-                $employee = $this->employeeRepository->findById($user['employee_id']);
-                if ($employee && !empty($employee['department_id'])) {
-                    $filters['department_id'] = $employee['department_id'];
-                } else {
-                    // If user has no department, they can't see any requests.
-                    return [];
-                }
-            } else {
+             $user = $this->authService->user();
+            if (!$user || empty($user['employee_id'])) {
+                return []; // Not logged in or not an employee, show nothing.
+            }
+            $visibleDeptIds = $this->getVisibleDepartmentIds($user['employee_id']);
+             if (empty($visibleDeptIds)) {
                 return [];
+            }
+            $filters['department_id'] = $visibleDeptIds;
+        }
+
+        return $this->leaveRepository->findByStatus('pending', $filters);
+    }
+
+    private function getVisibleDepartmentIds(int $employeeId): array
+    {
+        $managedDeptIds = $this->departmentRepository->findManagedDepartmentIdsByEmployee($employeeId);
+        
+        $allVisibleIds = [];
+
+        if (empty($managedDeptIds)) {
+            // Not a manager, can only see their own department.
+            $employee = $this->employeeRepository->findById($employeeId);
+            if ($employee && $employee['department_id']) {
+                $allVisibleIds[] = $employee['department_id'];
+            }
+        } else {
+            // Is a manager, get all sub-departments of all managed departments.
+            foreach ($managedDeptIds as $deptId) {
+                $subtreeIds = $this->departmentRepository->findSubtreeIds($deptId);
+                $allVisibleIds = array_merge($allVisibleIds, $subtreeIds);
             }
         }
 
-        // Assumes leaveRepository->findByStatus will be updated to accept filters
-        $pendingLeaves = $this->leaveRepository->findByStatus('pending', $filters);
-        
-        // The new findByStatus should already join employee details, so no extra enrichment needed.
-        return $pendingLeaves;
+        return array_unique($allVisibleIds);
     }
 
     /**

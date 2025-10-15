@@ -73,7 +73,7 @@ $router->group('/api', function($router) {
     $router->put('/organization/{id}', [OrganizationApiController::class, 'update'])->name('api.organization.update')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->delete('/organization/{id}', [OrganizationApiController::class, 'destroy'])->name('api.organization.destroy')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->get('/organization/chart', [OrganizationApiController::class, 'getChart'])->name('api.organization.chart')->middleware('auth')->middleware('permission', 'organization.view');
-    $router->put('/departments/{id}/manager', [OrganizationApiController::class, 'updateManager'])->name('api.departments.updateManager')->middleware('auth')->middleware('permission', 'department.manage_manager');
+    $router->get('/organization/managable-departments', [OrganizationApiController::class, 'getManagableDepartments'])->name('api.organization.managable-departments')->middleware('auth');
 
     // Role and Permission API routes
     $router->get('/roles', [RoleApiController::class, 'index'])->name('api.roles.index')->middleware('auth')->middleware('permission', 'role.view');

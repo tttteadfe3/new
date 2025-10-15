@@ -70,8 +70,24 @@ class EmployeeRepository {
         $params = [];
 
         if (!empty($filters['department_id'])) {
-            $whereClauses[] = "e.department_id = :department_id";
-            $params[':department_id'] = $filters['department_id'];
+            if (is_array($filters['department_id'])) {
+                if (count($filters['department_id']) > 0) {
+                    $deptPlaceholders = [];
+                    foreach ($filters['department_id'] as $key => $deptId) {
+                        $placeholder = ':dept_id_' . $key;
+                        $deptPlaceholders[] = $placeholder;
+                        $params[$placeholder] = $deptId;
+                    }
+                    $whereClauses[] = "e.department_id IN (" . implode(', ', $deptPlaceholders) . ")";
+                } else {
+                    // Handle empty array case to return no results
+                    $whereClauses[] = "1=0";
+                }
+            } else {
+                // Handle single department ID
+                $whereClauses[] = "e.department_id = :department_id";
+                $params[':department_id'] = $filters['department_id'];
+            }
         }
 
         if (!empty($filters['position_id'])) {

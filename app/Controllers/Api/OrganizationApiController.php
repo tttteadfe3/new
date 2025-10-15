@@ -46,21 +46,11 @@ class OrganizationApiController extends BaseApiController
         }
     }
 
-    /**
-     * 부서장을 업데이트합니다.
-     * PUT /api/departments/{id}/manager
-     */
-    public function updateManager(int $id): void
+    public function getManagableDepartments(): void
     {
         try {
-            $input = $this->getJsonInput();
-            $managerId = $input['manager_id'] ?? null;
-
-            if ($this->organizationService->updateDepartmentManager($id, $managerId)) {
-                $this->apiSuccess(null, '부서장 정보가 업데이트되었습니다.');
-            } else {
-                $this->apiError('부서장 정보 업데이트에 실패했습니다.');
-            }
+            $data = $this->organizationService->getManagableDepartments();
+            $this->apiSuccess($data);
         } catch (Exception $e) {
             $this->handleException($e);
         }

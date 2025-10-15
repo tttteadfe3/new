@@ -14,14 +14,12 @@ CREATE TABLE `hr_departments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL COMMENT '부서명',
   `parent_id` int(11) DEFAULT NULL COMMENT '상위 부서 ID',
-  `manager_id` int(11) DEFAULT NULL COMMENT '부서장 직원 ID',
   `can_view_all_leaves` tinyint(1) NOT NULL DEFAULT 0 COMMENT '전체 휴가 조회 권한 여부',
   `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
-  KEY `fk_department_parent` (`parent_id`),
-  KEY `fk_department_manager` (`manager_id`)
+  KEY `fk_department_parent` (`parent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='부서 정보';
 
 -- --------------------------------------------------------
@@ -408,7 +406,18 @@ CREATE TABLE `waste_collection_items` (
 -- `hr_departments` 테이블의 외래 키 제약 조건 추가
 -- (참조하는 테이블들이 모두 생성된 후에 추가)
 ALTER TABLE `hr_departments`
-  ADD CONSTRAINT `fk_department_parent` FOREIGN KEY (`parent_id`) REFERENCES `hr_departments` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_department_manager` FOREIGN KEY (`manager_id`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL;
+  ADD CONSTRAINT `fk_department_parent` FOREIGN KEY (`parent_id`) REFERENCES `hr_departments` (`id`) ON DELETE SET NULL;
+
+-- ========================================
+-- (신규) 부서장 매핑 테이블 생성
+-- ========================================
+CREATE TABLE `hr_department_managers` (
+  `department_id` int(11) NOT NULL COMMENT '부서 ID',
+  `employee_id` int(11) NOT NULL COMMENT '부서장으로 지정된 직원 ID',
+  PRIMARY KEY (`department_id`, `employee_id`),
+  KEY `fk_manager_employee_id` (`employee_id`),
+  CONSTRAINT `fk_manager_department_id` FOREIGN KEY (`department_id`) REFERENCES `hr_departments` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_manager_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='부서-부서장 매핑 정보';
 
 COMMIT;
