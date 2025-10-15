@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\DepartmentRepository;
+use App\Repositories\EmployeeRepository;
 
 class OrganizationService
 {
@@ -13,7 +14,7 @@ class OrganizationService
     public function __construct(
         DepartmentRepository $departmentRepository,
         AuthService $authService,
-        EmployeeRepository $employeeRepository
+        \App\Repositories\EmployeeRepository $employeeRepository
     ) {
         $this->departmentRepository = $departmentRepository;
         $this->authService = $authService;
