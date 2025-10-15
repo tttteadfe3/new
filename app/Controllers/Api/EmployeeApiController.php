@@ -18,6 +18,7 @@ class EmployeeApiController extends BaseApiController
     private EmployeeService $employeeService;
     private DepartmentRepository $departmentRepository;
     private PositionRepository $positionRepository;
+    private \App\Services\OrganizationService $organizationService;
 
     public function __construct(
         Request $request,
@@ -28,19 +29,21 @@ class EmployeeApiController extends BaseApiController
         JsonResponse $jsonResponse,
         EmployeeService $employeeService,
         DepartmentRepository $departmentRepository,
-        PositionRepository $positionRepository
+        PositionRepository $positionRepository,
+        \App\Services\OrganizationService $organizationService
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->employeeService = $employeeService;
         $this->departmentRepository = $departmentRepository;
         $this->positionRepository = $positionRepository;
+        $this->organizationService = $organizationService;
     }
 
     public function getInitialData(): void
     {
         try {
             $data = [
-                'departments' => $this->departmentRepository->getAll(),
+                'departments' => $this->organizationService->getFormattedDepartmentListForAll(),
                 'positions' => $this->positionRepository->getAll(),
             ];
             $this->apiSuccess($data);
