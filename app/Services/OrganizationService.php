@@ -266,7 +266,11 @@ class OrganizationService
             // For all other descendants, display as "ChildName(ParentName)"
             else if ($parentId !== null && isset($departmentMap[$parentId])) {
                 $parentName = $departmentMap[$parentId]->name;
-                $formattedDept->name = "{$formattedDept->name} ({$parentName})";
+                // Check if the department name already ends with the parent name in parentheses.
+                $expectedSuffix = " ({$parentName})";
+                if (substr($formattedDept->name, -strlen($expectedSuffix)) !== $expectedSuffix) {
+                    $formattedDept->name .= $expectedSuffix;
+                }
             }
 
             $formattedDepartments[] = $formattedDept;

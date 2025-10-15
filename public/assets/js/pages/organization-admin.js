@@ -51,11 +51,12 @@ class OrganizationAdminPage extends BasePage {
 
     async loadSelectOptions() {
         try {
-            const deptResponse = await this.apiCall('/organization?type=department');
+            const deptResponse = await this.apiCall('/organization?type=department&context=management');
             this.populateSelect(this.elements.parentIdSelect, deptResponse.data, 'id', 'name', '(없음)');
 
             const empResponse = await this.apiCall('/employees?status=active');
-            this.populateSelect(this.elements.managerIdsSelect, empResponse.data, 'id', 'name', '');
+            this.state.employees = empResponse.data.map(emp => ({ id: emp.id, name: emp.name, value: emp.id, label: emp.name }));
+            this.populateSelect(this.elements.managerIdsSelect, this.state.employees, 'id', 'name', '');
 
             // Initialize Choices.js if it doesn't exist
             if (!this.choicesInstances.managers) {
