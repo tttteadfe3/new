@@ -78,23 +78,23 @@ class DepartmentRepository {
     }
 
     public function create(array $data): string {
-        $sql = "INSERT INTO hr_departments (name, parent_id, can_view_all_leaves) VALUES (:name, :parent_id, :can_view_all_leaves)";
+        $sql = "INSERT INTO hr_departments (name, parent_id, can_view_all_employees) VALUES (:name, :parent_id, :can_view_all_employees)";
         $params = [
             ':name' => $data['name'],
             ':parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null,
-            ':can_view_all_leaves' => isset($data['can_view_all_leaves']) && $data['can_view_all_leaves'] ? 1 : 0
+            ':can_view_all_employees' => isset($data['can_view_all_employees']) && $data['can_view_all_employees'] ? 1 : 0
         ];
         $this->db->execute($sql, $params);
         return $this->db->lastInsertId();
     }
 
     public function update(int $id, array $data): bool {
-        $sql = "UPDATE hr_departments SET name = :name, parent_id = :parent_id, can_view_all_leaves = :can_view_all_leaves WHERE id = :id";
+        $sql = "UPDATE hr_departments SET name = :name, parent_id = :parent_id, can_view_all_employees = :can_view_all_employees WHERE id = :id";
         $params = [
             ':id' => $id,
             ':name' => $data['name'],
             ':parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null,
-            ':can_view_all_leaves' => isset($data['can_view_all_leaves']) && $data['can_view_all_leaves'] ? 1 : 0
+            ':can_view_all_employees' => isset($data['can_view_all_employees']) && $data['can_view_all_employees'] ? 1 : 0
         ];
         return $this->db->execute($sql, $params) > 0;
     }

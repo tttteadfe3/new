@@ -9,6 +9,7 @@ use App\Repositories\DepartmentRepository;
 use App\Repositories\PositionRepository;
 use App\Repositories\LogRepository;
 use App\Models\Employee;
+use App\Services\OrganizationService;
 
 class EmployeeService
 {
@@ -18,6 +19,7 @@ class EmployeeService
     private PositionRepository $positionRepository;
     private LogRepository $logRepository;
     private SessionManager $sessionManager;
+    private OrganizationService $organizationService;
 
     public function __construct(
         EmployeeRepository $employeeRepository,
@@ -25,7 +27,8 @@ class EmployeeService
         DepartmentRepository $departmentRepository,
         PositionRepository $positionRepository,
         LogRepository $logRepository,
-        SessionManager $sessionManager
+        SessionManager $sessionManager,
+        OrganizationService $organizationService
     ) {
         $this->employeeRepository = $employeeRepository;
         $this->employeeChangeLogRepository = $employeeChangeLogRepository;
@@ -33,6 +36,7 @@ class EmployeeService
         $this->positionRepository = $positionRepository;
         $this->logRepository = $logRepository;
         $this->sessionManager = $sessionManager;
+        $this->organizationService = $organizationService;
     }
 
     /**
@@ -44,10 +48,36 @@ class EmployeeService
     }
 
     /**
-     * Get all employees with optional filters
+     * Get all employees with optional filters, applying centralized department visibility logic.
      */
     public function getAllEmployees(array $filters = []): array
     {
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+
+        // If the result is not null, it means the user is not a global admin.
+        if ($visibleDeptIds !== null) {
+            // If the user has no visible departments, return empty.
+            if (empty($visibleDeptIds)) {
+                return [];
+            }
+
+            // If a department filter is already applied, we must ensure it's a subset
+            // of the departments the user is allowed to see.
+            if (!empty($filters['department_id'])) {
+                $requestedDeptIds = is_array($filters['department_id']) ? $filters['department_id'] : [$filters['department_id']];
+                $allowedRequestedIds = array_intersect($requestedDeptIds, $visibleDeptIds);
+
+                if (empty($allowedRequestedIds)) {
+                    return []; // Requested department is not within the visible scope.
+                }
+                $filters['department_id'] = $allowedRequestedIds;
+
+            } else {
+                // No filter was applied, so apply the user's visible departments.
+                $filters['department_id'] = $visibleDeptIds;
+            }
+        }
+
         return $this->employeeRepository->getAll($filters);
     }
 

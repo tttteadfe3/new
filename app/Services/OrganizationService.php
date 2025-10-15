@@ -135,6 +135,52 @@ class OrganizationService
         return implode($separator, $path);
     }
 
+    /**
+     * Get the list of department IDs that the current user is allowed to view.
+     * Returns null if the user has global "view all" permissions.
+     * Returns an array of department IDs otherwise.
+     */
+    public function getVisibleDepartmentIdsForCurrentUser(): ?array
+    {
+        // 1. Check for global permissions first.
+        $user = $this->authService->user();
+        if (!$user || $this->authService->check('employee.view_all')) { // A new global permission
+            return null;
+        }
+
+        if (empty($user['employee_id'])) {
+            return []; // Not an employee, can't see anyone.
+        }
+
+        // 2. Check for department-level "view all" permission.
+        $employee = $this->employeeRepository->findById($user['employee_id']);
+        if ($employee && !empty($employee['department_id'])) {
+            $department = $this->departmentRepository->findById($employee['department_id']);
+            if ($department && $department->can_view_all_employees) {
+                return null;
+            }
+        }
+
+        // 3. Determine visibility based on manager status.
+        $managedDeptIds = $this->departmentRepository->findManagedDepartmentIdsByEmployee($user['employee_id']);
+        $allVisibleIds = [];
+
+        if (empty($managedDeptIds)) {
+            // Not a manager, can only see their own department.
+            if ($employee && $employee['department_id']) {
+                $allVisibleIds[] = $employee['department_id'];
+            }
+        } else {
+            // Is a manager, get all sub-departments of all managed departments.
+            foreach ($managedDeptIds as $deptId) {
+                $subtreeIds = $this->departmentRepository->findSubtreeIds($deptId);
+                $allVisibleIds = array_merge($allVisibleIds, $subtreeIds);
+            }
+        }
+
+        return array_unique($allVisibleIds);
+    }
+
     // ===================================================
     // CRUD Methods restored for OrganizationApiController
     // ===================================================

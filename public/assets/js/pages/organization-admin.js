@@ -30,7 +30,7 @@ class OrganizationAdminPage extends BasePage {
             departmentFields: document.getElementById('department-fields'),
             parentIdSelect: document.getElementById('parent-id'),
             managerIdSelect: document.getElementById('manager-id'),
-            canViewAllLeavesCheckbox: document.getElementById('can-view-all-leaves')
+            canViewAllEmployeesCheckbox: document.getElementById('can-view-all-employees')
         };
     }
 
@@ -89,12 +89,12 @@ class OrganizationAdminPage extends BasePage {
                 if (type === 'department') {
                     dataAttrs += ` data-parent-id="${item.parent_id || ''}"`;
                     dataAttrs += ` data-manager-id="${item.manager_id || ''}"`;
-                    dataAttrs += ` data-can-view-all-leaves="${item.can_view_all_leaves || '0'}"`;
+                    dataAttrs += ` data-can-view-all-employees="${item.can_view_all_employees || '0'}"`;
                 }
                 return `
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         ${this._sanitizeHTML(item.name)}
-                        ${type === 'department' && parseInt(item.can_view_all_leaves, 10) === 1 ? '<span class="badge bg-info text-dark ms-2">전체 휴가 조회 가능</span>' : ''}
+                        ${type === 'department' && parseInt(item.can_view_all_employees, 10) === 1 ? '<span class="badge bg-info text-dark ms-2">전체 직원 조회 가능</span>' : ''}
                         <div>
                             <button class="btn btn-secondary btn-sm edit-btn" ${dataAttrs}>수정</button>
                             <button class="btn btn-danger btn-sm delete-btn" data-id="${item.id}" data-name="${this._sanitizeHTML(item.name)}" data-type="${type}">삭제</button>
@@ -123,13 +123,13 @@ class OrganizationAdminPage extends BasePage {
             if (type === 'department') {
                 this.elements.parentIdSelect.value = data.parentId || '';
                 this.elements.managerIdSelect.value = data.managerId || '';
-                this.elements.canViewAllLeavesCheckbox.checked = data.canViewAllLeaves === '1';
+                this.elements.canViewAllEmployeesCheckbox.checked = data.canViewAllEmployees === '1';
             }
         } else { // Adding
             this.elements.modalTitle.textContent = `새 ${entityName} 추가`;
             this.elements.orgIdInput.value = '';
             if (type === 'department') {
-                this.elements.canViewAllLeavesCheckbox.checked = false;
+                this.elements.canViewAllEmployeesCheckbox.checked = false;
             }
         }
         this.state.orgModal.show();
@@ -145,7 +145,7 @@ class OrganizationAdminPage extends BasePage {
         if (type === 'department') {
             payload.parent_id = this.elements.parentIdSelect.value;
             payload.manager_id = this.elements.managerIdSelect.value;
-            payload.can_view_all_leaves = this.elements.canViewAllLeavesCheckbox.checked;
+            payload.can_view_all_employees = this.elements.canViewAllEmployeesCheckbox.checked;
         }
 
         const url = id ? `${this.config.API_URL}/${id}` : this.config.API_URL;
@@ -170,12 +170,12 @@ class OrganizationAdminPage extends BasePage {
 
     handleActionClick(e) {
         const target = e.target;
-        const { id, name, type, parentId, managerId } = target.dataset;
+        const { id, name, type, parentId, managerId, canViewAllEmployees } = target.dataset;
 
         if (!type || !id) return;
 
         if (target.classList.contains('edit-btn')) {
-            const data = { id, name, parentId, managerId };
+            const data = { id, name, parentId, managerId, canViewAllEmployees };
             this.openModal(type, data);
         } else if (target.classList.contains('delete-btn')) {
             const entityName = type === 'department' ? '부서' : '직급';

@@ -68,9 +68,9 @@
                             </select>
                         </div>
                         <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="can-view-all-leaves" name="can_view_all_leaves">
-                            <label class="form-check-label" for="can-view-all-leaves">전체 휴가내역 조회 권한</label>
-                            <small class="form-text text-muted d-block">이 부서에 속한 모든 사용자가 다른 부서의 휴가 내역까지 모두 조회할 수 있습니다. (인사팀 등)</small>
+                            <input type="checkbox" class="form-check-input" id="can-view-all-employees" name="can_view_all_employees">
+                            <label class="form-check-label" for="can-view-all-employees">전체 직원 조회 권한</label>
+                            <small class="form-text text-muted d-block">이 부서에 속한 모든 사용자가 다른 부서의 직원을 포함한 모든 직원 정보를 조회할 수 있습니다. (인사팀, 경영진 등)</small>
                         </div>
                     </div>
                 </div>
