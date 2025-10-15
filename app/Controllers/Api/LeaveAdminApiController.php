@@ -274,7 +274,7 @@ class LeaveAdminApiController extends BaseApiController
         if ($department_id) {
             $employeeFilters['department_id'] = $department_id;
         }
-        
+
         try {
             $employees = $this->employeeRepository->getAll($employeeFilters);
 

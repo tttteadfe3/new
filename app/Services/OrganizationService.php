@@ -98,12 +98,16 @@ class OrganizationService
             $this->findSubtreeRecursive($managedDeptId, $departmentMap, $visibleDepartments);
         }
 
-        // Format names hierarchically
-        foreach ($visibleDepartments as &$dept) {
-            $dept->name = $this->getHierarchicalName($dept->id, $departmentMap);
+        // Format names hierarchically without modifying the original map data
+        $formattedDepartments = [];
+        foreach ($visibleDepartments as $dept) {
+            // Clone the department object to avoid modifying the original in the map
+            $formattedDept = clone $dept;
+            $formattedDept->name = $this->getHierarchicalName($dept->id, $departmentMap);
+            $formattedDepartments[] = $formattedDept;
         }
 
-        return array_values($visibleDepartments);
+        return $formattedDepartments;
     }
 
     private function findSubtreeRecursive(int $deptId, array &$map, array &$visible)
