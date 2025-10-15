@@ -159,7 +159,8 @@ class LeaveAdminApiController extends BaseApiController
         ];
         
         try {
-            $data = $this->leaveRepository->getAllEntitlements(array_filter($filters));
+            // Use the service layer which applies visibility rules
+            $data = $this->leaveService->getAllEntitlements(array_filter($filters));
             $this->apiSuccess($data);
         } catch (Exception $e) {
             $this->apiError('연차 부여 내역 조회 중 오류 발생', 'SERVER_ERROR', 500);
@@ -270,13 +271,9 @@ class LeaveAdminApiController extends BaseApiController
         $year = (int)($data['year'] ?? date('Y'));
         $department_id = $data['department_id'] ?? null;
         
-        $employeeFilters = ['status' => 'active'];
-        if ($department_id) {
-            $employeeFilters['department_id'] = $department_id;
-        }
-        
         try {
-            $employees = $this->employeeRepository->getAll($employeeFilters);
+            // Use the service layer which applies visibility rules
+            $employees = $this->leaveService->getEmployeesForLeaveCalculation($department_id);
 
             $results = [];
             foreach ($employees as $employee) {

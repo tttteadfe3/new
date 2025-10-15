@@ -622,4 +622,53 @@ class LeaveService {
             'projected_remaining' => $totalDays - $usedDays - $pendingDays
         ];
     }
+
+    /**
+     * Get all leave entitlements with filters, applying department-level visibility.
+     */
+    public function getAllEntitlements(array $filters = []): array
+    {
+        $finalFilters = $filters;
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+
+        if ($visibleDeptIds !== null) {
+            if (empty($visibleDeptIds)) return [];
+
+            if (!empty($finalFilters['department_id'])) {
+                if (!in_array($finalFilters['department_id'], $visibleDeptIds)) {
+                    return []; // Forbidden department
+                }
+            } else {
+                $finalFilters['department_id'] = $visibleDeptIds;
+            }
+        }
+
+        return $this->leaveRepository->getAllEntitlements(array_filter($finalFilters));
+    }
+
+    /**
+     * Get employees for leave calculation, applying department-level visibility.
+     */
+    public function getEmployeesForLeaveCalculation(?int $departmentId): array
+    {
+        $employeeFilters = ['status' => 'active'];
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+
+        if ($visibleDeptIds !== null) {
+            if (empty($visibleDeptIds)) return [];
+
+            if ($departmentId) { // User specified a department
+                if (!in_array($departmentId, $visibleDeptIds)) {
+                    return []; // Forbidden
+                }
+                $employeeFilters['department_id'] = $departmentId;
+            } else {
+                $employeeFilters['department_id'] = $visibleDeptIds;
+            }
+        } elseif ($departmentId) {
+             $employeeFilters['department_id'] = $departmentId;
+        }
+
+        return $this->employeeRepository->getAll($employeeFilters);
+    }
 }

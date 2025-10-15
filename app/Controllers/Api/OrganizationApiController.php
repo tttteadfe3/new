@@ -62,7 +62,8 @@ class OrganizationApiController extends BaseApiController
             $type = $_GET['type'] ?? '';
             $data = [];
             if ($type === 'department') {
-                $data = $this->organizationService->getAllDepartments();
+                // Centralized permission logic is now applied here.
+                $data = $this->organizationService->getVisibleDepartmentsForCurrentUser();
             } elseif ($type === 'position') {
                 $data = $this->positionRepository->getAll();
             } else {

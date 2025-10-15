@@ -136,49 +136,82 @@ class OrganizationService
     }
 
     /**
-     * Get the list of department IDs that the current user is allowed to view.
-     * Returns null if the user has global "view all" permissions.
-     * Returns an array of department IDs otherwise.
+     * 현재 사용자가 볼 수 있는 부서 ID 목록을 가져옵니다.
+     * 이 메소드는 데이터 조회 권한의 중심 역할을 합니다.
+     *
+     * @return array|null 사용자가 모든 부서를 볼 수 있는 전역 권한을 가질 경우 null을 반환하고,
+     *                    그렇지 않으면 볼 수 있는 부서 ID의 배열을 반환합니다.
      */
     public function getVisibleDepartmentIdsForCurrentUser(): ?array
     {
-        // 1. Check for global permissions first.
         $user = $this->authService->user();
-        if (!$user || $this->authService->check('employee.view_all')) { // A new global permission
-            return null;
+        if (!$user) {
+            return []; // 로그인하지 않은 사용자
+        }
+
+        // 규칙 1: 전역 "모든 부서 보기" 권한 확인
+        if ($this->authService->check('department.view_all')) {
+            return null; // null은 '제한 없음'을 의미
         }
 
         if (empty($user['employee_id'])) {
-            return []; // Not an employee, can't see anyone.
+            return []; // 직원이 아닌 사용자는 어떤 부서도 볼 수 없음
         }
 
-        // 2. Check for department-level "view all" permission.
         $employee = $this->employeeRepository->findById($user['employee_id']);
-        if ($employee && !empty($employee['department_id'])) {
-            $department = $this->departmentRepository->findById($employee['department_id']);
-            if ($department && $department->can_view_all_employees) {
-                return null;
-            }
+        if (!$employee || empty($employee['department_id'])) {
+            return []; // 소속 부서가 없는 직원
         }
 
-        // 3. Determine visibility based on manager status.
-        $managedDeptIds = $this->departmentRepository->findManagedDepartmentIdsByEmployee($user['employee_id']);
-        $allVisibleIds = [];
+        // 규칙 1.5: 소속 부서의 "전체 보기" 권한 확인 (기존 기능 복원)
+        $department = $this->departmentRepository->findById($employee['department_id']);
+        if ($department && $department->can_view_all_employees) {
+            return null; // null은 '제한 없음'을 의미
+        }
 
-        if (empty($managedDeptIds)) {
-            // Not a manager, can only see their own department.
-            if ($employee && $employee['department_id']) {
-                $allVisibleIds[] = $employee['department_id'];
-            }
-        } else {
-            // Is a manager, get all sub-departments of all managed departments.
+        // 규칙 2: 부서 관리자 권한 확인
+        $managedDeptIds = $this->departmentRepository->findManagedDepartmentIdsByEmployee($user['employee_id']);
+
+        if (!empty($managedDeptIds)) {
+            // 관리자일 경우, 관리하는 모든 부서와 그 하위 부서들을 모두 가져옵니다.
+            $allVisibleIds = [];
             foreach ($managedDeptIds as $deptId) {
                 $subtreeIds = $this->departmentRepository->findSubtreeIds($deptId);
                 $allVisibleIds = array_merge($allVisibleIds, $subtreeIds);
             }
+            // 자신의 부서도 추가 (관리부서와 소속부서가 다를 경우를 대비)
+            $allVisibleIds[] = $employee['department_id'];
+            return array_unique($allVisibleIds);
         }
 
-        return array_unique($allVisibleIds);
+        // 규칙 3: 일반 사용자일 경우
+        // 자신의 소속 부서만 볼 수 있습니다.
+        return [$employee['department_id']];
+    }
+
+    /**
+     * 현재 사용자가 볼 수 있는 부서의 전체 객체 목록을 반환합니다.
+     * 내부적으로 getVisibleDepartmentIdsForCurrentUser를 사용하여 권한을 확인합니다.
+     * @return Department[]
+     */
+    public function getVisibleDepartmentsForCurrentUser(): array
+    {
+        $visibleIds = $this->getVisibleDepartmentIdsForCurrentUser();
+
+        $allDepartments = $this->departmentRepository->getAll();
+
+        if ($visibleIds === null) {
+            return $allDepartments; // 모든 부서 반환
+        }
+
+        if (empty($visibleIds)) {
+            return [];
+        }
+
+        // 볼 수 있는 ID에 해당하는 부서 객체만 필터링하여 반환
+        return array_filter($allDepartments, function ($department) use ($visibleIds) {
+            return in_array($department->id, $visibleIds);
+        });
     }
 
     // ===================================================
