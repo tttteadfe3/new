@@ -61,9 +61,8 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="manager-id" class="form-label">부서장</label>
-                            <select class="form-select" id="manager-id" name="manager_id">
-                                <option value="">(없음)</option>
+                            <label for="manager-ids" class="form-label">부서장</label>
+                            <select class="form-select" id="manager-ids" name="manager_ids[]" multiple>
                                 <!-- Employee options will be populated by JS -->
                             </select>
                         </div>
