@@ -103,7 +103,8 @@ $container->register(\App\Controllers\Api\EmployeeApiController::class, fn($c) =
     $c->resolve(JsonResponse::class),
     $c->resolve(\App\Services\EmployeeService::class),
     $c->resolve(\App\Repositories\DepartmentRepository::class),
-    $c->resolve(\App\Repositories\PositionRepository::class)
+    $c->resolve(\App\Repositories\PositionRepository::class),
+    $c->resolve(\App\Services\OrganizationService::class)
 ));
 
 // Start and regenerate session
