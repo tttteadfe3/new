@@ -72,11 +72,15 @@ set_exception_handler(function(Throwable $exception) {
         exit;
     }
 
-    // 운영 모드일 경우에만, 표준 에러 페이지로 리디렉션합니다.
+    // 운영 모드일 경우, 새로 만든 500 오류 뷰를 직접 렌더링합니다.
     if (!headers_sent()) {
         http_response_code(500);
-        header('Location: ' . BASE_URL . '/errors/error.php?code=500');
     }
+    // 버퍼를 정리하여 이전에 출력된 내용이 오류 페이지에 영향을 주지 않도록 합니다.
+    if (ob_get_level()) {
+        ob_end_clean();
+    }
+    require_once ROOT_PATH . '/app/Views/errors/500.php';
     exit;
 });
 
