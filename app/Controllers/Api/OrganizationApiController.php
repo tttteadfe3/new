@@ -46,6 +46,19 @@ class OrganizationApiController extends BaseApiController
         }
     }
 
+    public function getEligibleManagers(int $departmentId): void
+    {
+        try {
+            $currentManagerIds = isset($_GET['current_manager_ids']) ? explode(',', $_GET['current_manager_ids']) : [];
+            $currentManagerIds = array_map('intval', array_filter($currentManagerIds));
+
+            $data = $this->organizationService->getEligibleManagers($departmentId, $currentManagerIds);
+            $this->apiSuccess($data);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
     public function getManagableDepartments(): void
     {
         try {
