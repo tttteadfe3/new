@@ -123,5 +123,81 @@ class EmployeeApiController extends BaseApiController
         }
     }
 
-    // ... (rest of the original methods are assumed to be here)
+    public function store(): void
+    {
+        if (!$this->authService->check('employee.create')) {
+            $this->apiForbidden('직원을 생성할 권한이 없습니다.');
+            return;
+        }
+        try {
+            $data = $this->getJsonInput();
+            $newEmployeeId = $this->employeeService->createEmployee($data);
+
+            if ($newEmployeeId) {
+                $this->apiSuccess(['id' => $newEmployeeId], '직원이 성공적으로 생성되었습니다.');
+            } else {
+                $this->apiError('직원 생성에 실패했습니다.');
+            }
+        } catch (\InvalidArgumentException $e) {
+            $this->apiBadRequest($e->getMessage());
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    public function getChangeHistory(int $id): void
+    {
+        if (!$this->authService->canManageEmployee($id)) {
+            $this->apiForbidden('해당 직원의 변경 이력을 조회할 권한이 없습니다.');
+            return;
+        }
+        try {
+            $history = $this->employeeService->getEmployeeChangeHistory($id);
+            $this->apiSuccess($history);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    public function approveUpdate(int $id): void
+    {
+        if (!$this->authService->check('employee.approve')) {
+            $this->apiForbidden('프로필 변경을 승인할 권한이 없습니다.');
+            return;
+        }
+        try {
+            if ($this->employeeService->approveProfileUpdate($id)) {
+                $this->apiSuccess(null, '프로필 변경 요청이 승인되었습니다.');
+            } else {
+                $this->apiError('프로필 변경 요청 승인에 실패했습니다. 이미 처리되었거나 요청이 존재하지 않을 수 있습니다.');
+            }
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    public function rejectUpdate(int $id): void
+    {
+        if (!$this->authService->check('employee.approve')) {
+            $this->apiForbidden('프로필 변경을 반려할 권한이 없습니다.');
+            return;
+        }
+        try {
+            $data = $this->getJsonInput();
+            $reason = $data['reason'] ?? '';
+
+            if (empty($reason)) {
+                $this->apiBadRequest('반려 사유를 입력해야 합니다.');
+                return;
+            }
+
+            if ($this->employeeService->rejectProfileUpdate($id, $reason)) {
+                $this->apiSuccess(null, '프로필 변경 요청이 반려되었습니다.');
+            } else {
+                $this->apiError('프로필 변경 요청 반려에 실패했습니다.');
+            }
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
 }

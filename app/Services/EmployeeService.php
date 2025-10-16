@@ -210,6 +210,14 @@ class EmployeeService
     }
 
     /**
+     * Get employee change history
+     */
+    public function getEmployeeChangeHistory(int $employeeId): array
+    {
+        return $this->employeeChangeLogRepository->findByEmployeeId($employeeId);
+    }
+
+    /**
      * Log changes between old and new employee data
      */
     private function logChanges(int $employeeId, array $oldData, array $newData, int $changerId): void
