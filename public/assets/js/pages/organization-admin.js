@@ -144,7 +144,7 @@ class OrganizationAdminPage extends BasePage {
                     this.choicesInstances.managers.enable();
                     this.choicesInstances.managers.setChoices(choices, 'value', 'label', true);
 
-                    const managerIds = data.managerIds ? data.managerIds.split(',').map(id => id.trim()) : [];
+                    const managerIds = data.managerIds ? data.managerIds.split(',').map(id => id.trim().toString()) : [];
                     this.choicesInstances.managers.setValue(managerIds);
                 } catch (error) {
                     console.error('Failed to load eligible managers:', error);

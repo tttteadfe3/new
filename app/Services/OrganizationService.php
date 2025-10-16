@@ -41,7 +41,7 @@ class OrganizationService
                     'id' => $deptId,
                     'name' => $row['name'],
                     'parent_id' => $row['parent_id'],
-                    'manager_name' => $row['manager_names'],
+                    'manager_name' => $row['manager_name'],
                     'children' => [],
                     'employees' => []
                 ];
@@ -181,7 +181,6 @@ class OrganizationService
         return array_unique($allVisibleIds);
     }
 
-
     // ===================================================
     // CRUD Methods restored for OrganizationApiController
     // ===================================================
@@ -195,13 +194,13 @@ class OrganizationService
     {
         $this->departmentRepository->beginTransaction();
         try {
-            $managerIds = $data['manager_ids'] ?? [];
-            unset($data['manager_ids']); // Ensure it's not passed to the create method
+            $managerId = $data['manager_id'] ?? null;
+            unset($data['manager_id']); // Ensure it's not passed to the create method
 
             $newDeptId = $this->departmentRepository->create($data);
 
-            if (!empty($managerIds)) {
-                $this->departmentRepository->replaceManagers($newDeptId, $managerIds);
+            if ($managerId) {
+                $this->departmentRepository->replaceManagers($newDeptId, [$managerId]);
             }
 
             $this->departmentRepository->commit();
@@ -216,14 +215,13 @@ class OrganizationService
     {
         $this->departmentRepository->beginTransaction();
         try {
-            // Expect an array of manager IDs.
-            $managerIds = $data['manager_ids'] ?? [];
-            unset($data['manager_ids']);
+            $managerId = $data['manager_id'] ?? null;
+            unset($data['manager_id']);
 
             $result = $this->departmentRepository->update($id, $data);
 
-            // Replace managers. If managerIds is empty, it will remove all managers.
-            $this->departmentRepository->replaceManagers($id, $managerIds);
+            // Replace managers - if managerId is empty/null, it will remove all managers
+            $this->departmentRepository->replaceManagers($id, $managerId ? [$managerId] : []);
 
             $this->departmentRepository->commit();
             return $result;
@@ -238,66 +236,45 @@ class OrganizationService
         return $this->departmentRepository->delete($id);
     }
 
-    public function getEligibleManagers(int $departmentId): array
-    {
-        $ancestorIds = $this->departmentRepository->findAncestorIds($departmentId);
-        if (empty($ancestorIds)) {
-            return [];
-        }
-        return $this->employeeRepository->findByDepartmentIds($ancestorIds);
-    }
-
     /**
      * Gets all departments and formats their names contextually for display in lists.
      * @return array
      */
     public function getFormattedDepartmentListForAll(): array
     {
-        $allDepartments = $this->departmentRepository->findAllWithManagers();
+        $allDepartments = $this->departmentRepository->getAll();
         if (empty($allDepartments)) {
             return [];
         }
 
         $departmentMap = [];
         foreach ($allDepartments as $dept) {
-            $departmentMap[$dept['id']] = $dept;
+            $departmentMap[$dept->id] = $dept;
         }
 
-        return $this->formatDepartmentList($allDepartments, $departmentMap);
-    }
-
-    private function formatDepartmentList(array $departments, array $departmentMap): array
-    {
-        // Identify true root departments (those without a parent in the full map)
+        // Identify true root departments (those without a parent)
         $rootDeptIds = [];
-        foreach ($departmentMap as $dept) {
-            if ($dept['parent_id'] === null) {
-                $rootDeptIds[] = $dept['id'];
+        foreach ($allDepartments as $dept) {
+            if ($dept->parent_id === null) {
+                $rootDeptIds[] = $dept->id;
             }
         }
         $rootDeptIdsSet = array_flip($rootDeptIds);
 
         // Format names based on the display rule
         $formattedDepartments = [];
-        foreach ($departments as $dept) {
-            $formattedDept = $dept; // Work with a copy of the array
-            $parentId = $formattedDept['parent_id'];
+        foreach ($allDepartments as $dept) {
+            $formattedDept = clone $dept; // Clone to avoid modifying original data
+            $parentId = $formattedDept->parent_id;
 
             // Display simple name if it's a root or a direct child of a root
-            if (isset($rootDeptIdsSet[$formattedDept['id']]) || ($parentId !== null && isset($rootDeptIdsSet[$parentId]))) {
+            if (isset($rootDeptIdsSet[$formattedDept->id]) || ($parentId !== null && isset($rootDeptIdsSet[$parentId]))) {
                 // Name is already simple
             }
-            // For all other descendants, display as "ParentName(ChildName)"
+            // For all other descendants, display as "ChildName(ParentName)"
             else if ($parentId !== null && isset($departmentMap[$parentId])) {
-                $parentName = $departmentMap[$parentId]['name'];
-
-                // Clean the child name by removing a "(Parent)" suffix if it already exists in the database.
-                $cleanedChildName = preg_replace('/ \(' . preg_quote($parentName, '/') . '\)$/', '', $formattedDept['name']);
-
-                // Check if the parent name itself is already formatted. If so, use the simple name.
-                $simpleParentName = preg_replace('/ \(.*\)$/', '', $parentName);
-
-                $formattedDept['name'] = "{$simpleParentName} ({$cleanedChildName})";
+                $parentName = $departmentMap[$parentId]->name;
+                $formattedDept->name = "{$formattedDept->name} ({$parentName})";
             }
 
             $formattedDepartments[] = $formattedDept;
