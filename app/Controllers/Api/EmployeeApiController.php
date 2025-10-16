@@ -113,5 +113,15 @@ class EmployeeApiController extends BaseApiController
         }
     }
 
+    public function unlinked(): void
+    {
+        try {
+            $unlinkedEmployees = $this->employeeService->getUnlinkedEmployees();
+            $this->apiSuccess($unlinkedEmployees);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
     // ... (rest of the original methods are assumed to be here)
 }
