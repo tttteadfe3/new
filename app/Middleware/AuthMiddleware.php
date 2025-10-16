@@ -23,5 +23,6 @@ class AuthMiddleware extends BaseMiddleware
             }
             exit();
         }
+        $this->authService->checkAccess();
     }
 }
