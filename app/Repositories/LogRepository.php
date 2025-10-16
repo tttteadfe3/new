@@ -12,9 +12,19 @@ class LogRepository {
     }
 
     public function insert(array $logData): bool {
+        // Ensure all keys are present to avoid SQL errors
+        $defaults = [
+            'user_id' => null,
+            'user_name' => null,
+            'action' => null,
+            'details' => '', // Default to empty string if not provided
+            'ip_address' => null
+        ];
+        $params = array_merge($defaults, $logData);
+
         $sql = "INSERT INTO sys_activity_logs (user_id, user_name, action, details, ip_address)
                 VALUES (:user_id, :user_name, :action, :details, :ip_address)";
-        return $this->db->execute($sql, $logData) > 0;
+        return $this->db->execute($sql, $params) > 0;
     }
 
     public function search(array $filters = [], int $limit = 50): array {
