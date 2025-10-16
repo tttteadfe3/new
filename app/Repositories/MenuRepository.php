@@ -412,6 +412,33 @@ class MenuRepository
     }
 
     /**
+     * URL이 '#'이고 표시할 하위 메뉴가 없는 상위 메뉴를 재귀적으로 제거합니다.
+     * @param array &$menuTree 메뉴 트리 (참조로 전달)
+     * @return array 필터링된 메뉴 트리
+     */
+    private function filterEmptyParentMenus(array &$menuTree): array
+    {
+        $filteredTree = [];
+        foreach ($menuTree as &$node) {
+            // 자식 노드를 먼저 재귀적으로 필터링
+            if (!empty($node['children'])) {
+                $node['children'] = $this->filterEmptyParentMenus($node['children']);
+            }
+
+            // 현재 노드가 '#' 링크를 가지고 있고 자식이 없으면 제거
+            if (isset($node['url']) && $node['url'] === '#' && empty($node['children'])) {
+                // 이 노드를 건너뛰어 결과에 포함시키지 않음
+                continue;
+            }
+            
+            $filteredTree[] = $node;
+        }
+        unset($node);
+
+        return $filteredTree;
+    }
+
+    /**
      * 사용자가 접근할 수 있는 모든 메뉴를 계층 구조로 가져옵니다. (통합 메뉴용)
      * @param array $userPermissions 사용자의 퍼미션 키 배열
      * @param string $currentUrl 현재 URL (active 상태 표시용)
@@ -446,6 +473,6 @@ class MenuRepository
         }
         unset($menu); // 마지막 요소에 대한 참조를 해제합니다.
 
-        return $tree;
+        return $this->filterEmptyParentMenus($tree);
     }
 }

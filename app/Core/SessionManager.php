@@ -13,6 +13,10 @@ class SessionManager {
     }
 
     public function regenerate() {
+        if (!$this->has('user')) {
+            return;
+        }
+
         if (!$this->has('last_regen')) {
             $this->set('last_regen', time());
         } else if (time() - $this->get('last_regen') > 1800) {
