@@ -41,7 +41,7 @@ class OrganizationService
                     'id' => $deptId,
                     'name' => $row['name'],
                     'parent_id' => $row['parent_id'],
-                    'manager_name' => $row['manager_name'],
+                    'manager_name' => $row['manager_names'],
                     'children' => [],
                     'employees' => []
                 ];
@@ -90,7 +90,7 @@ class OrganizationService
         $allDepartments = $this->departmentRepository->getAll();
         $departmentMap = [];
         foreach ($allDepartments as $dept) {
-            $departmentMap[$dept->id] = $dept;
+            $departmentMap[$dept['id']] = $dept;
         }
 
         $visibleDepartments = [];
@@ -100,7 +100,7 @@ class OrganizationService
 
         // Format names hierarchically
         foreach ($visibleDepartments as &$dept) {
-            $dept->name = $this->getHierarchicalName($dept->id, $departmentMap);
+            $dept['name'] = $this->getHierarchicalName($dept['id'], $departmentMap);
         }
 
         return array_values($visibleDepartments);
@@ -114,8 +114,8 @@ class OrganizationService
         $visible[$deptId] = $map[$deptId];
 
         foreach ($map as $child) {
-            if ($child->parent_id == $deptId) {
-                $this->findSubtreeRecursive($child->id, $map, $visible);
+            if ($child['parent_id'] == $deptId) {
+                $this->findSubtreeRecursive($child['id'], $map, $visible);
             }
         }
     }
@@ -129,8 +129,8 @@ class OrganizationService
         $path = [];
         $current = $map[$deptId];
         while ($current) {
-            array_unshift($path, $current->name);
-            $current = $current->parent_id ? ($map[$current->parent_id] ?? null) : null;
+            array_unshift($path, $current['name']);
+            $current = $current['parent_id'] ? ($map[$current['parent_id']] ?? null) : null;
         }
         return implode($separator, $path);
     }
@@ -181,6 +181,7 @@ class OrganizationService
         return array_unique($allVisibleIds);
     }
 
+
     // ===================================================
     // CRUD Methods restored for OrganizationApiController
     // ===================================================
@@ -194,13 +195,13 @@ class OrganizationService
     {
         $this->departmentRepository->beginTransaction();
         try {
-            $managerId = $data['manager_id'] ?? null;
-            unset($data['manager_id']); // Ensure it's not passed to the create method
+            $managerIds = $data['manager_ids'] ?? [];
+            unset($data['manager_ids']); // Ensure it's not passed to the create method
 
             $newDeptId = $this->departmentRepository->create($data);
 
-            if ($managerId) {
-                $this->departmentRepository->replaceManagers($newDeptId, [$managerId]);
+            if (!empty($managerIds)) {
+                $this->departmentRepository->replaceManagers($newDeptId, $managerIds);
             }
 
             $this->departmentRepository->commit();
@@ -215,13 +216,14 @@ class OrganizationService
     {
         $this->departmentRepository->beginTransaction();
         try {
-            $managerId = $data['manager_id'] ?? null;
-            unset($data['manager_id']);
+            // Expect an array of manager IDs.
+            $managerIds = $data['manager_ids'] ?? [];
+            unset($data['manager_ids']);
 
             $result = $this->departmentRepository->update($id, $data);
 
-            // Replace managers - if managerId is empty/null, it will remove all managers
-            $this->departmentRepository->replaceManagers($id, $managerId ? [$managerId] : []);
+            // Replace managers. If managerIds is empty, it will remove all managers.
+            $this->departmentRepository->replaceManagers($id, $managerIds);
 
             $this->departmentRepository->commit();
             return $result;
@@ -236,45 +238,84 @@ class OrganizationService
         return $this->departmentRepository->delete($id);
     }
 
+    public function getEligibleManagers(int $departmentId, array $currentManagerIds = []): array
+    {
+        $ancestorIds = $this->departmentRepository->findAncestorIds($departmentId);
+
+        $eligibleEmployees = [];
+        if (!empty($ancestorIds)) {
+            $eligibleEmployees = $this->employeeRepository->findByDepartmentIds($ancestorIds);
+        }
+
+        if (empty($currentManagerIds)) {
+            return $eligibleEmployees;
+        }
+
+        // Ensure current managers are in the list, even if they are not in an ancestor department.
+        $currentManagers = $this->employeeRepository->findByIds($currentManagerIds);
+
+        // Merge and remove duplicates
+        $eligibleEmployeeIds = array_column($eligibleEmployees, 'id');
+        foreach ($currentManagers as $manager) {
+            if (!in_array($manager['id'], $eligibleEmployeeIds)) {
+                $eligibleEmployees[] = $manager;
+            }
+        }
+
+        return $eligibleEmployees;
+    }
+
     /**
      * Gets all departments and formats their names contextually for display in lists.
      * @return array
      */
     public function getFormattedDepartmentListForAll(): array
     {
-        $allDepartments = $this->departmentRepository->getAll();
+        $allDepartments = $this->departmentRepository->findAllWithManagers();
         if (empty($allDepartments)) {
             return [];
         }
 
         $departmentMap = [];
         foreach ($allDepartments as $dept) {
-            $departmentMap[$dept->id] = $dept;
+            $departmentMap[$dept['id']] = $dept;
         }
 
-        // Identify true root departments (those without a parent)
+        return $this->formatDepartmentList($allDepartments, $departmentMap);
+    }
+
+    private function formatDepartmentList(array $departments, array $departmentMap): array
+    {
+        // Identify true root departments (those without a parent in the full map)
         $rootDeptIds = [];
-        foreach ($allDepartments as $dept) {
-            if ($dept->parent_id === null) {
-                $rootDeptIds[] = $dept->id;
+        foreach ($departmentMap as $dept) {
+            if ($dept['parent_id'] === null) {
+                $rootDeptIds[] = $dept['id'];
             }
         }
         $rootDeptIdsSet = array_flip($rootDeptIds);
 
         // Format names based on the display rule
         $formattedDepartments = [];
-        foreach ($allDepartments as $dept) {
-            $formattedDept = clone $dept; // Clone to avoid modifying original data
-            $parentId = $formattedDept->parent_id;
+        foreach ($departments as $dept) {
+            $formattedDept = $dept; // Work with a copy of the array
+            $parentId = $formattedDept['parent_id'];
 
             // Display simple name if it's a root or a direct child of a root
-            if (isset($rootDeptIdsSet[$formattedDept->id]) || ($parentId !== null && isset($rootDeptIdsSet[$parentId]))) {
+            if (isset($rootDeptIdsSet[$formattedDept['id']]) || ($parentId !== null && isset($rootDeptIdsSet[$parentId]))) {
                 // Name is already simple
             }
-            // For all other descendants, display as "ChildName(ParentName)"
+            // For all other descendants, display as "ParentName(ChildName)"
             else if ($parentId !== null && isset($departmentMap[$parentId])) {
-                $parentName = $departmentMap[$parentId]->name;
-                $formattedDept->name = "{$formattedDept->name} ({$parentName})";
+                $parentName = $departmentMap[$parentId]['name'];
+
+                // Clean the child name by removing a "(Parent)" suffix if it already exists in the database.
+                $cleanedChildName = preg_replace('/ \(' . preg_quote($parentName, '/') . '\)$/', '', $formattedDept['name']);
+
+                // Check if the parent name itself is already formatted. If so, use the simple name.
+                $simpleParentName = preg_replace('/ \(.*\)$/', '', $parentName);
+
+                $formattedDept['name'] = "{$simpleParentName} ({$cleanedChildName})";
             }
 
             $formattedDepartments[] = $formattedDept;
