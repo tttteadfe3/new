@@ -90,7 +90,7 @@ class OrganizationService
         $allDepartments = $this->departmentRepository->getAll();
         $departmentMap = [];
         foreach ($allDepartments as $dept) {
-            $departmentMap[$dept->id] = $dept;
+            $departmentMap[$dept['id']] = $dept;
         }
 
         $visibleDepartments = [];
@@ -100,7 +100,7 @@ class OrganizationService
 
         // Format names hierarchically
         foreach ($visibleDepartments as &$dept) {
-            $dept->name = $this->getHierarchicalName($dept->id, $departmentMap);
+            $dept['name'] = $this->getHierarchicalName($dept['id'], $departmentMap);
         }
 
         return array_values($visibleDepartments);
@@ -114,8 +114,8 @@ class OrganizationService
         $visible[$deptId] = $map[$deptId];
 
         foreach ($map as $child) {
-            if ($child->parent_id == $deptId) {
-                $this->findSubtreeRecursive($child->id, $map, $visible);
+            if ($child['parent_id'] == $deptId) {
+                $this->findSubtreeRecursive($child['id'], $map, $visible);
             }
         }
     }
@@ -129,8 +129,8 @@ class OrganizationService
         $path = [];
         $current = $map[$deptId];
         while ($current) {
-            array_unshift($path, $current->name);
-            $current = $current->parent_id ? ($map[$current->parent_id] ?? null) : null;
+            array_unshift($path, $current['name']);
+            $current = $current['parent_id'] ? ($map[$current['parent_id']] ?? null) : null;
         }
         return implode($separator, $path);
     }
@@ -238,13 +238,31 @@ class OrganizationService
         return $this->departmentRepository->delete($id);
     }
 
-    public function getEligibleManagers(int $departmentId): array
+    public function getEligibleManagers(int $departmentId, array $currentManagerIds = []): array
     {
         $ancestorIds = $this->departmentRepository->findAncestorIds($departmentId);
-        if (empty($ancestorIds)) {
-            return [];
+
+        $eligibleEmployees = [];
+        if (!empty($ancestorIds)) {
+            $eligibleEmployees = $this->employeeRepository->findByDepartmentIds($ancestorIds);
         }
-        return $this->employeeRepository->findByDepartmentIds($ancestorIds);
+
+        if (empty($currentManagerIds)) {
+            return $eligibleEmployees;
+        }
+
+        // Ensure current managers are in the list, even if they are not in an ancestor department.
+        $currentManagers = $this->employeeRepository->findByIds($currentManagerIds);
+
+        // Merge and remove duplicates
+        $eligibleEmployeeIds = array_column($eligibleEmployees, 'id');
+        foreach ($currentManagers as $manager) {
+            if (!in_array($manager['id'], $eligibleEmployeeIds)) {
+                $eligibleEmployees[] = $manager;
+            }
+        }
+
+        return $eligibleEmployees;
     }
 
     /**

@@ -49,7 +49,10 @@ class OrganizationApiController extends BaseApiController
     public function getEligibleManagers(int $departmentId): void
     {
         try {
-            $data = $this->organizationService->getEligibleManagers($departmentId);
+            $currentManagerIds = isset($_GET['current_manager_ids']) ? explode(',', $_GET['current_manager_ids']) : [];
+            $currentManagerIds = array_map('intval', array_filter($currentManagerIds));
+
+            $data = $this->organizationService->getEligibleManagers($departmentId, $currentManagerIds);
             $this->apiSuccess($data);
         } catch (Exception $e) {
             $this->handleException($e);
@@ -70,19 +73,13 @@ class OrganizationApiController extends BaseApiController
     {
         try {
             $type = $_GET['type'] ?? '';
-            $context = $_GET['context'] ?? 'default'; // default, management
             $data = [];
-
             if ($type === 'department') {
-                if ($context === 'management') {
-                    $data = $this->organizationService->getFormattedDepartmentListForAll();
-                } else {
-                    $data = $this->organizationService->getAllDepartments();
-                }
+                $data = $this->organizationService->getFormattedDepartmentListForAll();
             } elseif ($type === 'position') {
                 $data = $this->positionRepository->getAll();
             } else {
-                throw new Exception('Invalid entity type specified.');
+                 throw new Exception('Invalid entity type specified.');
             }
             $this->apiSuccess($data);
         } catch (Exception $e) {
