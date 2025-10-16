@@ -57,6 +57,21 @@ class DepartmentRepository {
         return array_column($results, 'id');
     }
 
+    public function findAncestorIds(int $departmentId): array
+    {
+        $sql = "
+            WITH RECURSIVE DepartmentAncestors AS (
+                SELECT id, parent_id FROM hr_departments WHERE id = :department_id
+                UNION ALL
+                SELECT d.id, d.parent_id FROM hr_departments d
+                INNER JOIN DepartmentAncestors da ON d.id = da.parent_id
+            )
+            SELECT id FROM DepartmentAncestors
+        ";
+        $results = $this->db->query($sql, [':department_id' => $departmentId]);
+        return array_column($results, 'id');
+    }
+
     public function findAllWithEmployees(): array {
         $sql = "
             SELECT

@@ -238,6 +238,15 @@ class OrganizationService
         return $this->departmentRepository->delete($id);
     }
 
+    public function getEligibleManagers(int $departmentId): array
+    {
+        $ancestorIds = $this->departmentRepository->findAncestorIds($departmentId);
+        if (empty($ancestorIds)) {
+            return [];
+        }
+        return $this->employeeRepository->findByDepartmentIds($ancestorIds);
+    }
+
     /**
      * Gets all departments and formats their names contextually for display in lists.
      * @return array

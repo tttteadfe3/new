@@ -54,6 +54,19 @@ class EmployeeRepository {
         return $this->db->fetchOne($sql, [':user_id' => $userId]);
     }
 
+    public function findByDepartmentIds(array $departmentIds): array
+    {
+        if (empty($departmentIds)) {
+            return [];
+        }
+        $inClause = implode(',', array_map('intval', $departmentIds));
+        $sql = "SELECT e.id, e.name
+                FROM hr_employees e
+                WHERE e.department_id IN ($inClause) AND e.termination_date IS NULL
+                ORDER BY e.name ASC";
+        return $this->db->query($sql);
+    }
+
     /**
      * 모든 직원 목록을 조회합니다. 연결된 사용자 닉네임도 함께 가져옵니다.
      * @param array $filters 필터 조건 (예: ['department_id' => 1])
