@@ -155,8 +155,18 @@ class OrganizationAdminPage extends BasePage {
             this.elements.modalTitle.textContent = `새 ${entityName} 추가`;
             this.elements.orgIdInput.value = '';
             if (type === 'department') {
-                this.choicesInstances.managers.clearStore();
                 this.elements.canViewAllEmployeesCheckbox.checked = false;
+                // For new departments, load all active employees as potential managers
+                try {
+                    const empResponse = await this.apiCall('/employees?status=active');
+                    const choices = empResponse.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
+                    this.choicesInstances.managers.enable();
+                    this.choicesInstances.managers.setChoices(choices, 'value', 'label', true);
+                    this.choicesInstances.managers.setValue([]);
+                } catch (error) {
+                    console.error('Failed to load employees for new department:', error);
+                    Toast.error('부서장 목록을 불러오는데 실패했습니다.');
+                }
             }
         }
         this.state.orgModal.show();
