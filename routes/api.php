@@ -69,6 +69,7 @@ $router->group('/api', function($router) {
 
     // Organization API routes
     $router->get('/organization', [OrganizationApiController::class, 'index'])->name('api.organization.index')->middleware('auth');
+    $router->get('/organization/{id}/eligible-managers', [OrganizationApiController::class, 'getEligibleManagers'])->name('api.organization.eligible-managers')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->post('/organization', [OrganizationApiController::class, 'store'])->name('api.organization.store')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->put('/organization/{id}', [OrganizationApiController::class, 'update'])->name('api.organization.update')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->delete('/organization/{id}', [OrganizationApiController::class, 'destroy'])->name('api.organization.destroy')->middleware('auth')->middleware('permission', 'organization.manage');

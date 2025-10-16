@@ -46,6 +46,16 @@ class OrganizationApiController extends BaseApiController
         }
     }
 
+    public function getEligibleManagers(int $departmentId): void
+    {
+        try {
+            $data = $this->organizationService->getEligibleManagers($departmentId);
+            $this->apiSuccess($data);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
     public function getManagableDepartments(): void
     {
         try {

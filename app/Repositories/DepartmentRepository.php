@@ -21,7 +21,7 @@ class DepartmentRepository {
             LEFT JOIN hr_department_managers m ON d.id = m.department_id
             ORDER BY d.name
         ";
-        return $this->db->fetchAllAs(Department::class, $sql);
+        return $this->db->fetchAll($sql);
     }
 
     public function findById(int $id): ?Department {
@@ -57,6 +57,21 @@ class DepartmentRepository {
         return array_column($results, 'id');
     }
 
+    public function findAncestorIds(int $departmentId): array
+    {
+        $sql = "
+            WITH RECURSIVE DepartmentAncestors AS (
+                SELECT id, parent_id FROM hr_departments WHERE id = :department_id
+                UNION ALL
+                SELECT d.id, d.parent_id FROM hr_departments d
+                INNER JOIN DepartmentAncestors da ON d.id = da.parent_id
+            )
+            SELECT id FROM DepartmentAncestors
+        ";
+        $results = $this->db->query($sql, [':department_id' => $departmentId]);
+        return array_column($results, 'id');
+    }
+
     public function findAllWithEmployees(): array {
         $sql = "
             SELECT
@@ -83,6 +98,7 @@ class DepartmentRepository {
         $sql = "
             SELECT
                 d.*,
+                d.name as simple_name,
                 GROUP_CONCAT(m.name SEPARATOR ', ') as manager_names,
                 GROUP_CONCAT(dm.employee_id SEPARATOR ',') as manager_ids
             FROM hr_departments d
@@ -91,7 +107,7 @@ class DepartmentRepository {
             GROUP BY d.id
             ORDER BY d.name
         ";
-        return $this->db->fetchAllAs(Department::class, $sql);
+        return $this->db->fetchAll($sql);
     }
 
     public function create(array $data): string {

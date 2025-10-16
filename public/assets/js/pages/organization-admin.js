@@ -53,30 +53,9 @@ class OrganizationAdminPage extends BasePage {
         try {
             const deptResponse = await this.apiCall('/organization?type=department&context=management');
             this.populateSelect(this.elements.parentIdSelect, deptResponse.data, 'id', 'name', '(없음)');
-
-            const empResponse = await this.apiCall('/employees?status=active');
-            this.state.employees = empResponse.data.map(emp => ({ id: emp.id, name: emp.name, value: emp.id, label: emp.name }));
-            this.populateSelect(this.elements.managerIdsSelect, this.state.employees, 'id', 'name', '');
-
-            // Initialize Choices.js if it doesn't exist
-            if (!this.choicesInstances.managers) {
-                this.choicesInstances.managers = new Choices(this.elements.managerIdsSelect, {
-                    removeItemButton: true,
-                    placeholder: true,
-                    placeholderValue: '부서장을 선택하세요',
-                });
-            } else {
-                // If it exists, just update the choices
-                this.choicesInstances.managers.setChoices(
-                    empResponse.data.map(emp => ({ value: emp.id, label: emp.name })),
-                    'value',
-                    'label',
-                    true
-                );
-            }
         } catch (error) {
             console.error('Failed to load select options:', error);
-            Toast.error('부서장 및 상위 부서 목록을 불러오는데 실패했습니다.');
+            Toast.error('상위 부서 목록을 불러오는데 실패했습니다.');
         }
     }
 
@@ -103,6 +82,7 @@ class OrganizationAdminPage extends BasePage {
             container.innerHTML = response.data.map(item => {
                 let dataAttrs = `data-id="${item.id}" data-name="${this._sanitizeHTML(item.name)}" data-type="${type}"`;
                 if (type === 'department') {
+                    dataAttrs += ` data-simple-name="${this._sanitizeHTML(item.simple_name)}"`;
                     dataAttrs += ` data-parent-id="${item.parent_id || ''}"`;
                     // Note: manager_ids is a comma-separated string from the server
                     dataAttrs += ` data-manager-ids="${item.manager_ids || ''}"`;
@@ -127,43 +107,66 @@ class OrganizationAdminPage extends BasePage {
         }
     }
 
-    openModal(type, data = null) {
+    async openModal(type, data = null) {
         this.elements.orgForm.reset();
         const entityName = type === 'department' ? '부서' : '직급';
-
-        // Reset Choices.js instance for managers
-        if (this.choicesInstances.managers) {
-            this.choicesInstances.managers.clearStore();
-            this.choicesInstances.managers.setChoices(
-                this.state.employees || [], // Assuming employees are pre-loaded into state
-                'id', 'name', true
-            );
-        }
 
         this.elements.orgTypeInput.value = type;
         this.elements.orgNameLabel.textContent = `${entityName} 이름`;
         this.elements.departmentFields.style.display = type === 'department' ? 'block' : 'none';
 
+        if (type === 'department') {
+            if (!this.choicesInstances.managers) {
+                this.choicesInstances.managers = new Choices(this.elements.managerIdsSelect, {
+                    removeItemButton: true,
+                    placeholder: true,
+                    placeholderValue: '부서장을 선택하세요',
+                });
+            }
+
+            // Disable manager dropdown until we have a department to check against
+            this.choicesInstances.managers.disable();
+        }
+
         if (data) { // Editing
             this.elements.modalTitle.textContent = `${entityName} 정보 수정`;
             this.elements.orgIdInput.value = data.id;
-            this.elements.orgNameInput.value = data.name;
+            this.elements.orgNameInput.value = data.simpleName || data.name; // Use simple_name for editing
+
             if (type === 'department') {
                 this.elements.parentIdSelect.value = data.parentId || '';
-                const managerIds = data.managerIds ? data.managerIds.split(',').map(id => id.trim()) : [];
-                if (this.choicesInstances.managers) {
-                    this.choicesInstances.managers.setValue(managerIds);
-                }
                 this.elements.canViewAllEmployeesCheckbox.checked = data.canViewAllEmployees === '1';
+
+                // Fetch eligible managers and then set the value
+                try {
+                    const eligibleManagers = await this.apiCall(`${this.config.API_URL}/${data.id}/eligible-managers`);
+                    const choices = eligibleManagers.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
+                    this.choicesInstances.managers.enable();
+                    this.choicesInstances.managers.setChoices(choices, 'value', 'label', true);
+
+                    const managerIds = data.managerIds ? data.managerIds.split(',').map(id => id.trim()) : [];
+                    this.choicesInstances.managers.setValue(managerIds);
+                } catch (error) {
+                    console.error('Failed to load eligible managers:', error);
+                    Toast.error('부서장 목록을 불러오는데 실패했습니다.');
+                }
             }
         } else { // Adding
             this.elements.modalTitle.textContent = `새 ${entityName} 추가`;
             this.elements.orgIdInput.value = '';
             if (type === 'department') {
-                if (this.choicesInstances.managers) {
-                    this.choicesInstances.managers.setValue([]);
-                }
                 this.elements.canViewAllEmployeesCheckbox.checked = false;
+                // For new departments, load all active employees as potential managers
+                try {
+                    const empResponse = await this.apiCall('/employees?status=active');
+                    const choices = empResponse.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
+                    this.choicesInstances.managers.enable();
+                    this.choicesInstances.managers.setChoices(choices, 'value', 'label', true);
+                    this.choicesInstances.managers.setValue([]);
+                } catch (error) {
+                    console.error('Failed to load employees for new department:', error);
+                    Toast.error('부서장 목록을 불러오는데 실패했습니다.');
+                }
             }
         }
         this.state.orgModal.show();
@@ -205,13 +208,13 @@ class OrganizationAdminPage extends BasePage {
     handleActionClick(e) {
         const target = e.target;
         // Destructure all potential data attributes
-        const { id, name, type, parentId, managerIds, canViewAllEmployees } = target.dataset;
+        const { id, name, type, parentId, managerIds, canViewAllEmployees, simpleName } = target.dataset;
 
         if (!type || !id) return;
 
         if (target.classList.contains('edit-btn')) {
             // Pass all relevant data to the modal
-            const data = { id, name, parentId, managerIds, canViewAllEmployees };
+            const data = { id, name, type, parentId, managerIds, canViewAllEmployees, simpleName };
             this.openModal(type, data);
         } else if (target.classList.contains('delete-btn')) {
             const entityName = type === 'department' ? '부서' : '직급';
