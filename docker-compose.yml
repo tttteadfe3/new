@@ -1,0 +1,66 @@
+version: '3.8'
+services:
+  nginx:
+    image: nginx:latest
+    container_name: intra_nginx
+    environment:
+      - TZ=Asia/Seoul
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./www:/var/www/
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - php
+      - phpmyadmin
+    networks:
+      - intra_network
+    restart: unless-stopped
+  php:
+    build: .
+    container_name: intra_php
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      - ./www:/var/www
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+    networks:
+      - intra_network
+    restart: unless-stopped
+  mariadb:
+    image: mariadb:latest
+    container_name: intra_mariadb
+    environment:
+      TZ: Asia/Seoul
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./mariadb/data:/var/lib/mysql
+      - ./mariadb/conf.d:/etc/mysql/conf.d
+    networks:
+      - intra_network
+    restart: unless-stopped
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: intra_phpmyadmin
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      # 서브 경로 지원을 위한 설정
+      # PMA_ABSOLUTE_URI: https://test.wonsil.kr/phpMyAdmin/
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      # 추가 설정
+      UPLOAD_LIMIT: 2048M
+      MEMORY_LIMIT: 2048M
+    depends_on:
+      - mariadb
+    networks:
+      - intra_network
+    restart: unless-stopped
+    # 운영환경에서는 phpMyAdmin 제거 권장
+networks:
+  intra_network:
+    driver: bridge
