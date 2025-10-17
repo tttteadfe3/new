@@ -10,9 +10,25 @@
                             </div> <!-- .p-4 -->
 
                             <div class="chat-room-list pt-3" data-simplebar>
+                                <div class="d-flex align-items-center px-4 mb-2">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0 text-muted">확인 대기</h6>
+                                    </div>
+                                </div>
                                 <div class="chat-message-list">
                                     <div class="list-group list-group-flush" id="pending-list">
                                         <!-- Pending items will be dynamically inserted here -->
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center px-4 my-2">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0 text-muted">승인 대기</h6>
+                                    </div>
+                                </div>
+                                <div class="chat-message-list">
+                                    <div class="list-group list-group-flush" id="processed-list">
+                                        <!-- Processed items will be dynamically inserted here -->
                                     </div>
                                 </div>
                             </div>
@@ -96,6 +112,9 @@
                                         <div class="d-flex justify-content-end gap-2">
                                             <button type="button" class="btn btn-danger btn-sm" id="delete-btn">
                                                 <i class="ri-delete-bin-line me-1"></i>삭제
+                                            </button>
+                                            <button type="button" class="btn btn-success btn-sm d-none" id="approve-btn">
+                                                <i class="ri-check-line me-1"></i>승인
                                             </button>
                                             <button type="button" class="btn btn-primary btn-sm" id="confirm-btn">
                                                 <i class="ri-check-double-line me-1"></i>확인 및 저장

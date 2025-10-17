@@ -343,6 +343,8 @@ CREATE TABLE `illegal_disposal_cases2` (
   `employee_id` int(11) NOT NULL COMMENT '등록한 직원 ID',
   `confirmed_by` int(11) DEFAULT NULL COMMENT '내용 확인한 관리자 ID',
   `confirmed_at` datetime DEFAULT NULL COMMENT '내용 확인일시',
+  `approved_by` int(11) DEFAULT NULL COMMENT '승인한 관리자 ID',
+  `approved_at` datetime DEFAULT NULL COMMENT '승인일시',
   `deleted_by` int(11) DEFAULT NULL COMMENT '삭제한 관리자 ID',
   `deleted_at` datetime DEFAULT NULL COMMENT '삭제일시',
   `status` varchar(20) NOT NULL COMMENT '처리 상태 (예: pending, confirmed)',

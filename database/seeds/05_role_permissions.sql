@@ -16,8 +16,9 @@ INSERT INTO `sys_role_permissions` (`role_id`, `permission_id`) VALUES
 (1, 31),  -- littering.create
 (1, 32),  -- littering.process
 (1, 33),  -- littering.confirm
-(1, 34),  -- littering.delete
-(1, 35),  -- littering.restore
+(1, 34),  -- littering.approve
+(1, 35),  -- littering.delete
+(1, 36),  -- littering.restore
 (1, 40),  -- waste.view
 (1, 41),  -- waste.manage_admin
 (1, 50),  -- user.view
