@@ -2,25 +2,33 @@
 
 namespace App\Services;
 
+use App\Core\SessionManager;
+
 class KakaoAuthService
 {
     private string $clientId;
     private string $clientSecret;
     private string $redirectUri;
+    private SessionManager $session;
 
-    public function __construct()
+    public function __construct(SessionManager $session)
     {
         $this->clientId = KAKAO_CLIENT_ID;
         $this->clientSecret = KAKAO_CLIENT_SECRET;
         $this->redirectUri = KAKAO_REDIRECT_URI;
+        $this->session = $session;
     }
 
     public function getAuthorizationUrl(): string
     {
+        $state = bin2hex(random_bytes(16));
+        $this->session->set('oauth2state', $state);
+
         $params = [
             'response_type' => 'code',
             'client_id' => $this->clientId,
             'redirect_uri' => $this->redirectUri,
+            'state' => $state,
         ];
         return 'https://kauth.kakao.com/oauth/authorize?' . http_build_query($params);
     }
