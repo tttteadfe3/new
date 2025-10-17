@@ -165,7 +165,8 @@ class WasteCollectionPage extends BasePage {
             data: { isCluster: false, collections: [data], id: data.id },
             onClick: (m, markerData) => this.openCollectionOverlay(markerData)
         });
-        this.state.collectionList.push({ marker: collectionInfo.marker, data: { ...data, id: data.id } });
+        // Store the entire markerInfo object, which contains the marker reference
+        this.state.collectionList.push({ markerInfo: collectionInfo, data: { ...data, id: data.id } });
     }
 
     openCollectionOverlay(markerData) {
@@ -221,7 +222,7 @@ class WasteCollectionPage extends BasePage {
             const index = this.state.collectionList.findIndex(item => !item.isCluster && item.data.id === collectionId);
             if (index > -1) {
                 const collectionInfo = this.state.collectionList[index];
-                this.state.mapService.mapManager.removeMarker(collectionInfo.marker);
+                this.state.mapService.mapManager.removeMarker(collectionInfo.markerInfo);
                 this.state.collectionList.splice(index, 1);
             }
         } catch (error) {
