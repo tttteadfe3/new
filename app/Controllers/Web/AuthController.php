@@ -46,10 +46,16 @@ class AuthController extends BaseController
     public function kakaoCallback()
     {
         $code = $this->request->input('code');
-        if (!$code) {
-            // Handle error - no code provided
-            $this->redirect('/login?error=auth_failed');
+        $state = $this->request->input('state');
+        $sessionState = $this->authService->getSessionManager()->get('oauth2state');
+
+        if (!$code || !$state || !$sessionState || $state !== $sessionState) {
+            // CSRF attack detected or state mismatch.
+            $this->redirect('/login?error=invalid_state');
         }
+
+        // Clear the state from the session once it's been used.
+        $this->authService->getSessionManager()->remove('oauth2state');
 
         try {
             $token = $this->kakaoAuthService->getAccessToken($code);
