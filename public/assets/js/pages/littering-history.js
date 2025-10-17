@@ -52,7 +52,7 @@ class LitteringHistoryPage extends BasePage {
      */
     async loadInitialData() {
         try {
-            const response = await this.apiCall(`${this.config.API_URL}?status=processed`);
+            const response = await this.apiCall(`${this.config.API_URL}?status=completed`);
             this.state.processedReports = response.data || [];
             this.groupReportsByAddress();
             this.displayReportsOnMap();

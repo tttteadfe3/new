@@ -165,7 +165,8 @@ class WasteCollectionPage extends BasePage {
             data: { isCluster: false, collections: [data], id: data.id },
             onClick: (m, markerData) => this.openCollectionOverlay(markerData)
         });
-        this.state.collectionList.push({ marker: collectionInfo.marker, data: { ...data, id: data.id } });
+        // Store the entire markerInfo object, which contains the marker reference
+        this.state.collectionList.push({ markerInfo: collectionInfo, data: { ...data, id: data.id } });
     }
 
     openCollectionOverlay(markerData) {
@@ -180,7 +181,22 @@ class WasteCollectionPage extends BasePage {
             const itemsContent = items.map(item => `<li class="list-group-item d-flex justify-content-between align-items-center p-1">${item.name}<span class="badge bg-secondary rounded-pill">${item.quantity}</span></li>`).join('');
             const typeBadge = c.type === 'field' ? `<span class="badge bg-info">현장등록</span>` : `<span class="badge bg-success">인터넷배출</span>`;
             const feeBadge = (c.type === 'online' && c.fee > 0) ? `<span class="badge bg-dark ms-1">${c.fee.toLocaleString()}원</span>` : '';
-            return `<div class="card mb-2"><div class="card-body p-2"><div class="d-flex justify-content-between"><div>${typeBadge}${feeBadge}</div><small>${new Date(c.issue_date).toLocaleDateString()}</small></div><ul class="list-group list-group-flush">${itemsContent || '<li>품목 없음</li>'}</ul></div></div>`;
+
+            let cardFooter = '';
+            if (c.type === 'field' && c.status === 'unprocessed') {
+                cardFooter = `<div class="card-footer p-2 text-end"><button class="btn btn-sm btn-primary" onclick="window.wasteCollectionApp.processFieldCollection(${c.id})">수거 완료</button></div>`;
+            }
+
+            return `<div class="card mb-2">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between">
+                                <div>${typeBadge}${feeBadge}</div>
+                                <small>${new Date(c.issue_date).toLocaleDateString()}</small>
+                            </div>
+                            <ul class="list-group list-group-flush">${itemsContent || '<li>품목 없음</li>'}</ul>
+                        </div>
+                        ${cardFooter}
+                    </div>`;
         }).join('');
 
         const headerTitle = isCluster ? `${first.address} (${collections.length}건)` : first.address;
@@ -193,6 +209,24 @@ class WasteCollectionPage extends BasePage {
         if (this.state.currentOverlay) {
             this.state.currentOverlay.setMap(null);
             this.state.currentOverlay = null;
+        }
+    }
+
+    async processFieldCollection(collectionId) {
+        try {
+            await this.apiCall(`/waste-collections/admin/${collectionId}/process`, { method: 'POST' });
+            Toast.success('수거 완료 처리되었습니다.');
+            this.closeOverlay();
+
+            // Find and remove the marker from the map
+            const index = this.state.collectionList.findIndex(item => !item.isCluster && item.data.id === collectionId);
+            if (index > -1) {
+                const collectionInfo = this.state.collectionList[index];
+                this.state.mapService.mapManager.removeMarker(collectionInfo.markerInfo);
+                this.state.collectionList.splice(index, 1);
+            }
+        } catch (error) {
+            Toast.error(`처리 실패: ${error.message}`);
         }
     }
 
