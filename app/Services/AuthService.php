@@ -35,6 +35,11 @@ class AuthService {
         $this->employeeRepository = $employeeRepository;
     }
 
+    public function getSessionManager(): SessionManager
+    {
+        return $this->sessionManager;
+    }
+
     public function user(): ?array
     {
         return $this->sessionManager->get('user');
