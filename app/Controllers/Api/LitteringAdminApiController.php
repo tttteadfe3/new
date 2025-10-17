@@ -41,16 +41,23 @@ class LitteringAdminApiController extends BaseApiController
      */
     public function listReports(): void
     {
-        $status = $this->request->input('status', 'pending'); // 'pending', 'deleted'
+        $status = $this->request->input('status', 'pending'); // 'pending', 'processed_for_approval', 'deleted'
 
         try {
-            if ($status === 'pending') {
-                $data = $this->litteringService->getPendingLittering();
-            } elseif ($status === 'deleted') {
-                $data = $this->litteringService->getDeletedLittering();
-            } else {
-                $this->apiError('Invalid status value.', 'INVALID_INPUT', 400);
-                return;
+            $data = [];
+            switch ($status) {
+                case 'pending':
+                    $data = $this->litteringService->getPendingLittering();
+                    break;
+                case 'processed_for_approval':
+                    $data = $this->litteringService->getProcessedLitteringForApproval();
+                    break;
+                case 'deleted':
+                    $data = $this->litteringService->getDeletedLittering();
+                    break;
+                default:
+                    $this->apiError('Invalid status value.', 'INVALID_INPUT', 400);
+                    return;
             }
             $this->apiSuccess($data);
         } catch (Exception $e) {
@@ -72,6 +79,23 @@ class LitteringAdminApiController extends BaseApiController
 
             $result = $this->litteringService->confirmLittering($data, $adminId);
             $this->apiSuccess($result, '민원 정보가 성공적으로 확인되었습니다.');
+        } catch (Exception $e) {
+            $this->apiError($e->getMessage(), 'OPERATION_FAILED', 422);
+        }
+    }
+
+    /**
+     * Approve a processed littering report.
+     * Corresponds to POST /api/littering_admin/reports/{id}/approve
+     */
+    public function approve(int $id): void
+    {
+        $adminId = $this->user()['id'];
+
+        try {
+            $postData = ['id' => $id];
+            $result = $this->litteringService->approveLittering($postData, $adminId);
+            $this->apiSuccess($result, '처리가 최종 승인되었습니다.');
         } catch (Exception $e) {
             $this->apiError($e->getMessage(), 'OPERATION_FAILED', 422);
         }

@@ -41,13 +41,13 @@ class LitteringApiController extends BaseApiController
      */
     public function index(): void
     {
-        $status = $this->request->input('status', 'active'); // 'active', 'processed'
+        $status = $this->request->input('status', 'active'); // 'active', 'completed'
 
         try {
             if ($status === 'active') {
                 $data = $this->litteringService->getActiveLittering();
-            } elseif ($status === 'processed') {
-                $data = $this->litteringService->getProcessedLittering();
+            } elseif ($status === 'completed') {
+                $data = $this->litteringService->getCompletedLittering();
             } else {
                 $this->apiError('Invalid status value.', 'INVALID_INPUT', 400);
                 return;

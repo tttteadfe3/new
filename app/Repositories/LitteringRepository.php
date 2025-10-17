@@ -14,7 +14,7 @@ class LitteringRepository {
      * @return array
      */
     public function findAllActive(): array {
-        $query = "SELECT * FROM `illegal_disposal_cases2` WHERE `status` not in( 'processed', 'deleted' )ORDER BY `created_at` DESC";
+        $query = "SELECT * FROM `illegal_disposal_cases2` WHERE `status` NOT IN ('processed', 'completed', 'deleted') AND `deleted_at` IS NULL ORDER BY `created_at` DESC";
         return $this->db->fetchAll($query);
     }
 
@@ -38,10 +38,10 @@ class LitteringRepository {
     }
 
     /**
-     * 처리 완료된 민원만 조회합니다.
+     * 최종 완료된 민원만 조회합니다.
      * @return array
      */
-    public function findAllProcessed(): array {
+    public function findAllCompleted(): array {
         $query = "
             SELECT 
                 idc.*, 
@@ -50,8 +50,27 @@ class LitteringRepository {
             FROM `illegal_disposal_cases2` idc
             LEFT JOIN `sys_users` u ON idc.user_id = u.id
             LEFT JOIN `hr_employees` e ON idc.employee_id = e.id
-            WHERE idc.status = 'pending' AND idc.deleted_at IS NULL
+            WHERE idc.status = 'completed' AND idc.deleted_at IS NULL
             ORDER BY idc.updated_at DESC
+        ";
+        return $this->db->fetchAll($query);
+    }
+
+    /**
+     * 관리자가 볼 '승인 대기(processed)' 상태의 민원만 조회합니다.
+     * @return array
+     */
+    public function findAllProcessedForApproval(): array {
+        $query = "
+            SELECT
+                idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
+                u.nickname as user_name,
+                e.name as employee_name
+            FROM `illegal_disposal_cases2` idc
+            LEFT JOIN `sys_users` u ON idc.user_id = u.id
+            LEFT JOIN `hr_employees` e ON idc.employee_id = e.id
+            WHERE idc.status = 'processed' AND idc.deleted_at IS NULL
+            ORDER BY idc.created_at DESC
         ";
         return $this->db->fetchAll($query);
     }
@@ -156,5 +175,19 @@ class LitteringRepository {
     public function restore(int $caseId): bool {
         $query = "UPDATE illegal_disposal_cases2 SET status = 'pending', deleted_by = NULL, deleted_at = NULL WHERE id = ?";
         return $this->db->execute($query, [$caseId]) > 0;
+    }
+
+    /**
+     * 관리자가 처리된 민원을 최종 승인하고 상태를 'completed'로 변경합니다.
+     * @param int $caseId
+     * @param int $adminId
+     * @return bool
+     */
+    public function approve(int $caseId, int $adminId): bool {
+        $query = 'UPDATE `illegal_disposal_cases2`
+                  SET `status` = ?, `approved_by` = ?, `approved_at` = NOW()
+                  WHERE `id` = ?';
+        $params = ['completed', $adminId, $caseId];
+        return $this->db->execute($query, $params) > 0;
     }
 }

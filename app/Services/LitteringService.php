@@ -33,9 +33,14 @@ class LitteringService
         return $this->litteringRepository->findAllPending();
     }
 
-    public function getProcessedLittering(): array
+    public function getCompletedLittering(): array
     {
-        return $this->litteringRepository->findAllProcessed();
+        return $this->litteringRepository->findAllCompleted();
+    }
+
+    public function getProcessedLitteringForApproval(): array
+    {
+        return $this->litteringRepository->findAllProcessedForApproval();
     }
 
     public function getDeletedLittering(): array
@@ -123,6 +128,25 @@ class LitteringService
 
         if (!$this->litteringRepository->confirm($caseId, $updateData, $adminId)) {
             throw new Exception("Failed to confirm report.", 500);
+        }
+
+        return $this->getLitteringById($caseId);
+    }
+
+    public function approveLittering(array $postData, int $adminId): array
+    {
+        $caseId = intval($postData['id'] ?? 0);
+        if (!$caseId) {
+            throw new Exception("Invalid report ID.", 400);
+        }
+
+        $case = $this->getLitteringById($caseId);
+        if ($case['status'] !== 'processed') {
+            throw new Exception("Report must be in 'processed' state to be approved.", 403);
+        }
+
+        if (!$this->litteringRepository->approve($caseId, $adminId)) {
+            throw new Exception("Failed to approve report.", 500);
         }
 
         return $this->getLitteringById($caseId);
