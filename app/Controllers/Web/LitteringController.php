@@ -32,7 +32,6 @@ class LitteringController extends BaseController
     {
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/split-layout.css");
         
-        View::getInstance()->addJs("https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js");
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 
         // Refactored Scripts
@@ -50,11 +49,9 @@ class LitteringController extends BaseController
      */
     public function index(): void
     {
-        View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering-index.css");
         
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 
@@ -74,11 +71,9 @@ class LitteringController extends BaseController
      */
     public function history(): void
     {
-        View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering_history.css");
         
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 

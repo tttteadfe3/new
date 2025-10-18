@@ -133,6 +133,10 @@ class LitteringHistoryPage extends BasePage {
         items.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
         items.forEach(item => processList.appendChild(this.createReportItemElement(item)));
 
+        if (this.lightbox) {
+            this.lightbox.reload();
+        }
+
         if (this.state.detailsOffcanvas) {
             this.state.detailsOffcanvas.show();
         }
@@ -170,11 +174,19 @@ class LitteringHistoryPage extends BasePage {
         if (item.reg_photo_path) photos.push({ src: item.reg_photo_path, title: '작업전' });
         if (item.reg_photo_path2) photos.push({ src: item.reg_photo_path2, title: '작업후' });
         if (item.proc_photo_path) photos.push({ src: item.proc_photo_path, title: '처리' });
+
+        if (photos.length === 0) {
+            return '';
+        }
+
+        const imageWidthClass = photos.length > 1 ? 'w-50' : 'w-100';
         return photos.map(photo => `
-            <a href="${photo.src}" class="gallery-lightbox" data-gallery="gallery-${item.id}" title="${photo.title}">
-                <img src="${photo.src}" alt="${photo.title}" class="process-item-photo rounded">
-                <small class="photo-label">${photo.title}</small>
-            </a>`).join('');
+            <div class="${imageWidthClass}">
+                <a href="${photo.src}" class="gallery-lightbox" data-gallery="gallery-${item.id}" title="${photo.title}">
+                    <img src="${photo.src}" class="img-fluid rounded" alt="${photo.title}" style="cursor: pointer;">
+                </a>
+            </div>
+        `).join('');
     }
 
     formatDate(dateString) {

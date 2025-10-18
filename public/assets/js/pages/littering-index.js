@@ -51,7 +51,6 @@ class LitteringMapPage extends BasePage {
 
         this.setupModals();
         this.setupEventListeners();
-        this.setupPhotoSwiper();
         this.setupLightbox();
         this.loadInitialData();
     }
@@ -467,15 +466,6 @@ class LitteringMapPage extends BasePage {
         this.state.mapService.mapManager.handleLocationSelect(center);
     }
 
-    setupPhotoSwiper() {
-        this.photoSwiper = new Swiper('#photoSwiper', {
-            slidesPerView: 1,
-            spaceBetween: 10,
-            pagination: { el: '.swiper-pagination', clickable: true },
-            navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
-        });
-    }
-
     setupLightbox() {
         this.lightbox = GLightbox({
             selector: '.gallery-lightbox'
@@ -483,8 +473,8 @@ class LitteringMapPage extends BasePage {
     }
 
     renderExistingPhotos(reportData) {
-        const wrapper = document.getElementById('photoSwiperWrapper');
-        wrapper.innerHTML = '';
+        const container = document.getElementById('photo-container');
+        container.innerHTML = '';
         const photos = [];
 
         if (reportData.reg_photo_path) photos.push({ src: reportData.reg_photo_path, title: '작업전' });
@@ -492,24 +482,21 @@ class LitteringMapPage extends BasePage {
         if (reportData.proc_photo_path) photos.push({ src: reportData.proc_photo_path, title: '처리 사진' });
 
         if (photos.length > 0) {
+            const imageWidthClass = photos.length > 1 ? 'w-50' : 'w-100';
             photos.forEach(photo => {
-                const slide = document.createElement('div');
-                slide.className = 'swiper-slide';
-                slide.innerHTML = `
-                    <a href="${photo.src}" class="gallery-lightbox" data-gallery="littering-map" title="${photo.title}">
-                        <img src="${photo.src}" alt="${photo.title}" class="img-fluid">
-                        <div class="photo-label">${photo.title}</div>
-                    </a>`;
-                wrapper.appendChild(slide);
+                const imgHTML = `
+                    <div class="${imageWidthClass}">
+                        <a href="${photo.src}" class="gallery-lightbox" data-gallery="littering-map" title="${photo.title}">
+                            <img src="${photo.src}" class="img-fluid rounded" alt="${photo.title}" style="cursor: pointer;">
+                        </a>
+                    </div>
+                `;
+                const imgNode = document.createRange().createContextualFragment(imgHTML).firstElementChild;
+                container.appendChild(imgNode);
             });
         } else {
-            const noPhotoSlide = document.createElement('div');
-            noPhotoSlide.className = 'swiper-slide no-photo-slide';
-            noPhotoSlide.textContent = '등록된 사진이 없습니다.';
-            wrapper.appendChild(noPhotoSlide);
+            container.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
         }
-        this.photoSwiper.update();
-        this.photoSwiper.slideTo(0, 0);
 
         if (this.lightbox) {
             this.lightbox.reload();
