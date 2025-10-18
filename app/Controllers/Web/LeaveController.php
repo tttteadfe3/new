@@ -45,10 +45,9 @@ class LeaveController extends BaseController
      */
     public function approval(): void
     {
-        $pageTitle = "연차 신청 승인/반려";
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-approval.js');
 
-        echo $this->render('pages/leaves/approval', compact('pageTitle'), 'layouts/app');
+        echo $this->render('pages/leaves/approval', [], 'layouts/app');
     }
 
     /**
@@ -56,10 +55,9 @@ class LeaveController extends BaseController
      */
     public function granting(): void
     {
-        $pageTitle = "연차 부여/계산";
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-granting.js');
 
-        echo $this->render('pages/leaves/granting', compact('pageTitle'), 'layouts/app');
+        echo $this->render('pages/leaves/granting', [], 'layouts/app');
     }
 
     /**
@@ -67,13 +65,12 @@ class LeaveController extends BaseController
      */
     public function history(): void
     {
-        $pageTitle = "직원 연차 내역 조회";
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-history-admin.js');
 
         // Get all employees for the dropdown via the service layer
         $employees = $this->employeeService->getActiveEmployees();
 
-        echo $this->render('pages/leaves/history', compact('pageTitle', 'employees'), 'layouts/app');
+        echo $this->render('pages/leaves/history', compact('employees'), 'layouts/app');
     }
 
 }

@@ -44,11 +44,7 @@ class WasteCollectionController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-index.js");
 
-        $pageTitle = "대형폐기물 수거";
-        $this->activityLogger->logMenuAccess($pageTitle);
-
         echo $this->render('pages/waste/index', [
-            'pageTitle' => $pageTitle,
             'jsConfig' => ['allowedRegions' => ALLOWED_REGIONS]
         ], 'layouts/app');
     }
@@ -61,12 +57,7 @@ class WasteCollectionController extends BaseController
         // Refactored Scripts
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-manage.js");
         
-        $pageTitle = "대형폐기물 관리";
-        $this->activityLogger->logMenuAccess($pageTitle);
-
-        echo $this->render('pages/waste/manage', [
-            'pageTitle' => $pageTitle
-        ], 'layouts/app');
+        echo $this->render('pages/waste/manage', [], 'layouts/app');
     }
 
 }

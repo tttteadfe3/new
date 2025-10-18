@@ -41,20 +41,13 @@ class AdminController extends BaseController
      */
     public function organization(): void
     {
-        $pageTitle = "부서/직급 관리";
-
         // Add Choices.js CSS and JS
         View::getInstance()->addCss('https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css');
         View::getInstance()->addJs('https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js');
 
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/organization-admin.js');
         
-        // Log menu access
-        $this->activityLogger->logMenuAccess($pageTitle);
-        
-        echo $this->render('pages/admin/organization', [
-            'pageTitle' => $pageTitle
-        ], 'layouts/app');
+        echo $this->render('pages/admin/organization', [], 'layouts/app');
     }
 
     /**
@@ -62,15 +55,9 @@ class AdminController extends BaseController
      */
     public function rolePermissions(): void
     {
-        $pageTitle = "역할 및 권한 관리";
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/roles.js');
         
-        // Log menu access
-        $this->activityLogger->logMenuAccess($pageTitle);
-        
-        echo $this->render('pages/admin/role-permissions', [
-            'pageTitle' => $pageTitle
-        ], 'layouts/app');
+        echo $this->render('pages/admin/role-permissions', [], 'layouts/app');
     }
 
     /**
@@ -78,15 +65,9 @@ class AdminController extends BaseController
      */
     public function users(): void
     {
-        $pageTitle = "사용자 관리";
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/users.js');
         
-        // Log menu access
-        $this->activityLogger->logMenuAccess($pageTitle);
-        
-        echo $this->render('pages/admin/users', [
-            'pageTitle' => $pageTitle
-        ], 'layouts/app');
+        echo $this->render('pages/admin/users', [], 'layouts/app');
     }
 
     /**
@@ -94,15 +75,9 @@ class AdminController extends BaseController
      */
     public function menus(): void
     {
-        $pageTitle = "메뉴 관리";
         View::getInstance()->addJs("https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/menu-admin.js");
         
-        // Log menu access
-        $this->activityLogger->logMenuAccess($pageTitle);
-        
-        echo $this->render('pages/admin/menus', [
-            'pageTitle' => $pageTitle
-        ], 'layouts/app');
+        echo $this->render('pages/admin/menus', [], 'layouts/app');
     }
 }

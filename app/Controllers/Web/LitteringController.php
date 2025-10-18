@@ -30,9 +30,6 @@ class LitteringController extends BaseController
      */
     public function manage(): void
     {
-        $pageTitle = "부적정배출 확인";
-        $this->activityLogger->logMenuAccess($pageTitle);
-
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/split-layout.css");
         
         View::getInstance()->addJs("https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js");
@@ -45,7 +42,7 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-manage.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/manage', ['pageTitle' => $pageTitle], 'layouts/app');
+        echo $this->render('pages/littering/manage', [], 'layouts/app');
     }
 
     /**
@@ -53,9 +50,6 @@ class LitteringController extends BaseController
      */
     public function index(): void
     {
-        $pageTitle = "부적정배출 등록";
-        $this->activityLogger->logMenuAccess($pageTitle);
-
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering-index.css");
@@ -72,7 +66,7 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-index.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/index', ['pageTitle' => $pageTitle], 'layouts/app');
+        echo $this->render('pages/littering/index', [], 'layouts/app');
     }
 
     /**
@@ -80,9 +74,6 @@ class LitteringController extends BaseController
      */
     public function history(): void
     {
-        $pageTitle = "무단투기 처리 내역";
-        $this->activityLogger->logMenuAccess($pageTitle);
-
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/swiper/swiper-bundle.min.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering_history.css");
@@ -99,7 +90,7 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-history.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/history', ['pageTitle' => $pageTitle], 'layouts/app');
+        echo $this->render('pages/littering/history', [], 'layouts/app');
     }
 
     /**
@@ -107,9 +98,6 @@ class LitteringController extends BaseController
      */
     public function deleted(): void
     {
-        $pageTitle = "삭제된 부적정배출";
-        $this->activityLogger->logMenuAccess($pageTitle);
-
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 
         // Refactored Scripts
@@ -119,7 +107,7 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-deleted-admin.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/deleted', ['pageTitle' => $pageTitle], 'layouts/app');
+        echo $this->render('pages/littering/deleted', [], 'layouts/app');
     }
 
     /**

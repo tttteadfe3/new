@@ -26,11 +26,6 @@ class MyPageController extends BaseController
     {
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/my-page.js");
 
-        $pageTitle = "마이페이지";
-        $this->activityLogger->logMenuAccess($pageTitle);
-
-        echo $this->render('pages/my-page/index', [
-            'pageTitle' => $pageTitle
-        ], 'layouts/app');
+        echo $this->render('pages/my-page/index', [], 'layouts/app');
     }
 }
