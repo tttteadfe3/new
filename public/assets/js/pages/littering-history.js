@@ -159,8 +159,8 @@ class LitteringHistoryPage extends BasePage {
                 </div>
                 <hr class="my-2">
                 <div class="d-flex justify-content-between small text-muted mb-2">
-                    <span>배출일: ${this.formatDate(item.issue_date)}</span>
-                    <span>수거일: ${this.formatDate(item.collect_date)}</span>
+                    <span>배출일: ${this.formatDate(item.created_at)}</span>
+                    <span>수거일: ${this.formatDate(item.updated_at)}</span>
                 </div>
                 ${item.note ? `<p class="mt-2 mb-2 p-2 bg-light border rounded small">${item.note}</p>` : ''}
                 <div class="d-flex gap-2 mt-2 flex-wrap">${this.renderPhotoElements(item)}</div>
@@ -192,7 +192,12 @@ class LitteringHistoryPage extends BasePage {
     }
 
     formatDate(dateString) {
-        return dateString ? new Date(dateString).toLocaleDateString('ko-KR') : 'N/A';
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
     formatDateTime(dateTimeString) {

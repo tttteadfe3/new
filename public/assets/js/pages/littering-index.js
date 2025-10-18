@@ -194,7 +194,6 @@ class LitteringMapPage extends BasePage {
         if (locationData.address) {
             document.getElementById('address').textContent = locationData.address;
         }
-        this.setTodaysDate('#issueDate');
         this.state.modals.register.show();
     }
 
@@ -208,7 +207,6 @@ class LitteringMapPage extends BasePage {
         this.state.currentReportIndex = index;
         document.getElementById('procAddress').textContent = reportData.address || '-';
         document.getElementById('procWasteType').textContent = reportData.waste_type || '-';
-        this.setTodaysDate('#collectDate');
         this.renderExistingPhotos(reportData);
 
         const formFields = document.getElementById('processFormFields');
@@ -344,10 +342,6 @@ class LitteringMapPage extends BasePage {
             }
         }
 
-        if (!document.getElementById('collectDate').value.trim()) {
-            return { isValid: false, message: '수거일자를 입력해주세요.' };
-        }
-
         if (this.state.currentReportIndex === null || !this.state.reportList[this.state.currentReportIndex]) {
             return { isValid: false, message: '해당 신고 정보를 찾을 수 없습니다.' };
         }
@@ -417,12 +411,6 @@ class LitteringMapPage extends BasePage {
             img.onerror = () => reject(new Error('Image loading failed'));
             img.src = URL.createObjectURL(file);
         });
-    }
-
-    setTodaysDate(selector) {
-        const today = new Date();
-        const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        document.querySelector(selector).value = dateString;
     }
 
     toggleSubWasteType() {
