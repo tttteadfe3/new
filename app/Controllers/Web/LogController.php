@@ -31,16 +31,11 @@ class LogController extends BaseController
      */
     public function index(): void
     {
-        $pageTitle = "사용 로그 뷰어";
-
         // Load BaseApp and dependencies
 
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/log-viewer.js');
-        $this->activityLogger->logMenuAccess($pageTitle);
 
-        echo $this->render('pages/logs/index', [
-            'pageTitle' => $pageTitle
-        ], 'layouts/app');
+        echo $this->render('pages/logs/index', [], 'layouts/app');
     }
 
 }

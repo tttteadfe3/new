@@ -38,11 +38,7 @@ class HolidayController extends BaseController
 
         \App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/holiday-admin.js');
 
-        $data = [
-            'pageTitle' => '휴일/근무일 설정'
-        ];
-
-        echo $this->render('pages/holidays/index', $data, 'layouts/app');
+        echo $this->render('pages/holidays/index', [], 'layouts/app');
     }
 
 }

@@ -80,7 +80,12 @@ $container->register(\App\Services\OrganizationService::class, fn($c) => new \Ap
 $container->register(\App\Services\ProfileService::class, fn($c) => new \App\Services\ProfileService($c->resolve(\App\Repositories\UserRepository::class), $c->resolve(\App\Repositories\EmployeeRepository::class)));
 $container->register(\App\Services\RolePermissionService::class, fn($c) => new \App\Services\RolePermissionService($c->resolve(\App\Repositories\RoleRepository::class)));
 $container->register(\App\Services\UserService::class, fn($c) => new \App\Services\UserService($c->resolve(\App\Repositories\UserRepository::class), $c->resolve(\App\Repositories\RoleRepository::class)));
-$container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Services\ViewDataService($c->resolve(\App\Services\AuthService::class), $c->resolve(SessionManager::class), $c->resolve(\App\Repositories\MenuRepository::class)));
+$container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Services\ViewDataService(
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(SessionManager::class),
+    $c->resolve(\App\Repositories\MenuRepository::class),
+    $c->resolve(\App\Services\ActivityLogger::class)
+));
 $container->register(\App\Services\WasteCollectionService::class, fn($c) => new \App\Services\WasteCollectionService($c->resolve(\App\Repositories\WasteCollectionRepository::class), $c->resolve(Database::class)));
 
 // Register Web Controllers that have dependencies
