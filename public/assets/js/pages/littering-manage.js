@@ -169,8 +169,10 @@ class LitteringAdminPage extends BasePage {
             const imageWidthClass = photos.length > 1 ? 'w-50' : 'w-100';
             photos.forEach(photo => {
                 const imgHTML = `
-                    <div class="${imageWidthClass}">
-                        <img src="${photo.src}" class="img-fluid rounded" alt="${photo.title}" style="cursor: pointer;">
+                    <div class="${imageWidthClass}" style="cursor: pointer;">
+                        <div class="image-container-16-9">
+                            <img src="${photo.src}" alt="${photo.title}">
+                        </div>
                     </div>
                 `;
                 const imgNode = document.createRange().createContextualFragment(imgHTML).firstElementChild;

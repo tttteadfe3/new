@@ -486,8 +486,10 @@ class LitteringMapPage extends BasePage {
             photos.forEach(photo => {
                 const imgHTML = `
                     <div class="${imageWidthClass}">
-                        <a href="${photo.src}" class="gallery-lightbox" data-gallery="littering-map" title="${photo.title}">
-                            <img src="${photo.src}" class="img-fluid rounded" alt="${photo.title}" style="cursor: pointer;">
+                        <a href="${photo.src}" class="gallery-lightbox" data-gallery="littering-map" title="${photo.title}" style="cursor: pointer;">
+                            <div class="image-container-16-9">
+                                <img src="${photo.src}" alt="${photo.title}">
+                            </div>
                         </a>
                     </div>
                 `;
