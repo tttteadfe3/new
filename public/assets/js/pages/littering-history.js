@@ -171,9 +171,9 @@ class LitteringHistoryPage extends BasePage {
 
     renderPhotoElements(item) {
         const photoSlots = [
-            { title: '등록 사진 1', src: item.reg_photo_path },
-            { title: '등록 사진 2', src: item.reg_photo_path2 },
-            { title: '처리 사진', src: item.proc_photo_path }
+            { title: '작업전', src: item.reg_photo_path },
+            { title: '작업후', src: item.reg_photo_path2 },
+            { title: '처리완료', src: item.proc_photo_path }
         ];
 
         let hasPhotos = false;

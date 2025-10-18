@@ -177,14 +177,14 @@ class LitteringAdminPage extends BasePage {
         let photoSlots = [];
         if (reportData.type === 'pending') {
             photoSlots = [
-                { title: '등록 사진 1', src: reportData.reg_photo_path },
-                { title: '등록 사진 2', src: reportData.reg_photo_path2 }
+                { title: '작업전', src: reportData.reg_photo_path },
+                { title: '작업후', src: reportData.reg_photo_path2 }
             ];
         } else { // 'processed'
             photoSlots = [
-                { title: '등록 사진 1', src: reportData.reg_photo_path },
-                { title: '등록 사진 2', src: reportData.reg_photo_path2 },
-                { title: '처리 사진', src: reportData.proc_photo_path }
+                { title: '작업전', src: reportData.reg_photo_path },
+                { title: '작업후', src: reportData.reg_photo_path2 },
+                { title: '처리완료', src: reportData.proc_photo_path }
             ];
         }
 
