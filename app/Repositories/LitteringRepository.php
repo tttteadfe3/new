@@ -26,7 +26,7 @@ class LitteringRepository {
         $query = "
             SELECT 
                 idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
-                idc.reg_photo_path, idc.reg_photo_path2,
+                idc.reg_photo_path, idc.reg_photo_path2, idc.status,
                 COALESCE(e.name, '알 수 없음') as created_by_name
             FROM `illegal_disposal_cases2` idc
             LEFT JOIN `hr_employees` e ON idc.created_by = e.id
@@ -63,7 +63,7 @@ class LitteringRepository {
         $query = "
             SELECT
                 idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
-                idc.reg_photo_path, idc.reg_photo_path2, idc.proc_photo_path,
+                idc.reg_photo_path, idc.reg_photo_path2, idc.proc_photo_path, idc.status,
                 COALESCE(e.name, '알 수 없음') as created_by_name,
                 COALESCE(e2.name, '알 수 없음') as updated_by_name
             FROM `illegal_disposal_cases2` idc
@@ -82,8 +82,8 @@ class LitteringRepository {
      */
     public function save(array $data): ?int {
         $query = 'INSERT INTO `illegal_disposal_cases2` 
-                    (`status`, `latitude`, `longitude`, `address`, `waste_type`, `waste_type2`,
-                     `reg_photo_path`, `reg_photo_path2`, `created_at`, `created_by`)
+                    (`status`, `latitude`, `longitude`, `address`, `waste_type`, `waste_type2`, 
+                     `reg_photo_path`, `reg_photo_path2`, `created_at`, `created_by`) 
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)';
         
         $params = [
