@@ -126,7 +126,7 @@ class LitteringAdminPage extends BasePage {
         const selected = sourceList.find(item => item.id === reportId);
         if (!selected) return;
 
-        this.state.selectedReport = { ...selected, type };
+        this.state.selectedReport = selected;
 
         document.getElementById('case-id').value = selected.id;
         document.getElementById('latitude').value = selected.latitude;
@@ -136,9 +136,9 @@ class LitteringAdminPage extends BasePage {
         document.getElementById('waste_type2').value = selected.waste_type2;
 
         let personInfo = '';
-        if (selected.type === 'pending') {
+        if (selected.status === 'pending') {
             personInfo = `등록 : ${selected.created_by_name}`;
-        } else if (selected.type === 'processed') {
+        } else if (selected.status === 'processed') {
             personInfo = `등록 : ${selected.created_by_name} 처리 : ${selected.updated_by_name}`;
         }
         document.getElementById('registrant-info').textContent = personInfo;
@@ -160,9 +160,9 @@ class LitteringAdminPage extends BasePage {
         });
 
         // Toggle button visibility based on type
-        document.getElementById('confirm-btn').classList.toggle('d-none', type !== 'pending');
-        document.getElementById('approve-btn').classList.toggle('d-none', type !== 'processed');
-        document.getElementById('delete-btn').classList.toggle('d-none', type !== 'pending'); // Can only delete pending reports
+        document.getElementById('confirm-btn').classList.toggle('d-none', selected.status !== 'pending');
+        document.getElementById('approve-btn').classList.toggle('d-none', selected.status !== 'processed');
+        document.getElementById('delete-btn').classList.toggle('d-none', selected.status !== 'pending'); // Can only delete pending reports
 
         document.getElementById('detail-view').classList.remove('d-none');
         if (window.SplitLayout) {
@@ -175,7 +175,8 @@ class LitteringAdminPage extends BasePage {
         container.innerHTML = '';
 
         let photoSlots = [];
-        if (reportData.type === 'pending') {
+			console.log(reportData);
+        if (reportData.status === 'pending') {
             photoSlots = [
                 { title: '작업전', src: reportData.reg_photo_path },
                 { title: '작업후', src: reportData.reg_photo_path2 }
