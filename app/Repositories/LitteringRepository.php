@@ -27,7 +27,7 @@ class LitteringRepository {
             SELECT 
                 idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
                 idc.reg_photo_path, idc.reg_photo_path2,
-                e.name as created_by_name
+                COALESCE(e.name, '알 수 없음') as created_by_name
             FROM `illegal_disposal_cases2` idc
             LEFT JOIN `hr_employees` e ON idc.created_by = e.id
             WHERE idc.status = 'pending' AND idc.deleted_at IS NULL
@@ -64,9 +64,11 @@ class LitteringRepository {
             SELECT
                 idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
                 idc.reg_photo_path, idc.reg_photo_path2, idc.proc_photo_path,
-                e.name as created_by_name
+                COALESCE(e.name, '알 수 없음') as created_by_name,
+                COALESCE(e2.name, '알 수 없음') as updated_by_name
             FROM `illegal_disposal_cases2` idc
             LEFT JOIN `hr_employees` e ON idc.created_by = e.id
+            LEFT JOIN `hr_employees` e2 ON idc.updated_by = e2.id
             WHERE idc.status = 'processed' AND idc.deleted_at IS NULL
             ORDER BY idc.created_at DESC
         ";

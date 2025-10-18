@@ -90,7 +90,13 @@ class LitteringAdminPage extends BasePage {
         }
 
         items.forEach(item => {
-            const registrantName = item.employee_name || item.user_name || '알 수 없음';
+            let personInfo = '';
+            if (type === 'pending') {
+                personInfo = `등록 : ${item.created_by_name}`;
+            } else if (type === 'processed') {
+                personInfo = `등록 : ${item.created_by_name} 처리 : ${item.updated_by_name}`;
+            }
+
             const itemHtml = `
                 <a href="#" class="list-group-item list-group-item-action" data-id="${item.id}" data-type="${type}">
                     <div class="d-flex w-100 justify-content-between">
@@ -98,7 +104,7 @@ class LitteringAdminPage extends BasePage {
                         <small>${new Date(item.created_at).toLocaleDateString()}</small>
                     </div>
                     <p class="mb-1 small text-muted">${item.address}</p>
-                    <small class="text-muted">등록자: ${registrantName}</small>
+                    <small class="text-muted">${personInfo}</small>
                 </a>
             `;
             const itemNode = document.createRange().createContextualFragment(itemHtml).firstElementChild;
@@ -128,7 +134,14 @@ class LitteringAdminPage extends BasePage {
         document.getElementById('address').value = selected.address;
         document.getElementById('waste_type').value = selected.waste_type;
         document.getElementById('waste_type2').value = selected.waste_type2;
-        document.getElementById('registrant-info').textContent = `등록자: ${selected.employee_name || selected.user_name || '알 수 없음'} (${selected.employee_name ? '직원' : '일반'})`;
+
+        let personInfo = '';
+        if (selected.type === 'pending') {
+            personInfo = `등록 : ${selected.created_by_name}`;
+        } else if (selected.type === 'processed') {
+            personInfo = `등록 : ${selected.created_by_name} 처리 : ${selected.updated_by_name}`;
+        }
+        document.getElementById('registrant-info').textContent = personInfo;
         
         this.renderExistingPhotos(selected);
 
