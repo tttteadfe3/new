@@ -26,6 +26,7 @@ class LitteringRepository {
         $query = "
             SELECT 
                 idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
+                idc.reg_photo_path, idc.reg_photo_path2,
                 u.nickname as user_name, 
                 e.name as employee_name 
             FROM `illegal_disposal_cases2` idc
@@ -64,6 +65,7 @@ class LitteringRepository {
         $query = "
             SELECT
                 idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
+                idc.reg_photo_path, idc.reg_photo_path2, idc.proc_photo_path,
                 u.nickname as user_name,
                 e.name as employee_name
             FROM `illegal_disposal_cases2` idc

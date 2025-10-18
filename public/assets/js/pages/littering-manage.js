@@ -161,14 +161,22 @@ class LitteringAdminPage extends BasePage {
         const wrapper = document.getElementById('photoSwiperWrapper');
         wrapper.innerHTML = '';
         const photos = [];
-        if (reportData.reg_photo_path) photos.push({ src: reportData.reg_photo_path, title: '등록 사진' });
-    
+        if (reportData.reg_photo_path) photos.push({ src: reportData.reg_photo_path, title: '등록 사진 1' });
+        if (reportData.reg_photo_path2) photos.push({ src: reportData.reg_photo_path2, title: '등록 사진 2' });
+        if (reportData.proc_photo_path) photos.push({ src: reportData.proc_photo_path, title: '처리 사진' });
+
         if (photos.length > 0) {
-            const photo = photos[0];
-            const slideHTML = `<img src="${photo.src}" class="d-block w-100" alt="${photo.title}">`;
-            const slideNode = document.createRange().createContextualFragment(slideHTML).firstChild;
-            slideNode.addEventListener('click', () => this.openPhotoModal(photo.src, photo.title));
-            wrapper.appendChild(slideNode);
+            photos.forEach((photo, index) => {
+                const isActive = index === 0 ? 'active' : '';
+                const slideHTML = `
+                    <div class="carousel-item ${isActive}">
+                        <img src="${photo.src}" class="d-block w-100" alt="${photo.title}">
+                    </div>
+                `;
+                const slideNode = document.createRange().createContextualFragment(slideHTML).firstChild;
+                slideNode.addEventListener('click', () => this.openPhotoModal(photo.src, photo.title));
+                wrapper.appendChild(slideNode);
+            });
         } else {
             wrapper.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
         }
