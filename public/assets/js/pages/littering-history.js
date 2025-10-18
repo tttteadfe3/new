@@ -170,25 +170,40 @@ class LitteringHistoryPage extends BasePage {
     }
 
     renderPhotoElements(item) {
-        const photos = [];
-        if (item.reg_photo_path) photos.push({ src: item.reg_photo_path, title: '작업전' });
-        if (item.reg_photo_path2) photos.push({ src: item.reg_photo_path2, title: '작업후' });
-        if (item.proc_photo_path) photos.push({ src: item.proc_photo_path, title: '처리' });
+        const photoSlots = [
+            { title: '등록 사진 1', src: item.reg_photo_path },
+            { title: '등록 사진 2', src: item.reg_photo_path2 },
+            { title: '처리 사진', src: item.proc_photo_path }
+        ];
 
-        if (photos.length === 0) {
-            return '';
-        }
-
-        const imageWidthClass = photos.length > 1 ? 'w-50' : 'w-100';
-        return photos.map(photo => `
-            <div class="${imageWidthClass}">
-                <a href="${photo.src}" class="gallery-lightbox" data-gallery="gallery-${item.id}" title="${photo.title}" style="cursor: pointer;">
-                    <div class="image-container-16-9">
-                        <img src="${photo.src}" alt="${photo.title}">
+        let hasPhotos = false;
+        const gridHtml = photoSlots.map(slot => {
+            let content;
+            if (slot.src) {
+                hasPhotos = true;
+                content = `
+                    <a href="${slot.src}" class="gallery-lightbox" data-gallery="gallery-${item.id}" title="${slot.title}" style="cursor: pointer;">
+                        <img src="${slot.src}" alt="${slot.title}">
+                    </a>
+                `;
+            } else {
+                content = `
+                    <div class="no-image-placeholder">
+                        <div>${slot.title}</div>
+                        <small>(이미지 없음)</small>
                     </div>
-                </a>
-            </div>
-        `).join('');
+                `;
+            }
+            return `
+                <div class="photo-item">
+                    <div class="image-container-16-9">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return hasPhotos ? `<div class="photo-grid">${gridHtml}</div>` : '<div class="text-center p-3 text-muted small">등록된 사진이 없습니다.</div>';
     }
 
     formatDate(dateString) {

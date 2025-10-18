@@ -173,27 +173,55 @@ class LitteringAdminPage extends BasePage {
     renderExistingPhotos(reportData) {
         const container = document.getElementById('photo-container');
         container.innerHTML = '';
-        const photos = [];
-        if (reportData.reg_photo_path) photos.push({ src: reportData.reg_photo_path, title: '등록 사진 1' });
-        if (reportData.reg_photo_path2) photos.push({ src: reportData.reg_photo_path2, title: '등록 사진 2' });
-        if (reportData.proc_photo_path) photos.push({ src: reportData.proc_photo_path, title: '처리 사진' });
 
-        if (photos.length > 0) {
-            const imageWidthClass = photos.length > 1 ? 'w-50' : 'w-100';
-            photos.forEach(photo => {
-                const imgHTML = `
-                    <div class="${imageWidthClass}" style="cursor: pointer;">
-                        <div class="image-container-16-9">
-                            <img src="${photo.src}" alt="${photo.title}">
-                        </div>
-                    </div>
-                `;
-                const imgNode = document.createRange().createContextualFragment(imgHTML).firstElementChild;
-                imgNode.addEventListener('click', () => this.openPhotoModal(photo.src, photo.title));
-                container.appendChild(imgNode);
-            });
+        let photoSlots = [];
+        if (reportData.type === 'pending') {
+            photoSlots = [
+                { title: '등록 사진 1', src: reportData.reg_photo_path },
+                { title: '등록 사진 2', src: reportData.reg_photo_path2 }
+            ];
+        } else { // 'processed'
+            photoSlots = [
+                { title: '등록 사진 1', src: reportData.reg_photo_path },
+                { title: '등록 사진 2', src: reportData.reg_photo_path2 },
+                { title: '처리 사진', src: reportData.proc_photo_path }
+            ];
+        }
+
+        const grid = document.createElement('div');
+        grid.className = 'photo-grid';
+        let hasPhotos = false;
+
+        photoSlots.forEach(slot => {
+            const item = document.createElement('div');
+            item.className = 'photo-item';
+
+            const container169 = document.createElement('div');
+            container169.className = 'image-container-16-9';
+
+            if (slot.src) {
+                hasPhotos = true;
+                container169.style.cursor = 'pointer';
+                container169.addEventListener('click', () => this.openPhotoModal(slot.src, slot.title));
+
+                const img = document.createElement('img');
+                img.src = slot.src;
+                img.alt = slot.title;
+                container169.appendChild(img);
+            } else {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'no-image-placeholder';
+                placeholder.innerHTML = `<div>${slot.title}</div><small>(이미지 없음)</small>`;
+                container169.appendChild(placeholder);
+            }
+            item.appendChild(container169);
+            grid.appendChild(item);
+        });
+
+        if (!hasPhotos) {
+             container.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
         } else {
-            container.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
+            container.appendChild(grid);
         }
     }
 

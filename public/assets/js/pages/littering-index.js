@@ -463,29 +463,58 @@ class LitteringMapPage extends BasePage {
     renderExistingPhotos(reportData) {
         const container = document.getElementById('photo-container');
         container.innerHTML = '';
-        const photos = [];
 
-        if (reportData.reg_photo_path) photos.push({ src: reportData.reg_photo_path, title: '작업전' });
-        if (reportData.reg_photo_path2) photos.push({ src: reportData.reg_photo_path2, title: '작업후' });
-        if (reportData.proc_photo_path) photos.push({ src: reportData.proc_photo_path, title: '처리 사진' });
+        const photoSlots = [
+            {
+                title: '작업전',
+                src: reportData.reg_photo_path,
+            },
+            {
+                title: '작업후',
+                src: reportData.reg_photo_path2,
+            }
+        ];
 
-        if (photos.length > 0) {
-            const imageWidthClass = photos.length > 1 ? 'w-50' : 'w-100';
-            photos.forEach(photo => {
-                const imgHTML = `
-                    <div class="${imageWidthClass}">
-                        <a href="${photo.src}" class="gallery-lightbox" data-gallery="littering-map" title="${photo.title}" style="cursor: pointer;">
-                            <div class="image-container-16-9">
-                                <img src="${photo.src}" alt="${photo.title}">
-                            </div>
-                        </a>
-                    </div>
-                `;
-                const imgNode = document.createRange().createContextualFragment(imgHTML).firstElementChild;
-                container.appendChild(imgNode);
-            });
-        } else {
+        let hasPhotos = false;
+        const grid = document.createElement('div');
+        grid.className = 'photo-grid';
+
+        photoSlots.forEach(slot => {
+            const item = document.createElement('div');
+            item.className = 'photo-item';
+
+            const container169 = document.createElement('div');
+            container169.className = 'image-container-16-9';
+
+            if (slot.src) {
+                hasPhotos = true;
+                const link = document.createElement('a');
+                link.href = slot.src;
+                link.className = 'gallery-lightbox';
+                link.dataset.gallery = `littering-map-${reportData.id}`;
+                link.title = slot.title;
+                link.style.cursor = 'pointer';
+
+                const img = document.createElement('img');
+                img.src = slot.src;
+                img.alt = slot.title;
+
+                link.appendChild(img);
+                container169.appendChild(link);
+            } else {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'no-image-placeholder';
+                placeholder.innerHTML = `<div>${slot.title}</div><small>(이미지 없음)</small>`;
+                container169.appendChild(placeholder);
+            }
+            item.appendChild(container169);
+            grid.appendChild(item);
+        });
+
+        if (!hasPhotos) {
             container.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
+        } else {
+            container.appendChild(grid);
         }
 
         if (this.lightbox) {
