@@ -29,7 +29,6 @@ class EmployeeController extends BaseController
      */
     public function index(): void
     {
-        $pageTitle = "직원 목록";
         View::getInstance()->addCss(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.css');
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.js');
 
@@ -37,12 +36,7 @@ class EmployeeController extends BaseController
 
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
         
-        // Log menu access
-        $this->activityLogger->logMenuAccess($pageTitle);
-        
-        echo $this->render('pages/employees/index', [
-            'pageTitle' => $pageTitle
-        ], 'layouts/app');
+        echo $this->render('pages/employees/index', [], 'layouts/app');
     }
 
     /**
