@@ -133,6 +133,10 @@ class LitteringHistoryPage extends BasePage {
         items.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
         items.forEach(item => processList.appendChild(this.createReportItemElement(item)));
 
+        if (this.lightbox) {
+            this.lightbox.reload();
+        }
+
         if (this.state.detailsOffcanvas) {
             this.state.detailsOffcanvas.show();
         }
@@ -155,8 +159,8 @@ class LitteringHistoryPage extends BasePage {
                 </div>
                 <hr class="my-2">
                 <div class="d-flex justify-content-between small text-muted mb-2">
-                    <span>배출일: ${this.formatDate(item.issue_date)}</span>
-                    <span>수거일: ${this.formatDate(item.collect_date)}</span>
+                    <span>배출일: ${this.formatDate(item.created_at)}</span>
+                    <span>수거일: ${this.formatDate(item.updated_at)}</span>
                 </div>
                 ${item.note ? `<p class="mt-2 mb-2 p-2 bg-light border rounded small">${item.note}</p>` : ''}
                 <div class="d-flex gap-2 mt-2 flex-wrap">${this.renderPhotoElements(item)}</div>
@@ -166,19 +170,49 @@ class LitteringHistoryPage extends BasePage {
     }
 
     renderPhotoElements(item) {
-        const photos = [];
-        if (item.reg_photo_path) photos.push({ src: item.reg_photo_path, title: '작업전' });
-        if (item.reg_photo_path2) photos.push({ src: item.reg_photo_path2, title: '작업후' });
-        if (item.proc_photo_path) photos.push({ src: item.proc_photo_path, title: '처리' });
-        return photos.map(photo => `
-            <a href="${photo.src}" class="gallery-lightbox" data-gallery="gallery-${item.id}" title="${photo.title}">
-                <img src="${photo.src}" alt="${photo.title}" class="process-item-photo rounded">
-                <small class="photo-label">${photo.title}</small>
-            </a>`).join('');
+        const photoSlots = [
+            { title: '작업전', src: item.reg_photo_path },
+            { title: '작업후', src: item.reg_photo_path2 },
+            { title: '처리완료', src: item.proc_photo_path }
+        ];
+
+        let hasPhotos = false;
+        const gridHtml = photoSlots.map(slot => {
+            let content;
+            if (slot.src) {
+                hasPhotos = true;
+                content = `
+                    <a href="${slot.src}" class="gallery-lightbox" data-gallery="gallery-${item.id}" title="${slot.title}" style="cursor: pointer;">
+                        <img src="${slot.src}" alt="${slot.title}">
+                    </a>
+                `;
+            } else {
+                content = `
+                    <div class="no-image-placeholder">
+                        <div>${slot.title}</div>
+                        <small>(이미지 없음)</small>
+                    </div>
+                `;
+            }
+            return `
+                <div class="photo-item">
+                    <div class="image-container-16-9">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return hasPhotos ? `<div class="photo-grid">${gridHtml}</div>` : '<div class="text-center p-3 text-muted small">등록된 사진이 없습니다.</div>';
     }
 
     formatDate(dateString) {
-        return dateString ? new Date(dateString).toLocaleDateString('ko-KR') : 'N/A';
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
     formatDateTime(dateTimeString) {

@@ -56,18 +56,8 @@
                                                             </div>
                                                         </div>
                                 <div class="card-body">
-                                    <div id="carouselPhoto" class="carousel carousel-dark slide" data-bs-ride="carousel">
-                                        <div class="carousel-inner" id="photoSwiperWrapper">
-                                            <!-- Photos will be dynamically inserted here -->
-                                        </div>
-                                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselPhoto" data-bs-slide="prev">
-                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                            <span class="visually-hidden">Previous</span>
-                                        </button>
-                                        <button class="carousel-control-next" type="button" data-bs-target="#carouselPhoto" data-bs-slide="next">
-                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                            <span class="visually-hidden">Next</span>
-                                        </button>
+                                    <div id="photo-container" class="d-flex justify-content-center gap-2 mb-3">
+                                        <!-- Photos will be dynamically inserted here -->
                                     </div>
                                     <p id="registrant-info" class="mt-3 mb-1"></p>
                                     <form id="confirm-form">

@@ -122,24 +122,8 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">사진</label>
-                    <div class="photo-swiper-container">
-                        <!-- Swiper -->
-                        <div class="swiper navigation-swiper rounded" id="photoSwiper">
-                            <div class="swiper-wrapper" id="photoSwiperWrapper">
-                                <!-- 사진이 없을 때 표시할 슬라이드 -->
-                                <div class="swiper-slide no-photo-slide">
-                                    <div class="no-photo-content text-center p-3 border rounded bg-light">
-                                        <i class="ri-image-2-line fs-1 text-muted mb-2 d-block"></i>
-                                        <span class="text-muted">등록 사진이 없습니다.</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- 네비게이션 버튼 -->
-                            <div class="swiper-button-next"></div>
-                            <div class="swiper-button-prev"></div>
-                            <!-- 페이지네이션 -->
-                            <div class="swiper-pagination"></div>
-                        </div>
+                <div id="photo-container" class="d-flex justify-content-center gap-2 mb-3">
+                    <!-- Photos will be dynamically inserted here -->
                 </div>
             </div>
             <div class="mb-3" style="display:none;">

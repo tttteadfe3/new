@@ -54,7 +54,7 @@ class LitteringService
         return $this->litteringRepository->findById($id);
     }
 
-    public function registerLittering(array $postData, array $files, int $userId, ?int $employeeId): array
+    public function registerLittering(array $postData, array $files, int $employeeId): array
     {
         $this->validateRegistration($postData, $files);
         $this->db->beginTransaction();
@@ -69,17 +69,14 @@ class LitteringService
                 ? FileUploader::validateAndUpload($files['photo2'], 'littering', 'reg2_') : '';
 
             $data = [
-                'status'      => 'pending',
-                'user_id'     => $userId,
-                'employee_id' => $employeeId,
                 'latitude'    => floatval($postData['lat']),
                 'longitude'   => floatval($postData['lng']),
                 'address'     => Validator::sanitizeString($postData['address'] ?? ''),
                 'waste_type'  => Validator::sanitizeString($postData['waste_type'] ?? ''),
                 'waste_type2' => Validator::sanitizeString($postData['waste_type2'] ?? ''),
-                'issueDate'   => $postData['issueDate'] ?? '',
                 'fileName1'   => $fileName1,
-                'fileName2'   => $fileName2
+                'fileName2'   => $fileName2,
+                'created_by'  => $employeeId
             ];
 
             $newId = $this->litteringRepository->save($data);
@@ -111,7 +108,7 @@ class LitteringService
         }
     }
 
-    public function confirmLittering(array $postData, int $adminId): array
+    public function confirmLittering(array $postData, int $employeeId): array
     {
         $caseId = intval($postData['id'] ?? 0);
         if (!$caseId) {
@@ -126,14 +123,14 @@ class LitteringService
             'waste_type2' => Validator::sanitizeString($postData['waste_type2'] ?? '')
         ];
 
-        if (!$this->litteringRepository->confirm($caseId, $updateData, $adminId)) {
+        if (!$this->litteringRepository->confirm($caseId, $updateData, $employeeId)) {
             throw new Exception("Failed to confirm report.", 500);
         }
 
         return $this->getLitteringById($caseId);
     }
 
-    public function approveLittering(array $postData, int $adminId): array
+    public function approveLittering(array $postData, int $employeeId): array
     {
         $caseId = intval($postData['id'] ?? 0);
         if (!$caseId) {
@@ -145,21 +142,21 @@ class LitteringService
             throw new Exception("Report must be in 'processed' state to be approved.", 403);
         }
 
-        if (!$this->litteringRepository->approve($caseId, $adminId)) {
+        if (!$this->litteringRepository->approve($caseId, $employeeId)) {
             throw new Exception("Failed to approve report.", 500);
         }
 
         return $this->getLitteringById($caseId);
     }
 
-    public function deleteLittering(array $postData, int $adminId): array
+    public function deleteLittering(array $postData, int $employeeId): array
     {
         $caseId = intval($postData['id'] ?? 0);
         if (!$caseId) {
             throw new Exception("Invalid report ID.", 400);
         }
 
-        if (!$this->litteringRepository->softDelete($caseId, $adminId)) {
+        if (!$this->litteringRepository->softDelete($caseId, $employeeId)) {
             throw new Exception("Failed to delete report.", 500);
         }
 
@@ -194,7 +191,7 @@ class LitteringService
         return $this->getLitteringById($caseId);
     }
 
-    public function processLittering(array $postData, array $files): array
+    public function processLittering(array $postData, array $files, int $employeeId): array
     {
         $this->validateProcess($postData, $files);
 
@@ -210,13 +207,12 @@ class LitteringService
         $data = [
             'id'          => $caseId,
             'corrected'   => Validator::sanitizeString($postData['corrected']),
-            'collectDate' => $postData['collectDate'] ?? null,
             'note'        => Validator::sanitizeString($postData['note'] ?? ''),
             'procFileName' => (isset($files['procPhoto']) && $files['procPhoto']['error'] === UPLOAD_ERR_OK)
                 ? FileUploader::validateAndUpload($files['procPhoto'], 'littering', 'proc_') : ''
         ];
 
-        if (!$this->litteringRepository->process($data)) {
+        if (!$this->litteringRepository->process($data, $employeeId)) {
             throw new Exception("Failed to update report status in database.", 500);
         }
 

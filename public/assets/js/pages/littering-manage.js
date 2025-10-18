@@ -90,7 +90,13 @@ class LitteringAdminPage extends BasePage {
         }
 
         items.forEach(item => {
-            const registrantName = item.employee_name || item.user_name || '알 수 없음';
+            let personInfo = '';
+            if (type === 'pending') {
+                personInfo = `등록 : ${item.created_by_name}`;
+            } else if (type === 'processed') {
+                personInfo = `등록 : ${item.created_by_name} 처리 : ${item.updated_by_name}`;
+            }
+
             const itemHtml = `
                 <a href="#" class="list-group-item list-group-item-action" data-id="${item.id}" data-type="${type}">
                     <div class="d-flex w-100 justify-content-between">
@@ -98,7 +104,7 @@ class LitteringAdminPage extends BasePage {
                         <small>${new Date(item.created_at).toLocaleDateString()}</small>
                     </div>
                     <p class="mb-1 small text-muted">${item.address}</p>
-                    <small class="text-muted">등록자: ${registrantName}</small>
+                    <small class="text-muted">${personInfo}</small>
                 </a>
             `;
             const itemNode = document.createRange().createContextualFragment(itemHtml).firstElementChild;
@@ -128,7 +134,14 @@ class LitteringAdminPage extends BasePage {
         document.getElementById('address').value = selected.address;
         document.getElementById('waste_type').value = selected.waste_type;
         document.getElementById('waste_type2').value = selected.waste_type2;
-        document.getElementById('registrant-info').textContent = `등록자: ${selected.employee_name || selected.user_name || '알 수 없음'} (${selected.employee_name ? '직원' : '일반'})`;
+
+        let personInfo = '';
+        if (selected.type === 'pending') {
+            personInfo = `등록 : ${selected.created_by_name}`;
+        } else if (selected.type === 'processed') {
+            personInfo = `등록 : ${selected.created_by_name} 처리 : ${selected.updated_by_name}`;
+        }
+        document.getElementById('registrant-info').textContent = personInfo;
         
         this.renderExistingPhotos(selected);
 
@@ -158,19 +171,57 @@ class LitteringAdminPage extends BasePage {
     }
 
     renderExistingPhotos(reportData) {
-        const wrapper = document.getElementById('photoSwiperWrapper');
-        wrapper.innerHTML = '';
-        const photos = [];
-        if (reportData.reg_photo_path) photos.push({ src: reportData.reg_photo_path, title: '등록 사진' });
-    
-        if (photos.length > 0) {
-            const photo = photos[0];
-            const slideHTML = `<img src="${photo.src}" class="d-block w-100" alt="${photo.title}">`;
-            const slideNode = document.createRange().createContextualFragment(slideHTML).firstChild;
-            slideNode.addEventListener('click', () => this.openPhotoModal(photo.src, photo.title));
-            wrapper.appendChild(slideNode);
+        const container = document.getElementById('photo-container');
+        container.innerHTML = '';
+
+        let photoSlots = [];
+        if (reportData.type === 'pending') {
+            photoSlots = [
+                { title: '작업전', src: reportData.reg_photo_path },
+                { title: '작업후', src: reportData.reg_photo_path2 }
+            ];
+        } else { // 'processed'
+            photoSlots = [
+                { title: '작업전', src: reportData.reg_photo_path },
+                { title: '작업후', src: reportData.reg_photo_path2 },
+                { title: '처리완료', src: reportData.proc_photo_path }
+            ];
+        }
+
+        const grid = document.createElement('div');
+        grid.className = 'photo-grid';
+        let hasPhotos = false;
+
+        photoSlots.forEach(slot => {
+            const item = document.createElement('div');
+            item.className = 'photo-item';
+
+            const container169 = document.createElement('div');
+            container169.className = 'image-container-16-9';
+
+            if (slot.src) {
+                hasPhotos = true;
+                container169.style.cursor = 'pointer';
+                container169.addEventListener('click', () => this.openPhotoModal(slot.src, slot.title));
+
+                const img = document.createElement('img');
+                img.src = slot.src;
+                img.alt = slot.title;
+                container169.appendChild(img);
+            } else {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'no-image-placeholder';
+                placeholder.innerHTML = `<div>${slot.title}</div><small>(이미지 없음)</small>`;
+                container169.appendChild(placeholder);
+            }
+            item.appendChild(container169);
+            grid.appendChild(item);
+        });
+
+        if (!hasPhotos) {
+             container.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
         } else {
-            wrapper.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
+            container.appendChild(grid);
         }
     }
 
@@ -200,7 +251,7 @@ class LitteringAdminPage extends BasePage {
                 body: updatedData
             });
             Toast.success('성공적으로 확인 및 저장되었습니다.');
-            this.removeReportFromList(updatedData.id);
+            this.removeReportFromList(updatedData.id, 'pending');
         } catch (error) {
             Toast.error('저장에 실패했습니다: ' + error.message);
         } finally {

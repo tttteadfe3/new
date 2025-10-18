@@ -51,7 +51,6 @@ class LitteringMapPage extends BasePage {
 
         this.setupModals();
         this.setupEventListeners();
-        this.setupPhotoSwiper();
         this.setupLightbox();
         this.loadInitialData();
     }
@@ -195,7 +194,6 @@ class LitteringMapPage extends BasePage {
         if (locationData.address) {
             document.getElementById('address').textContent = locationData.address;
         }
-        this.setTodaysDate('#issueDate');
         this.state.modals.register.show();
     }
 
@@ -209,7 +207,6 @@ class LitteringMapPage extends BasePage {
         this.state.currentReportIndex = index;
         document.getElementById('procAddress').textContent = reportData.address || '-';
         document.getElementById('procWasteType').textContent = reportData.waste_type || '-';
-        this.setTodaysDate('#collectDate');
         this.renderExistingPhotos(reportData);
 
         const formFields = document.getElementById('processFormFields');
@@ -345,10 +342,6 @@ class LitteringMapPage extends BasePage {
             }
         }
 
-        if (!document.getElementById('collectDate').value.trim()) {
-            return { isValid: false, message: '수거일자를 입력해주세요.' };
-        }
-
         if (this.state.currentReportIndex === null || !this.state.reportList[this.state.currentReportIndex]) {
             return { isValid: false, message: '해당 신고 정보를 찾을 수 없습니다.' };
         }
@@ -420,12 +413,6 @@ class LitteringMapPage extends BasePage {
         });
     }
 
-    setTodaysDate(selector) {
-        const today = new Date();
-        const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        document.querySelector(selector).value = dateString;
-    }
-
     toggleSubWasteType() {
         const isChecked = document.getElementById('mixed').checked;
         const subTypeContainer = document.getElementById('waste_type2Container');
@@ -467,15 +454,6 @@ class LitteringMapPage extends BasePage {
         this.state.mapService.mapManager.handleLocationSelect(center);
     }
 
-    setupPhotoSwiper() {
-        this.photoSwiper = new Swiper('#photoSwiper', {
-            slidesPerView: 1,
-            spaceBetween: 10,
-            pagination: { el: '.swiper-pagination', clickable: true },
-            navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
-        });
-    }
-
     setupLightbox() {
         this.lightbox = GLightbox({
             selector: '.gallery-lightbox'
@@ -483,33 +461,61 @@ class LitteringMapPage extends BasePage {
     }
 
     renderExistingPhotos(reportData) {
-        const wrapper = document.getElementById('photoSwiperWrapper');
-        wrapper.innerHTML = '';
-        const photos = [];
+        const container = document.getElementById('photo-container');
+        container.innerHTML = '';
 
-        if (reportData.reg_photo_path) photos.push({ src: reportData.reg_photo_path, title: '작업전' });
-        if (reportData.reg_photo_path2) photos.push({ src: reportData.reg_photo_path2, title: '작업후' });
-        if (reportData.proc_photo_path) photos.push({ src: reportData.proc_photo_path, title: '처리 사진' });
+        const photoSlots = [
+            {
+                title: '작업전',
+                src: reportData.reg_photo_path,
+            },
+            {
+                title: '작업후',
+                src: reportData.reg_photo_path2,
+            }
+        ];
 
-        if (photos.length > 0) {
-            photos.forEach(photo => {
-                const slide = document.createElement('div');
-                slide.className = 'swiper-slide';
-                slide.innerHTML = `
-                    <a href="${photo.src}" class="gallery-lightbox" data-gallery="littering-map" title="${photo.title}">
-                        <img src="${photo.src}" alt="${photo.title}" class="img-fluid">
-                        <div class="photo-label">${photo.title}</div>
-                    </a>`;
-                wrapper.appendChild(slide);
-            });
+        let hasPhotos = false;
+        const grid = document.createElement('div');
+        grid.className = 'photo-grid';
+
+        photoSlots.forEach(slot => {
+            const item = document.createElement('div');
+            item.className = 'photo-item';
+
+            const container169 = document.createElement('div');
+            container169.className = 'image-container-16-9';
+
+            if (slot.src) {
+                hasPhotos = true;
+                const link = document.createElement('a');
+                link.href = slot.src;
+                link.className = 'gallery-lightbox';
+                link.dataset.gallery = `littering-map-${reportData.id}`;
+                link.title = slot.title;
+                link.style.cursor = 'pointer';
+
+                const img = document.createElement('img');
+                img.src = slot.src;
+                img.alt = slot.title;
+
+                link.appendChild(img);
+                container169.appendChild(link);
+            } else {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'no-image-placeholder';
+                placeholder.innerHTML = `<div>${slot.title}</div><small>(이미지 없음)</small>`;
+                container169.appendChild(placeholder);
+            }
+            item.appendChild(container169);
+            grid.appendChild(item);
+        });
+
+        if (!hasPhotos) {
+            container.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
         } else {
-            const noPhotoSlide = document.createElement('div');
-            noPhotoSlide.className = 'swiper-slide no-photo-slide';
-            noPhotoSlide.textContent = '등록된 사진이 없습니다.';
-            wrapper.appendChild(noPhotoSlide);
+            container.appendChild(grid);
         }
-        this.photoSwiper.update();
-        this.photoSwiper.slideTo(0, 0);
 
         if (this.lightbox) {
             this.lightbox.reload();

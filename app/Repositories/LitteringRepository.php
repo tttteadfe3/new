@@ -26,11 +26,10 @@ class LitteringRepository {
         $query = "
             SELECT 
                 idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
-                u.nickname as user_name, 
-                e.name as employee_name 
+                idc.reg_photo_path, idc.reg_photo_path2,
+                COALESCE(e.name, '알 수 없음') as created_by_name
             FROM `illegal_disposal_cases2` idc
-            LEFT JOIN `sys_users` u ON idc.user_id = u.id
-            LEFT JOIN `hr_employees` e ON idc.employee_id = e.id
+            LEFT JOIN `hr_employees` e ON idc.created_by = e.id
             WHERE idc.status = 'pending' AND idc.deleted_at IS NULL
             ORDER BY idc.created_at DESC
         ";
@@ -45,11 +44,11 @@ class LitteringRepository {
         $query = "
             SELECT 
                 idc.*, 
-                u.nickname as user_name, 
-                e.name as employee_name 
+                e.name as created_by_name,
+                e2.name as updated_by_name
             FROM `illegal_disposal_cases2` idc
-            LEFT JOIN `sys_users` u ON idc.user_id = u.id
-            LEFT JOIN `hr_employees` e ON idc.employee_id = e.id
+            LEFT JOIN `hr_employees` e ON idc.created_by = e.id
+            LEFT JOIN `hr_employees` e2 ON idc.updated_by = e2.id
             WHERE idc.status = 'completed' AND idc.deleted_at IS NULL
             ORDER BY idc.updated_at DESC
         ";
@@ -64,11 +63,12 @@ class LitteringRepository {
         $query = "
             SELECT
                 idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
-                u.nickname as user_name,
-                e.name as employee_name
+                idc.reg_photo_path, idc.reg_photo_path2, idc.proc_photo_path,
+                COALESCE(e.name, '알 수 없음') as created_by_name,
+                COALESCE(e2.name, '알 수 없음') as updated_by_name
             FROM `illegal_disposal_cases2` idc
-            LEFT JOIN `sys_users` u ON idc.user_id = u.id
-            LEFT JOIN `hr_employees` e ON idc.employee_id = e.id
+            LEFT JOIN `hr_employees` e ON idc.created_by = e.id
+            LEFT JOIN `hr_employees` e2 ON idc.updated_by = e2.id
             WHERE idc.status = 'processed' AND idc.deleted_at IS NULL
             ORDER BY idc.created_at DESC
         ";
@@ -82,15 +82,16 @@ class LitteringRepository {
      */
     public function save(array $data): ?int {
         $query = 'INSERT INTO `illegal_disposal_cases2` 
-                    (`user_id`, `employee_id`, `status`, `latitude`, `longitude`, `address`, `waste_type`, `waste_type2`, 
-                     `issue_date`, `reg_photo_path`, `reg_photo_path2`, `created_at`) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())';
+                    (`status`, `latitude`, `longitude`, `address`, `waste_type`, `waste_type2`,
+                     `reg_photo_path`, `reg_photo_path2`, `created_at`, `created_by`)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)';
         
         $params = [
-            $data['user_id'], $data['employee_id'], 'pending',
+            'pending',
             $data['latitude'], $data['longitude'], $data['address'], 
-            $data['waste_type'], $data['waste_type2'], $data['issueDate'],
-            $data['fileName1'], $data['fileName2']
+            $data['waste_type'], $data['waste_type2'],
+            $data['fileName1'], $data['fileName2'],
+            $data['created_by']
         ];
         
         $newId = $this->db->insert($query, $params);
@@ -104,22 +105,22 @@ class LitteringRepository {
      * @param int $adminId
      * @return bool
      */
-    public function confirm(int $caseId, array $data, int $adminId): bool {
+    public function confirm(int $caseId, array $data, int $employeeId): bool {
         $query = 'UPDATE `illegal_disposal_cases2` 
                   SET `latitude` = ?, `longitude` = ?, `address` = ?, `waste_type` = ?, `waste_type2` = ?, 
-                      `status` = ?, `confirmed_by` = ?, `confirmed_at` = NOW()
+                      `status` = ?, `confirmed_by` = ?, `confirmed_at` = NOW(), `updated_by` = ?
                   WHERE `id` = ?';
         $params = [
             $data['latitude'], $data['longitude'], $data['address'],
             $data['waste_type'], $data['waste_type2'], 'confirmed',
-            $adminId, $caseId
+            $employeeId, $employeeId, $caseId
         ];
         return $this->db->execute($query, $params) > 0;
     }
 
-    public function softDelete(int $caseId, int $adminId): bool {
-        $query = "UPDATE illegal_disposal_cases2 SET status = 'deleted', deleted_by = ?, deleted_at = NOW() WHERE id = ?";
-        return $this->db->execute($query, [$adminId, $caseId]) > 0;
+    public function softDelete(int $caseId, int $employeeId): bool {
+        $query = "UPDATE illegal_disposal_cases2 SET status = 'deleted', deleted_by = ?, deleted_at = NOW(), updated_by = ? WHERE id = ?";
+        return $this->db->execute($query, [$employeeId, $employeeId, $caseId]) > 0;
     }
 
     /**
@@ -127,9 +128,9 @@ class LitteringRepository {
      * @param array $data (id 포함)
      * @return bool
      */
-    public function process(array $data): bool {
-        $updateFields = '`collect_date` = ?, `corrected` = ?, `note` = ?, `status` = ?';
-        $params = [$data['collectDate'], $data['corrected'], $data['note'], 'processed'];
+    public function process(array $data, int $employeeId): bool {
+        $updateFields = '`corrected` = ?, `note` = ?, `status` = ?, `updated_by` = ?';
+        $params = [$data['corrected'], $data['note'], 'processed', $employeeId];
         if (!empty($data['procFileName'])) {
             $updateFields .= ', `proc_photo_path` = ?';
             $params[] = $data['procFileName'];
@@ -156,11 +157,11 @@ class LitteringRepository {
         $query = "
             SELECT 
                 idc.*, 
-                u.nickname as user_name, 
-                e.name as employee_name 
+                e.name as created_by_name,
+                e2.name as deleted_by_name
             FROM `illegal_disposal_cases2` idc
-            LEFT JOIN `sys_users` u ON idc.user_id = u.id
-            LEFT JOIN `hr_employees` e ON idc.employee_id = e.id
+            LEFT JOIN `hr_employees` e ON idc.created_by = e.id
+            LEFT JOIN `hr_employees` e2 ON idc.deleted_by = e2.id
             WHERE idc.status = 'deleted' 
             ORDER BY idc.deleted_at DESC
         ";
@@ -183,11 +184,11 @@ class LitteringRepository {
      * @param int $adminId
      * @return bool
      */
-    public function approve(int $caseId, int $adminId): bool {
+    public function approve(int $caseId, int $employeeId): bool {
         $query = 'UPDATE `illegal_disposal_cases2`
-                  SET `status` = ?, `approved_by` = ?, `approved_at` = NOW()
+                  SET `status` = ?, `approved_by` = ?, `approved_at` = NOW(), `updated_by` = ?
                   WHERE `id` = ?';
-        $params = ['completed', $adminId, $caseId];
+        $params = ['completed', $employeeId, $employeeId, $caseId];
         return $this->db->execute($query, $params) > 0;
     }
 }
