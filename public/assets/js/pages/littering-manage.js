@@ -208,7 +208,7 @@ class LitteringAdminPage extends BasePage {
                 body: updatedData
             });
             Toast.success('성공적으로 확인 및 저장되었습니다.');
-            this.removeReportFromList(updatedData.id);
+            this.removeReportFromList(updatedData.id, 'pending');
         } catch (error) {
             Toast.error('저장에 실패했습니다: ' + error.message);
         } finally {
