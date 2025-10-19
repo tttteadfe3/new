@@ -160,9 +160,9 @@ class LitteringAdminPage extends BasePage {
         });
 
         // Toggle button visibility based on type
-        document.getElementById('confirm-btn').classList.toggle('d-none', selected.status !== 'pending');
-        document.getElementById('approve-btn').classList.toggle('d-none', selected.status !== 'processed');
-        document.getElementById('delete-btn').classList.toggle('d-none', selected.status !== 'pending'); // Can only delete pending reports
+        document.getElementById('confirm-btn').classList.toggle('d-none', type !== 'pending');
+        document.getElementById('approve-btn').classList.toggle('d-none', type !== 'processed');
+        document.getElementById('delete-btn').classList.toggle('d-none', type !== 'pending'); // Can only delete pending reports
 
         document.getElementById('detail-view').classList.remove('d-none');
         if (window.SplitLayout) {
@@ -261,7 +261,7 @@ class LitteringAdminPage extends BasePage {
     }
 
     async approveReport() {
-        if (!this.state.selectedReport || this.state.selectedReport.type !== 'processed') return;
+        if (!this.state.selectedReport || this.state.selectedReport.status !== 'processed') return;
 
         const reportId = this.state.selectedReport.id;
         this.setButtonLoading('#approve-btn', '승인 중...');
