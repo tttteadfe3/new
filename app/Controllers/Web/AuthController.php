@@ -39,8 +39,8 @@ class AuthController extends BaseController
             'kakaoLoginUrl' => $this->kakaoAuthService->getAuthorizationUrl()
         ];
 
-        // The 'login' view will be created later.
-        return $this->render('auth/login', $data);
+        View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/login.css");
+        echo $this->render('auth/login', $data, 'layouts/basic');
     }
 
     public function kakaoCallback()

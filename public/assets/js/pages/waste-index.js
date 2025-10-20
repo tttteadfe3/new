@@ -200,7 +200,7 @@ class WasteCollectionPage extends BasePage {
         }).join('');
 
         const headerTitle = isCluster ? `${first.address} (${collections.length}건)` : first.address;
-        const content = `<div class="card shadow-sm" style="min-width:300px;"><div class="card-header bg-primary text-white p-2 d-flex justify-content-between"><h6>${headerTitle}</h6><button type="button" class="btn-close btn-close-white" onclick="window.wasteCollectionApp.closeOverlay()"></button></div><div class="card-body p-2" style="max-height:350px; overflow-y:auto;">${collectionsContent}</div></div>`;
+        const content = `<div class="card shadow-sm" style="min-width:300px;"><div class="d-flex align-items-center bg-primary bg-gradient p-3 card-header"><h6 class="m-0 me-2 text-white">${headerTitle}</h6><button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="offcanvas" aria-label="Close" onclick="window.wasteCollectionApp.closeOverlay()"></button></div><div class="card-body p-2" style="max-height:350px; overflow-y:auto;">${collectionsContent}</div></div>`;
         
         this.state.currentOverlay = new kakao.maps.CustomOverlay({ content, map: this.state.mapService.mapManager.getMap(), position, yAnchor: 1.1 });
     }

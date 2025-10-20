@@ -16,6 +16,6 @@ class StatusController extends BaseController
             $this->redirect('/dashboard');
         }
 
-        return $this->render('status/index', [], '');
+        return $this->render('status/index', [], 'layouts/basic');
     }
 }
