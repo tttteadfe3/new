@@ -7,9 +7,9 @@
 </div>
 
 <div class="offcanvas offcanvas-end" tabindex="-1" id="markerOffcanvas">
-    <div class="offcanvas-header bg-light">
-        <h5 class="offcanvas-title">처리 내역 상세</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    <div class="d-flex align-items-center bg-primary bg-gradient p-3 offcanvas-header">
+        <h5 class="offcanvas-title m-0 me-2 text-white">처리 내역 상세</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body p-0">
         <div class="p-3 bg-light border-bottom">

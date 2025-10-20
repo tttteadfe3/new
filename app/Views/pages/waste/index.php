@@ -53,9 +53,9 @@
 </div>
 
 <div class="offcanvas offcanvas-end" tabindex="-1" id="registerCollectionModal">
-    <div class="offcanvas-header bg-light p-3">
-        <h5 class="offcanvas-title"><i class="ri-add-circle-line me-2"></i>대형폐기물 수거 등록</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    <div class="d-flex align-items-center bg-primary bg-gradient p-3 offcanvas-header">
+        <h5 class="offcanvas-title m-0 me-2 text-white">대형폐기물 수거 등록</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body p-4">
         <form id="wasteCollectionForm" onsubmit="return false;">

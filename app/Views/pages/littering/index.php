@@ -36,9 +36,9 @@
     </div>
 </div>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="registerModal">
-    <div class="offcanvas-header bg-light p-3">
-        <h5 class="offcanvas-title">부적정배출 등록</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    <div class="d-flex align-items-center bg-primary bg-gradient p-3 offcanvas-header">
+        <h5 class="offcanvas-title m-0 me-2 text-white">부적정배출 등록</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body p-4">
         <form onsubmit="return false;">
@@ -104,9 +104,9 @@
 </div>
 
 <div class="offcanvas offcanvas-end" tabindex="-1" id="processModal">
-    <div class="offcanvas-header bg-light p-3">
-        <h5 class="offcanvas-title"><i class="ri-settings-4-line me-2"></i>처리 등록</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    <div class="d-flex align-items-center bg-primary bg-gradient p-3 offcanvas-header">
+        <h5 class="offcanvas-title m-0 me-2 text-white">처리 등록</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="alert alert-warning rounded-0 mb-0" id="procStatusMessage" style="display: none;"></div>
     <div class="offcanvas-body p-4" id="processFormFields">
