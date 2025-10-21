@@ -93,9 +93,16 @@
 - **`database/schema.sql`**: 전체 데이터베이스 구조를 정의하는 스키마 파일.
 - **`database/seeds/`**: 초기 데이터를 담고 있는 시드 파일. **파일명 순서대로** 임포트해야 합니다.
 
-## 4. 코딩 규칙
+## 4. 개발 가이드
 
-### 4.1. 명명 규칙
+프로젝트의 상세한 개발 규칙과 모범 사례는 아래의 가이드 문서를 참고하십시오.
+
+- **[PHP 개발 가이드](./PHP_GUIDE.md)**: MVC-S 아키텍처, DI 컨테이너 사용법, 새로운 기능 추가 절차 등을 포함합니다.
+- **[JavaScript 개발 가이드](./JS_GUIDE.md)**: `BasePage` 클래스 생명주기, API 호출, 상태 관리 패턴 등을 포함합니다.
+
+## 5. 코딩 규칙
+
+### 5.1. 명명 규칙
 
 - **PHP 클래스**: `PascalCase` (예: `LitteringController`)
 - **PHP 메서드**: `camelCase` (예: `getLitteringById`)
@@ -104,13 +111,13 @@
 - **CSS 파일**: `kebab-case.css` (예: `littering-manage.css`)
 - **View 파일**: `kebab-case.php` (예: `littering-manage.php`)
 
-### 4.2. 스타일 가이드
+### 5.2. 스타일 가이드
 
 - **CSS**: View 파일 내 `<style>` 태그나 인라인 스타일 사용을 금지합니다. 모든 스타일은 `public/assets/css/pages` 내의 CSS 파일로 분리해야 합니다.
 
 ---
 
-## 5. 수동 설치 가이드
+## 6. 수동 설치 가이드
 
 (기존 설치 가이드 내용은 여기에 동일하게 포함됩니다.)
 

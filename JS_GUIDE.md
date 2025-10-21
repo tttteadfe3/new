@@ -1,50 +1,92 @@
-# JavaScript 아키텍처 가이드
+# JavaScript 개발 가이드
 
 이 문서는 프로젝트의 JavaScript 코드 구조와 규칙을 정의하여 일관성을 유지하고 협업을 용이하게 하는 것을 목표로 합니다.
 
-## 1. 디렉토리 구조
+## 1. 아키텍처 및 디렉토리 구조
 
 모든 JavaScript 모듈은 `public/assets/js/` 디렉토리 아래에 위치하며, 각 디렉토리는 다음과 같은 명확한 역할을 가집니다.
 
 - **`core/`**: 애플리케이션의 핵심 기반 클래스를 포함합니다.
-  - `base-page.js`: 모든 페이지 클래스가 상속받는 최상위 부모 클래스입니다. 공통 상태 관리, API 서비스 접근, 기본 생명주기 메서드 등을 제공합니다.
+  - `base-page.js`: 모든 페이지 클래스가 상속받는 최상위 부모 클래스. 공통 상태 관리, API 서비스 접근, 생명주기 메서드 등을 제공합니다.
 
 - **`pages/`**: 각 페이지의 고유한 로직과 진입점(entry point) 역할을 하는 스크립트를 포함합니다.
-  - 파일은 특정 페이지의 기능을 모두 담고 있는 클래스를 정의하고, 마지막에 인스턴스화(`new ...Page()`)하여 실행합니다.
-  - 예: `menu-admin.js`, `profile.js`
+  - 각 파일은 `BasePage`를 상속받는 클래스를 정의하고, 마지막에 `new ...Page()`로 인스턴스화하여 실행합니다.
 
-- **`components/`**: 재사용 가능한 UI 컴포넌트를 포함합니다.
-  - 특정 페이지에 종속되지 않고, 여러 곳에서 사용될 수 있는 시각적 요소를 관리합니다.
-  - 예: `interactive-map.js`, `custom-chart.js`
+- **`services/`**: UI가 없는 공유 기능을 담당하는 서비스 모듈입니다.
+  - `api-service.js`: 모든 서버 API 통신을 담당하는 중앙 집중형 서비스입니다.
 
-- **`services/`**: UI가 없는 공유 기능을 담당하는 서비스 모듈을 포함합니다.
-  - API 통신, 상태 관리, 지도 로직 등 백그라운드에서 동작하는 기능들을 클래스로 정의합니다.
-  - 예: `api-service.js`, `map-service.js`
+- **`components/`**: 여러 페이지에서 재사용 가능한 UI 컴포넌트입니다. (예: `custom-chart.js`)
 
-- **`utils/`**: 상태에 의존하지 않는 순수 유틸리티 함수들을 포함합니다.
-  - DOM 조작, 날짜 포맷팅 등 간단하고 재사용 가능한 함수들의 모음입니다.
-  - 예: `dom-helpers.js`
+- **`utils/`**: 상태에 의존하지 않는 순수 유틸리티 함수 모음입니다. (예: `dom-helpers.js`)
 
-## 2. 명명 규칙
+## 2. `BasePage` 클래스 심층 분석
 
-코드의 가독성과 예측 가능성을 높이기 위해 다음 명명 규칙을 엄격히 준수합니다.
+`BasePage`는 모든 페이지 클래스의 기반이며, 공통적인 로직을 추상화하여 코드 중복을 최소화합니다.
 
-- **파일 이름**: `kebab-case.js`
-  - 단어는 모두 소문자로 작성하고, 하이픈(`-`)으로 연결합니다.
-  - 예: `menu-admin.js`, `api-service.js`, `base-page.js`
+### 2.1. 생명주기 (Lifecycle)
 
-- **클래스 이름**: `PascalCase`
-  - 각 단어의 첫 글자를 대문자로 시작하며, 단어를 모두 붙여 씁니다.
-  - **`pages/`** 디렉토리의 클래스는 이름 끝에 `Page`를 붙여 역할을 명확히 합니다.
-  - 예: `MenuAdminPage`, `ApiService`, `BasePage`, `InteractiveMap`
+페이지 스크립트가 로드되면 `BasePage`의 생성자(`constructor`)는 다음 순서대로 핵심 메서드를 호출합니다.
 
-## 3. 새 페이지 스크립트 작성 예시
+1.  **`constructor(config)`**:
+    - `this.state = {}`와 `this.config = {}`를 초기화합니다.
+    - 자식 클래스에서 전달된 `config` 객체를 `this.config`에 병합합니다.
+    - `this.initializeApp()`을 호출하여 초기화 프로세스를 시작합니다.
 
-새로운 '직원 관리' 페이지를 위한 스크립트를 추가하는 과정은 다음과 같습니다.
+2.  **`initializeApp()`**:
+    - **`setupEventListeners()`**: 자식 클래스에서 오버라이드하여 페이지의 모든 이벤트 리스너를 바인딩합니다.
+    - **`loadInitialData()`**: 자식 클래스에서 오버라이드하여 페이지 로드 시 필요한 초기 데이터를 불러옵니다.
 
-1.  **파일 생성**: `public/assets/js/pages/employee-management.js` 파일을 생성합니다.
+> **중요**: 이벤트 리스너 설정이나 초기 데이터 로딩 로직은 `constructor`에 직접 작성하지 말고, 반드시 `setupEventListeners`와 `loadInitialData` 메서드에 작성해야 합니다.
 
-2.  **클래스 작성**: `BasePage`를 상속받는 `EmployeeManagementPage` 클래스를 작성합니다.
+### 2.2. 상태 관리 (State Management)
+
+- **`this.state`**: 페이지 내에서 동적으로 변경되는 모든 데이터는 `this.state` 객체에 저장해야 합니다.
+- **데이터 변경**: 데이터를 변경할 때는 `this.state`의 속성을 직접 수정합니다. (예: `this.state.employees = [...]`)
+- **UI 업데이트**: 데이터 변경 후에는 반드시 `this.render()`와 같은 UI 업데이트 메서드를 호출하여 화면에 변경 사항을 반영해야 합니다.
+
+### 2.3. API 통신 (`apiCall`)
+
+`BasePage`는 `ApiService`의 `apiCall` 메서드를 래핑하여 제공합니다. 이를 통해 일관된 방식으로 API를 호출하고 에러를 처리할 수 있습니다.
+
+- **사용법**: `this.apiCall(endpoint, method, body)`
+- **`endpoint`**: API 엔드포인트 URL (예: `/api/v1/employees`)
+- **`method`**: HTTP 메서드 (`'GET'`, `'POST'`, `'PUT'`, `'DELETE'`)
+- **`body`**: 요청 본문 (주로 `POST` 또는 `PUT` 요청 시 사용)
+
+#### API 호출 예시
+
+```javascript
+async fetchEmployees() {
+    try {
+        // GET 요청
+        const result = await this.apiCall('/api/v1/employees');
+        this.state.employees = result.data;
+        this.render();
+    } catch (error) {
+        // apiCall 내에서 중앙 집중적으로 에러를 처리하므로, 여기서는 추가적인 UI 피드백만 처리
+        console.error('Failed to fetch employees:', error);
+        alert('직원 목록을 불러오는 데 실패했습니다.');
+    }
+}
+
+async createEmployee(employeeData) {
+    try {
+        // POST 요청
+        const result = await this.apiCall('/api/v1/employees', 'POST', employeeData);
+        // 성공 시 UI 업데이트 또는 다른 액션 수행
+    } catch (error) {
+        console.error('Failed to create employee:', error);
+    }
+}
+```
+
+## 3. 새 페이지 스크립트 작성 가이드
+
+새로운 '직원 관리' 페이지 스크립트를 추가하는 상세 과정은 다음과 같습니다.
+
+1.  **파일 생성**: `public/assets/js/pages/employee-management.js`
+
+2.  **클래스 작성**:
 
     ```javascript
     // public/assets/js/pages/employee-management.js
@@ -52,40 +94,64 @@
     class EmployeeManagementPage extends BasePage {
         constructor() {
             super({
-                // 이 페이지에서 사용할 API 엔드포인트 등 설정
-                API_URL: '/employees'
+                // 페이지별 설정을 여기에 정의
+                deleteConfirmationMessage: '정말로 직원을 삭제하시겠습니까?'
             });
 
-            // 이 페이지에서만 사용할 상태 변수 초기화
+            // this.state 초기화
             this.state.employees = [];
+            this.state.isLoading = true;
         }
 
-        // BasePage의 initializeApp에서 자동으로 호출됨
+        // 1. 이벤트 리스너 설정
         setupEventListeners() {
-            // 이 페이지의 버튼, 입력 필드 등에 이벤트 리스너를 바인딩
-            document.getElementById('add-employee-btn').addEventListener('click', () => {
-                // ...
-            });
+            document.getElementById('add-btn').addEventListener('click', () => this.handleAddClick());
+            document.querySelector('.employee-list').addEventListener('click', (e) => this.handleListClick(e));
         }
 
-        // BasePage의 initializeApp에서 자동으로 호출됨
+        // 2. 초기 데이터 로드
         loadInitialData() {
-            // 페이지 로드 시 필요한 초기 데이터를 불러옴
             this.fetchEmployees();
         }
 
+        // 3. 데이터 로직 (API 호출 등)
         async fetchEmployees() {
+            this.state.isLoading = true;
+            this.render(); // 로딩 상태를 UI에 먼저 반영
+
             try {
-                const result = await this.apiCall(this.config.API_URL);
+                const result = await this.apiCall('/api/v1/employees');
                 this.state.employees = result.data;
-                this.render();
             } catch (error) {
                 console.error('Failed to fetch employees:', error);
+            } finally {
+                this.state.isLoading = false;
+                this.render(); // 최종 결과를 UI에 반영
             }
         }
 
+        // 4. 이벤트 핸들러
+        handleAddClick() {
+            // ...
+        }
+
+        handleListClick(event) {
+            if (event.target.matches('.delete-btn')) {
+                if (confirm(this.config.deleteConfirmationMessage)) {
+                    // ... 삭제 로직 ...
+                }
+            }
+        }
+
+        // 5. UI 렌더링
         render() {
-            // 데이터를 화면에 렌더링
+            const listContainer = document.querySelector('.employee-list');
+            if (this.state.isLoading) {
+                listContainer.innerHTML = '<div>로딩 중...</div>';
+                return;
+            }
+            // this.state.employees를 기반으로 목록을 렌더링
+            listContainer.innerHTML = this.state.employees.map(emp => `<div>${emp.name}</div>`).join('');
         }
     }
 
@@ -97,16 +163,7 @@
 
     ```php
     // app/Controllers/Web/EmployeeController.php
-
-    class EmployeeController extends BaseController
-    {
-        public function management()
-        {
-            // ...
-            View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
-            View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employee-management.js');
-            // ...
-            $this->render('employees/management');
-        }
-    }
+    View::addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
+    View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js'); // ApiService도 추가
+    View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employee-management.js');
     ```
