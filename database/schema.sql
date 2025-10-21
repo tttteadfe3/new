@@ -363,8 +363,6 @@ CREATE TABLE `waste_collections` (
   `longitude` decimal(15,10) NOT NULL COMMENT '경도',
   `address` varchar(255) NOT NULL COMMENT '수거 주소',
   `photo_path` varchar(255) DEFAULT NULL COMMENT '등록 사진 경로',
-  `user_id` int(11) NOT NULL COMMENT '등록한 사용자 ID',
-  `employee_id` int(11) DEFAULT NULL COMMENT '등록한 직원 ID',
   `issue_date` datetime NOT NULL COMMENT '배출일시',
   `discharge_number` varchar(100) DEFAULT NULL COMMENT '배출번호 (인터넷배출용)',
   `submitter_name` varchar(100) DEFAULT NULL COMMENT '성명 (인터net배출용)',
@@ -375,10 +373,11 @@ CREATE TABLE `waste_collections` (
   `type` enum('field','online') NOT NULL DEFAULT 'field' COMMENT '등록 구분 (field: 현장등록, online: 인터넷배출)',
   `geocoding_status` enum('success','failure') NOT NULL DEFAULT 'success' COMMENT '주소변환 성공여부',
   `created_at` datetime DEFAULT current_timestamp() COMMENT '데이터 등록 시각',
+  `created_by` int(11) DEFAULT NULL COMMENT '등록한 직원 ID',
+  `updated_at` datetime DEFAULT NULL COMMENT '데이터 수정 시각',
+  `updated_by` int(11) DEFAULT NULL COMMENT '수정한 직원 ID',
   PRIMARY KEY (`id`),
-  KEY `idx_coords` (`latitude`,`longitude`),
-  KEY `fk_waste_collection_user_id` (`user_id`),
-  CONSTRAINT `fk_waste_collection_user_id` FOREIGN KEY (`user_id`) REFERENCES `sys_users` (`id`) ON DELETE CASCADE
+  KEY `idx_coords` (`latitude`,`longitude`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='대형폐기물 수거 정보';
 
 -- ========================================

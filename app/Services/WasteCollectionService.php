@@ -42,7 +42,7 @@ class WasteCollectionService
     /**
      * Register new waste collection from field
      */
-    public function registerCollection(array $postData, array $files, int $userId, ?int $employeeId): array
+    public function registerCollection(array $postData, array $files, ?int $employeeId): array
     {
         $this->db->beginTransaction();
         
@@ -59,7 +59,6 @@ class WasteCollectionService
                 'longitude' => floatval($postData['lng']),
                 'address' => $postData['address'] ?? '',
                 'photo_path' => $photoPath,
-                'user_id' => $userId,
                 'employee_id' => $employeeId,
                 'issue_date' => date('Y-m-d H:i:s'),
                 'type' => 'field'
@@ -127,25 +126,25 @@ class WasteCollectionService
     /**
      * Process collections by address
      */
-    public function processCollectionsByAddress(string $address): bool
+    public function processCollectionsByAddress(string $address, int $employeeId): bool
     {
         if (empty($address)) {
             throw new Exception("주소가 필요합니다.", 400);
         }
         
-        return $this->wasteCollectionRepository->processByAddress($address);
+        return $this->wasteCollectionRepository->processByAddress($address, $employeeId);
     }
 
     /**
      * Process collection by ID
      */
-    public function processCollectionById(int $id): bool
+    public function processCollectionById(int $id, int $employeeId): bool
     {
         if (empty($id)) {
             throw new Exception("ID가 필요합니다.", 400);
         }
         
-        return $this->wasteCollectionRepository->processById($id);
+        return $this->wasteCollectionRepository->processById($id, $employeeId);
     }
 
     // === Admin Methods ===
@@ -244,8 +243,7 @@ class WasteCollectionService
                     'address' => $addressInfo['final_address'] ?? $collectionData['address'],
                     'geocoding_status' => $addressInfo ? 'success' : 'failure',
                     'photo_path' => null,
-                    'user_id' => $adminUserId,
-                    'employee_id' => null,
+                    'employee_id' => $adminUserId,
                     'issue_date' => $collectionData['dischargeDate'],
                     'discharge_number' => $collectionData['receiptNumber'],
                     'submitter_name' => $collectionData['name'],
@@ -325,13 +323,13 @@ class WasteCollectionService
     /**
      * Update admin memo
      */
-    public function updateAdminMemo(int $id, string $memo): bool
+    public function updateAdminMemo(int $id, string $memo, int $employeeId): bool
     {
         if (empty($id)) {
             throw new Exception("ID가 필요합니다.", 400);
         }
         
-        return $this->wasteCollectionRepository->updateAdminMemo($id, $memo);
+        return $this->wasteCollectionRepository->updateAdminMemo($id, $memo, $employeeId);
     }
 
     /**
