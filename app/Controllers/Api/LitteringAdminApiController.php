@@ -71,7 +71,7 @@ class LitteringAdminApiController extends BaseApiController
      */
     public function confirm(int $id): void
     {
-        $adminId = $this->user()['id'];
+        $adminId = $this->user()['employee_id'];
         
         try {
             $data = $this->getJsonInput();
@@ -90,7 +90,7 @@ class LitteringAdminApiController extends BaseApiController
      */
     public function approve(int $id): void
     {
-        $adminId = $this->user()['id'];
+        $adminId = $this->user()['employee_id'];
 
         try {
             $postData = ['id' => $id];
@@ -107,7 +107,7 @@ class LitteringAdminApiController extends BaseApiController
      */
     public function destroy(int $id): void
     {
-        $adminId = $this->user()['id'];
+        $adminId = $this->user()['employee_id'];
 
         try {
             $data = $this->getJsonInput();
