@@ -141,14 +141,14 @@ nano .env
 
 #### 4단계: 데이터베이스 설정
 1.  **데이터베이스 생성:**
+    데이터베이스 클라이언트에 접속하여 `.env` 파일에 설정한 이름으로 데이터베이스를 생성합니다.
     ```sql
     CREATE DATABASE your_database_name CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     ```
-2.  **데이터 임포트 (파일 순서 중요):**
+2.  **데이터 임포트:**
+    아래 명령어를 실행하면 스키마와 모든 시드 데이터가 자동으로 임포트됩니다.
     ```bash
-    mysql -u your_user -p your_database_name < database/schema.sql
-    mysql -u your_user -p your_database_name < database/seeds/01_departments.sql
-    # ... 나머지 시드 파일 순서대로 임포트
+    php scripts/seed.php
     ```
 
 #### 5단계: 디렉토리 권한 설정
