@@ -57,7 +57,7 @@ class WasteCollectionApiController extends BaseApiController
     {
         $user = $this->user();
         try {
-            $result = $this->wasteCollectionService->registerCollection($_POST, $_FILES, $user['id'], $user['employee_id'] ?? null);
+            $result = $this->wasteCollectionService->registerCollection($_POST, $_FILES, $user['employee_id']);
             $this->apiSuccess($result, '폐기물 수거 정보가 성공적으로 등록되었습니다.');
         } catch (Exception $e) {
             $this->apiError($e->getMessage(), 'VALIDATION_ERROR', 422);
@@ -84,8 +84,9 @@ class WasteCollectionApiController extends BaseApiController
      */
     public function processCollection(int $id): void
     {
+        $user = $this->user();
         try {
-            $result = $this->wasteCollectionService->processCollectionById($id);
+            $result = $this->wasteCollectionService->processCollectionById($id, $user['employee_id']);
             $this->apiSuccess($result, '선택한 항목이 처리되었습니다.');
         } catch (Exception $e) {
             $this->apiError($e->getMessage(), 'VALIDATION_ERROR', 422);
@@ -113,9 +114,10 @@ class WasteCollectionApiController extends BaseApiController
      */
     public function updateMemo(int $id): void
     {
+        $user = $this->user();
         try {
             $memo = $this->request->input('memo', '');
-            $result = $this->wasteCollectionService->updateAdminMemo($id, $memo);
+            $result = $this->wasteCollectionService->updateAdminMemo($id, $memo, $user['employee_id']);
             $this->apiSuccess($result, '메모가 업데이트되었습니다.');
         } catch (Exception $e) {
             $this->apiError($e->getMessage(), 'VALIDATION_ERROR', 422);

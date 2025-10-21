@@ -12,17 +12,15 @@ class WasteCollectionRepository {
 
     public function createCollection(array $data): ?int {
         $query = 'INSERT INTO `waste_collections`
-                    (`latitude`, `longitude`, `address`, `photo_path`, `user_id`, `employee_id`, `issue_date`,
-                     `discharge_number`, `submitter_name`, `submitter_phone`, `fee`, `status`, `type`, `geocoding_status`, `created_at`)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())';
+                    (`latitude`, `longitude`, `address`, `photo_path`, `issue_date`,
+                     `discharge_number`, `submitter_name`, `submitter_phone`, `fee`, `status`, `type`, `geocoding_status`, `created_at`, `created_by`)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)';
 
         $params = [
             $data['latitude'],
             $data['longitude'],
             $data['address'],
             $data['photo_path'],
-            $data['user_id'],
-            $data['employee_id'],
             $data['issue_date'],
             $data['discharge_number'] ?? null,
             $data['submitter_name'] ?? null,
@@ -30,7 +28,8 @@ class WasteCollectionRepository {
             $data['fee'] ?? 0,
             'unprocessed',
             $data['type'], // 'field' or 'online'
-            $data['geocoding_status'] ?? 'success'
+            $data['geocoding_status'] ?? 'success',
+            $data['employee_id']
         ];
 
         $newId = $this->db->insert($query, $params);
@@ -119,19 +118,19 @@ class WasteCollectionRepository {
         return $this->db->fetchOne($query, [$id]);
     }
 
-    public function processByAddress(string $address): bool {
-        $query = "UPDATE `waste_collections` SET `status` = 'processed' WHERE `address` = ? AND `status` = 'unprocessed'";
-        return $this->db->execute($query, [$address]) > 0;
+    public function processByAddress(string $address, int $employeeId): bool {
+        $query = "UPDATE `waste_collections` SET `status` = 'processed', `updated_at` = NOW(), `updated_by` = ? WHERE `address` = ? AND `status` = 'unprocessed'";
+        return $this->db->execute($query, [$employeeId, $address]) > 0;
     }
 
-    public function processById(int $id): bool {
-        $query = "UPDATE `waste_collections` SET `status` = 'processed' WHERE `id` = ? AND `status` = 'unprocessed'";
-        return $this->db->execute($query, [$id]) > 0;
+    public function processById(int $id, int $employeeId): bool {
+        $query = "UPDATE `waste_collections` SET `status` = 'processed', `updated_at` = NOW(), `updated_by` = ? WHERE `id` = ? AND `status` = 'unprocessed'";
+        return $this->db->execute($query, [$employeeId, $id]) > 0;
     }
 
-    public function updateAdminMemo(int $id, string $memo): bool {
-        $query = "UPDATE `waste_collections` SET `admin_memo` = ? WHERE `id` = ?";
-        return $this->db->execute($query, [$memo, $id]) > 0;
+    public function updateAdminMemo(int $id, string $memo, int $employeeId): bool {
+        $query = "UPDATE `waste_collections` SET `admin_memo` = ?, `updated_at` = NOW(), `updated_by` = ? WHERE `id` = ?";
+        return $this->db->execute($query, [$memo, $employeeId, $id]) > 0;
     }
 
     public function clearOnlineSubmissions(): bool {
