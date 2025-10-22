@@ -64,14 +64,7 @@ class LitteringApiController extends BaseApiController
      */
     public function store(): void
     {
-
-        $user = $this->user();
-        if (!$user) {
-            $this->apiError('로그인이 필요합니다.', 'UNAUTHORIZED', 401);
-            return;
-        }
-        
-        $employeeId = $user['employee_id'];
+        $employeeId = $this->user()['employee_id'];
         
         try {
             // Note: File uploads are handled via $_FILES, not JSON body.
@@ -92,12 +85,7 @@ class LitteringApiController extends BaseApiController
      */
     public function process(int $id): void
     {
-        $user = $this->user();
-        if (!$user || !isset($user['employee_id'])) {
-            $this->apiError('권한이 없습니다.', 'UNAUTHORIZED', 401);
-            return;
-        }
-        $employeeId = $user['employee_id'];
+        $employeeId = $this->user()['employee_id'];
         
         try {
             $data = $this->request->all(); // POST data is appropriate here
