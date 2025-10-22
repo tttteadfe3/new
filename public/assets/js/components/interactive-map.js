@@ -485,11 +485,13 @@ class InteractiveMap {
             : new kakao.maps.LatLng(position.lat || position.latitude, position.lng || position.longitude);
 
         return {
-            position: latlng,               // kakao.maps.LatLng 객체
-            latitude: latlng.getLat(),      // 숫자
-            longitude: latlng.getLng(),     // 숫자
-            address: addressData?.address || null,     // 문자열 또는 null
-            region: addressData?.region || null       // 문자열 또는 null
+            position: latlng,
+            latitude: latlng.getLat(),
+            longitude: latlng.getLng(),
+            address: addressData?.address || null,
+            jibun_address: addressData?.jibun_address || null,
+            road_address: addressData?.road_address || null,
+            region: addressData?.region || null
         };
     }
 
@@ -555,14 +557,18 @@ class InteractiveMap {
 
                         // 2단계: 상세 주소 가져오기
                         this.state.geocoder.coord2Address(latlng.getLng(), latlng.getLat(), (addressResult, addressStatus) => {
-                            if (addressStatus === kakao.maps.services.Status.OK) {
-                                const address = addressResult[0].address ?
-                                    addressResult[0].address.address_name :
-                                    addressResult[0].road_address?.address_name || '주소 정보 없음';
+                            if (addressStatus === kakao.maps.services.Status.OK && addressResult.length > 0) {
+                                const jibunAddress = addressResult[0].address ? addressResult[0].address.address_name : null;
+                                const roadAddress = addressResult[0].road_address ? addressResult[0].road_address.address_name : null;
+
+                                // 기본 주소는 지번 주소로, 없을 경우 도로명 주소 사용
+                                const displayAddress = jibunAddress || roadAddress || '주소 정보 없음';
 
                                 resolve({
                                     isValid: true,
-                                    address,
+                                    address: displayAddress,
+                                    jibun_address: jibunAddress,
+                                    road_address: roadAddress,
                                     region
                                 });
                             } else {

@@ -39,7 +39,19 @@ class LitteringMapPage extends BasePage {
             duplicateThreshold: 10,
             onTempMarkerClick: (locationData) => this.openRegistrationModal(locationData),
             onAddressResolved: (addressData) => {
-                document.getElementById('address').textContent = addressData.isValid ? addressData.address : '주소를 가져올 수 없습니다.';
+                const addressDisplay = document.getElementById('display_address');
+                const jibunAddressInput = document.getElementById('jibun_address');
+                const roadAddressInput = document.getElementById('road_address');
+
+                if (addressData.isValid) {
+                    addressDisplay.textContent = addressData.address;
+                    jibunAddressInput.value = addressData.jibun_address || '';
+                    roadAddressInput.value = addressData.road_address || '';
+                } else {
+                    addressDisplay.textContent = '주소를 가져올 수 없습니다.';
+                    jibunAddressInput.value = '';
+                    roadAddressInput.value = '';
+                }
             },
             onRegionValidation: (isValid, message) => {
                 if (!isValid) {
@@ -191,9 +203,9 @@ class LitteringMapPage extends BasePage {
     openRegistrationModal(locationData) {
         document.getElementById('lat').value = locationData.latitude;
         document.getElementById('lng').value = locationData.longitude;
-        if (locationData.address) {
-            document.getElementById('address').textContent = locationData.address;
-        }
+        document.getElementById('display_address').textContent = locationData.address || '주소 확인 중...';
+        document.getElementById('jibun_address').value = locationData.jibun_address || '';
+        document.getElementById('road_address').value = locationData.road_address || '';
         this.state.modals.register.show();
     }
 
@@ -205,7 +217,7 @@ class LitteringMapPage extends BasePage {
         }
 
         this.state.currentReportIndex = index;
-        document.getElementById('procAddress').textContent = reportData.address || '-';
+        document.getElementById('proc_display_address').textContent = reportData.jibun_address || reportData.road_address || '-';
         document.getElementById('procWasteType').textContent = reportData.waste_type || '-';
         this.renderExistingPhotos(reportData);
 
@@ -262,7 +274,8 @@ class LitteringMapPage extends BasePage {
         const formData = new FormData(form);
         formData.append('lat', document.getElementById('lat').value);
         formData.append('lng', document.getElementById('lng').value);
-        formData.append('address', document.getElementById('address').textContent);
+        formData.append('jibun_address', document.getElementById('jibun_address').value);
+        formData.append('road_address', document.getElementById('road_address').value);
         formData.append('waste_type', document.getElementById('waste_type').value);
         if (document.getElementById('mixed').checked) {
             formData.append('waste_type2', document.getElementById('waste_type2').value);

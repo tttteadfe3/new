@@ -31,8 +31,10 @@ class LitteringAdminPage extends BasePage {
         const mapOptions = {
             ...this.config,
             enableTempMarker: false,
-            onAddressResolved: (locationData) => {
-                document.getElementById('address').value = locationData.address;
+            onAddressResolved: (locationData, addressData) => {
+                document.getElementById('address').value = addressData.address;
+                document.getElementById('jibun_address').value = addressData.jibun_address || '';
+                document.getElementById('road_address').value = addressData.road_address || '';
             }
         };
         this.state.mapService = new MapService(mapOptions);
@@ -103,7 +105,7 @@ class LitteringAdminPage extends BasePage {
                         <h6 class="mb-1 list-title ">${item.waste_type}</h6>
                         <small>${new Date(item.created_at).toLocaleDateString()}</small>
                     </div>
-                    <p class="mb-1 small text-muted">${item.address}</p>
+                    <p class="mb-1 small text-muted">${item.jibun_address || item.road_address || '주소 없음'}</p>
                     <small class="text-muted">${personInfo}</small>
                 </a>
             `;
@@ -131,7 +133,9 @@ class LitteringAdminPage extends BasePage {
         document.getElementById('case-id').value = selected.id;
         document.getElementById('latitude').value = selected.latitude;
         document.getElementById('longitude').value = selected.longitude;
-        document.getElementById('address').value = selected.address;
+        document.getElementById('address').value = selected.jibun_address || selected.road_address || '';
+        document.getElementById('jibun_address').value = selected.jibun_address || '';
+        document.getElementById('road_address').value = selected.road_address || '';
         document.getElementById('waste_type').value = selected.waste_type;
         document.getElementById('waste_type2').value = selected.waste_type2;
 
@@ -240,10 +244,18 @@ class LitteringAdminPage extends BasePage {
             id: document.getElementById('case-id').value,
             latitude: document.getElementById('latitude').value,
             longitude: document.getElementById('longitude').value,
-            address: document.getElementById('address').value,
+            jibun_address: document.getElementById('address').value, // The visible field is treated as the jibun address
+            road_address: document.getElementById('road_address').value,
             waste_type: document.getElementById('waste_type').value,
             waste_type2: document.getElementById('waste_type2').value
         };
+
+        // If the main address was edited manually, clear the road_address
+        // as it might be inconsistent.
+        const originalDisplayAddress = this.state.selectedReport.jibun_address || this.state.selectedReport.road_address || '';
+        if (document.getElementById('address').value !== originalDisplayAddress) {
+            updatedData.road_address = '';
+        }
 
         this.setButtonLoading('#confirm-btn', '저장 중...');
         try {

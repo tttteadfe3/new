@@ -44,9 +44,11 @@
         <form onsubmit="return false;">
             <input type="hidden" id="lat">
             <input type="hidden" id="lng">
+            <input type="hidden" id="jibun_address">
+            <input type="hidden" id="road_address">
             <div class="mb-3">
                 <label class="form-label text-uppercase fw-semibold mb-2">주소</label>
-                <div class="form-control-plaintext border rounded p-2 bg-light" id="address">-</div>
+                <div class="form-control-plaintext border rounded p-2 bg-light" id="display_address">-</div>
             </div>
             <div class="row">
                 <div class="col-6 mb-3" style="display:none;">
@@ -114,7 +116,7 @@
             <input type="hidden" id="procIndex">
             <div class="mb-3">
                 <label for="procAddress" class="form-label">주소</label>
-                <div class="form-control-plaintext border rounded p-2 bg-light" id="procAddress">-</div>
+                <div class="form-control-plaintext border rounded p-2 bg-light" id="proc_display_address">-</div>
             </div>
             <div class="mb-3">
                 <label for="procWasteType" class="form-label">성상</label>
