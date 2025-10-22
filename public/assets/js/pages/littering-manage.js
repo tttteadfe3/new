@@ -96,7 +96,7 @@ class LitteringAdminPage extends BasePage {
             if (type === 'pending') {
                 personInfo = `등록 : ${item.created_by_name}`;
             } else if (type === 'processed') {
-                personInfo = `등록 : ${item.created_by_name} 처리 : ${item.updated_by_name}`;
+                personInfo = `등록 : ${item.created_by_name} 처리 : ${item.processed_by_name}`;
             }
 
             const itemHtml = `
@@ -143,7 +143,7 @@ class LitteringAdminPage extends BasePage {
         if (selected.status === 'pending') {
             personInfo = `등록 : ${selected.created_by_name}`;
         } else if (selected.status === 'processed') {
-            personInfo = `등록 : ${selected.created_by_name} 처리 : ${selected.updated_by_name}`;
+            personInfo = `등록 : ${selected.created_by_name} 처리 : ${selected.processed_by_name}`;
         }
         document.getElementById('registrant-info').textContent = personInfo;
         
