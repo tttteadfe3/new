@@ -133,7 +133,7 @@ class LitteringHistoryPage extends BasePage {
 
         offcanvasAddress.textContent = address;
         processList.innerHTML = '';
-        items.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        items.sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
         items.forEach(item => processList.appendChild(this.createReportItemElement(item)));
 
         if (this.lightbox) {
@@ -163,11 +163,11 @@ class LitteringHistoryPage extends BasePage {
                 <hr class="my-2">
                 <div class="d-flex justify-content-between small text-muted mb-2">
                     <span>배출일: ${this.formatDate(item.created_at)}</span>
-                    <span>수거일: ${this.formatDate(item.updated_at)}</span>
+                    <span>수거일: ${this.formatDate(item.completed_at)}</span>
                 </div>
                 ${item.note ? `<p class="mt-2 mb-2 p-2 bg-light border rounded small">${item.note}</p>` : ''}
                 <div class="d-flex gap-2 mt-2 flex-wrap">${this.renderPhotoElements(item)}</div>
-                <div class="small text-muted mt-2">처리 완료: ${this.formatDateTime(item.updated_at)}</div>
+                <div class="small text-muted mt-2">처리 완료: ${this.formatDateTime(item.completed_at)}</div>
             </div>`;
         return itemDiv;
     }
