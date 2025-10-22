@@ -71,7 +71,8 @@ class LitteringService
             $data = [
                 'latitude'    => floatval($postData['lat']),
                 'longitude'   => floatval($postData['lng']),
-                'address'     => Validator::sanitizeString($postData['address'] ?? ''),
+                'jibun_address' => Validator::sanitizeString($postData['jibun_address'] ?? ''),
+                'road_address' => Validator::sanitizeString($postData['road_address'] ?? ''),
                 'waste_type'  => Validator::sanitizeString($postData['waste_type'] ?? ''),
                 'waste_type2' => Validator::sanitizeString($postData['waste_type2'] ?? ''),
                 'fileName1'   => $fileName1,
@@ -118,7 +119,8 @@ class LitteringService
         $updateData = [
             'latitude'  => floatval($postData['latitude'] ?? 0),
             'longitude' => floatval($postData['longitude'] ?? 0),
-            'address'   => Validator::sanitizeString($postData['address'] ?? ''),
+            'jibun_address' => Validator::sanitizeString($postData['jibun_address'] ?? ''),
+            'road_address' => Validator::sanitizeString($postData['road_address'] ?? ''),
             'waste_type'  => Validator::sanitizeString($postData['waste_type'] ?? ''),
             'waste_type2' => Validator::sanitizeString($postData['waste_type2'] ?? '')
         ];

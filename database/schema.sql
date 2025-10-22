@@ -325,7 +325,6 @@ CREATE TABLE `illegal_disposal_cases2` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID (자동 증가)',
   `latitude` decimal(15,10) NOT NULL COMMENT '위도',
   `longitude` decimal(15,10) NOT NULL COMMENT '경도',
-  `address` varchar(255) NOT NULL COMMENT '배출 발생 주소',
   `waste_type` varchar(50) NOT NULL COMMENT '폐기물 성상 (예: 생활폐기물, 재활용 등)',
   `waste_type2` varchar(50) DEFAULT NULL COMMENT '혼합성상',
   `corrected` enum('o','x','=') DEFAULT NULL COMMENT '개선 여부 (o: 개선됨, x: 미개선, =: 사라짐)',

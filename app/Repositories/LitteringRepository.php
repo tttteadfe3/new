@@ -25,7 +25,7 @@ class LitteringRepository {
     public function findAllPending(): array {
         $query = "
             SELECT 
-                idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
+                idc.id, idc.jibun_address, idc.road_address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
                 idc.reg_photo_path, idc.reg_photo_path2, idc.status,
                 COALESCE(e.name, '알 수 없음') as created_by_name
             FROM `illegal_disposal_cases2` idc
@@ -62,7 +62,7 @@ class LitteringRepository {
     public function findAllProcessedForApproval(): array {
         $query = "
             SELECT
-                idc.id, idc.address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
+                idc.id, idc.jibun_address, idc.road_address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
                 idc.reg_photo_path, idc.reg_photo_path2, idc.proc_photo_path, idc.status,
                 COALESCE(e.name, '알 수 없음') as created_by_name,
                 COALESCE(e2.name, '알 수 없음') as updated_by_name
@@ -82,13 +82,13 @@ class LitteringRepository {
      */
     public function save(array $data): ?int {
         $query = 'INSERT INTO `illegal_disposal_cases2` 
-                    (`status`, `latitude`, `longitude`, `address`, `waste_type`, `waste_type2`, 
+                    (`status`, `latitude`, `longitude`, `jibun_address`, `road_address`, `waste_type`, `waste_type2`,
                      `reg_photo_path`, `reg_photo_path2`, `created_at`, `created_by`) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)';
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)';
         
         $params = [
             'pending',
-            $data['latitude'], $data['longitude'], $data['address'], 
+            $data['latitude'], $data['longitude'], $data['jibun_address'], $data['road_address'],
             $data['waste_type'], $data['waste_type2'],
             $data['fileName1'], $data['fileName2'],
             $data['created_by']
@@ -107,11 +107,11 @@ class LitteringRepository {
      */
     public function confirm(int $caseId, array $data, int $employeeId): bool {
         $query = 'UPDATE `illegal_disposal_cases2` 
-                  SET `latitude` = ?, `longitude` = ?, `address` = ?, `waste_type` = ?, `waste_type2` = ?, 
+                  SET `latitude` = ?, `longitude` = ?, `jibun_address` = ?, `road_address` = ?, `waste_type` = ?, `waste_type2` = ?,
                       `status` = ?, `confirmed_by` = ?, `confirmed_at` = NOW(), `updated_by` = ?
                   WHERE `id` = ?';
         $params = [
-            $data['latitude'], $data['longitude'], $data['address'],
+            $data['latitude'], $data['longitude'], $data['jibun_address'], $data['road_address'],
             $data['waste_type'], $data['waste_type2'], 'confirmed',
             $employeeId, $employeeId, $caseId
         ];
