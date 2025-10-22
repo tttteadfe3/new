@@ -92,7 +92,7 @@ class LitteringHistoryPage extends BasePage {
 
     groupReportsByAddress() {
         this.state.groupedData = this.state.processedReports.reduce((acc, item) => {
-            const address = item.address || '주소 없음';
+            const address = item.jibun_address || item.road_address || '주소 없음';
             if (!acc[address]) {
                 acc[address] = [];
             }
@@ -108,7 +108,10 @@ class LitteringHistoryPage extends BasePage {
             this.state.mapService.mapManager.addMarker({
                 position: { lat: firstItem.latitude, lng: firstItem.longitude },
                 type: `${dominantType}_processed`,
-                data: { address, items },
+                data: {
+                    address: firstItem.jibun_address || firstItem.road_address,
+                    items
+                },
                 onClick: (marker, markerData) => this.openDetailsOffcanvas(markerData.address, markerData.items)
             });
         });

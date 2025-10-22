@@ -60,7 +60,7 @@ class LitteringDeletedAdminPage extends BasePage {
             const registrantName = item.employee_name || item.user_name || '알 수 없음';
             const itemHtml = `<tr data-id="${item.id}">
                     <td>${item.id}</td>
-                    <td>${item.address}</td>
+                    <td>${item.jibun_address || item.road_address || '주소 없음'}</td>
                     <td>${item.waste_type}</td>
                     <td>${registrantName}</td>
                     <td>${new Date(item.deleted_at).toLocaleString()}</td>

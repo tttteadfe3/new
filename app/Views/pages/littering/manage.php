@@ -62,6 +62,8 @@
                                     <p id="registrant-info" class="mt-3 mb-1"></p>
                                     <form id="confirm-form">
                                         <input type="hidden" id="case-id">
+                                        <input type="hidden" id="jibun_address">
+                                        <input type="hidden" id="road_address">
                                         <div class="mb-3">
                                             <label for="address" class="form-label">주소</label>
                                             <input type="text" class="form-control form-control-sm" id="address">

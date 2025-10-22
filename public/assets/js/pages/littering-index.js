@@ -217,7 +217,7 @@ class LitteringMapPage extends BasePage {
         }
 
         this.state.currentReportIndex = index;
-        document.getElementById('proc_display_address').textContent = reportData.jibun_address || reportData.road_address || reportData.address || '-';
+        document.getElementById('proc_display_address').textContent = reportData.jibun_address || reportData.road_address || '-';
         document.getElementById('procWasteType').textContent = reportData.waste_type || '-';
         this.renderExistingPhotos(reportData);
 
