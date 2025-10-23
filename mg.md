@@ -9,7 +9,6 @@
 6. [권한 그룹 시스템](#권한-그룹-시스템)
 7. [UI/UX 설계](#uiux-설계)
 8. [적용 예시](#적용-예시)
-9. [마이그레이션 가이드](#마이그레이션-가이드)
 
 ---
 
@@ -2396,44 +2395,4 @@ class LeaveController {
         return $_SESSION['employee_id'] ?? null;
     }
 }
-```
-
----
-
-## 마이그레이션 가이드
-
-### 1. 데이터 마이그레이션 스크립트
-
-```sql
--- Step 1: 기존 users 테이블 백업
-CREATE TABLE users_backup AS SELECT * FROM users;
-
--- Step 2: employees 테이블로 데이터 이전
-INSERT INTO employees (
-    id, employee_no, name, email, password,
-    department_id, hire_date, status, created_at
-)
-SELECT 
-    id,
-    CONCAT('EMP', LPAD(id, 5, '0')) as employee_no,  -- 사번 생성
-    name,
-    email,
-    password,
-    department_id,
-    created_at as hire_date,
-    CASE WHEN is_active = 1 THEN 'active' ELSE 'inactive' END,
-    created_at
-FROM users;
-
--- Step 3: user_roles → employee_roles 마이그레이션
-INSERT INTO employee_roles (employee_id, role_id, assigned_at)
-SELECT user_id, role_id, created_at
-FROM user_roles;
-
--- Step 4: 기존 role_data_scopes 데이터 확인 및 조정
--- (필요 시 기존 데이터 변환)
-
--- Step 5: 기존 테이블 리네임 (필요시)
--- RENAME TABLE users TO users_old;
--- RENAME TABLE user_roles TO user_roles_old;
 ```
