@@ -70,27 +70,20 @@ class OrganizationService
 
     public function getManagableDepartments(): array
     {
-        $user = $this->authService->user();
-        if (!$user || !$user['employee_id']) {
+        $permittedDeptIds = $this->_getPermittedDepartmentIds();
+
+        if ($permittedDeptIds === null) {
             return $this->departmentRepository->getAll();
         }
 
-        // Check if user has global permission to see all departments
-        if ($this->authService->check('department.manage_all')) { // Assuming a permission key
-            return $this->departmentRepository->getAll();
-        }
-
-        $permittedDeptIds = $this->departmentRepository->findDepartmentIdsWithEmployeeViewPermission($user['employee_id']);
         if (empty($permittedDeptIds)) {
-            // If not a viewer of any department, maybe just show their own?
-            $employee = $this->employeeRepository->findById($user['employee_id']);
-            return $employee ? [$this->departmentRepository->findById($employee['department_id'])] : [];
+            return [];
         }
 
         $allDepartments = $this->departmentRepository->getAll();
         $departmentMap = [];
         foreach ($allDepartments as $dept) {
-            $departmentMap[$dept['id']] = $dept;
+            $departmentMap[$dept['id']] = (array)$dept;
         }
 
         $visibleDepartments = [];
@@ -140,19 +133,17 @@ class OrganizationService
      * Returns null if the user has global "view all" permissions.
      * Returns an array of department IDs otherwise.
      */
-    public function getVisibleDepartmentIdsForCurrentUser(): ?array
+    private function _getPermittedDepartmentIds(): ?array
     {
-        // 1. Check for global permissions first.
         $user = $this->authService->user();
-        if (!$user || $this->authService->check('employee.view_all')) { // A new global permission
-            return null;
+        if (!$user || $this->authService->check('employee.view_all')) {
+            return null; // null signifies "all departments"
         }
 
         if (empty($user['employee_id'])) {
-            return []; // Not an employee, can't see anyone.
+            return []; // Not an employee, can't see anything.
         }
 
-        // 2. Check for department-level "view all" permission.
         $employee = $this->employeeRepository->findById($user['employee_id']);
         if ($employee && !empty($employee['department_id'])) {
             $department = $this->departmentRepository->findById($employee['department_id']);
@@ -161,21 +152,42 @@ class OrganizationService
             }
         }
 
-        // 3. Determine visibility based on view permissions.
-        $permittedDeptIds = $this->departmentRepository->findDepartmentIdsWithEmployeeViewPermission($user['employee_id']);
-        $allVisibleIds = [];
+        $permittedDeptIds = [];
+
+        // 1. Add own department
+        if ($employee && $employee['department_id']) {
+            $permittedDeptIds[] = $employee['department_id'];
+        }
+
+        // 2. Add departments permitted for the employee
+        $employeePermitted = $this->departmentRepository->findDepartmentIdsWithEmployeeViewPermission($user['employee_id']);
+        $permittedDeptIds = array_merge($permittedDeptIds, $employeePermitted);
+
+        // 3. Add departments permitted for the employee's department
+        if ($employee && $employee['department_id']) {
+            $departmentPermitted = $this->departmentRepository->findVisibleDepartmentIdsForGivenDepartment($employee['department_id']);
+            $permittedDeptIds = array_merge($permittedDeptIds, $departmentPermitted);
+        }
+
+        return array_unique($permittedDeptIds);
+    }
+
+    public function getVisibleDepartmentIdsForCurrentUser(): ?array
+    {
+        $permittedDeptIds = $this->_getPermittedDepartmentIds();
+
+        if ($permittedDeptIds === null) {
+            return null;
+        }
 
         if (empty($permittedDeptIds)) {
-            // Not a viewer, can only see their own department.
-            if ($employee && $employee['department_id']) {
-                $allVisibleIds[] = $employee['department_id'];
-            }
-        } else {
-            // Is a viewer, get all sub-departments of all permitted departments.
-            foreach ($permittedDeptIds as $deptId) {
-                $subtreeIds = $this->departmentRepository->findSubtreeIds($deptId);
-                $allVisibleIds = array_merge($allVisibleIds, $subtreeIds);
-            }
+            return [];
+        }
+
+        $allVisibleIds = [];
+        foreach ($permittedDeptIds as $deptId) {
+            $subtreeIds = $this->departmentRepository->findSubtreeIds($deptId);
+            $allVisibleIds = array_merge($allVisibleIds, $subtreeIds);
         }
 
         return array_unique($allVisibleIds);

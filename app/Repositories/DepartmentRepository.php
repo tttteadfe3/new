@@ -46,6 +46,13 @@ class DepartmentRepository {
         return array_column($results, 'permitted_department_id');
     }
 
+    public function findVisibleDepartmentIdsForGivenDepartment(int $permittedDepartmentId): array
+    {
+        $sql = "SELECT department_id FROM hr_department_view_permissions WHERE permitted_department_id = :permitted_department_id";
+        $results = $this->db->query($sql, [':permitted_department_id' => $permittedDepartmentId]);
+        return array_column($results, 'department_id');
+    }
+
     public function findDepartmentIdsWithEmployeeViewPermission(int $employeeId): array
     {
         $sql = "SELECT department_id FROM hr_department_managers WHERE employee_id = :employee_id";
