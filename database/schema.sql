@@ -14,6 +14,7 @@ CREATE TABLE `hr_departments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL COMMENT '부서명',
   `parent_id` int(11) DEFAULT NULL COMMENT '상위 부서 ID',
+  `path` varchar(255) DEFAULT NULL COMMENT '계층 구조 경로 (예: /1/3/)',
   `can_view_all_employees` tinyint(1) NOT NULL DEFAULT 0 COMMENT '전체 직원 조회 권한 여부',
   `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
@@ -408,14 +409,27 @@ ALTER TABLE `hr_departments`
 
 -- ========================================
 -- (신규) 부서장 매핑 테이블 생성
+-- (신규) 부서 조회 권한 직원 매핑 테이블
 -- ========================================
 CREATE TABLE `hr_department_managers` (
   `department_id` int(11) NOT NULL COMMENT '부서 ID',
-  `employee_id` int(11) NOT NULL COMMENT '부서장으로 지정된 직원 ID',
+  `employee_id` int(11) NOT NULL COMMENT '조회 권한을 가진 직원 ID',
   PRIMARY KEY (`department_id`, `employee_id`),
   KEY `fk_manager_employee_id` (`employee_id`),
   CONSTRAINT `fk_manager_department_id` FOREIGN KEY (`department_id`) REFERENCES `hr_departments` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_manager_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='부서-부서장 매핑 정보';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='부서별 조회 권한이 있는 직원 정보';
+
+-- ========================================
+-- (신규) 부서 조회 권한 부서 매핑 테이블
+-- ========================================
+CREATE TABLE `hr_department_view_permissions` (
+  `department_id` int(11) NOT NULL COMMENT '정보를 제공하는 부서 ID',
+  `permitted_department_id` int(11) NOT NULL COMMENT '조회 권한을 부여받는 부서 ID',
+  PRIMARY KEY (`department_id`, `permitted_department_id`),
+  KEY `fk_view_permission_permitted_department_id` (`permitted_department_id`),
+  CONSTRAINT `fk_view_permission_department_id` FOREIGN KEY (`department_id`) REFERENCES `hr_departments` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_view_permission_permitted_department_id` FOREIGN KEY (`permitted_department_id`) REFERENCES `hr_departments` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='한 부서가 다른 부서 정보를 조회할 수 있는 권한';
 
 COMMIT;

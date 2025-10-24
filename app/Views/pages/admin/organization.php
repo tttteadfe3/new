@@ -61,9 +61,15 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="manager-ids" class="form-label">부서장</label>
-                            <select class="form-select" id="manager-ids" name="manager_ids[]" multiple>
+                            <label for="viewer-employee-ids" class="form-label">조회 권한 직원</label>
+                            <select class="form-select" id="viewer-employee-ids" name="viewer_employee_ids[]" multiple>
                                 <!-- Employee options will be populated by JS -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="viewer-department-ids" class="form-label">조회 권한 부서</label>
+                            <select class="form-select" id="viewer-department-ids" name="viewer_department_ids[]" multiple>
+                                <!-- Department options will be populated by JS -->
                             </select>
                         </div>
                         <div class="mb-3 form-check">

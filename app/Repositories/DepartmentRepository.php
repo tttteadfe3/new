@@ -16,9 +16,8 @@ class DepartmentRepository {
      */
     public function getAll(): array {
         $sql = "
-            SELECT d.*, m.employee_id as manager_id
+            SELECT d.*
             FROM hr_departments d
-            LEFT JOIN hr_department_managers m ON d.id = m.department_id
             ORDER BY d.name
         ";
         return $this->db->fetchAll($sql);
@@ -26,16 +25,28 @@ class DepartmentRepository {
 
     public function findById(int $id): ?Department {
         $sql = "
-            SELECT d.*, m.employee_id as manager_id
+            SELECT d.*
             FROM hr_departments d
-            LEFT JOIN hr_department_managers m ON d.id = m.department_id
             WHERE d.id = :id
         ";
         $result = $this->db->fetchOneAs(Department::class, $sql, [':id' => $id]);
         return $result ?: null;
     }
 
-    public function findManagedDepartmentIdsByEmployee(int $employeeId): array
+    public function findByParentId(int $parentId): array
+    {
+        $sql = "SELECT * FROM hr_departments WHERE parent_id = :parent_id";
+        return $this->db->fetchAll($sql, [':parent_id' => $parentId]);
+    }
+
+    public function findDepartmentViewPermissionIds(int $departmentId): array
+    {
+        $sql = "SELECT permitted_department_id FROM hr_department_view_permissions WHERE department_id = :department_id";
+        $results = $this->db->query($sql, [':department_id' => $departmentId]);
+        return array_column($results, 'permitted_department_id');
+    }
+
+    public function findDepartmentIdsWithEmployeeViewPermission(int $employeeId): array
     {
         $sql = "SELECT department_id FROM hr_department_managers WHERE employee_id = :employee_id";
         $results = $this->db->query($sql, [':employee_id' => $employeeId]);
@@ -79,8 +90,8 @@ class DepartmentRepository {
                 e.id as employee_id,
                 e.name as employee_name,
                 p.name as position_name,
-                (SELECT GROUP_CONCAT(m.name SEPARATOR ', ') FROM hr_department_managers dm JOIN hr_employees m ON dm.employee_id = m.id WHERE dm.department_id = d.id) as manager_names,
-                (SELECT GROUP_CONCAT(dm.employee_id SEPARATOR ',') FROM hr_department_managers dm WHERE dm.department_id = d.id) as manager_ids
+                (SELECT GROUP_CONCAT(m.name SEPARATOR ', ') FROM hr_department_managers dm JOIN hr_employees m ON dm.employee_id = m.id WHERE dm.department_id = d.id) as viewer_employee_names,
+                (SELECT GROUP_CONCAT(dm.employee_id SEPARATOR ',') FROM hr_department_managers dm WHERE dm.department_id = d.id) as viewer_employee_ids
             FROM
                 hr_departments d
             LEFT JOIN
@@ -93,14 +104,14 @@ class DepartmentRepository {
         return $this->db->query($sql);
     }
 
-    public function findAllWithManagers(): array
+    public function findAllWithViewers(): array
     {
         $sql = "
             SELECT
                 d.*,
                 d.name as simple_name,
-                GROUP_CONCAT(m.name SEPARATOR ', ') as manager_names,
-                GROUP_CONCAT(dm.employee_id SEPARATOR ',') as manager_ids
+                GROUP_CONCAT(m.name SEPARATOR ', ') as viewer_employee_names,
+                GROUP_CONCAT(dm.employee_id SEPARATOR ',') as viewer_employee_ids
             FROM hr_departments d
             LEFT JOIN hr_department_managers dm ON d.id = dm.department_id
             LEFT JOIN hr_employees m ON dm.employee_id = m.id
@@ -111,10 +122,11 @@ class DepartmentRepository {
     }
 
     public function create(array $data): string {
-        $sql = "INSERT INTO hr_departments (name, parent_id, can_view_all_employees) VALUES (:name, :parent_id, :can_view_all_employees)";
+        $sql = "INSERT INTO hr_departments (name, parent_id, path, can_view_all_employees) VALUES (:name, :parent_id, :path, :can_view_all_employees)";
         $params = [
             ':name' => $data['name'],
             ':parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null,
+            ':path' => $data['path'] ?? null,
             ':can_view_all_employees' => isset($data['can_view_all_employees']) && $data['can_view_all_employees'] ? 1 : 0
         ];
         $this->db->execute($sql, $params);
@@ -122,11 +134,12 @@ class DepartmentRepository {
     }
 
     public function update(int $id, array $data): bool {
-        $sql = "UPDATE hr_departments SET name = :name, parent_id = :parent_id, can_view_all_employees = :can_view_all_employees WHERE id = :id";
+        $sql = "UPDATE hr_departments SET name = :name, parent_id = :parent_id, path = :path, can_view_all_employees = :can_view_all_employees WHERE id = :id";
         $params = [
             ':id' => $id,
             ':name' => $data['name'],
             ':parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null,
+            ':path' => $data['path'] ?? null,
             ':can_view_all_employees' => isset($data['can_view_all_employees']) && $data['can_view_all_employees'] ? 1 : 0
         ];
         return $this->db->execute($sql, $params) > 0;
@@ -144,21 +157,42 @@ class DepartmentRepository {
         return $this->db->execute("DELETE FROM hr_departments WHERE id = :id", [':id' => $id]) > 0;
     }
 
-    public function replaceManagers(int $departmentId, array $managerIds): void
+    public function replaceEmployeeViewPermissions(int $departmentId, array $employeeIds): void
     {
         $this->db->execute("DELETE FROM hr_department_managers WHERE department_id = :department_id", [':department_id' => $departmentId]);
 
-        if (empty($managerIds)) {
+        if (empty($employeeIds)) {
             return;
         }
 
         $sql = "INSERT INTO hr_department_managers (department_id, employee_id) VALUES ";
         $params = [];
         $placeholders = [];
-        foreach ($managerIds as $i => $managerId) {
-            $placeholders[] = "(:department_id_{$i}, :manager_id_{$i})";
+        foreach ($employeeIds as $i => $employeeId) {
+            $placeholders[] = "(:department_id_{$i}, :employee_id_{$i})";
             $params[":department_id_{$i}"] = $departmentId;
-            $params[":manager_id_{$i}"] = $managerId;
+            $params[":employee_id_{$i}"] = $employeeId;
+        }
+        $sql .= implode(', ', $placeholders);
+
+        $this->db->execute($sql, $params);
+    }
+
+    public function replaceDepartmentViewPermissions(int $departmentId, array $permittedDepartmentIds): void
+    {
+        $this->db->execute("DELETE FROM hr_department_view_permissions WHERE department_id = :department_id", [':department_id' => $departmentId]);
+
+        if (empty($permittedDepartmentIds)) {
+            return;
+        }
+
+        $sql = "INSERT INTO hr_department_view_permissions (department_id, permitted_department_id) VALUES ";
+        $params = [];
+        $placeholders = [];
+        foreach ($permittedDepartmentIds as $i => $permittedDepartmentId) {
+            $placeholders[] = "(:department_id_{$i}, :permitted_department_id_{$i})";
+            $params[":department_id_{$i}"] = $departmentId;
+            $params[":permitted_department_id_{$i}"] = $permittedDepartmentId;
         }
         $sql .= implode(', ', $placeholders);
 
