@@ -58,7 +58,11 @@ $container->register(\App\Services\EmployeeService::class, fn($c) => new \App\Se
     $c->resolve(SessionManager::class),
     $c->resolve(\App\Services\OrganizationService::class)
 ));
-$container->register(\App\Services\HolidayService::class, fn($c) => new \App\Services\HolidayService($c->resolve(\App\Repositories\HolidayRepository::class), $c->resolve(\App\Repositories\DepartmentRepository::class)));
+$container->register(\App\Services\HolidayService::class, fn($c) => new \App\Services\HolidayService(
+    $c->resolve(\App\Repositories\HolidayRepository::class),
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(\App\Services\OrganizationService::class)
+));
 $container->register(\App\Services\KakaoAuthService::class, fn($c) => new \App\Services\KakaoAuthService($c->resolve(SessionManager::class)));
 $container->register(\App\Services\LeaveService::class, fn($c) => new \App\Services\LeaveService(
     $c->resolve(\App\Repositories\LeaveRepository::class),
@@ -79,7 +83,11 @@ $container->register(\App\Services\OrganizationService::class, fn($c) => new \Ap
 ));
 $container->register(\App\Services\ProfileService::class, fn($c) => new \App\Services\ProfileService($c->resolve(\App\Repositories\UserRepository::class), $c->resolve(\App\Repositories\EmployeeRepository::class)));
 $container->register(\App\Services\RolePermissionService::class, fn($c) => new \App\Services\RolePermissionService($c->resolve(\App\Repositories\RoleRepository::class)));
-$container->register(\App\Services\UserService::class, fn($c) => new \App\Services\UserService($c->resolve(\App\Repositories\UserRepository::class), $c->resolve(\App\Repositories\RoleRepository::class)));
+$container->register(\App\Services\UserService::class, fn($c) => new \App\Services\UserService(
+    $c->resolve(\App\Repositories\UserRepository::class),
+    $c->resolve(\App\Repositories\RoleRepository::class),
+    $c->resolve(\App\Services\OrganizationService::class)
+));
 $container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Services\ViewDataService(
     $c->resolve(\App\Services\AuthService::class),
     $c->resolve(SessionManager::class),

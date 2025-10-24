@@ -271,7 +271,7 @@ class OrganizationService
      */
     public function getFormattedDepartmentListForAll(): array
     {
-        $allDepartments = $this->departmentRepository->findAllWithManagers();
+        $allDepartments = $this->departmentRepository->findAllWithViewers();
         if (empty($allDepartments)) {
             return [];
         }
