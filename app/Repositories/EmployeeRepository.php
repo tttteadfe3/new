@@ -81,10 +81,11 @@ class EmployeeRepository {
 
     /**
      * 모든 직원 목록을 조회합니다. 연결된 사용자 닉네임도 함께 가져옵니다.
-     * @param array $filters 필터 조건 (예: ['department_id' => 1])
+     * @param array $filters 필터 조건
+     * @param array|null $visibleDepartmentIds 조회 가능한 부서 ID 목록
      * @return array
      */
-    public function getAll(array $filters = []): array {
+    public function getAll(array $filters = [], ?array $visibleDepartmentIds = null): array {
         $sql = "SELECT e.*, u.nickname, d.name as department_name, p.name as position_name
                 FROM hr_employees e
                 LEFT JOIN sys_users u ON e.id = u.employee_id
@@ -94,21 +95,12 @@ class EmployeeRepository {
         $whereClauses = [];
         $params = [];
 
-        if (!empty($filters['department_id'])) {
-            if (is_array($filters['department_id'])) {
-                if (count($filters['department_id']) > 0) {
-                    // Sanitize all IDs to ensure they are integers
-                    $deptIds = array_map('intval', $filters['department_id']);
-                    $inClause = implode(',', $deptIds);
-                    $whereClauses[] = "e.department_id IN ($inClause)";
-                } else {
-                    // Handle empty array case to return no results
-                    $whereClauses[] = "1=0";
-                }
+        if ($visibleDepartmentIds !== null) {
+            if (empty($visibleDepartmentIds)) {
+                $whereClauses[] = "1=0"; // Return no results if no departments are visible
             } else {
-                // Handle single department ID
-                $whereClauses[] = "e.department_id = :department_id";
-                $params[':department_id'] = $filters['department_id'];
+                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+                $whereClauses[] = "e.department_id IN ($inClause)";
             }
         }
 

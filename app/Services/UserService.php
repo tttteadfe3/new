@@ -13,11 +13,16 @@ class UserService
 {
     private UserRepository $userRepository;
     private RoleRepository $roleRepository;
+    private OrganizationService $organizationService;
 
-    public function __construct(UserRepository $userRepository, RoleRepository $roleRepository)
-    {
+    public function __construct(
+        UserRepository $userRepository,
+        RoleRepository $roleRepository,
+        OrganizationService $organizationService
+    ) {
         $this->userRepository = $userRepository;
         $this->roleRepository = $roleRepository;
+        $this->organizationService = $organizationService;
     }
 
     /**
@@ -25,7 +30,8 @@ class UserService
      */
     public function getAllUsers(array $filters = []): array
     {
-        return $this->userRepository->getAllWithRoles($filters);
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+        return $this->userRepository->getAllWithRoles($filters, $visibleDeptIds);
     }
 
     /**
@@ -114,9 +120,10 @@ class UserService
     /**
      * Get a list of employees who are not yet linked to a user account.
      */
-    public function getUnlinkedEmployees(?int $departmentId = null): array
+    public function getUnlinkedEmployees(): array
     {
-        return $this->userRepository->getUnlinkedEmployees($departmentId);
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+        return $this->userRepository->getUnlinkedEmployees($visibleDeptIds);
     }
 
     /**

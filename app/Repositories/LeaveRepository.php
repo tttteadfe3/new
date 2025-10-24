@@ -60,10 +60,11 @@ class LeaveRepository {
      * 모든 활성 직원의 특정 연도 연차 부여 현황을 조회합니다.
      * 연차 부여 내역이 없는 직원도 목록에 포함됩니다.
      *
-     * @param array $filters 필터 조건. e.g., ['year' => 2024, 'department_id' => 1]
+     * @param array $filters 필터 조건. e.g., ['year' => 2024]
+     * @param array|null $visibleDepartmentIds 조회 가능한 부서 ID 목록
      * @return array 직원별 연차 부여 현황 목록
      */
-    public function getAllEntitlements(array $filters = []): array {
+    public function getAllEntitlements(array $filters = [], ?array $visibleDepartmentIds = null): array {
         $year = $filters['year'] ?? date('Y');
 
         $sql = "SELECT
@@ -86,9 +87,13 @@ class LeaveRepository {
 
         $params = [':year1' => $year, ':year2' => $year];
 
-        if (!empty($filters['department_id'])) {
-            $sql .= " AND e.department_id = :department_id";
-            $params[':department_id'] = $filters['department_id'];
+        if ($visibleDepartmentIds !== null) {
+            if (empty($visibleDepartmentIds)) {
+                $sql .= " AND 1=0"; // Return no results
+            } else {
+                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+                $sql .= " AND e.department_id IN ($inClause)";
+            }
         }
 
         $sql .= " ORDER BY e.name ASC";
@@ -305,9 +310,10 @@ class LeaveRepository {
      * 모든 연차 신청 목록을 조건에 따라 조회합니다. (관리자용)
      *
      * @param array $filters 필터 조건. e.g., ['status' => 'pending', 'start_date' => '2024-01-01']
+     * @param array|null $visibleDepartmentIds 조회 가능한 부서 ID 목록
      * @return array 필터링된 연차 신청 목록
      */
-    public function findAll(array $filters = []): array {
+    public function findAll(array $filters = [], ?array $visibleDepartmentIds = null): array {
         $sql = "SELECT l.*, e.name as employee_name, d.name as department_name, p.name as position_name
                 FROM hr_leaves l
                 JOIN hr_employees e ON l.employee_id = e.id
@@ -329,18 +335,12 @@ class LeaveRepository {
             $whereClauses[] = "l.end_date <= :end_date";
             $params[':end_date'] = $filters['end_date'];
         }
-        if (!empty($filters['department_id'])) {
-            if (is_array($filters['department_id'])) {
-                if (count($filters['department_id']) > 0) {
-                    $deptIds = array_map('intval', $filters['department_id']);
-                    $inClause = implode(',', $deptIds);
-                    $whereClauses[] = "e.department_id IN ($inClause)";
-                } else {
-                    $whereClauses[] = "1=0";
-                }
+        if ($visibleDepartmentIds !== null) {
+            if (empty($visibleDepartmentIds)) {
+                $whereClauses[] = "1=0";
             } else {
-                $whereClauses[] = "e.department_id = :department_id";
-                $params[':department_id'] = $filters['department_id'];
+                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+                $whereClauses[] = "e.department_id IN ($inClause)";
             }
         }
 

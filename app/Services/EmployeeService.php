@@ -53,32 +53,7 @@ class EmployeeService
     public function getAllEmployees(array $filters = []): array
     {
         $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
-
-        // If the result is not null, it means the user is not a global admin.
-        if ($visibleDeptIds !== null) {
-            // If the user has no visible departments, return empty.
-            if (empty($visibleDeptIds)) {
-                return [];
-            }
-
-            // If a department filter is already applied, we must ensure it's a subset
-            // of the departments the user is allowed to see.
-            if (!empty($filters['department_id'])) {
-                $requestedDeptIds = is_array($filters['department_id']) ? $filters['department_id'] : [$filters['department_id']];
-                $allowedRequestedIds = array_intersect($requestedDeptIds, $visibleDeptIds);
-
-                if (empty($allowedRequestedIds)) {
-                    return []; // Requested department is not within the visible scope.
-                }
-                $filters['department_id'] = $allowedRequestedIds;
-
-            } else {
-                // No filter was applied, so apply the user's visible departments.
-                $filters['department_id'] = $visibleDeptIds;
-            }
-        }
-
-        return $this->employeeRepository->getAll($filters);
+        return $this->employeeRepository->getAll($filters, $visibleDeptIds);
     }
 
     /**

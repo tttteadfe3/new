@@ -155,11 +155,10 @@ class LeaveAdminApiController extends BaseApiController
     {
         $filters = [
             'year' => $this->request->input('year', date('Y')),
-            'department_id' => $this->request->input('department_id')
         ];
         
         try {
-            $data = $this->leaveRepository->getAllEntitlements(array_filter($filters));
+            $data = $this->leaveService->getAllEntitlements(array_filter($filters));
             $this->apiSuccess($data);
         } catch (Exception $e) {
             $this->apiError('연차 부여 내역 조회 중 오류 발생', 'SERVER_ERROR', 500);
