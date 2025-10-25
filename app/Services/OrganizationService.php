@@ -186,9 +186,12 @@ class OrganizationService
             unset($data['viewer_department_ids']);
             unset($data['path']);
 
+            $parentId = !empty($data['parent_id']) ? (int)$data['parent_id'] : null;
+            $data['parent_id'] = $parentId;
+
             $newDeptId = $this->departmentRepository->create($data);
 
-            $path = $this->calculateDepartmentPath($data['parent_id'] ?? null, $newDeptId);
+            $path = $this->calculateDepartmentPath($parentId, $newDeptId);
             $this->departmentRepository->update($newDeptId, ['path' => $path]);
 
             if (!empty($viewerEmployeeIds)) {
@@ -218,7 +221,10 @@ class OrganizationService
             $oldDepartment = $this->departmentRepository->findById($id);
             $oldPath = $oldDepartment->path;
 
-            $newPath = $this->calculateDepartmentPath($data['parent_id'] ?? null, $id);
+            $parentId = !empty($data['parent_id']) ? (int)$data['parent_id'] : null;
+            $data['parent_id'] = $parentId;
+
+            $newPath = $this->calculateDepartmentPath($parentId, $id);
             $data['path'] = $newPath;
 
             $result = $this->departmentRepository->update($id, $data);
@@ -247,7 +253,7 @@ class OrganizationService
         if (!$parent) {
             throw new \Exception("Parent department with ID {$parentId} not found.");
         }
-        return rtrim($parent->path, '/') . "/{$currentId}/";
+        return rtrim($parent->path ?? '', '/') . "/{$currentId}/";
     }
 
     private function updateSubtreePaths(int $parentId, string $parentPath)
