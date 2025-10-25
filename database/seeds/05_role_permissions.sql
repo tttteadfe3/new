@@ -79,10 +79,4 @@ INSERT INTO `sys_role_permissions` (`role_id`, `permission_id`) VALUES
 (1, 80),
 (1, 90),
 (1, 100),
-(1, 101),
-(1, 110),
-(1, 111),
-(1, 112),
-(1, 113),
-(1, 114);
-INSERT INTO `sys_role_permissions` (`role_id`, `permission_id`) VALUES (1, 70);
+(1, 101);
