@@ -11,22 +11,22 @@ class PositionRepository {
         $this->db = $db;
     }
     public function getAll() {
-        return $this->db->query("SELECT * FROM hr_positions ORDER BY name");
+        return $this->db->query("SELECT * FROM hr_positions ORDER BY level ASC, name ASC");
     }
 
     public function findById(int $id) {
         return $this->db->fetchOne("SELECT * FROM hr_positions WHERE id = :id", [':id' => $id]);
     }
 
-    public function create(string $name): string {
-        $sql = "INSERT INTO hr_positions (name) VALUES (:name)";
-        $this->db->execute($sql, [':name' => $name]);
+    public function create(string $name, int $level): string {
+        $sql = "INSERT INTO hr_positions (name, level) VALUES (:name, :level)";
+        $this->db->execute($sql, [':name' => $name, ':level' => $level]);
         return $this->db->lastInsertId();
     }
 
-    public function update(int $id, string $name): bool {
-        $sql = "UPDATE hr_positions SET name = :name WHERE id = :id";
-        return $this->db->execute($sql, [':id' => $id, ':name' => $name]) > 0;
+    public function update(int $id, string $name, int $level): bool {
+        $sql = "UPDATE hr_positions SET name = :name, level = :level WHERE id = :id";
+        return $this->db->execute($sql, [':id' => $id, ':name' => $name, ':level' => $level]) > 0;
     }
 
     public function isEmployeeAssigned(int $id): bool {

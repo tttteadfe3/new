@@ -10,11 +10,21 @@ class HolidayRepository {
     public function __construct(Database $db) {
         $this->db = $db;
     }
-    public function getAll() {
+    public function getAll(?array $visibleDepartmentIds = null) {
         $sql = "SELECT h.*, d.name as department_name
                 FROM hr_holidays h
-                LEFT JOIN hr_departments d ON h.department_id = d.id
-                ORDER BY h.date DESC";
+                LEFT JOIN hr_departments d ON h.department_id = d.id";
+
+        if ($visibleDepartmentIds !== null) {
+            if (empty($visibleDepartmentIds)) {
+                $sql .= " WHERE 1=0"; // Return no results
+            } else {
+                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+                $sql .= " WHERE h.department_id IS NULL OR h.department_id IN ($inClause)";
+            }
+        }
+
+        $sql .= " ORDER BY h.date DESC";
         return $this->db->query($sql);
     }
 

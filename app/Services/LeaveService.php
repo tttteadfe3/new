@@ -550,32 +550,8 @@ class LeaveService {
      */
     public function getLeaveHistory(array $filters = []): array
     {
-        $finalFilters = $filters;
-
-        // Centralized logic from OrganizationService will determine which department IDs are visible.
         $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
-
-        // If the user can see all employees, visibleDeptIds will be null.
-        if ($visibleDeptIds !== null) {
-            if (empty($visibleDeptIds)) {
-                return []; // User has no departments they can see.
-            }
-             // If a department filter is set, ensure it's a subset of what the user is allowed to see.
-            if (!empty($finalFilters['department_id'])) {
-                if (in_array($finalFilters['department_id'], $visibleDeptIds)) {
-                    // Filter is valid, but we need its subtree.
-                    $finalFilters['department_id'] = $this->departmentRepository->findSubtreeIds($finalFilters['department_id']);
-                } else {
-                    return []; // Trying to access a forbidden department.
-                }
-            } else {
-                // No specific filter, so use all visible departments.
-                $finalFilters['department_id'] = $visibleDeptIds;
-            }
-        }
-        // If visibleDeptIds is null, it means user is admin-like and no department filter should be applied unless specified.
-
-        return $this->leaveRepository->findAll($finalFilters);
+        return $this->leaveRepository->findAll($filters, $visibleDeptIds);
     }
 
     /**
@@ -583,18 +559,14 @@ class LeaveService {
      */
     public function getPendingLeaveRequests(): array
     {
-        $filters = [];
         $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+        return $this->leaveRepository->findByStatus('pending', [], $visibleDeptIds);
+    }
 
-        // If the result is not null, apply the department filter.
-        if ($visibleDeptIds !== null) {
-            if (empty($visibleDeptIds)) {
-                return [];
-            }
-            $filters['department_id'] = $visibleDeptIds;
-        }
-
-        return $this->leaveRepository->findByStatus('pending', $filters);
+    public function getAllEntitlements(array $filters = []): array
+    {
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+        return $this->leaveRepository->getAllEntitlements($filters, $visibleDeptIds);
     }
 
     /**

@@ -21,14 +21,9 @@ class OrganizationService
         $this->employeeRepository = $employeeRepository;
     }
 
-    /**
-     * 조직도 데이터를 계층 구조로 가공하여 반환합니다.
-     * @return array
-     */
     public function getOrganizationChartData(): array
     {
         $flatData = $this->departmentRepository->findAllWithEmployees();
-
         if (empty($flatData)) {
             return [];
         }
@@ -41,7 +36,7 @@ class OrganizationService
                     'id' => $deptId,
                     'name' => $row['name'],
                     'parent_id' => $row['parent_id'],
-                    'manager_name' => $row['manager_names'],
+                    'viewer_employee_names' => $row['viewer_employee_names'],
                     'children' => [],
                     'employees' => []
                 ];
@@ -70,35 +65,30 @@ class OrganizationService
 
     public function getManagableDepartments(): array
     {
-        $user = $this->authService->user();
-        if (!$user || !$user['employee_id']) {
-            return $this->departmentRepository->getAll();
+        $permittedDeptIds = $this->_getPermittedDepartmentIds();
+
+        if ($permittedDeptIds === null) {
+            $allDepartments = $this->departmentRepository->getAll();
+            $departmentMap = [];
+            foreach ($allDepartments as $dept) {
+                $departmentMap[$dept['id']] = (array)$dept;
+            }
+            $visibleDepartments = $departmentMap;
+        } else {
+            if (empty($permittedDeptIds)) {
+                return [];
+            }
+            $allDepartments = $this->departmentRepository->getAll();
+            $departmentMap = [];
+            foreach ($allDepartments as $dept) {
+                $departmentMap[$dept['id']] = (array)$dept;
+            }
+            $visibleDepartments = [];
+            foreach ($permittedDeptIds as $permittedDeptId) {
+                $this->findSubtreeRecursive($permittedDeptId, $departmentMap, $visibleDepartments);
+            }
         }
 
-        // Check if user has global permission to see all departments
-        if ($this->authService->check('department.manage_all')) { // Assuming a permission key
-            return $this->departmentRepository->getAll();
-        }
-
-        $managedDeptIds = $this->departmentRepository->findManagedDepartmentIdsByEmployee($user['employee_id']);
-        if (empty($managedDeptIds)) {
-            // If not a manager of any department, maybe just show their own?
-            $employee = $this->employeeRepository->findById($user['employee_id']);
-            return $employee ? [$this->departmentRepository->findById($employee['department_id'])] : [];
-        }
-
-        $allDepartments = $this->departmentRepository->getAll();
-        $departmentMap = [];
-        foreach ($allDepartments as $dept) {
-            $departmentMap[$dept['id']] = $dept;
-        }
-
-        $visibleDepartments = [];
-        foreach ($managedDeptIds as $managedDeptId) {
-            $this->findSubtreeRecursive($managedDeptId, $departmentMap, $visibleDepartments);
-        }
-
-        // Format names hierarchically
         foreach ($visibleDepartments as &$dept) {
             $dept['name'] = $this->getHierarchicalName($dept['id'], $departmentMap);
         }
@@ -122,9 +112,7 @@ class OrganizationService
 
     private function getHierarchicalName(int $deptId, array &$map, string $separator = '->'): string
     {
-        if (!isset($map[$deptId])) {
-            return '';
-        }
+        if (!isset($map[$deptId])) return '';
 
         $path = [];
         $current = $map[$deptId];
@@ -135,56 +123,53 @@ class OrganizationService
         return implode($separator, $path);
     }
 
-    /**
-     * Get the list of department IDs that the current user is allowed to view.
-     * Returns null if the user has global "view all" permissions.
-     * Returns an array of department IDs otherwise.
-     */
-    public function getVisibleDepartmentIdsForCurrentUser(): ?array
+    private function _getPermittedDepartmentIds(): ?array
     {
-        // 1. Check for global permissions first.
         $user = $this->authService->user();
-        if (!$user || $this->authService->check('employee.view_all')) { // A new global permission
+        if (!$user || $this->authService->check('employee.view_all')) {
             return null;
         }
 
         if (empty($user['employee_id'])) {
-            return []; // Not an employee, can't see anyone.
+            return [];
         }
 
-        // 2. Check for department-level "view all" permission.
         $employee = $this->employeeRepository->findById($user['employee_id']);
-        if ($employee && !empty($employee['department_id'])) {
-            $department = $this->departmentRepository->findById($employee['department_id']);
-            if ($department && $department->can_view_all_employees) {
-                return null;
-            }
+
+        $permittedDeptIds = [];
+        if ($employee && $employee['department_id']) {
+            $permittedDeptIds[] = $employee['department_id'];
         }
 
-        // 3. Determine visibility based on manager status.
-        $managedDeptIds = $this->departmentRepository->findManagedDepartmentIdsByEmployee($user['employee_id']);
-        $allVisibleIds = [];
+        $employeePermitted = $this->departmentRepository->findDepartmentIdsWithEmployeeViewPermission($user['employee_id']);
+        $permittedDeptIds = array_merge($permittedDeptIds, $employeePermitted);
 
-        if (empty($managedDeptIds)) {
-            // Not a manager, can only see their own department.
-            if ($employee && $employee['department_id']) {
-                $allVisibleIds[] = $employee['department_id'];
-            }
-        } else {
-            // Is a manager, get all sub-departments of all managed departments.
-            foreach ($managedDeptIds as $deptId) {
-                $subtreeIds = $this->departmentRepository->findSubtreeIds($deptId);
-                $allVisibleIds = array_merge($allVisibleIds, $subtreeIds);
-            }
+        if ($employee && $employee['department_id']) {
+            $departmentPermitted = $this->departmentRepository->findVisibleDepartmentIdsForGivenDepartment($employee['department_id']);
+            $permittedDeptIds = array_merge($permittedDeptIds, $departmentPermitted);
+        }
+
+        return array_unique($permittedDeptIds);
+    }
+
+    public function getVisibleDepartmentIdsForCurrentUser(): ?array
+    {
+        $permittedDeptIds = $this->_getPermittedDepartmentIds();
+        if ($permittedDeptIds === null) {
+            return null;
+        }
+        if (empty($permittedDeptIds)) {
+            return [];
+        }
+
+        $allVisibleIds = [];
+        foreach ($permittedDeptIds as $deptId) {
+            $subtreeIds = $this->departmentRepository->findSubtreeIds($deptId);
+            $allVisibleIds = array_merge($allVisibleIds, $subtreeIds);
         }
 
         return array_unique($allVisibleIds);
     }
-
-
-    // ===================================================
-    // CRUD Methods restored for OrganizationApiController
-    // ===================================================
 
     public function getAllDepartments(): array
     {
@@ -195,13 +180,25 @@ class OrganizationService
     {
         $this->departmentRepository->beginTransaction();
         try {
-            $managerIds = $data['manager_ids'] ?? [];
-            unset($data['manager_ids']); // Ensure it's not passed to the create method
+            $viewerEmployeeIds = $data['viewer_employee_ids'] ?? [];
+            unset($data['viewer_employee_ids']);
+            $viewerDepartmentIds = $data['viewer_department_ids'] ?? [];
+            unset($data['viewer_department_ids']);
+            unset($data['path']);
+
+            $parentId = !empty($data['parent_id']) ? (int)$data['parent_id'] : null;
+            $data['parent_id'] = $parentId;
 
             $newDeptId = $this->departmentRepository->create($data);
 
-            if (!empty($managerIds)) {
-                $this->departmentRepository->replaceManagers($newDeptId, $managerIds);
+            $path = $this->calculateDepartmentPath($parentId, $newDeptId);
+            $this->departmentRepository->update($newDeptId, ['path' => $path]);
+
+            if (!empty($viewerEmployeeIds)) {
+                $this->departmentRepository->replaceEmployeeViewPermissions($newDeptId, $viewerEmployeeIds);
+            }
+            if (!empty($viewerDepartmentIds)) {
+                $this->departmentRepository->replaceDepartmentViewPermissions($newDeptId, $viewerDepartmentIds);
             }
 
             $this->departmentRepository->commit();
@@ -216,14 +213,28 @@ class OrganizationService
     {
         $this->departmentRepository->beginTransaction();
         try {
-            // Expect an array of manager IDs.
-            $managerIds = $data['manager_ids'] ?? [];
-            unset($data['manager_ids']);
+            $viewerEmployeeIds = $data['viewer_employee_ids'] ?? [];
+            unset($data['viewer_employee_ids']);
+            $viewerDepartmentIds = $data['viewer_department_ids'] ?? [];
+            unset($data['viewer_department_ids']);
+
+            $oldDepartment = $this->departmentRepository->findById($id);
+            $oldPath = $oldDepartment->path;
+
+            $parentId = !empty($data['parent_id']) ? (int)$data['parent_id'] : null;
+            $data['parent_id'] = $parentId;
+
+            $newPath = $this->calculateDepartmentPath($parentId, $id);
+            $data['path'] = $newPath;
 
             $result = $this->departmentRepository->update($id, $data);
 
-            // Replace managers. If managerIds is empty, it will remove all managers.
-            $this->departmentRepository->replaceManagers($id, $managerIds);
+            if ($oldPath !== $newPath) {
+                $this->updateSubtreePaths($id, $newPath);
+            }
+
+            $this->departmentRepository->replaceEmployeeViewPermissions($id, $viewerEmployeeIds);
+            $this->departmentRepository->replaceDepartmentViewPermissions($id, $viewerDepartmentIds);
 
             $this->departmentRepository->commit();
             return $result;
@@ -233,45 +244,51 @@ class OrganizationService
         }
     }
 
+    private function calculateDepartmentPath(?int $parentId, int $currentId): string
+    {
+        if ($parentId === null) {
+            return "/{$currentId}/";
+        }
+        $parent = $this->departmentRepository->findById($parentId);
+        if (!$parent) {
+            throw new \Exception("Parent department with ID {$parentId} not found.");
+        }
+        return rtrim($parent->path ?? '', '/') . "/{$currentId}/";
+    }
+
+    private function updateSubtreePaths(int $parentId, string $parentPath)
+    {
+        $children = $this->departmentRepository->findByParentId($parentId);
+        foreach ($children as $child) {
+            $childId = $child['id'];
+            $newPath = rtrim($parentPath, '/') . "/{$childId}/";
+            $this->departmentRepository->update($childId, ['path' => $newPath]);
+            $this->updateSubtreePaths($childId, $newPath);
+        }
+    }
+
     public function deleteDepartment(int $id): bool
     {
         return $this->departmentRepository->delete($id);
     }
 
-    public function getEligibleManagers(int $departmentId, array $currentManagerIds = []): array
+    public function getDepartmentViewPermissionIds(int $departmentId): array
     {
-        $ancestorIds = $this->departmentRepository->findAncestorIds($departmentId);
-
-        $eligibleEmployees = [];
-        if (!empty($ancestorIds)) {
-            $eligibleEmployees = $this->employeeRepository->findByDepartmentIds($ancestorIds);
-        }
-
-        if (empty($currentManagerIds)) {
-            return $eligibleEmployees;
-        }
-
-        // Ensure current managers are in the list, even if they are not in an ancestor department.
-        $currentManagers = $this->employeeRepository->findByIds($currentManagerIds);
-
-        // Merge and remove duplicates
-        $eligibleEmployeeIds = array_column($eligibleEmployees, 'id');
-        foreach ($currentManagers as $manager) {
-            if (!in_array($manager['id'], $eligibleEmployeeIds)) {
-                $eligibleEmployees[] = $manager;
-            }
-        }
-
-        return $eligibleEmployees;
+        return $this->departmentRepository->findDepartmentViewPermissionIds($departmentId);
     }
 
-    /**
-     * Gets all departments and formats their names contextually for display in lists.
-     * @return array
-     */
+    public function getEligibleViewerEmployees(int $departmentId): array
+    {
+        $ancestorIds = $this->departmentRepository->findAncestorIds($departmentId);
+        if (empty($ancestorIds)) {
+            return [];
+        }
+        return $this->employeeRepository->findByDepartmentIds($ancestorIds);
+    }
+
     public function getFormattedDepartmentListForAll(): array
     {
-        $allDepartments = $this->departmentRepository->findAllWithManagers();
+        $allDepartments = $this->departmentRepository->findAllWithViewers();
         if (empty($allDepartments)) {
             return [];
         }
@@ -286,7 +303,6 @@ class OrganizationService
 
     private function formatDepartmentList(array $departments, array $departmentMap): array
     {
-        // Identify true root departments (those without a parent in the full map)
         $rootDeptIds = [];
         foreach ($departmentMap as $dept) {
             if ($dept['parent_id'] === null) {
@@ -295,29 +311,19 @@ class OrganizationService
         }
         $rootDeptIdsSet = array_flip($rootDeptIds);
 
-        // Format names based on the display rule
         $formattedDepartments = [];
         foreach ($departments as $dept) {
-            $formattedDept = $dept; // Work with a copy of the array
+            $formattedDept = $dept;
             $parentId = $formattedDept['parent_id'];
 
-            // Display simple name if it's a root or a direct child of a root
             if (isset($rootDeptIdsSet[$formattedDept['id']]) || ($parentId !== null && isset($rootDeptIdsSet[$parentId]))) {
                 // Name is already simple
-            }
-            // For all other descendants, display as "ParentName(ChildName)"
-            else if ($parentId !== null && isset($departmentMap[$parentId])) {
+            } else if ($parentId !== null && isset($departmentMap[$parentId])) {
                 $parentName = $departmentMap[$parentId]['name'];
-
-                // Clean the child name by removing a "(Parent)" suffix if it already exists in the database.
                 $cleanedChildName = preg_replace('/ \(' . preg_quote($parentName, '/') . '\)$/', '', $formattedDept['name']);
-
-                // Check if the parent name itself is already formatted. If so, use the simple name.
                 $simpleParentName = preg_replace('/ \(.*\)$/', '', $parentName);
-
                 $formattedDept['name'] = "{$simpleParentName} ({$cleanedChildName})";
             }
-
             $formattedDepartments[] = $formattedDept;
         }
 

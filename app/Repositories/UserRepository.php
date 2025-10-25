@@ -65,7 +65,7 @@ class UserRepository {
         return $this->db->query($sql, [':user_id' => $userId]);
     }
     
-    public function getAllWithRoles(array $filters = []): array {
+    public function getAllWithRoles(array $filters = [], ?array $visibleDepartmentIds = null): array {
         $baseSql = "SELECT 
                     u.id, u.nickname, u.email, u.status, u.employee_id,
                     GROUP_CONCAT(DISTINCT r.name SEPARATOR ', ') as roles,
@@ -99,6 +99,15 @@ class UserRepository {
         if (!empty($filters['role_id'])) {
             $whereClauses[] = "u.id IN (SELECT user_id FROM sys_user_roles WHERE role_id = :role_id)";
             $params[':role_id'] = $filters['role_id'];
+        }
+
+        if ($visibleDepartmentIds !== null) {
+            if (empty($visibleDepartmentIds)) {
+                $whereClauses[] = "u.employee_id IS NULL"; // Only show unlinked users
+            } else {
+                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+                $whereClauses[] = "(e.department_id IN ($inClause) OR u.employee_id IS NULL)";
+            }
         }
 
         $sql = $baseSql;
@@ -156,18 +165,22 @@ class UserRepository {
 
     /**
      * 사용자 계정과 아직 연결되지 않은 직원 목록을 가져옵니다.
-     * @param int|null $departmentId 부서 ID로 필터링
+     * @param array|null $visibleDepartmentIds 조회 가능한 부서 ID 목록
      */
-    public function getUnlinkedEmployees(int $departmentId = null): array {
+    public function getUnlinkedEmployees(?array $visibleDepartmentIds = null): array {
         $params = [];
         // employees.id가 users.employee_id에 존재하지 않고, 퇴사일이 없는 직원만 선택
         $sql = "SELECT e.id, e.name, e.employee_number FROM hr_employees e
                 WHERE NOT EXISTS (SELECT 1 FROM sys_users u WHERE u.employee_id = e.id)
                 AND e.termination_date IS NULL";
         
-        if ($departmentId) {
-            $sql .= " AND e.department_id = :department_id";
-            $params[':department_id'] = $departmentId;
+        if ($visibleDepartmentIds !== null) {
+            if (empty($visibleDepartmentIds)) {
+                $sql .= " AND 1=0";
+            } else {
+                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+                $sql .= " AND e.department_id IN ($inClause)";
+            }
         }
         
         $sql .= " ORDER BY e.name";

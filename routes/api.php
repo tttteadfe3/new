@@ -11,6 +11,7 @@ use App\Controllers\Api\RoleApiController;
 use App\Controllers\Api\UserApiController;
 use App\Controllers\Api\MenuApiController;
 use App\Controllers\Api\ProfileApiController;
+use App\Controllers\Api\PositionApiController;
 use App\Controllers\Api\LogApiController;
 use App\Controllers\Api\WasteCollectionApiController;
 
@@ -69,12 +70,18 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
 
     // Organization API routes
     $router->get('/organization', [OrganizationApiController::class, 'index'])->name('api.organization.index')->middleware('auth');
-    $router->get('/organization/{id}/eligible-managers', [OrganizationApiController::class, 'getEligibleManagers'])->name('api.organization.eligible-managers')->middleware('auth')->middleware('permission', 'organization.manage');
+    $router->get('/organization/{id}/eligible-viewer-employees', [OrganizationApiController::class, 'getEligibleViewerEmployees'])->name('api.organization.eligible-viewer-employees')->middleware('auth')->middleware('permission', 'organization.manage');
+    $router->get('/organization/{id}/view-permissions', [OrganizationApiController::class, 'getDepartmentViewPermissions'])->name('api.organization.view-permissions')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->post('/organization', [OrganizationApiController::class, 'store'])->name('api.organization.store')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->put('/organization/{id}', [OrganizationApiController::class, 'update'])->name('api.organization.update')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->delete('/organization/{id}', [OrganizationApiController::class, 'destroy'])->name('api.organization.destroy')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->get('/organization/chart', [OrganizationApiController::class, 'getChart'])->name('api.organization.chart')->middleware('auth')->middleware('permission', 'organization.view');
     $router->get('/organization/managable-departments', [OrganizationApiController::class, 'getManagableDepartments'])->name('api.organization.managable-departments')->middleware('auth');
+
+    // Position API routes
+    $router->post('/positions', [PositionApiController::class, 'store'])->name('api.positions.store')->middleware('auth')->middleware('permission', 'organization.manage');
+    $router->put('/positions/{id}', [PositionApiController::class, 'update'])->name('api.positions.update')->middleware('auth')->middleware('permission', 'organization.manage');
+    $router->delete('/positions/{id}', [PositionApiController::class, 'delete'])->name('api.positions.delete')->middleware('auth')->middleware('permission', 'organization.manage');
 
     // Role and Permission API routes
     $router->get('/roles', [RoleApiController::class, 'index'])->name('api.roles.index')->middleware('auth')->middleware('permission', 'role.view');

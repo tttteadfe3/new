@@ -31,11 +31,12 @@ class EmployeeRepository {
      */
     public function findUnlinked(): array
     {
-        $sql = "SELECT e.*
+        $sql = "SELECT e.*, p.level
                 FROM hr_employees e
                 LEFT JOIN sys_users u ON e.id = u.employee_id
+                LEFT JOIN hr_positions p ON e.position_id = p.id
                 WHERE u.employee_id IS NULL AND e.termination_date IS NULL
-                ORDER BY e.name ASC";
+                ORDER BY p.level ASC, e.hire_date ASC";
         return $this->db->query($sql);
     }
 
@@ -62,8 +63,9 @@ class EmployeeRepository {
         $inClause = implode(',', array_map('intval', $departmentIds));
         $sql = "SELECT e.id, e.name
                 FROM hr_employees e
+                JOIN hr_positions p ON e.position_id = p.id
                 WHERE e.department_id IN ($inClause) AND e.termination_date IS NULL
-                ORDER BY e.name ASC";
+                ORDER BY p.level ASC, e.hire_date ASC";
         return $this->db->query($sql);
     }
 
@@ -81,10 +83,11 @@ class EmployeeRepository {
 
     /**
      * 모든 직원 목록을 조회합니다. 연결된 사용자 닉네임도 함께 가져옵니다.
-     * @param array $filters 필터 조건 (예: ['department_id' => 1])
+     * @param array $filters 필터 조건
+     * @param array|null $visibleDepartmentIds 조회 가능한 부서 ID 목록
      * @return array
      */
-    public function getAll(array $filters = []): array {
+    public function getAll(array $filters = [], ?array $visibleDepartmentIds = null): array {
         $sql = "SELECT e.*, u.nickname, d.name as department_name, p.name as position_name
                 FROM hr_employees e
                 LEFT JOIN sys_users u ON e.id = u.employee_id
@@ -94,21 +97,12 @@ class EmployeeRepository {
         $whereClauses = [];
         $params = [];
 
-        if (!empty($filters['department_id'])) {
-            if (is_array($filters['department_id'])) {
-                if (count($filters['department_id']) > 0) {
-                    // Sanitize all IDs to ensure they are integers
-                    $deptIds = array_map('intval', $filters['department_id']);
-                    $inClause = implode(',', $deptIds);
-                    $whereClauses[] = "e.department_id IN ($inClause)";
-                } else {
-                    // Handle empty array case to return no results
-                    $whereClauses[] = "1=0";
-                }
+        if ($visibleDepartmentIds !== null) {
+            if (empty($visibleDepartmentIds)) {
+                $whereClauses[] = "1=0"; // Return no results if no departments are visible
             } else {
-                // Handle single department ID
-                $whereClauses[] = "e.department_id = :department_id";
-                $params[':department_id'] = $filters['department_id'];
+                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+                $whereClauses[] = "e.department_id IN ($inClause)";
             }
         }
 
@@ -129,18 +123,7 @@ class EmployeeRepository {
             $sql .= " WHERE " . implode(" AND ", $whereClauses);
         }
 
-        $sql .= " ORDER BY
-            CASE p.name
-                WHEN '대표' THEN 1
-                WHEN '부장' THEN 2
-                WHEN '과장' THEN 3
-                WHEN '팀장' THEN 4
-                WHEN '조장' THEN 5
-                WHEN '주임' THEN 6
-                WHEN '사원' THEN 7
-                ELSE 8
-            END,
-            e.hire_date ASC";
+        $sql .= " ORDER BY p.level ASC, e.hire_date ASC";
 
         return $this->db->query($sql, $params);
     }
@@ -155,7 +138,7 @@ class EmployeeRepository {
                 LEFT JOIN hr_departments d ON e.department_id = d.id
                 LEFT JOIN hr_positions p ON e.position_id = p.id
                 WHERE e.termination_date IS NULL
-                ORDER BY e.name ASC";
+                ORDER BY p.level ASC, e.hire_date ASC";
 
         return $this->db->query($sql);
     }

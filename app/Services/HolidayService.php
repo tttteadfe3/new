@@ -11,11 +11,16 @@ class HolidayService
 {
     private HolidayRepository $holidayRepository;
     private DepartmentRepository $departmentRepository;
+    private OrganizationService $organizationService;
 
-    public function __construct(HolidayRepository $holidayRepository, DepartmentRepository $departmentRepository)
-    {
+    public function __construct(
+        HolidayRepository $holidayRepository,
+        DepartmentRepository $departmentRepository,
+        OrganizationService $organizationService
+    ) {
         $this->holidayRepository = $holidayRepository;
         $this->departmentRepository = $departmentRepository;
+        $this->organizationService = $organizationService;
     }
 
     /**
@@ -23,7 +28,8 @@ class HolidayService
      */
     public function getAllHolidays(): array
     {
-        return $this->holidayRepository->getAll();
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+        return $this->holidayRepository->getAll($visibleDeptIds);
     }
 
     /**

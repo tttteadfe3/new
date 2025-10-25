@@ -61,15 +61,16 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="manager-ids" class="form-label">부서장</label>
-                            <select class="form-select" id="manager-ids" name="manager_ids[]" multiple>
+                            <label for="viewer-employee-ids" class="form-label">조회 권한 직원</label>
+                            <select class="form-select" id="viewer-employee-ids" name="viewer_employee_ids[]" multiple>
                                 <!-- Employee options will be populated by JS -->
                             </select>
                         </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="can-view-all-employees" name="can_view_all_employees">
-                            <label class="form-check-label" for="can-view-all-employees">전체 직원 조회 권한</label>
-                            <small class="form-text text-muted d-block">이 부서에 속한 모든 사용자가 다른 부서의 직원을 포함한 모든 직원 정보를 조회할 수 있습니다. (인사팀, 경영진 등)</small>
+                        <div class="mb-3">
+                            <label for="viewer-department-ids" class="form-label">조회 권한 부서</label>
+                            <select class="form-select" id="viewer-department-ids" name="viewer_department_ids[]" multiple>
+                                <!-- Department options will be populated by JS -->
+                            </select>
                         </div>
                     </div>
                 </div>
