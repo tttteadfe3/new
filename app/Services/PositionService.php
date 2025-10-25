@@ -36,6 +36,15 @@ class PositionService {
             return ['errors' => $errors];
         }
 
+        $position = $this->positionRepository->findById($id);
+        if (!$position) {
+            return ['success' => false, 'message' => 'Position not found'];
+        }
+
+        if ($position['name'] === $data['name'] && $position['level'] == $data['level']) {
+            return ['success' => true];
+        }
+
         $success = $this->positionRepository->update($id, $data['name'], $data['level']);
         return ['success' => $success];
     }
