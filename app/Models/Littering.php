@@ -7,42 +7,48 @@ class Littering extends BaseModel
     protected array $fillable = [
         'latitude',
         'longitude',
-        'address',
+        'jibun_address',
+        'road_address',
         'waste_type',
         'waste_type2',
-        'mixed',
-        'photo1',
-        'photo2',
-        'corrected',
-        'process_photo',
-        'note',
+        'reg_photo_path',
+        'reg_photo_path2',
+        'proc_photo_path',
         'status',
-        'approved_by',
-        'approved_at',
-        'rejection_reason',
+        'corrected',
+        'note',
         'created_by',
-        'processed_at'
+        'confirmed_by',
+        'processed_by',
+        'completed_by',
+        'deleted_by',
+        'created_at',
+        'confirmed_at',
+        'processed_at',
+        'completed_at',
+        'deleted_at'
     ];
 
-    protected array $hidden = [
-        'rejection_reason'
-    ];
+    protected array $hidden = [];
 
     protected array $rules = [
         'latitude' => 'required|numeric',
         'longitude' => 'required|numeric',
-        'address' => 'string|max:500',
+        'jibun_address' => 'string|max:255',
+        'road_address' => 'string|max:255',
         'waste_type' => 'required|string|max:50',
         'waste_type2' => 'string|max:50',
-        'mixed' => 'in:Y,N',
-        'photo1' => 'string|max:255',
-        'photo2' => 'string|max:255',
+        'reg_photo_path' => 'required|string|max:255',
+        'reg_photo_path2' => 'string|max:255',
+        'proc_photo_path' => 'string|max:255',
+        'status' => 'required|string|max:20',
         'corrected' => 'in:o,x,=',
-        'process_photo' => 'string|max:255',
         'note' => 'string',
-        'status' => 'in:pending,approved,rejected',
-        'approved_by' => 'integer',
-        'created_by' => 'integer'
+        'created_by' => 'integer',
+        'confirmed_by' => 'integer',
+        'processed_by' => 'integer',
+        'completed_by' => 'integer',
+        'deleted_by' => 'integer'
     ];
 
     /**
@@ -67,14 +73,6 @@ class Littering extends BaseModel
     public function isRejected(): bool
     {
         return $this->getAttribute('status') === 'rejected';
-    }
-
-    /**
-     * Check if this is a mixed waste disposal.
-     */
-    public function isMixedWaste(): bool
-    {
-        return $this->getAttribute('mixed') === 'Y';
     }
 
     /**
@@ -142,16 +140,16 @@ class Littering extends BaseModel
     {
         $photos = [];
         
-        if ($this->getAttribute('photo1')) {
-            $photos['before'] = $this->getAttribute('photo1');
+        if ($this->getAttribute('reg_photo_path')) {
+            $photos['before'] = $this->getAttribute('reg_photo_path');
         }
         
-        if ($this->getAttribute('photo2')) {
-            $photos['after'] = $this->getAttribute('photo2');
+        if ($this->getAttribute('reg_photo_path2')) {
+            $photos['after'] = $this->getAttribute('reg_photo_path2');
         }
         
-        if ($this->getAttribute('process_photo')) {
-            $photos['process'] = $this->getAttribute('process_photo');
+        if ($this->getAttribute('proc_photo_path')) {
+            $photos['process'] = $this->getAttribute('proc_photo_path');
         }
         
         return $photos;
@@ -195,12 +193,6 @@ class Littering extends BaseModel
             $isValid = false;
         }
 
-        // Business rule: if mixed is Y, waste_type2 should be provided
-        if ($this->getAttribute('mixed') === 'Y' && empty($this->getAttribute('waste_type2'))) {
-            $this->errors['waste_type2'] = '혼합배출인 경우 부성상을 입력해야 합니다.';
-            $isValid = false;
-        }
-
         // Business rule: corrected status can only be set if status is approved
         $corrected = $this->getAttribute('corrected');
         $status = $this->getAttribute('status');
@@ -210,8 +202,8 @@ class Littering extends BaseModel
         }
 
         // Business rule: process_photo should be provided if corrected is set
-        if ($corrected && empty($this->getAttribute('process_photo'))) {
-            $this->errors['process_photo'] = '개선 여부가 설정된 경우 처리 사진이 필요합니다.';
+        if ($corrected && empty($this->getAttribute('proc_photo_path'))) {
+            $this->errors['proc_photo_path'] = '개선 여부가 설정된 경우 처리 사진이 필요합니다.';
             $isValid = false;
         }
 
