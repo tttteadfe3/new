@@ -31,11 +31,12 @@ class EmployeeRepository {
      */
     public function findUnlinked(): array
     {
-        $sql = "SELECT e.*
+        $sql = "SELECT e.*, p.level
                 FROM hr_employees e
                 LEFT JOIN sys_users u ON e.id = u.employee_id
+                LEFT JOIN hr_positions p ON e.position_id = p.id
                 WHERE u.employee_id IS NULL AND e.termination_date IS NULL
-                ORDER BY e.name ASC";
+                ORDER BY p.level ASC, e.hire_date ASC";
         return $this->db->query($sql);
     }
 
@@ -62,8 +63,9 @@ class EmployeeRepository {
         $inClause = implode(',', array_map('intval', $departmentIds));
         $sql = "SELECT e.id, e.name
                 FROM hr_employees e
+                JOIN hr_positions p ON e.position_id = p.id
                 WHERE e.department_id IN ($inClause) AND e.termination_date IS NULL
-                ORDER BY e.name ASC";
+                ORDER BY p.level ASC, e.hire_date ASC";
         return $this->db->query($sql);
     }
 
@@ -121,18 +123,7 @@ class EmployeeRepository {
             $sql .= " WHERE " . implode(" AND ", $whereClauses);
         }
 
-        $sql .= " ORDER BY
-            CASE p.name
-                WHEN '대표' THEN 1
-                WHEN '부장' THEN 2
-                WHEN '과장' THEN 3
-                WHEN '팀장' THEN 4
-                WHEN '조장' THEN 5
-                WHEN '주임' THEN 6
-                WHEN '사원' THEN 7
-                ELSE 8
-            END,
-            e.hire_date ASC";
+        $sql .= " ORDER BY p.level ASC, e.hire_date ASC";
 
         return $this->db->query($sql, $params);
     }
@@ -147,7 +138,7 @@ class EmployeeRepository {
                 LEFT JOIN hr_departments d ON e.department_id = d.id
                 LEFT JOIN hr_positions p ON e.position_id = p.id
                 WHERE e.termination_date IS NULL
-                ORDER BY e.name ASC";
+                ORDER BY p.level ASC, e.hire_date ASC";
 
         return $this->db->query($sql);
     }

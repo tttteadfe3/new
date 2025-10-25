@@ -81,6 +81,7 @@ $container->register(\App\Services\OrganizationService::class, fn($c) => new \Ap
     $c->resolve(\App\Services\AuthService::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class)
 ));
+$container->register(\App\Services\PositionService::class, fn($c) => new \App\Services\PositionService($c->resolve(\App\Repositories\PositionRepository::class)));
 $container->register(\App\Services\ProfileService::class, fn($c) => new \App\Services\ProfileService($c->resolve(\App\Repositories\UserRepository::class), $c->resolve(\App\Repositories\EmployeeRepository::class)));
 $container->register(\App\Services\RolePermissionService::class, fn($c) => new \App\Services\RolePermissionService($c->resolve(\App\Repositories\RoleRepository::class)));
 $container->register(\App\Services\UserService::class, fn($c) => new \App\Services\UserService(
