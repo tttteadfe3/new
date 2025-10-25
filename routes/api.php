@@ -69,6 +69,7 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
 
     // Organization API routes
     $router->get('/organization', [OrganizationApiController::class, 'index'])->name('api.organization.index')->middleware('auth');
+    $router->get('/organization/{id}/eligible-viewer-employees', [OrganizationApiController::class, 'getEligibleViewerEmployees'])->name('api.organization.eligible-viewer-employees')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->get('/organization/{id}/view-permissions', [OrganizationApiController::class, 'getDepartmentViewPermissions'])->name('api.organization.view-permissions')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->post('/organization', [OrganizationApiController::class, 'store'])->name('api.organization.store')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->put('/organization/{id}', [OrganizationApiController::class, 'update'])->name('api.organization.update')->middleware('auth')->middleware('permission', 'organization.manage');

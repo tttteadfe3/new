@@ -139,7 +139,7 @@ class OrganizationAdminPage extends BasePage {
                 this.elements.parentIdSelect.value = data.parentId || '';
 
                 try {
-                    const empResponse = await this.apiCall('/employees?status=active');
+                    const empResponse = await this.apiCall(`${this.config.API_URL}/${data.id}/eligible-viewer-employees`);
                     const empChoices = empResponse.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
                     this.choicesInstances.viewerEmployees.setChoices(empChoices, 'value', 'label', true);
                     const viewerEmployeeIds = data.viewerEmployeeIds ? data.viewerEmployeeIds.split(',').map(id => id.trim().toString()) : [];

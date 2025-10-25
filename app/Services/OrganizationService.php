@@ -277,6 +277,15 @@ class OrganizationService
         return $this->departmentRepository->findDepartmentViewPermissionIds($departmentId);
     }
 
+    public function getEligibleViewerEmployees(int $departmentId): array
+    {
+        $ancestorIds = $this->departmentRepository->findAncestorIds($departmentId);
+        if (empty($ancestorIds)) {
+            return [];
+        }
+        return $this->employeeRepository->findByDepartmentIds($ancestorIds);
+    }
+
     public function getFormattedDepartmentListForAll(): array
     {
         $allDepartments = $this->departmentRepository->findAllWithViewers();

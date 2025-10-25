@@ -46,6 +46,16 @@ class OrganizationApiController extends BaseApiController
         }
     }
 
+    public function getEligibleViewerEmployees(int $departmentId): void
+    {
+        try {
+            $data = $this->organizationService->getEligibleViewerEmployees($departmentId);
+            $this->apiSuccess($data);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
     public function getDepartmentViewPermissions(int $departmentId): void
     {
         try {
