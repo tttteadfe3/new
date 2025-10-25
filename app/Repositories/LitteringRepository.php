@@ -63,7 +63,7 @@ class LitteringRepository {
         $query = "
             SELECT
                 idc.id, idc.jibun_address, idc.road_address, idc.waste_type, idc.waste_type2, idc.created_at, idc.latitude, idc.longitude,
-                idc.reg_photo_path, idc.reg_photo_path2, idc.proc_photo_path, idc.status,
+                idc.reg_photo_path, idc.reg_photo_path2, idc.proc_photo_path, idc.status, idc.corrected,
                 COALESCE(e.name, '알 수 없음') as created_by_name,
                 COALESCE(e2.name, '알 수 없음') as processed_by_name
             FROM `illegal_disposal_cases2` idc

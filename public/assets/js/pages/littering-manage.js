@@ -99,10 +99,33 @@ class LitteringAdminPage extends BasePage {
                 personInfo = `등록 : ${item.created_by_name} 처리 : ${item.processed_by_name}`;
             }
 
+            let correctedBadge = '';
+            if (type === 'processed' && item.corrected) {
+                let badgeClass = '';
+                let correctedText = '';
+                switch (item.corrected) {
+                    case 'o':
+                        badgeClass = 'bg-success';
+                        correctedText = '개선';
+                        break;
+                    case 'x':
+                        badgeClass = 'bg-danger';
+                        correctedText = '미개선';
+                        break;
+                    case '=':
+                        badgeClass = 'bg-warning';
+                        correctedText = '부분개선';
+                        break;
+                }
+                if(correctedText) {
+                    correctedBadge = `<span class="badge ${badgeClass} ms-2">${correctedText}</span>`;
+                }
+            }
+
             const itemHtml = `
                 <a href="#" class="list-group-item list-group-item-action" data-id="${item.id}" data-type="${type}">
                     <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1 list-title ">${item.waste_type}</h6>
+                        <h6 class="mb-1 list-title ">${item.waste_type}${correctedBadge}</h6>
                         <small>${new Date(item.created_at).toLocaleDateString()}</small>
                     </div>
                     <p class="mb-1 small text-muted">${item.jibun_address || item.road_address || '주소 없음'}</p>
