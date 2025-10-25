@@ -114,7 +114,7 @@ class LitteringAdminPage extends BasePage {
                         break;
                     case '=':
                         badgeClass = 'bg-warning';
-                        correctedText = '부분개선';
+                        correctedText = '없어짐';
                         break;
                 }
                 if(correctedText) {
