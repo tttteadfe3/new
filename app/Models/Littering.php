@@ -11,14 +11,12 @@ class Littering extends BaseModel
         'road_address',
         'waste_type',
         'waste_type2',
-        'mixed',
         'reg_photo_path',
         'reg_photo_path2',
         'proc_photo_path',
         'status',
         'corrected',
         'note',
-        'rejection_reason',
         'created_by',
         'confirmed_by',
         'processed_by',
@@ -31,9 +29,7 @@ class Littering extends BaseModel
         'deleted_at'
     ];
 
-    protected array $hidden = [
-        'rejection_reason'
-    ];
+    protected array $hidden = [];
 
     protected array $rules = [
         'latitude' => 'required|numeric',
@@ -42,14 +38,12 @@ class Littering extends BaseModel
         'road_address' => 'string|max:255',
         'waste_type' => 'required|string|max:50',
         'waste_type2' => 'string|max:50',
-        'mixed' => 'in:Y,N',
         'reg_photo_path' => 'required|string|max:255',
         'reg_photo_path2' => 'string|max:255',
         'proc_photo_path' => 'string|max:255',
         'status' => 'required|string|max:20',
         'corrected' => 'in:o,x,=',
         'note' => 'string',
-        'rejection_reason' => 'string',
         'created_by' => 'integer',
         'confirmed_by' => 'integer',
         'processed_by' => 'integer',
@@ -79,14 +73,6 @@ class Littering extends BaseModel
     public function isRejected(): bool
     {
         return $this->getAttribute('status') === 'rejected';
-    }
-
-    /**
-     * Check if this is a mixed waste disposal.
-     */
-    public function isMixedWaste(): bool
-    {
-        return $this->getAttribute('mixed') === 'Y';
     }
 
     /**
@@ -204,12 +190,6 @@ class Littering extends BaseModel
         $longitude = $this->getAttribute('longitude');
         if ($longitude !== null && ($longitude < -180 || $longitude > 180)) {
             $this->errors['longitude'] = '경도는 -180도에서 180도 사이여야 합니다.';
-            $isValid = false;
-        }
-
-        // Business rule: if mixed is Y, waste_type2 should be provided
-        if ($this->getAttribute('mixed') === 'Y' && empty($this->getAttribute('waste_type2'))) {
-            $this->errors['waste_type2'] = '혼합배출인 경우 부성상을 입력해야 합니다.';
             $isValid = false;
         }
 

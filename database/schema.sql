@@ -354,7 +354,6 @@ CREATE TABLE `illegal_disposal_cases2` (
   -- 폐기물 정보
   `waste_type` varchar(50) NOT NULL COMMENT '폐기물 주성상',
   `waste_type2` varchar(50) DEFAULT NULL COMMENT '폐기물 부성상 (혼합배출 시)',
-  `mixed` char(1) DEFAULT 'N' COMMENT '혼합배출 여부 (Y/N)',
 
   -- 사진 정보
   `reg_photo_path` varchar(255) NOT NULL COMMENT '등록 사진 (처리 전)',
@@ -365,7 +364,6 @@ CREATE TABLE `illegal_disposal_cases2` (
   `status` varchar(20) NOT NULL DEFAULT 'pending' COMMENT '처리 상태 (pending, confirmed, completed, rejected, deleted)',
   `corrected` enum('o','x','=') DEFAULT NULL COMMENT '개선 여부 (o: 개선, x: 미개선, =: 사라짐)',
   `note` text DEFAULT NULL COMMENT '관리자 메모',
-  `rejection_reason` text DEFAULT NULL COMMENT '반려 사유',
 
   -- 담당자 정보
   `created_by` int(11) DEFAULT NULL COMMENT '최초 등록한 직원 ID',
