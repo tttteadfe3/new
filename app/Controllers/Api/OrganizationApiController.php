@@ -82,7 +82,7 @@ class OrganizationApiController extends BaseApiController
             $type = $_GET['type'] ?? '';
             $data = [];
             if ($type === 'department') {
-                $data = $this->organizationService->getFormattedDepartmentListForAll();
+                $data = $this->organizationService->getFormattedDepartmentListWithHierarchy();
             } elseif ($type === 'position') {
                 $data = $this->positionRepository->getAll();
             } else {
