@@ -257,4 +257,105 @@ class OrganizationAdminPage extends BasePage {
     }
 }
 
-new OrganizationAdminPage();
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Position Management Logic ---
+    const positionModalEl = document.getElementById('position-modal');
+    if (!positionModalEl) return;
+
+    const positionModal = new bootstrap.Modal(positionModalEl);
+    const positionForm = document.getElementById('position-form');
+    const positionModalTitle = document.getElementById('position-modal-title');
+    const positionIdInput = document.getElementById('position-id');
+    const positionNameInput = document.getElementById('position-name');
+    const positionLevelInput = document.getElementById('position-level');
+    const positionsTableBody = document.querySelector('#positions-table tbody');
+
+    const openPositionModal = (id = null, name = '', level = '') => {
+        positionForm.reset();
+        positionIdInput.value = id || '';
+        positionNameInput.value = name;
+        positionLevelInput.value = level || 10;
+        positionModalTitle.textContent = id ? '직급 수정' : '새 직급 추가';
+        positionModal.show();
+    };
+
+    document.getElementById('add-position-btn').addEventListener('click', () => {
+        openPositionModal();
+    });
+
+    positionsTableBody.addEventListener('click', (e) => {
+        const target = e.target;
+        const row = target.closest('tr');
+        if (!row) return;
+
+        const id = row.dataset.id;
+        const name = row.dataset.name;
+        const level = row.dataset.level;
+
+        if (target.classList.contains('edit-position-btn')) {
+            openPositionModal(id, name, level);
+        }
+
+        if (target.classList.contains('delete-position-btn')) {
+            if (confirm(`'${name}' 직급을 정말 삭제하시겠습니까?`)) {
+                deletePosition(id);
+            }
+        }
+    });
+
+    positionForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = positionIdInput.value;
+        const url = id ? `/api/positions/${id}` : '/api/positions';
+        const method = id ? 'PUT' : 'POST';
+
+        const payload = {
+            name: positionNameInput.value,
+            level: positionLevelInput.value
+        };
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (response.ok) {
+                positionModal.hide();
+                location.reload(); // Simple reload for now
+            } else {
+                alert(result.message || '저장 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            console.error('Error saving position:', error);
+            alert('저장 중 오류가 발생했습니다.');
+        }
+    });
+
+    const deletePosition = async (id) => {
+        try {
+            const response = await fetch(`/api/positions/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const result = await response.json();
+            if (response.ok) {
+                location.reload(); // Simple reload
+            } else {
+                alert(result.message || '삭제 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            console.error('Error deleting position:', error);
+            alert('삭제 중 오류가 발생했습니다.');
+        }
+    };
+
+    // Initialize department logic if it exists on the page
+    if (document.getElementById('departments-list-container')) {
+        new OrganizationAdminPage();
+    }
+});

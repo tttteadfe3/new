@@ -106,11 +106,15 @@ $container->register(\App\Controllers\Web\LeaveController::class, fn($c) => new 
     $c->resolve(\App\Services\LeaveService::class),
     $c->resolve(\App\Services\EmployeeService::class)
 ));
-$container->register(\App\Controllers\Web\PositionController::class, fn($c) => new \App\Controllers\Web\PositionController(
+$container->register(\App\Controllers\Web\AdminController::class, fn($c) => new \App\Controllers\Web\AdminController(
     $c->resolve(Request::class),
     $c->resolve(\App\Services\AuthService::class),
     $c->resolve(\App\Services\ViewDataService::class),
     $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Services\OrganizationService::class),
+    $c->resolve(\App\Services\RolePermissionService::class),
+    $c->resolve(\App\Services\UserService::class),
+    $c->resolve(\App\Services\MenuManagementService::class),
     $c->resolve(\App\Services\PositionService::class)
 ));
 

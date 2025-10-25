@@ -18,6 +18,7 @@ class AdminController extends BaseController
     private RolePermissionService $rolePermissionService;
     private UserService $userService;
     private MenuManagementService $menuManagementService;
+    private \App\Services\PositionService $positionService;
 
     public function __construct(
         Request $request,
@@ -27,13 +28,15 @@ class AdminController extends BaseController
         OrganizationService $organizationService,
         RolePermissionService $rolePermissionService,
         UserService $userService,
-        MenuManagementService $menuManagementService
+        MenuManagementService $menuManagementService,
+        \App\Services\PositionService $positionService
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger);
         $this->organizationService = $organizationService;
         $this->rolePermissionService = $rolePermissionService;
         $this->userService = $userService;
         $this->menuManagementService = $menuManagementService;
+        $this->positionService = $positionService;
     }
 
     /**
@@ -47,7 +50,9 @@ class AdminController extends BaseController
 
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/organization-admin.js');
         
-        echo $this->render('pages/admin/organization', [], 'layouts/app');
+        $positions = $this->positionService->getAllPositions();
+
+        echo $this->render('pages/admin/organization', ['positions' => $positions], 'layouts/app');
     }
 
     /**
