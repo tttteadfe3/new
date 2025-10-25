@@ -120,9 +120,13 @@ $container->register(\App\Controllers\Web\AdminController::class, fn($c) => new 
 
 // Register API Controllers
 $container->register(\App\Controllers\Api\PositionApiController::class, fn($c) => new \App\Controllers\Api\PositionApiController(
-    $c->resolve(\App\Services\PositionService::class),
     $c->resolve(Request::class),
-    $c->resolve(JsonResponse::class)
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(JsonResponse::class),
+    $c->resolve(\App\Services\PositionService::class)
 ));
 $container->register(\App\Controllers\Api\EmployeeApiController::class, fn($c) => new \App\Controllers\Api\EmployeeApiController(
     $c->resolve(Request::class),
