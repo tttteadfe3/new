@@ -59,7 +59,7 @@ class WasteCollectionService
                 'longitude' => floatval($postData['lng']),
                 'address' => $postData['address'] ?? '',
                 'photo_path' => $photoPath,
-                'employee_id' => $employeeId,
+                'created_by' => $employeeId,
                 'issue_date' => date('Y-m-d H:i:s'),
                 'type' => 'field'
             ];
@@ -243,7 +243,7 @@ class WasteCollectionService
                     'address' => $addressInfo['final_address'] ?? $collectionData['address'],
                     'geocoding_status' => $addressInfo ? 'success' : 'failure',
                     'photo_path' => null,
-                    'employee_id' => $adminUserId,
+                    'created_by' => $adminUserId,
                     'issue_date' => $collectionData['dischargeDate'],
                     'discharge_number' => $collectionData['receiptNumber'],
                     'submitter_name' => $collectionData['name'],
