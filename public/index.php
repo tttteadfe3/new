@@ -106,7 +106,13 @@ $container->register(\App\Controllers\Web\LeaveController::class, fn($c) => new 
     $c->resolve(\App\Services\LeaveService::class),
     $c->resolve(\App\Services\EmployeeService::class)
 ));
-$container->register(\App\Controllers\Web\PositionController::class, fn($c) => new \App\Controllers\Web\PositionController($c->resolve(\App\Services\PositionService::class)));
+$container->register(\App\Controllers\Web\PositionController::class, fn($c) => new \App\Controllers\Web\PositionController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Services\PositionService::class)
+));
 
 // Register API Controllers
 $container->register(\App\Controllers\Api\PositionApiController::class, fn($c) => new \App\Controllers\Api\PositionApiController(
