@@ -5,16 +5,25 @@ namespace App\Controllers\Api;
 use App\Services\PositionService;
 use App\Core\JsonResponse;
 use App\Core\Request;
+use App\Services\AuthService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Repositories\EmployeeRepository;
 
-class PositionApiController {
+class PositionApiController extends BaseApiController {
     private PositionService $positionService;
-    private Request $request;
-    private JsonResponse $jsonResponse;
 
-    public function __construct(PositionService $positionService, Request $request, JsonResponse $jsonResponse) {
+    public function __construct(
+        Request $request,
+        AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
+        PositionService $positionService
+    ) {
+        parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->positionService = $positionService;
-        $this->request = $request;
-        $this->jsonResponse = $jsonResponse;
     }
 
     public function store() {
@@ -22,10 +31,10 @@ class PositionApiController {
         $result = $this->positionService->createPosition($data);
 
         if (isset($result['errors'])) {
-            return $this->jsonResponse->send(['errors' => $result['errors']], 422);
+            $this->apiError('Validation failed', 'VALIDATION_ERROR', 422);
+        } else {
+            $this->apiSuccess(['id' => $result['id']], 'Position created successfully.');
         }
-
-        return $this->jsonResponse->send(['success' => true, 'id' => $result['id']]);
     }
 
     public function update(int $id) {
@@ -33,23 +42,21 @@ class PositionApiController {
         $result = $this->positionService->updatePosition($id, $data);
 
         if (isset($result['errors'])) {
-            return $this->jsonResponse->send(['errors' => $result['errors']], 422);
+            $this->apiError('Validation failed', 'VALIDATION_ERROR', 422);
+        } elseif (!$result['success']) {
+            $this->apiBadRequest('Update failed.');
+        } else {
+            $this->apiSuccess(null, 'Position updated successfully.');
         }
-
-        if (!$result['success']) {
-            return $this->jsonResponse->send(['success' => false, 'message' => 'Update failed'], 400);
-        }
-
-        return $this->jsonResponse->send(['success' => true]);
     }
 
     public function delete(int $id) {
         $success = $this->positionService->deletePosition($id);
 
-        if (!$success) {
-            return $this->jsonResponse->send(['success' => false, 'message' => '해당 직급에 소속된 직원이 있어 삭제할 수 없습니다.'], 400);
+        if ($success) {
+            $this->apiSuccess(null, 'Position deleted successfully.');
+        } else {
+            $this->apiBadRequest('This position cannot be deleted because it is assigned to employees.');
         }
-
-        return $this->jsonResponse->send(['success' => true]);
     }
 }
