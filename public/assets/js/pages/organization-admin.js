@@ -43,7 +43,7 @@ class DepartmentAdminPage extends BasePage {
 
     async loadSelectOptions() {
         try {
-            const deptResponse = await this.apiCall(this.config.API_URL);
+            const deptResponse = await this.apiCall(`${this.config.API_URL}?type=department`);
             this.populateSelect(this.elements.parentIdSelect, deptResponse.data, 'id', 'name', '(없음)');
         } catch (error) {
             console.error('Failed to load select options:', error);
@@ -63,7 +63,7 @@ class DepartmentAdminPage extends BasePage {
 
     async loadDepartments() {
         try {
-            const response = await this.apiCall(this.config.API_URL);
+            const response = await this.apiCall(`${this.config.API_URL}?type=department`);
             if (response.data.length === 0) {
                 this.elements.departmentsListContainer.innerHTML = `<div class="list-group-item">부서가 없습니다.</div>`;
                 return;
@@ -104,7 +104,7 @@ class DepartmentAdminPage extends BasePage {
             try {
                 const [empResponse, deptResponse, permResponse] = await Promise.all([
                     this.apiCall(`${this.config.API_URL}/${data.id}/eligible-viewer-employees`),
-                    this.apiCall(this.config.API_URL),
+                    this.apiCall(`${this.config.API_URL}?type=department`),
                     this.apiCall(`${this.config.API_URL}/${data.id}/view-permissions`)
                 ]);
 
@@ -131,7 +131,7 @@ class DepartmentAdminPage extends BasePage {
             try {
                  const [empResponse, deptResponse] = await Promise.all([
                     this.apiCall('/employees?status=active'),
-                    this.apiCall(this.config.API_URL)
+                    this.apiCall(`${this.config.API_URL}?type=department`)
                 ]);
 
                 const empChoices = empResponse.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
@@ -156,7 +156,8 @@ class DepartmentAdminPage extends BasePage {
             name: this.elements.deptNameInput.value,
             parent_id: this.elements.parentIdSelect.value,
             viewer_employee_ids: this.choicesInstances.viewerEmployees.getValue(true),
-            viewer_department_ids: this.choicesInstances.viewerDepartments.getValue(true)
+            viewer_department_ids: this.choicesInstances.viewerDepartments.getValue(true),
+            type: 'department'
         };
 
         const url = id ? `${this.config.API_URL}/${id}` : this.config.API_URL;
@@ -191,7 +192,7 @@ class DepartmentAdminPage extends BasePage {
 
     async deleteItem(id) {
         try {
-            const result = await this.apiCall(`${this.config.API_URL}/${id}`, { method: 'DELETE' });
+            const result = await this.apiCall(`${this.config.API_URL}/${id}`, { method: 'DELETE', body: { type: 'department' } });
             Toast.success(result.message);
             this.loadDepartments();
             this.loadSelectOptions();
@@ -209,33 +210,52 @@ class DepartmentAdminPage extends BasePage {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // --- Position Management Logic ---
-    const positionModalEl = document.getElementById('position-modal');
-    if (!positionModalEl) return;
+class PositionAdminPage extends BasePage {
+    constructor() {
+        super({
+            API_URL: '/api/positions'
+        });
+        this.elements = {};
+        this.state = {};
+    }
 
-    const positionModal = new bootstrap.Modal(positionModalEl);
-    const positionForm = document.getElementById('position-form');
-    const positionModalTitle = document.getElementById('position-modal-title');
-    const positionIdInput = document.getElementById('position-id');
-    const positionNameInput = document.getElementById('position-name');
-    const positionLevelInput = document.getElementById('position-level');
-    const positionsTableBody = document.querySelector('#positions-table tbody');
+    initializeApp() {
+        this.cacheDOMElements();
+        if (!this.elements.modalEl) return;
 
-    const openPositionModal = (id = null, name = '', level = '') => {
-        positionForm.reset();
-        positionIdInput.value = id || '';
-        positionNameInput.value = name;
-        positionLevelInput.value = level || 10;
-        positionModalTitle.textContent = id ? '직급 수정' : '새 직급 추가';
-        positionModal.show();
-    };
+        this.state.modal = new bootstrap.Modal(this.elements.modalEl);
+        this.setupEventListeners();
+    }
 
-    document.getElementById('add-position-btn').addEventListener('click', () => {
-        openPositionModal();
-    });
+    cacheDOMElements() {
+        this.elements = {
+            modalEl: document.getElementById('position-modal'),
+            form: document.getElementById('position-form'),
+            modalTitle: document.getElementById('position-modal-title'),
+            idInput: document.getElementById('position-id'),
+            nameInput: document.getElementById('position-name'),
+            levelInput: document.getElementById('position-level'),
+            tableBody: document.querySelector('#positions-table tbody'),
+            addBtn: document.getElementById('add-position-btn')
+        };
+    }
 
-    positionsTableBody.addEventListener('click', (e) => {
+    setupEventListeners() {
+        this.elements.addBtn.addEventListener('click', () => this.openModal());
+        this.elements.tableBody.addEventListener('click', e => this.handleActionClick(e));
+        this.elements.form.addEventListener('submit', e => this.handleFormSubmit(e));
+    }
+
+    openModal(id = null, name = '', level = '') {
+        this.elements.form.reset();
+        this.elements.idInput.value = id || '';
+        this.elements.nameInput.value = name;
+        this.elements.levelInput.value = level || 10;
+        this.elements.modalTitle.textContent = id ? '직급 수정' : '새 직급 추가';
+        this.state.modal.show();
+    }
+
+    handleActionClick(e) {
         const target = e.target;
         const row = target.closest('tr');
         if (!row) return;
@@ -245,69 +265,78 @@ document.addEventListener('DOMContentLoaded', () => {
         const level = row.dataset.level;
 
         if (target.classList.contains('edit-position-btn')) {
-            openPositionModal(id, name, level);
+            this.openModal(id, name, level);
         }
 
         if (target.classList.contains('delete-position-btn')) {
-            if (confirm(`'${name}' 직급을 정말 삭제하시겠습니까?`)) {
-                deletePosition(id);
-            }
+            Confirm.fire('삭제 확인', `'${name}' 직급을 정말 삭제하시겠습니까?`).then(result => {
+                if (result.isConfirmed) this.deletePosition(id);
+            });
         }
-    });
+    }
 
-    positionForm.addEventListener('submit', async (e) => {
+    async handleFormSubmit(e) {
         e.preventDefault();
-        const id = positionIdInput.value;
-        const url = id ? `/api/positions/${id}` : '/api/positions';
+        const id = this.elements.idInput.value;
+        const url = id ? `${this.config.API_URL}/${id}` : this.config.API_URL;
         const method = id ? 'PUT' : 'POST';
 
         const payload = {
-            name: positionNameInput.value,
-            level: positionLevelInput.value
+            name: this.elements.nameInput.value,
+            level: this.elements.levelInput.value
         };
 
         try {
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
-            if (response.ok) {
-                positionModal.hide();
-                location.reload(); // Simple reload for now
-            } else {
-                alert(result.message || '저장 중 오류가 발생했습니다.');
-            }
+            const result = await this.apiCall(url, { method, body: payload });
+
+            this.state.modal.hide();
+            Toast.success(result.message);
+            this.updateTable(id, payload, result.data.id);
+
         } catch (error) {
             console.error('Error saving position:', error);
-            alert('저장 중 오류가 발생했습니다.');
+            Toast.error(`저장 중 오류 발생: ${error.message}`);
         }
-    });
+    }
 
-    const deletePosition = async (id) => {
+    updateTable(id, payload, newId) {
+        const newRow = `
+            <tr data-id="${id || newId}" data-name="${payload.name}" data-level="${payload.level}">
+                <td>${payload.name}</td>
+                <td>${payload.level}</td>
+                <td>
+                    <button class="btn btn-success btn-sm edit-position-btn">수정</button>
+                    <button class="btn btn-danger btn-sm delete-position-btn">삭제</button>
+                </td>
+            </tr>`;
+
+        if (id) {
+            const row = this.elements.tableBody.querySelector(`tr[data-id='${id}']`);
+            if (row) row.outerHTML = newRow;
+        } else {
+            this.elements.tableBody.insertAdjacentHTML('beforeend', newRow);
+        }
+    }
+
+    async deletePosition(id) {
         try {
-            const response = await fetch(`/api/positions/${id}`, {
-                method: 'DELETE',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const result = await response.json();
-            if (response.ok) {
-                location.reload(); // Simple reload
-            } else {
-                alert(result.message || '삭제 중 오류가 발생했습니다.');
-            }
+            const result = await this.apiCall(`${this.config.API_URL}/${id}`, { method: 'DELETE' });
+            Toast.success(result.message);
+            const row = this.elements.tableBody.querySelector(`tr[data-id='${id}']`);
+            if (row) row.remove();
         } catch (error) {
             console.error('Error deleting position:', error);
-            alert('삭제 중 오류가 발생했습니다.');
+            Toast.error(`삭제 중 오류 발생: ${error.message}`);
         }
-    };
+    }
+}
 
-    // Initialize department logic if it exists on the page
+
+document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('departments-list-container')) {
         new DepartmentAdminPage();
+    }
+    if (document.getElementById('positions-table')) {
+        new PositionAdminPage();
     }
 });

@@ -27,26 +27,26 @@ class PositionApiController extends BaseApiController {
     }
 
     public function store() {
-        $data = $this->request->all();
+        $data = $this->getJsonInput();
         $result = $this->positionService->createPosition($data);
 
         if (isset($result['errors'])) {
-            $this->apiError('Validation failed', 'VALIDATION_ERROR', 422);
+            $this->apiError('Validation failed', 'VALIDATION_ERROR', $result['errors']);
         } else {
-            $this->apiSuccess(['id' => $result['id']], 'Position created successfully.');
+            $this->apiSuccess(['id' => $result['id']], '직급이 생성되었습니다.');
         }
     }
 
     public function update(int $id) {
-        $data = $this->request->all();
+        $data = $this->getJsonInput();
         $result = $this->positionService->updatePosition($id, $data);
 
         if (isset($result['errors'])) {
-            $this->apiError('Validation failed', 'VALIDATION_ERROR', 422);
+            $this->apiError('Validation failed', 'VALIDATION_ERROR', $result['errors']);
         } elseif (!$result['success']) {
-            $this->apiBadRequest('Update failed.');
+            $this->apiBadRequest($result['message'] ?? '직급 수정에 실패했습니다.');
         } else {
-            $this->apiSuccess(null, 'Position updated successfully.');
+            $this->apiSuccess(null, '직급 정보가 수정되었습니다.');
         }
     }
 
@@ -54,9 +54,9 @@ class PositionApiController extends BaseApiController {
         $success = $this->positionService->deletePosition($id);
 
         if ($success) {
-            $this->apiSuccess(null, 'Position deleted successfully.');
+            $this->apiSuccess(null, '직급이 삭제되었습니다.');
         } else {
-            $this->apiBadRequest('This position cannot be deleted because it is assigned to employees.');
+            $this->apiBadRequest('직원이 할당된 직급은 삭제할 수 없습니다.');
         }
     }
 }
