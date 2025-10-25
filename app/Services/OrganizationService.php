@@ -116,10 +116,20 @@ class OrganizationService
 
         $path = [];
         $current = $map[$deptId];
-        while ($current) {
+        $depth = 0;
+        $maxDepth = 10; // Prevent infinite loops
+
+        while ($current && $depth < $maxDepth) {
             array_unshift($path, $current['name']);
             $current = $current['parent_id'] ? ($map[$current['parent_id']] ?? null) : null;
+            $depth++;
         }
+
+        if ($depth >= $maxDepth) {
+            // Handle cases of deep nesting or circular references gracefully
+            array_unshift($path, '...');
+        }
+
         return implode($separator, $path);
     }
 
@@ -286,47 +296,54 @@ class OrganizationService
         return $this->employeeRepository->findByDepartmentIds($ancestorIds);
     }
 
-    public function getFormattedDepartmentListForAll(): array
+    public function getFormattedDepartmentListWithHierarchy(): array
     {
         $allDepartments = $this->departmentRepository->findAllWithViewers();
         if (empty($allDepartments)) {
             return [];
         }
 
+        // Build a map and a tree structure
         $departmentMap = [];
+        $tree = [];
         foreach ($allDepartments as $dept) {
             $departmentMap[$dept['id']] = $dept;
         }
 
-        return $this->formatDepartmentList($allDepartments, $departmentMap);
+        foreach ($departmentMap as $id => &$dept) {
+            if (!empty($dept['parent_id']) && isset($departmentMap[$dept['parent_id']])) {
+                $departmentMap[$dept['parent_id']]['children'][] = &$dept;
+            } else {
+                $tree[] = &$dept;
+            }
+        }
+        unset($dept); // Unset reference
+
+        // Flatten the tree with hierarchical names
+        $formattedList = [];
+        $this->flattenTree($tree, $formattedList);
+
+        return $formattedList;
     }
 
-    private function formatDepartmentList(array $departments, array $departmentMap): array
+    private function flattenTree(array $nodes, array &$formattedList, string $parentPath = ''): void
     {
-        $rootDeptIds = [];
-        foreach ($departmentMap as $dept) {
-            if ($dept['parent_id'] === null) {
-                $rootDeptIds[] = $dept['id'];
+        foreach ($nodes as $node) {
+            // Construct the hierarchical name
+            $currentPath = $parentPath . (empty($parentPath) ? '' : ' > ') . $node['simple_name'];
+
+            // Create a copy of the node to modify
+            $formattedNode = $node;
+            $formattedNode['name'] = $currentPath;
+
+            // Remove children before adding to the list
+            unset($formattedNode['children']);
+            $formattedList[] = $formattedNode;
+
+            // Recurse if children exist
+            if (!empty($node['children'])) {
+                $this->flattenTree($node['children'], $formattedList, $currentPath);
             }
         }
-        $rootDeptIdsSet = array_flip($rootDeptIds);
-
-        $formattedDepartments = [];
-        foreach ($departments as $dept) {
-            $formattedDept = $dept;
-            $parentId = $formattedDept['parent_id'];
-
-            if (isset($rootDeptIdsSet[$formattedDept['id']]) || ($parentId !== null && isset($rootDeptIdsSet[$parentId]))) {
-                // Name is already simple
-            } else if ($parentId !== null && isset($departmentMap[$parentId])) {
-                $parentName = $departmentMap[$parentId]['name'];
-                $cleanedChildName = preg_replace('/ \(' . preg_quote($parentName, '/') . '\)$/', '', $formattedDept['name']);
-                $simpleParentName = preg_replace('/ \(.*\)$/', '', $parentName);
-                $formattedDept['name'] = "{$simpleParentName} ({$cleanedChildName})";
-            }
-            $formattedDepartments[] = $formattedDept;
-        }
-
-        return $formattedDepartments;
     }
 }
