@@ -18,7 +18,7 @@ class PositionApiController {
     }
 
     public function store() {
-        $data = $this->request->getBody();
+        $data = $this->request->all();
         $result = $this->positionService->createPosition($data);
 
         if (isset($result['errors'])) {
@@ -29,7 +29,7 @@ class PositionApiController {
     }
 
     public function update(int $id) {
-        $data = $this->request->getBody();
+        $data = $this->request->all();
         $result = $this->positionService->updatePosition($id, $data);
 
         if (isset($result['errors'])) {
