@@ -1,6 +1,6 @@
 <?php
 // app/Views/pages/admin/positions/edit.php
-use App.core\View;
+use App\Core\View;
 use App\Services\ViewDataService;
 
 View::setLayout('layouts/app');
@@ -30,21 +30,17 @@ $viewData = ViewDataService::getViewData();
                 <h5 class="card-title mb-0">직급 정보 수정</h5>
             </div>
             <div class="card-body">
-                <form action="/admin/positions/update/<?= $position['id'] ?>" method="POST">
+                <form id="edit-position-form" data-position-id="<?= $position['id'] ?>">
                     <div class="mb-3">
                         <label for="name" class="form-label">직급명</label>
                         <input type="text" class="form-control" id="name" name="name" value="<?= htmlspecialchars($position['name'] ?? '') ?>" required>
-                        <?php if (isset($errors['name'])): ?>
-                            <div class="text-danger mt-1"><?= $errors['name'] ?></div>
-                        <?php endif; ?>
+                        <div class="invalid-feedback" id="name-error"></div>
                     </div>
                     <div class="mb-3">
                         <label for="level" class="form-label">레벨</label>
                         <input type="number" class="form-control" id="level" name="level" value="<?= htmlspecialchars($position['level'] ?? '10') ?>" required>
                         <small class="form-text text-muted">레벨이 낮을수록 높은 직급입니다. (예: 대표 1, 사원 10)</small>
-                        <?php if (isset($errors['level'])): ?>
-                            <div class="text-danger mt-1"><?= $errors['level'] ?></div>
-                        <?php endif; ?>
+                        <div class="invalid-feedback" id="level-error"></div>
                     </div>
 
                     <div>
@@ -57,4 +53,53 @@ $viewData = ViewDataService::getViewData();
     </div>
 </div>
 
+<?php View::endSection(); ?>
+
+<?php View::startSection('js'); ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('edit-position-form');
+    const positionId = form.dataset.positionId;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        fetch(`/api/positions/${positionId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                window.location.href = '/admin/positions';
+            } else if (result.errors) {
+                // Clear previous errors
+                document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+                for (const [key, message] of Object.entries(result.errors)) {
+                    const input = document.getElementById(key);
+                    const errorDiv = document.getElementById(`${key}-error`);
+                    if (input && errorDiv) {
+                        input.classList.add('is-invalid');
+                        errorDiv.textContent = message;
+                    }
+                }
+            } else {
+                alert(result.message || 'An unexpected error occurred.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the position.');
+        });
+    });
+});
+</script>
 <?php View::endSection(); ?>

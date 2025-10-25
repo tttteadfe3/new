@@ -52,7 +52,7 @@ $viewData = ViewDataService::getViewData();
                             </tr>
                         <?php else: ?>
                             <?php foreach ($positions as $position): ?>
-                            <tr>
+                            <tr data-position-id="<?= $position['id'] ?>">
                                 <td><?= htmlspecialchars($position['id']) ?></td>
                                 <td><?= htmlspecialchars($position['name']) ?></td>
                                 <td><?= htmlspecialchars($position['level']) ?></td>
@@ -62,9 +62,7 @@ $viewData = ViewDataService::getViewData();
                                             <a href="/admin/positions/edit/<?= $position['id'] ?>" class="btn btn-sm btn-success edit-item-btn">수정</a>
                                         </div>
                                         <div class="remove">
-                                             <form action="/admin/positions/delete/<?= $position['id'] ?>" method="POST" onsubmit="return confirm('정말로 이 직급을 삭제하시겠습니까? 관련 직원들의 직급 정보가 NULL이 됩니다.');">
-                                                <button type="submit" class="btn btn-sm btn-danger remove-item-btn">삭제</button>
-                                            </form>
+                                            <button class="btn btn-sm btn-danger remove-item-btn">삭제</button>
                                         </div>
                                     </div>
                                 </td>
@@ -82,6 +80,35 @@ $viewData = ViewDataService::getViewData();
 
 <?php View::startSection('js'); ?>
 <script>
-// Add any page-specific JS here
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('positions-table');
+    table.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-item-btn')) {
+            const row = e.target.closest('tr');
+            const positionId = row.dataset.positionId;
+
+            if (confirm('정말로 이 직급을 삭제하시겠습니까? 관련 직원들의 직급 정보가 NULL이 됩니다.')) {
+                fetch(`/api/positions/${positionId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        row.remove();
+                    } else {
+                        alert(result.message || 'An error occurred while deleting the position.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the position.');
+                });
+            }
+        }
+    });
+});
 </script>
 <?php View::endSection(); ?>

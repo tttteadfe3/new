@@ -11,6 +11,7 @@ use App\Controllers\Api\RoleApiController;
 use App\Controllers\Api\UserApiController;
 use App\Controllers\Api\MenuApiController;
 use App\Controllers\Api\ProfileApiController;
+use App\Controllers\Api\PositionApiController;
 use App\Controllers\Api\LogApiController;
 use App\Controllers\Api\WasteCollectionApiController;
 
@@ -76,6 +77,11 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->delete('/organization/{id}', [OrganizationApiController::class, 'destroy'])->name('api.organization.destroy')->middleware('auth')->middleware('permission', 'organization.manage');
     $router->get('/organization/chart', [OrganizationApiController::class, 'getChart'])->name('api.organization.chart')->middleware('auth')->middleware('permission', 'organization.view');
     $router->get('/organization/managable-departments', [OrganizationApiController::class, 'getManagableDepartments'])->name('api.organization.managable-departments')->middleware('auth');
+
+    // Position API routes
+    $router->post('/positions', [PositionApiController::class, 'store'])->name('api.positions.store')->middleware('auth')->middleware('permission', 'organization.manage');
+    $router->put('/positions/{id}', [PositionApiController::class, 'update'])->name('api.positions.update')->middleware('auth')->middleware('permission', 'organization.manage');
+    $router->delete('/positions/{id}', [PositionApiController::class, 'delete'])->name('api.positions.delete')->middleware('auth')->middleware('permission', 'organization.manage');
 
     // Role and Permission API routes
     $router->get('/roles', [RoleApiController::class, 'index'])->name('api.roles.index')->middleware('auth')->middleware('permission', 'role.view');

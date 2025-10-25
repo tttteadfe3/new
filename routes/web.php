@@ -12,7 +12,7 @@ use App\Controllers\Web\LogController;
 use App\Controllers\Web\ProfileController;
 use App\Controllers\Web\StatusController;
 use App\Controllers\Web\WasteCollectionController;
-use App\Controllers\PositionController;
+use App\Controllers\Web\PositionController;
 
 // --- 공용 및 인증 ---
 $router->get('/', [AuthController::class, 'login'])->name('home');
@@ -58,12 +58,9 @@ $router->get('/waste/manage', [WasteCollectionController::class, 'manage'])->nam
 
 // --- 관리자 ---
 $router->get('/admin/organization', [AdminController::class, 'organization'])->name('admin.organization')->middleware('auth')->middleware('permission', 'organization.manage');
-$router->get('/admin/positions', [PositionController::class, 'index'])->name('admin.positions.index')->middleware('auth')->middleware('permission', 'position.manage');
-$router->get('/admin/positions/create', [PositionController::class, 'create'])->name('admin.positions.create')->middleware('auth')->middleware('permission', 'position.manage');
-$router->post('/admin/positions/store', [PositionController::class, 'store'])->name('admin.positions.store')->middleware('auth')->middleware('permission', 'position.manage');
-$router->get('/admin/positions/edit/{id}', [PositionController::class, 'edit'])->name('admin.positions.edit')->middleware('auth')->middleware('permission', 'position.manage');
-$router->post('/admin/positions/update/{id}', [PositionController::class, 'update'])->name('admin.positions.update')->middleware('auth')->middleware('permission', 'position.manage');
-$router->post('/admin/positions/delete/{id}', [PositionController::class, 'delete'])->name('admin.positions.delete')->middleware('auth')->middleware('permission', 'position.manage');
+$router->get('/admin/positions', [PositionController::class, 'index'])->name('admin.positions.index')->middleware('auth')->middleware('permission', 'organization.manage');
+$router->get('/admin/positions/create', [PositionController::class, 'create'])->name('admin.positions.create')->middleware('auth')->middleware('permission', 'organization.manage');
+$router->get('/admin/positions/edit/{id}', [PositionController::class, 'edit'])->name('admin.positions.edit')->middleware('auth')->middleware('permission', 'organization.manage');
 $router->get('/admin/role-permissions', [AdminController::class, 'rolePermissions'])->name('admin.role-permissions')->middleware('auth')->middleware('permission', 'role.assign_permissions');
 $router->get('/admin/users', [AdminController::class, 'users'])->name('admin.users')->middleware('auth')->middleware('permission', 'user.view');
 $router->get('/admin/menus', [AdminController::class, 'menus'])->name('admin.menus')->middleware('auth')->middleware('permission', 'menu.manage');

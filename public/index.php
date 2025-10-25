@@ -106,8 +106,14 @@ $container->register(\App\Controllers\Web\LeaveController::class, fn($c) => new 
     $c->resolve(\App\Services\LeaveService::class),
     $c->resolve(\App\Services\EmployeeService::class)
 ));
+$container->register(\App\Controllers\Web\PositionController::class, fn($c) => new \App\Controllers\Web\PositionController($c->resolve(\App\Services\PositionService::class)));
 
-// Register EmployeeApiController explicitly with its new dependencies
+// Register API Controllers
+$container->register(\App\Controllers\Api\PositionApiController::class, fn($c) => new \App\Controllers\Api\PositionApiController(
+    $c->resolve(\App\Services\PositionService::class),
+    $c->resolve(Request::class),
+    $c->resolve(JsonResponse::class)
+));
 $container->register(\App\Controllers\Api\EmployeeApiController::class, fn($c) => new \App\Controllers\Api\EmployeeApiController(
     $c->resolve(Request::class),
     $c->resolve(\App\Services\AuthService::class),
