@@ -4,20 +4,23 @@ namespace App\Models;
 class WasteCollection extends BaseModel
 {
     protected array $fillable = [
+        'type',
         'latitude',
         'longitude',
         'address',
-        'photo_path',
-        'employee_id',
+        'geocoding_status',
         'issue_date',
+        'photo_path',
         'discharge_number',
         'submitter_name',
         'submitter_phone',
         'fee',
         'status',
-        'type',
-        'geocoding_status',
-        'admin_memo'
+        'admin_memo',
+        'created_by',
+        'completed_by',
+        'created_at',
+        'completed_at'
     ];
 
     protected array $hidden = [];

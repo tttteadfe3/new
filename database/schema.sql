@@ -203,6 +203,7 @@ CREATE TABLE `sys_user_roles` (
 CREATE TABLE `sys_activity_logs` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
   `user_id` int(11) DEFAULT NULL COMMENT '행위자 user_id (시스템 로그는 NULL)',
+  `employee_id` int(11) DEFAULT NULL COMMENT '관련 직원 ID (직원 관련 활동 시)',
   `user_name` varchar(255) DEFAULT NULL COMMENT '행위자 이름 (비로그인 사용자 등)',
   `action` varchar(255) NOT NULL COMMENT '활동 종류 (예: login, employee_update)',
   `details` text DEFAULT NULL COMMENT '활동 상세 내용 (JSON 형식 권장)',
@@ -212,7 +213,9 @@ CREATE TABLE `sys_activity_logs` (
   KEY `user_id` (`user_id`),
   KEY `idx_created_at` (`created_at`),
   KEY `idx_action` (`action`),
-  CONSTRAINT `activity_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_users` (`id`) ON DELETE SET NULL
+  KEY `fk_activity_log_employee_id` (`employee_id`),
+  CONSTRAINT `activity_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_activity_log_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 활동 감사 로그';
 
 -- ========================================
@@ -249,9 +252,13 @@ CREATE TABLE `hr_leave_adjustments_log` (
   `year` int(4) NOT NULL COMMENT '조정 대상 연도',
   `adjusted_days` decimal(4,1) NOT NULL COMMENT '조정된 연차 (예: +1.0, -0.5)',
   `reason` varchar(255) NOT NULL COMMENT '조정 사유',
-  `admin_id` int(11) NOT NULL COMMENT '처리한 관리자 user_id',
+  `admin_employee_id` int(11) NOT NULL COMMENT '처리한 관리자 employee_id',
   `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '기록 생성일시',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_leave_adj_employee_id` (`employee_id`),
+  KEY `fk_leave_adj_admin_employee_id` (`admin_employee_id`),
+  CONSTRAINT `fk_leave_adj_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_leave_adj_admin_employee_id` FOREIGN KEY (`admin_employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='(관리자용) 연차 수동 조정 기록';
 
 -- --------------------------------------------------------
@@ -273,7 +280,7 @@ CREATE TABLE `hr_leaves` (
 
   -- 처리 정보
   `status` enum('pending','approved','rejected','cancelled','cancellation_requested') NOT NULL DEFAULT 'pending' COMMENT '신청 상태',
-  `approved_by` int(11) DEFAULT NULL COMMENT '처리한 관리자 user_id',
+  `approver_employee_id` int(11) DEFAULT NULL COMMENT '처리한 관리자 employee_id',
   `rejection_reason` text DEFAULT NULL COMMENT '반려 사유',
   `cancellation_reason` text DEFAULT NULL COMMENT '취소 사유 (직원이 취소 요청 시)',
 
@@ -284,9 +291,9 @@ CREATE TABLE `hr_leaves` (
   KEY `idx_employee_id` (`employee_id`),
   KEY `idx_status` (`status`),
   KEY `idx_start_date` (`start_date`),
-  KEY `fk_leaves_approved_by` (`approved_by`),
+  KEY `fk_leaves_approver_employee_id` (`approver_employee_id`),
   CONSTRAINT `fk_leaves_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_leaves_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `sys_users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_leaves_approver_employee_id` FOREIGN KEY (`approver_employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원 휴가 신청 내역';
 
 -- ========================================
@@ -322,16 +329,16 @@ CREATE TABLE `hr_holidays` (
 CREATE TABLE `hr_employee_change_logs` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
   `employee_id` int(11) NOT NULL COMMENT '변경 대상 직원 ID',
-  `changer_id` int(11) DEFAULT NULL COMMENT '변경 수행한 관리자 user_id (시스템에 의한 변경 시 NULL)',
+  `changer_employee_id` int(11) DEFAULT NULL COMMENT '변경 수행한 관리자 employee_id (시스템 변경 시 NULL)',
   `field_name` varchar(100) NOT NULL COMMENT '변경된 필드명',
   `old_value` text DEFAULT NULL COMMENT '변경 전 값',
   `new_value` text DEFAULT NULL COMMENT '변경 후 값',
   `changed_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '변경일시',
   PRIMARY KEY (`id`),
   KEY `idx_employee_id` (`employee_id`),
-  KEY `fk_log_changer_id` (`changer_id`),
+  KEY `fk_log_changer_employee_id` (`changer_employee_id`),
   CONSTRAINT `fk_log_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_log_changer_id` FOREIGN KEY (`changer_id`) REFERENCES `sys_users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_log_changer_employee_id` FOREIGN KEY (`changer_employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원 정보 변경 감사 로그';
 
 -- ========================================
@@ -415,12 +422,16 @@ CREATE TABLE `waste_collections` (
 
   -- 담당자 및 타임스탬프
   `created_by` int(11) DEFAULT NULL COMMENT '등록한 직원 ID',
-  `updated_by` int(11) DEFAULT NULL COMMENT '수정한 직원 ID',
+  `completed_by` int(11) DEFAULT NULL COMMENT '완료 처리한 직원 ID',
   `created_at` datetime DEFAULT current_timestamp() COMMENT '등록일시',
-  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp() COMMENT '수정일시',
+  `completed_at` datetime DEFAULT NULL COMMENT '완료일시',
 
   PRIMARY KEY (`id`),
-  KEY `idx_coords` (`latitude`,`longitude`)
+  KEY `idx_coords` (`latitude`,`longitude`),
+  KEY `fk_waste_collection_created_by` (`created_by`),
+  KEY `fk_waste_collection_completed_by` (`completed_by`),
+  CONSTRAINT `fk_waste_collection_created_by` FOREIGN KEY (`created_by`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_waste_collection_completed_by` FOREIGN KEY (`completed_by`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='대형폐기물 수거 접수 정보';
 
 -- ========================================

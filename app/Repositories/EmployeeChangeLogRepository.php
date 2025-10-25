@@ -12,13 +12,13 @@ class EmployeeChangeLogRepository {
     /**
      * 직원 정보 변경 로그를 기록합니다.
      */
-    public function insert(int $employeeId, int $changerId, string $fieldName, ?string $oldValue, ?string $newValue): bool {
-        $sql = "INSERT INTO hr_employee_change_logs (employee_id, changer_id, field_name, old_value, new_value)
-                VALUES (:employee_id, :changer_id, :field_name, :old_value, :new_value)";
+    public function insert(int $employeeId, int $changerEmployeeId, string $fieldName, ?string $oldValue, ?string $newValue): bool {
+        $sql = "INSERT INTO hr_employee_change_logs (employee_id, changer_employee_id, field_name, old_value, new_value)
+                VALUES (:employee_id, :changer_employee_id, :field_name, :old_value, :new_value)";
         
         return $this->db->execute($sql, [
             ':employee_id' => $employeeId,
-            ':changer_id' => $changerId,
+            ':changer_employee_id' => $changerEmployeeId,
             ':field_name' => $fieldName,
             ':old_value' => $oldValue,
             ':new_value' => $newValue
@@ -29,9 +29,9 @@ class EmployeeChangeLogRepository {
      * 특정 직원의 모든 변경 이력을 조회합니다.
      */
     public function findByEmployeeId(int $employeeId): array {
-        $sql = "SELECT l.*, u.nickname as changer_name 
+        $sql = "SELECT l.*, e.name as changer_name
                 FROM hr_employee_change_logs l
-                LEFT JOIN sys_users u ON l.changer_id = u.id
+                LEFT JOIN hr_employees e ON l.changer_employee_id = e.id
                 WHERE l.employee_id = :employee_id 
                 ORDER BY l.changed_at DESC";
         return $this->db->query($sql, [':employee_id' => $employeeId]);

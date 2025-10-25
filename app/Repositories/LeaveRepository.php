@@ -158,15 +158,15 @@ class LeaveRepository {
      * @param int $adminId 조정을 수행한 관리자의 ID
      * @return bool 로그 기록 성공 여부
      */
-    public function logAdjustment(int $employeeId, int $year, float $adjustedDays, string $reason, int $adminId): bool {
-        $sql = "INSERT INTO hr_leave_adjustments_log (employee_id, year, adjusted_days, reason, admin_id)
-                VALUES (:employee_id, :year, :adjusted_days, :reason, :admin_id)";
+    public function logAdjustment(int $employeeId, int $year, float $adjustedDays, string $reason, int $adminEmployeeId): bool {
+        $sql = "INSERT INTO hr_leave_adjustments_log (employee_id, year, adjusted_days, reason, admin_employee_id)
+                VALUES (:employee_id, :year, :adjusted_days, :reason, :admin_employee_id)";
         return $this->db->execute($sql, [
             ':employee_id' => $employeeId,
             ':year' => $year,
             ':adjusted_days' => $adjustedDays,
             ':reason' => $reason,
-            ':admin_id' => $adminId
+            ':admin_employee_id' => $adminEmployeeId
         ]) > 0;
     }
 
@@ -196,9 +196,9 @@ class LeaveRepository {
      * @return array 해당 직원의 연차 신청 목록
      */
     public function findByEmployeeId(int $employeeId, array $filters = []): array {
-         $sql = "SELECT l.*, u.nickname as approver_name
+         $sql = "SELECT l.*, approver.name as approver_name
                 FROM hr_leaves l
-                LEFT JOIN sys_users u ON l.approved_by = u.id
+                LEFT JOIN hr_employees approver ON l.approver_employee_id = approver.id
                 WHERE l.employee_id = :employee_id";
 
         $params = [':employee_id' => $employeeId];
@@ -275,15 +275,15 @@ class LeaveRepository {
      * @param string|null $rejectionReason 반려 사유 (반려 시에만 사용)
      * @return bool 업데이트 성공 여부
      */
-    public function updateStatus(int $id, string $status, ?int $adminUserId, ?string $rejectionReason): bool {
+    public function updateStatus(int $id, string $status, ?int $adminEmployeeId, ?string $rejectionReason): bool {
         $sql = "UPDATE hr_leaves
-                SET status = :status, approved_by = :approved_by, rejection_reason = :rejection_reason
+                SET status = :status, approver_employee_id = :approver_employee_id, rejection_reason = :rejection_reason
                 WHERE id = :id";
 
         return $this->db->execute($sql, [
             ':id' => $id,
             ':status' => $status,
-            ':approved_by' => $adminUserId,
+            ':approver_employee_id' => $adminEmployeeId,
             ':rejection_reason' => $rejectionReason
         ]) > 0;
     }
