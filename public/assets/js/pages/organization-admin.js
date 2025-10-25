@@ -29,8 +29,7 @@ class OrganizationAdminPage extends BasePage {
             departmentFields: document.getElementById('department-fields'),
             parentIdSelect: document.getElementById('parent-id'),
             viewerEmployeeIdsSelect: document.getElementById('viewer-employee-ids'),
-            viewerDepartmentIdsSelect: document.getElementById('viewer-department-ids'),
-            canViewAllEmployeesCheckbox: document.getElementById('can-view-all-employees')
+            viewerDepartmentIdsSelect: document.getElementById('viewer-department-ids')
         };
         this.choicesInstances = {};
     }
@@ -86,7 +85,6 @@ class OrganizationAdminPage extends BasePage {
                     dataAttrs += ` data-parent-id="${item.parent_id || ''}"`;
                     dataAttrs += ` data-viewer-employee-ids="${item.viewer_employee_ids || ''}"`;
                     dataAttrs += ` data-viewer-department-ids="${item.viewer_department_ids || ''}"`;
-                    dataAttrs += ` data-can-view-all-employees="${item.can_view_all_employees || '0'}"`;
                 }
                 return `
                     <div class="list-group-item d-flex justify-content-between align-items-center">
@@ -139,7 +137,6 @@ class OrganizationAdminPage extends BasePage {
 
             if (type === 'department') {
                 this.elements.parentIdSelect.value = data.parentId || '';
-                this.elements.canViewAllEmployeesCheckbox.checked = data.canViewAllEmployees === '1';
 
                 try {
                     const empResponse = await this.apiCall('/employees?status=active');
@@ -165,7 +162,6 @@ class OrganizationAdminPage extends BasePage {
             this.elements.modalTitle.textContent = `새 ${entityName} 추가`;
             this.elements.orgIdInput.value = '';
             if (type === 'department') {
-                this.elements.canViewAllEmployeesCheckbox.checked = false;
                 try {
                     const empResponse = await this.apiCall('/employees?status=active');
                     const empChoices = empResponse.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
@@ -196,7 +192,6 @@ class OrganizationAdminPage extends BasePage {
             payload.parent_id = this.elements.parentIdSelect.value;
             payload.viewer_employee_ids = this.choicesInstances.viewerEmployees ? this.choicesInstances.viewerEmployees.getValue(true) : [];
             payload.viewer_department_ids = this.choicesInstances.viewerDepartments ? this.choicesInstances.viewerDepartments.getValue(true) : [];
-            payload.can_view_all_employees = this.elements.canViewAllEmployeesCheckbox.checked;
         }
 
         const url = id ? `${this.config.API_URL}/${id}` : this.config.API_URL;
@@ -220,12 +215,12 @@ class OrganizationAdminPage extends BasePage {
 
     handleActionClick(e) {
         const target = e.target;
-        const { id, name, type, parentId, viewerEmployeeIds, viewerDepartmentIds, canViewAllEmployees, simpleName } = target.dataset;
+        const { id, name, type, parentId, viewerEmployeeIds, viewerDepartmentIds, simpleName } = target.dataset;
 
         if (!type || !id) return;
 
         if (target.classList.contains('edit-btn')) {
-            const data = { id, name, type, parentId, viewerEmployeeIds, viewerDepartmentIds, canViewAllEmployees, simpleName };
+            const data = { id, name, type, parentId, viewerEmployeeIds, viewerDepartmentIds, simpleName };
             this.openModal(type, data);
         } else if (target.classList.contains('delete-btn')) {
             const entityName = type === 'department' ? '부서' : '직급';

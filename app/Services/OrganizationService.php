@@ -135,12 +135,6 @@ class OrganizationService
         }
 
         $employee = $this->employeeRepository->findById($user['employee_id']);
-        if ($employee && !empty($employee['department_id'])) {
-            $department = $this->departmentRepository->findById($employee['department_id']);
-            if ($department && $department->can_view_all_employees) {
-                return null;
-            }
-        }
 
         $permittedDeptIds = [];
         if ($employee && $employee['department_id']) {

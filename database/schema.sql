@@ -15,7 +15,6 @@ CREATE TABLE `hr_departments` (
   `name` varchar(255) NOT NULL COMMENT '부서명',
   `parent_id` int(11) DEFAULT NULL COMMENT '상위 부서 ID',
   `path` varchar(255) DEFAULT NULL COMMENT '계층 구조 경로 (예: /1/3/)',
-  `can_view_all_employees` tinyint(1) NOT NULL DEFAULT 0 COMMENT '전체 직원 조회 권한 여부',
   `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
   PRIMARY KEY (`id`),
