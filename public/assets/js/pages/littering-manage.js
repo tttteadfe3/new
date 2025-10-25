@@ -104,15 +104,15 @@ class LitteringAdminPage extends BasePage {
                 let badgeClass = '';
                 let correctedText = '';
                 switch (item.corrected) {
-                    case 'yes':
+                    case 'o':
                         badgeClass = 'bg-success';
                         correctedText = '개선';
                         break;
-                    case 'no':
+                    case 'x':
                         badgeClass = 'bg-danger';
                         correctedText = '미개선';
                         break;
-                    case 'partial':
+                    case '=':
                         badgeClass = 'bg-warning';
                         correctedText = '부분개선';
                         break;
