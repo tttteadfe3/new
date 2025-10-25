@@ -81,7 +81,7 @@
 
 ### 3.3. 공통 컬럼 설계
 
--   **감사 (Auditing)**: 생성자(`created_by`), 수정자(`updated_by`) 컬럼에는 `employee_id`를 저장하여 모든 변경 사항을 추적합니다.
+-   **감사 (Auditing)**: 생성자(`created_by`), 처리자(`completed_by` 등) 컬럼에는 `employee_id`를 저장하여 모든 데이터 변경 이력을 추적합니다.
 -   **소프트 삭제 (Soft Delete)**: `status` 컬럼을 `deleted`로 변경하고 `deleted_at` 타임스탬프를 기록합니다. 데이터를 조회할 때는 반드시 `WHERE deleted_at IS NULL` 조건을 포함해야 합니다.
 -   **워크플로우 추적**: 상태 변경을 추적하는 컬럼은 `processed_by`, `processed_at`와 같이 상태 값과 의미가 명확하게 연결되도록 명명합니다.
 

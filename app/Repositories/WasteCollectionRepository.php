@@ -119,17 +119,17 @@ class WasteCollectionRepository {
     }
 
     public function processByAddress(string $address, int $employeeId): bool {
-        $query = "UPDATE `waste_collections` SET `status` = 'processed', `updated_at` = NOW(), `updated_by` = ? WHERE `address` = ? AND `status` = 'unprocessed'";
+        $query = "UPDATE `waste_collections` SET `status` = 'processed', `completed_at` = NOW(), `completed_by` = ? WHERE `address` = ? AND `status` = 'unprocessed'";
         return $this->db->execute($query, [$employeeId, $address]) > 0;
     }
 
     public function processById(int $id, int $employeeId): bool {
-        $query = "UPDATE `waste_collections` SET `status` = 'processed', `updated_at` = NOW(), `updated_by` = ? WHERE `id` = ? AND `status` = 'unprocessed'";
+        $query = "UPDATE `waste_collections` SET `status` = 'processed', `completed_at` = NOW(), `completed_by` = ? WHERE `id` = ? AND `status` = 'unprocessed'";
         return $this->db->execute($query, [$employeeId, $id]) > 0;
     }
 
     public function updateAdminMemo(int $id, string $memo, int $employeeId): bool {
-        $query = "UPDATE `waste_collections` SET `admin_memo` = ?, `updated_at` = NOW(), `updated_by` = ? WHERE `id` = ?";
+        $query = "UPDATE `waste_collections` SET `admin_memo` = ?, `completed_at` = NOW(), `completed_by` = ? WHERE `id` = ?";
         return $this->db->execute($query, [$memo, $employeeId, $id]) > 0;
     }
 

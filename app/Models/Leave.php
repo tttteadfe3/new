@@ -12,7 +12,7 @@ class Leave extends BaseModel
         'days_count',
         'reason',
         'status',
-        'approved_by',
+        'approver_employee_id',
         'rejection_reason',
         'cancellation_reason'
     ];
@@ -30,7 +30,7 @@ class Leave extends BaseModel
         'days_count' => 'required|numeric',
         'reason' => 'string',
         'status' => 'in:pending,approved,rejected,cancelled,cancellation_requested',
-        'approved_by' => 'integer'
+        'approver_employee_id' => 'integer'
     ];
 
     /**
