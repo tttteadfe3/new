@@ -1,5 +1,5 @@
-INSERT INTO `sys_users` (`id`, `kakao_id`, `email`, `nickname`, `profile_image_url`, `employee_id`, `status`, `created_at`, `updated_at`) VALUES
-(1, '4384745070', 'email-unavailable-68cb878762c93@example.com', '오창모', 'http://k.kakaocdn.net/dn/dGtSRp/btsPHN3X0nM/X6qyN4AqH3M7uYBjbLcBc0/img_640x640.jpg', 26, 'active', '2025-08-09 14:05:16', '2025-09-18 13:16:07'),
-(2, '4394352647', 'email-unavailable-68c9cbc923933@example.com', '김현철', 'http://k.kakaocdn.net/dn/k1wQK/btsMMGGTXCC/30qNvIJc7659sRDkj0Yco1/img_640x640.jpg', 13, 'active', '2025-08-13 05:51:15', '2025-09-17 05:42:49'),
-(3, '4414163217', 'email-unavailable-68acf9cf875c7@example.com', '원진실업(주)', 'http://k.kakaocdn.net/dn/RhI0Q/btsFfW3ZsMA/ICFbyGCmEizje2w3rwe6BK/img_640x640.jpg', NULL, 'active', '2025-08-26 09:01:58', '2025-08-26 09:03:27'),
-(4, '4448173688', 'email-unavailable-68c8f2d5ee0eb@example.com', '김정래', 'http://k.kakaocdn.net/dn/dubZPe/btsJgP1leyC/cx92tTyx8CDSIkklATwcCk/img_640x640.jpg', 115, 'active', '2025-09-15 18:11:47', '2025-09-16 14:17:09');
+INSERT INTO `sys_users` (`id`, `employee_id`, `kakao_id`, `email`, `nickname`, `profile_image_url`, `status`, `created_at`, `updated_at`) VALUES
+(1, 26, '4384745070', 'email-unavailable-68cb878762c93@example.com', '오창모', 'http://k.kakaocdn.net/dn/dGtSRp/btsPHN3X0nM/X6qyN4AqH3M7uYBjbLcBc0/img_640x640.jpg', 'active', '2025-08-09 14:05:16', '2025-09-18 13:16:07'),
+(2, 13, '4394352647', 'email-unavailable-68c9cbc923933@example.com', '김현철', 'http://k.kakaocdn.net/dn/k1wQK/btsMMGGTXCC/30qNvIJc7659sRDkj0Yco1/img_640x640.jpg', 'active', '2025-08-13 05:51:15', '2025-09-17 05:42:49'),
+(3, NULL, '4414163217', 'email-unavailable-68acf9cf875c7@example.com', '원진실업(주)', 'http://k.kakaocdn.net/dn/RhI0Q/btsFfW3ZsMA/ICFbyGCmEizje2w3rwe6BK/img_640x640.jpg', 'active', '2025-08-26 09:01:58', '2025-08-26 09:03:27'),
+(4, 115, '4448173688', 'email-unavailable-68c8f2d5ee0eb@example.com', '김정래', 'http://k.kakaocdn.net/dn/dubZPe/btsJgP1leyC/cx92tTyx8CDSIkklATwcCk/img_640x640.jpg', 'active', '2025-09-15 18:11:47', '2025-09-16 14:17:09');
