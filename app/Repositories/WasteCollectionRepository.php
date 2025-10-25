@@ -29,7 +29,7 @@ class WasteCollectionRepository {
             'unprocessed',
             $data['type'], // 'field' or 'online'
             $data['geocoding_status'] ?? 'success',
-            $data['employee_id']
+            $data['created_by']
         ];
 
         $newId = $this->db->insert($query, $params);
