@@ -25,8 +25,16 @@ class PositionRepository {
     }
 
     public function update(int $id, string $name, int $level): bool {
+        // First, check if the position exists
+        if (!$this->findById($id)) {
+            return false;
+        }
+
+        // If it exists, perform the update.
+        // The operation is successful even if 0 rows are affected (i.e., data is the same).
         $sql = "UPDATE hr_positions SET name = :name, level = :level WHERE id = :id";
-        return $this->db->execute($sql, [':id' => $id, ':name' => $name, ':level' => $level]) > 0;
+        $this->db->execute($sql, [':id' => $id, ':name' => $name, ':level' => $level]);
+        return true;
     }
 
     public function isEmployeeAssigned(int $id): bool {
