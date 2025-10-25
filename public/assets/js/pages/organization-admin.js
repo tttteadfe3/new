@@ -46,7 +46,6 @@ class OrganizationAdminPage extends BasePage {
     loadInitialData() {
         this.loadOrganizationData('department', this.elements.departmentsListContainer);
         this.loadOrganizationData('position', this.elements.positionsListContainer);
-        // Pre-load select options for the modal
         this.loadSelectOptions();
     }
 
@@ -221,13 +220,11 @@ class OrganizationAdminPage extends BasePage {
 
     handleActionClick(e) {
         const target = e.target;
-        // Destructure all potential data attributes
         const { id, name, type, parentId, viewerEmployeeIds, viewerDepartmentIds, canViewAllEmployees, simpleName } = target.dataset;
 
         if (!type || !id) return;
 
         if (target.classList.contains('edit-btn')) {
-            // Pass all relevant data to the modal
             const data = { id, name, type, parentId, viewerEmployeeIds, viewerDepartmentIds, canViewAllEmployees, simpleName };
             this.openModal(type, data);
         } else if (target.classList.contains('delete-btn')) {
@@ -265,4 +262,4 @@ class OrganizationAdminPage extends BasePage {
     }
 }
 
-    new OrganizationAdminPage();
+new OrganizationAdminPage();
