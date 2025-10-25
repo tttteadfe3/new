@@ -1,85 +1,104 @@
--- Renewed role-permission mappings based on the new permission scheme
--- Super Admin (Role ID: 1) gets all permissions
 INSERT INTO `sys_role_permissions` (`role_id`, `permission_id`) VALUES
-(1, 1),   -- dashboard.view
-(1, 10),  -- employee.view
-(1, 11),  -- employee.create
-(1, 12),  -- employee.update
-(1, 13),  -- employee.delete
-(1, 14),  -- employee.approve
-(1, 20),  -- leave.request
-(1, 21),  -- leave.view_own
-(1, 22),  -- leave.view_all
-(1, 23),  -- leave.approve
-(1, 24),  -- leave.manage_entitlement
-(1, 30),  -- littering.view
-(1, 31),  -- littering.create
-(1, 32),  -- littering.process
-(1, 33),  -- littering.confirm
-(1, 34),  -- littering.approve
-(1, 35),  -- littering.delete
-(1, 36),  -- littering.restore
-(1, 40),  -- waste.view
-(1, 41),  -- waste.manage_admin
-(1, 50),  -- user.view
-(1, 51),  -- user.update
-(1, 52),  -- user.link
-(1, 60),  -- role.view
-(1, 61),  -- role.create
-(1, 62),  -- role.update
-(1, 63),  -- role.delete
-(1, 64),  -- role.assign_permissions
-(1, 70),  -- organization.manage
-(1, 71),  -- organization.view
-(1, 72),  -- department.manage_manager
-(1, 80),  -- holiday.manage
-(1, 90),  -- menu.manage
-(1, 100), -- log.view
-(1, 101), -- log.delete
-
--- General User (Role ID: 3) gets basic permissions
-(3, 1),   -- dashboard.view
-(3, 20),  -- leave.request
-(3, 21),  -- leave.view_own
-(3, 30),  -- littering.view
-(3, 40),  -- waste.view
-
--- Collection/Transport Field Agent (Role ID: 7)
-(7, 1),   -- dashboard.view
-(7, 20),  -- leave.request
-(7, 21),  -- leave.view_own
-(7, 30),  -- littering.view
-(7, 31),  -- littering.create
-(7, 32),  -- littering.process
-(7, 40),  -- waste.view
-
--- Street Cleaning Field Agent (Role ID: 8) - Basic employee permissions
-(8, 1),   -- dashboard.view
-(8, 20),  -- leave.request
-(8, 21),  -- leave.view_own
-
--- Collection/Transport Loader (Role ID: 9) - Basic employee permissions
-(9, 1),   -- dashboard.view
-(9, 20),  -- leave.request
-(9, 21),  -- leave.view_own
-
--- Collection/Transport Leader (Role ID: 10)
-(10, 1),   -- dashboard.view
-(10, 20),  -- leave.request
-(10, 21),  -- leave.view_own
-(10, 30),  -- littering.view
-(10, 31),  -- littering.create
-(10, 32),  -- littering.process
-(10, 40),  -- waste.view
-
--- Collection/Transport Team Leader (Role ID: 11) - More permissions than leader
-(11, 1),   -- dashboard.view
-(11, 20),  -- leave.request
-(11, 21),  -- leave.view_own
-(11, 22),  -- leave.view_all (Can see team's leave)
-(11, 23),  -- leave.approve (Can approve team's leave)
-(11, 30),  -- littering.view
-(11, 31),  -- littering.create
-(11, 32),  -- littering.process
-(11, 33),  -- littering.confirm (Can confirm reports)
-(11, 40);  -- waste.view
+(1, 1),
+(7, 1),
+(8, 1),
+(16, 1),
+(19, 1),
+(21, 1),
+(22, 1),
+(1, 10),
+(21, 10),
+(1, 11),
+(21, 11),
+(1, 12),
+(21, 12),
+(1, 13),
+(21, 13),
+(1, 14),
+(21, 14),
+(1, 20),
+(7, 20),
+(8, 20),
+(16, 20),
+(19, 20),
+(21, 20),
+(22, 20),
+(1, 21),
+(7, 21),
+(8, 21),
+(16, 21),
+(19, 21),
+(21, 21),
+(22, 21),
+(1, 22),
+(7, 22),
+(8, 22),
+(16, 22),
+(21, 22),
+(1, 23),
+(7, 23),
+(8, 23),
+(16, 23),
+(21, 23),
+(1, 24),
+(21, 24),
+(1, 30),
+(7, 30),
+(16, 30),
+(19, 30),
+(21, 30),
+(22, 30),
+(1, 31),
+(7, 31),
+(16, 31),
+(19, 31),
+(21, 31),
+(22, 31),
+(1, 32),
+(7, 32),
+(16, 32),
+(19, 32),
+(21, 32),
+(22, 32),
+(1, 33),
+(7, 33),
+(21, 33),
+(1, 34),
+(7, 34),
+(21, 34),
+(1, 35),
+(21, 35),
+(1, 36),
+(7, 36),
+(21, 36),
+(1, 40),
+(7, 40),
+(16, 40),
+(19, 40),
+(21, 40),
+(22, 40),
+(1, 41),
+(21, 41),
+(1, 50),
+(1, 51),
+(1, 52),
+(1, 60),
+(1, 61),
+(1, 62),
+(1, 63),
+(1, 64),
+(1, 70),
+(1, 71),
+(21, 71),
+(1, 72),
+(21, 72),
+(1, 80),
+(21, 80),
+(1, 90),
+(1, 100),
+(1, 101),
+(1, 110),
+(1, 111),
+(1, 112),
+(1, 113),
+(1, 114);
