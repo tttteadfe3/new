@@ -1,15 +1,12 @@
 <?php
 // app/Views/pages/admin/positions/index.php
 use App\Core\View;
-use App\Services\ViewDataService;
 
-View::setLayout('layouts/app');
-View::startSection('css');
+View::getInstance()->startSection('css');
 // Add any page-specific CSS here
-View::endSection();
+View::getInstance()->endSection();
 
-View::startSection('content');
-$viewData = ViewDataService::getViewData();
+View::getInstance()->startSection('content');
 ?>
 
 <div class="row">
@@ -76,9 +73,9 @@ $viewData = ViewDataService::getViewData();
     </div>
 </div>
 
-<?php View::endSection(); ?>
+<?php View::getInstance()->endSection(); ?>
 
-<?php View::startSection('js'); ?>
+<?php View::getInstance()->startSection('js'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const table = document.getElementById('positions-table');
@@ -111,4 +108,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-<?php View::endSection(); ?>
+<?php View::getInstance()->endSection(); ?>

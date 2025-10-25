@@ -1,11 +1,8 @@
 <?php
 // app/Views/pages/admin/positions/create.php
 use App\Core\View;
-use App\Services\ViewDataService;
 
-View::setLayout('layouts/app');
-View::startSection('content');
-$viewData = ViewDataService::getViewData();
+View::getInstance()->startSection('content');
 ?>
 
 <div class="row">
@@ -53,9 +50,9 @@ $viewData = ViewDataService::getViewData();
     </div>
 </div>
 
-<?php View::endSection(); ?>
+<?php View::getInstance()->endSection(); ?>
 
-<?php View::startSection('js'); ?>
+<?php View::getInstance()->startSection('js'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('create-position-form');
@@ -100,4 +97,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-<?php View::endSection(); ?>
+<?php View::getInstance()->endSection(); ?>
