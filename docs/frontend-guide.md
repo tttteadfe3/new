@@ -167,3 +167,8 @@ async createEmployee(employeeData) {
     View::addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js'); // ApiService도 추가
     View::addJs(BASE_ASSETS_URL . '/assets/js/pages/employee-management.js');
     ```
+
+## 4. CSS & View 가이드
+
+-   **네이밍**: 파일명은 `kebab-case.css`, `kebab-case.php`를 따릅니다.
+-   **스타일링**: 인라인 CSS 사용을 지양하고, 페이지별 스타일은 `public/assets/css/pages/` 디렉토리의 개별 CSS 파일로 분리합니다.
