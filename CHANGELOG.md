@@ -4,6 +4,16 @@
 
 ---
 
+## [1.0.3 - 2025-10-26]
+
+### 🐛 버그 수정 (Bug Fixes)
+- **사용자 관리의 직원 연결 필터 기능 수정**:
+  - **문제**: `/admin/users` 페이지에서 직원을 연결할 때 부서 필터가 작동하지 않아 다른 부서의 직원들이 목록에 포함되는 문제.
+  - **원인**: `users.js`에서 부서 필터의 `change` 이벤트가 발생했을 때, `loadUnlinkedEmployees()` 함수를 호출하면서 선택된 부서 ID를 전달하지 않았음.
+  - **수정**: `departmentFilter`의 이벤트 리스너에서 `e.target.value`를 `loadUnlinkedEmployees()` 함수로 전달하도록 수정하여, API 요청 시 `department_id` 쿼리 파라미터가 포함되도록 함.
+  - **영향 범위**: `public/assets/js/pages/users.js`
+  - **함께 수정된 파일**: 없음
+
 ## [1.0.2 - 2025-10-26]
 
 ### 🐛 버그 수정 (Bug Fixes)
