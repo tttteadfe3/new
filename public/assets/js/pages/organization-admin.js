@@ -39,14 +39,20 @@ class DepartmentAdminPage extends BasePage {
 
     async loadInitialData() {
         try {
-            const response = await this.apiCall(`${this.config.API_URL}?type=department`);
-            this.state.departments = response.data; // Store for reuse
+            const [deptResponse, empResponse] = await Promise.all([
+                this.apiCall(`${this.config.API_URL}?type=department`),
+                this.apiCall('/employees?status=active')
+            ]);
+
+            this.state.departments = deptResponse.data;
+            this.state.employees = empResponse.data;
+
             this.renderDepartments(this.state.departments);
             this.populateSelect(this.elements.parentIdSelect, this.state.departments, 'id', 'name', '(없음)');
         } catch (error) {
             console.error('Error loading initial data:', error);
-            Toast.error('부서 정보를 불러오는데 실패했습니다.');
-            this.elements.departmentsListContainer.innerHTML = `<div class="list-group-item text-danger">부서 목록 로딩 실패</div>`;
+            Toast.error('초기 데이터를 불러오는데 실패했습니다.');
+            this.elements.departmentsListContainer.innerHTML = `<div class="list-group-item text-danger">목록 로딩 실패</div>`;
         }
     }
 
@@ -93,27 +99,27 @@ class DepartmentAdminPage extends BasePage {
             this.choicesInstances.viewerDepartments = new Choices(this.elements.viewerDepartmentIdsSelect, { removeItemButton: true, placeholder: true, placeholderValue: '부서를 선택하세요' });
         }
 
+        // Set choices for departments from pre-loaded data
+        const deptChoices = this.state.departments.map(dept => ({ value: dept.id.toString(), label: dept.name }));
+        this.choicesInstances.viewerDepartments.setChoices(deptChoices, 'value', 'label', true);
+
         if (data) { // Editing
             this.elements.modalTitle.textContent = '부서 정보 수정';
             this.elements.deptIdInput.value = data.id;
             this.elements.deptNameInput.value = data.name;
             this.elements.parentIdSelect.value = data.parentId || '';
 
-            // Note: Simplification assuming eligible employees/depts are pre-loaded or same for all
-            // For a more robust solution, these might need to be fetched if they are context-dependent
-            const allDepts = this.state.departments.map(d => ({ value: d.id.toString(), label: d.name }));
-            this.choicesInstances.viewerDepartments.setChoices(allDepts, 'value', 'label', true);
-
-            // Fetch eligible employees - this might be the only necessary call
             try {
-                const empResponse = await this.apiCall(`/employees?status=active`);
-                 const empChoices = empResponse.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
+                // Correctly fetch ONLY eligible employees for this specific department
+                const empResponse = await this.apiCall(`${this.config.API_URL}/${data.id}/eligible-viewer-employees`);
+                const empChoices = empResponse.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
                 this.choicesInstances.viewerEmployees.setChoices(empChoices, 'value', 'label', true);
-                 // Set values from data attribute
+
+                // Set current employee permissions from data attribute
                 const viewerEmployeeIds = data.viewerEmployeeIds ? data.viewerEmployeeIds.split(',') : [];
                 this.choicesInstances.viewerEmployees.setValue(viewerEmployeeIds);
 
-                // Assuming view permissions need to be fetched
+                // Fetch current department view permissions
                 const permResponse = await this.apiCall(`${this.config.API_URL}/${data.id}/view-permissions`);
                 const viewerDepartmentIds = permResponse.data.map(id => id.toString());
                 this.choicesInstances.viewerDepartments.setValue(viewerDepartmentIds);
@@ -125,23 +131,14 @@ class DepartmentAdminPage extends BasePage {
         } else { // Adding
             this.elements.modalTitle.textContent = '새 부서 추가';
             this.elements.deptIdInput.value = '';
-            try {
-                 const [empResponse, deptResponse] = await Promise.all([
-                    this.apiCall('/employees?status=active'),
-                    this.apiCall(`${this.config.API_URL}?type=department`)
-                ]);
 
-                const empChoices = empResponse.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
-                this.choicesInstances.viewerEmployees.setChoices(empChoices, 'value', 'label', true);
-                this.choicesInstances.viewerEmployees.setValue([]);
+            // Use pre-loaded employees for the 'Add New' modal
+            const empChoices = this.state.employees.map(emp => ({ value: emp.id.toString(), label: emp.name }));
+            this.choicesInstances.viewerEmployees.setChoices(empChoices, 'value', 'label', true);
 
-                const deptChoices = deptResponse.data.map(dept => ({ value: dept.id.toString(), label: dept.name }));
-                this.choicesInstances.viewerDepartments.setChoices(deptChoices, 'value', 'label', true);
-                this.choicesInstances.viewerDepartments.setValue([]);
-            } catch (error) {
-                console.error('Failed to load select options for new department:', error);
-                Toast.error('권한 목록을 불러오는데 실패했습니다.');
-            }
+            // Reset selections for new department
+            this.choicesInstances.viewerEmployees.setValue([]);
+            this.choicesInstances.viewerDepartments.setValue([]);
         }
         this.state.deptModal.show();
     }
