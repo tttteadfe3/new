@@ -5,6 +5,7 @@ class DepartmentAdminPage extends BasePage {
         });
         this.elements = {};
         this.choicesInstances = {};
+        this.initializeApp(); // Auto-initialize
     }
 
     initializeApp() {
@@ -349,11 +350,10 @@ class PositionAdminPage extends BasePage {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('departments-list-container')) {
-        new DepartmentAdminPage();
-    }
-    if (document.getElementById('positions-table')) {
-        new PositionAdminPage();
-    }
-});
+// Initialize pages
+if (document.getElementById('departments-list-container')) {
+    new DepartmentAdminPage();
+}
+if (document.getElementById('positions-table')) {
+    new PositionAdminPage();
+}
