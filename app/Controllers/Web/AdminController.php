@@ -49,10 +49,8 @@ class AdminController extends BaseController
         View::getInstance()->addJs('https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js');
 
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/organization-admin.js');
-        
-        $positions = $this->positionService->getAllPositions();
 
-        echo $this->render('pages/admin/organization', ['positions' => $positions], 'layouts/app');
+        echo $this->render('pages/admin/organization', [], 'layouts/app');
     }
 
     /**
