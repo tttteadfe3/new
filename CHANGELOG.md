@@ -7,9 +7,11 @@
 ## [1.0.5 - 2025-10-26]
 
 ### ♻️ 리팩토링 (Refactoring)
-- **`waste.manage_admin` 권한 리팩토링**:
-  - **변경 이유**: 권한의 역할을 명확히 하고 단일 책임을 갖도록 하기 위함.
-  - **변경 내용**: 기존의 포괄적인 `waste.manage_admin` 권한을 `waste.manage_online`으로 대체. 이 새로운 권한은 인터넷 배출 신고 관리와 관련된 모든 관리자급 기능을 제어.
+- **`waste.manage_admin` 권한 분리 및 이름 변경**:
+  - **변경 이유**: 단일 책임 원칙에 따라, 하나의 권한이 너무 많은 책임을 갖는 것을 방지하고 역할 분리를 명확히 하기 위함.
+  - **변경 내용**: 기존의 `waste.manage_admin` 권한을 다음과 같이 두 개의 구체적인 권한으로 분리하고 최종적으로 이름을 확정:
+    - `waste.process`: 현장 등록 및 수거 처리 관련 기능(개별 처리)을 제어.
+    - `waste.manage`: 인터넷 배출 신고 관리 기능(조회, 수정, 삭제, 일괄 등록)을 제어.
   - **영향 범위**: `database/seeds/04_permissions.sql`, `database/seeds/09_menus.sql`, `routes/web.php`, `routes/api.php`
   - **함께 수정된 파일**: 상기 영향 범위와 동일.
 

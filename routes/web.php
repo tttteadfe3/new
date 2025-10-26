@@ -53,7 +53,7 @@ $router->get('/littering/edit', [LitteringController::class, 'edit'])->name('lit
 
 // --- 폐기물 수거 ---
 $router->get('/waste/index', [WasteCollectionController::class, 'index'])->name('waste.index')->middleware('auth')->middleware('permission', 'waste.view');
-$router->get('/waste/manage', [WasteCollectionController::class, 'manage'])->name('waste.manage')->middleware('auth')->middleware('permission', 'waste.manage_online');
+$router->get('/waste/manage', [WasteCollectionController::class, 'manage'])->name('waste.manage')->middleware('auth')->middleware('permission', 'waste.manage');
 
 // --- 관리자 ---
 $router->get('/admin/organization', [AdminController::class, 'organization'])->name('admin.organization')->middleware('auth')->middleware('permission', 'organization.manage');
