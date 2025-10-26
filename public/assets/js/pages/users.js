@@ -54,7 +54,7 @@ class UsersAdminPage extends BasePage {
         this.elements.userTableBody.addEventListener('click', (e) => this.handleTableClick(e));
         this.elements.userForm.addEventListener('submit', (e) => this.handleUserFormSubmit(e));
         this.elements.mappingForm.addEventListener('submit', (e) => this.handleMappingFormSubmit(e));
-        this.elements.departmentFilter.addEventListener('change', () => this.loadUnlinkedEmployees());
+        this.elements.departmentFilter.addEventListener('change', (e) => this.loadUnlinkedEmployees(e.target.value));
     }
 
     loadInitialData() {
