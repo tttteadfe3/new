@@ -7,12 +7,14 @@
 ## [1.0.3 - 2025-10-26]
 
 ### 🐛 버그 수정 (Bug Fixes)
-- **사용자 관리의 직원 연결 필터 기능 수정**:
+- **사용자 관리의 직원 연결 필터 기능 수정 (Fullstack)**:
   - **문제**: `/admin/users` 페이지에서 직원을 연결할 때 부서 필터가 작동하지 않아 다른 부서의 직원들이 목록에 포함되는 문제.
-  - **원인**: `users.js`에서 부서 필터의 `change` 이벤트가 발생했을 때, `loadUnlinkedEmployees()` 함수를 호출하면서 선택된 부서 ID를 전달하지 않았음.
-  - **수정**: `departmentFilter`의 이벤트 리스너에서 `e.target.value`를 `loadUnlinkedEmployees()` 함수로 전달하도록 수정하여, API 요청 시 `department_id` 쿼리 파라미터가 포함되도록 함.
-  - **영향 범위**: `public/assets/js/pages/users.js`
-  - **함께 수정된 파일**: 없음
+  - **원인**: 1) 프론트엔드 `users.js`에서 API 요청 시 `department_id`를 보내지 않았고, 2) 백엔드 API에서 해당 파라미터를 처리하는 로직이 누락되었음.
+  - **수정**:
+    - **Frontend**: `users.js`의 `departmentFilter` 이벤트 리스너가 선택된 부서 ID를 `loadUnlinkedEmployees()` 함수로 전달하도록 수정.
+    - **Backend**: `EmployeeApiController`, `EmployeeService`, `EmployeeRepository`를 모두 수정하여 `department_id` 파라미터를 받아 SQL 쿼리에서 필터링하도록 로직 추가.
+  - **영향 범위**: `public/assets/js/pages/users.js`, `app/Controllers/Api/EmployeeApiController.php`, `app/Services/EmployeeService.php`, `app/Repositories/EmployeeRepository.php`
+  - **함께 수정된 파일**: 상기 영향 범위와 동일
 
 ## [1.0.2 - 2025-10-26]
 

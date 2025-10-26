@@ -43,9 +43,9 @@ class EmployeeService
      * 사용자 계정에 연결되지 않은 직원을 가져옵니다.
      * @return array
      */
-    public function getUnlinkedEmployees(): array
+    public function getUnlinkedEmployees(?int $departmentId = null): array
     {
-        return $this->employeeRepository->findUnlinked();
+        return $this->employeeRepository->findUnlinked($departmentId);
     }
 
     /**
