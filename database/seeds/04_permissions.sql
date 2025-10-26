@@ -29,8 +29,10 @@ INSERT INTO `sys_permissions` (`id`, `key`, `description`) VALUES
 (37, 'littering.force_delete', '부적정배출 정보 영구 삭제'),
 
 -- Waste Collection Management (2)
+-- Waste Collection Management (3)
+-- Waste Collection Management (2)
 (40, 'waste.view', '대형폐기물 수거 현황 조회'),
-(41, 'waste.manage_admin', '대형폐기물 관리(처리, 수정, 일괄등록 등)'),
+(41, 'waste.manage_online', '대형폐기물 인터넷배출 관리'),
 
 -- User Management (3)
 (50, 'user.view', '사용자 계정 목록 조회'),
@@ -44,7 +46,6 @@ INSERT INTO `sys_permissions` (`id`, `key`, `description`) VALUES
 (63, 'role.delete', '역할 삭제'),
 (64, 'role.assign_permissions', '역할에 권한 매핑'),
 
--- Organization Management (1)
 -- Organization Management (3)
 (70, 'organization.manage', '부서 및 직급 관리'),
 (71, 'organization.view', '조직도 조회'),
