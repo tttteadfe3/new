@@ -29,9 +29,9 @@ INSERT INTO `sys_permissions` (`id`, `key`, `description`) VALUES
 
 -- Waste Collection Management (3)
 (40, 'waste.view', '대형폐기물 수거 현황 조회'),
-(41, 'waste.process_field', '대형폐기물 현장등록 수거처리'),
-(42, 'waste.manage_online', '대형폐기물 인터넷배출 관리'),
-  
+(41, 'waste.process', '대형폐기물 수거 처리'),
+(42, 'waste.manage', '대형폐기물 인터넷배출 관리'),
+
 -- User Management (3)
 (50, 'user.view', '사용자 계정 목록 조회'),
 (51, 'user.update', '사용자 상태 및 역할 변경'),
