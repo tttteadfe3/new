@@ -12,14 +12,25 @@ class PositionService {
         $this->positionRepository = $positionRepository;
     }
 
+    /**
+     * @return array
+     */
     public function getAllPositions() {
         return $this->positionRepository->getAll();
     }
 
+    /**
+     * @param int $id
+     * @return mixed
+     */
     public function getPositionById(int $id) {
         return $this->positionRepository->findById($id);
     }
 
+    /**
+     * @param array $data
+     * @return array
+     */
     public function createPosition(array $data): array {
         $errors = PositionValidator::validate($data);
         if (!empty($errors)) {
@@ -30,6 +41,11 @@ class PositionService {
         return ['id' => $positionId];
     }
 
+    /**
+     * @param int $id
+     * @param array $data
+     * @return array
+     */
     public function updatePosition(int $id, array $data): array {
         $errors = PositionValidator::validate($data);
         if (!empty($errors)) {
@@ -38,7 +54,7 @@ class PositionService {
 
         $position = $this->positionRepository->findById($id);
         if (!$position) {
-            return ['success' => false, 'message' => 'Position not found'];
+            return ['success' => false, 'message' => '직급을 찾을 수 없습니다'];
         }
 
         if ($position['name'] === $data['name'] && $position['level'] == $data['level']) {
@@ -49,6 +65,10 @@ class PositionService {
         return ['success' => $success];
     }
 
+    /**
+     * @param int $id
+     * @return bool
+     */
     public function deletePosition(int $id): bool {
         return $this->positionRepository->delete($id);
     }

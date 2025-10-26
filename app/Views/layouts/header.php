@@ -1,5 +1,5 @@
 <?php
-// User info is now passed from the controller via ViewDataService as the $user variable.
+// 사용자 정보는 이제 ViewDataService를 통해 컨트롤러에서 $user 변수로 전달됩니다.
 $currentUserNickname = $user['nickname'] ?? '사용자';
 $profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/images/users/avatar.png';
 ?>
@@ -42,8 +42,8 @@ $profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/imag
                     </button>
                     <div class="dropdown-menu dropdown-menu-end">
                         <!-- item-->
-                        <a class="dropdown-item" href="<?= BASE_URL ?>/profile"><i class="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Profile</span></a>
-                        <a class="dropdown-item" href="<?= BASE_URL ?>/logout"><i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i> <span class="align-middle" data-key="t-logout">Logout</span></a>
+                        <a class="dropdown-item" href="<?= BASE_URL ?>/profile"><i class="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i> <span class="align-middle">프로필</span></a>
+                        <a class="dropdown-item" href="<?= BASE_URL ?>/logout"><i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i> <span class="align-middle" data-key="t-logout">로그아웃</span></a>
                     </div>
                 </div>
             </div>

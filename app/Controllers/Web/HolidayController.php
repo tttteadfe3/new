@@ -26,16 +26,15 @@ class HolidayController extends BaseController
     }
 
     /**
-     * Display the holiday administration page.
+     * 휴일 관리 페이지를 표시합니다.
      */
     public function index(): void
     {
-        // Set page-specific CSS and JS
+        // 페이지별 CSS 및 JS 설정
         \App\Core\View::getInstance()->addCss(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.css');
         \App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/flatpickr/flatpickr.min.js');
 
-        // Load BaseApp and dependencies
-
+        // BaseApp 및 종속성 로드
         \App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/holiday-admin.js');
 
         echo $this->render('pages/holidays/index', [], 'layouts/app');

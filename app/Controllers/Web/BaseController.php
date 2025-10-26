@@ -28,32 +28,32 @@ abstract class BaseController
     }
 
     /**
-     * Render a view with data.
+     * 데이터를 사용하여 뷰를 렌더링합니다.
      * 
-     * @param string $view The view file to render
-     * @param array $data Data to pass to the view
-     * @param string|null $layout The layout to use for rendering
-     * @return string The rendered view content
+     * @param string $view 렌더링할 뷰 파일
+     * @param array $data 뷰에 전달할 데이터
+     * @param string|null $layout 렌더링에 사용할 레이아웃
+     * @return string 렌더링된 뷰 콘텐츠
      */
     protected function render(string $view, array $data = [], ?string $layout = null): string
     {
-        // Prepare common data for all views that use a layout
+        // 레이아웃을 사용하는 모든 뷰에 대한 공통 데이터 준비
         $commonData = [];
         if ($layout !== null && $this->isAuthenticated()) {
-            // Use the instance of the dedicated service.
+            // 전용 서비스의 인스턴스를 사용합니다.
             $commonData = $this->viewDataService->getCommonData();
         }
 
-        // Merge controller-specific data with common data
+        // 컨트롤러별 데이터를 공통 데이터와 병합
         $viewData = array_merge($data, $commonData);
 
         return \App\Core\View::getInstance()->render($view, $viewData, $layout);
     }
 
     /**
-     * Redirect to a URL.
+     * URL로 리디렉션합니다.
      * 
-     * @param string $url The URL to redirect to
+     * @param string $url 리디렉션할 URL
      */
     protected function redirect(string $url): void
     {
@@ -62,9 +62,9 @@ abstract class BaseController
     }
 
     /**
-     * Get the current authenticated user.
+     * 현재 인증된 사용자를 가져옵니다.
      * 
-     * @return array|null The user data or null if not authenticated
+     * @return array|null 인증되지 않은 경우 사용자 데이터 또는 null
      */
     protected function user(): ?array
     {
@@ -72,9 +72,9 @@ abstract class BaseController
     }
 
     /**
-     * Check if the current user is authenticated.
+     * 현재 사용자가 인증되었는지 확인합니다.
      * 
-     * @return bool True if authenticated, false otherwise
+     * @return bool 인증된 경우 true, 그렇지 않은 경우 false
      */
     protected function isAuthenticated(): bool
     {

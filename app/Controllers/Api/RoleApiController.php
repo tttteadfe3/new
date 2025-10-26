@@ -36,7 +36,7 @@ class RoleApiController extends BaseApiController
     }
 
     /**
-     * Get all roles with user count.
+     * 사용자 수를 포함한 모든 역할을 가져옵니다.
      * GET /api/roles
      */
     public function index(): void
@@ -50,7 +50,7 @@ class RoleApiController extends BaseApiController
     }
 
     /**
-     * Get role details including permissions and assigned users.
+     * 권한 및 할당된 사용자를 포함한 역할 세부 정보를 가져옵니다.
      * GET /api/roles/{id}
      */
     public function show(int $id): void
@@ -58,7 +58,7 @@ class RoleApiController extends BaseApiController
         try {
             $role = $this->roleRepository->findById($id);
             if (!$role) {
-                $this->apiNotFound('Role not found');
+                $this->apiNotFound('역할을 찾을 수 없습니다');
             }
 
             $allPermissions = $this->roleRepository->getAllPermissions();
@@ -77,7 +77,7 @@ class RoleApiController extends BaseApiController
     }
 
     /**
-     * Create a new role.
+     * 새 역할을 만듭니다.
      * POST /api/roles
      */
     public function store(): void
@@ -100,7 +100,7 @@ class RoleApiController extends BaseApiController
     }
 
     /**
-     * Update an existing role.
+     * 기존 역할을 업데이트합니다.
      * PUT /api/roles/{id}
      */
     public function update(int $id): void
@@ -123,7 +123,7 @@ class RoleApiController extends BaseApiController
     }
 
     /**
-     * Delete a role.
+     * 역할을 삭제합니다.
      * DELETE /api/roles/{id}
      */
     public function destroy(int $id): void
@@ -140,7 +140,7 @@ class RoleApiController extends BaseApiController
     }
 
     /**
-     * Update permissions for a role.
+     * 역할에 대한 권한을 업데이트합니다.
      * PUT /api/roles/{id}/permissions
      */
     public function updatePermissions(int $id): void
@@ -151,7 +151,7 @@ class RoleApiController extends BaseApiController
 
             $this->roleRepository->updateRolePermissions($id, $permissionIds);
 
-            // Invalidate permissions cache
+            // 권한 캐시 무효화
             $timestamp_file = ROOT_PATH . '/storage/permissions_last_updated.txt';
             file_put_contents($timestamp_file, time());
 

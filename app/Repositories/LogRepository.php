@@ -11,13 +11,17 @@ class LogRepository {
         $this->db = $db;
     }
 
+    /**
+     * @param array $logData
+     * @return bool
+     */
     public function insert(array $logData): bool {
-        // Ensure all keys are present to avoid SQL errors
+        // SQL 오류를 피하기 위해 모든 키가 있는지 확인합니다.
         $defaults = [
             'user_id' => null,
             'user_name' => null,
             'action' => null,
-            'details' => '', // Default to empty string if not provided
+            'details' => '', // 제공되지 않은 경우 기본값은 빈 문자열
             'ip_address' => null
         ];
         $params = array_merge($defaults, $logData);
@@ -27,6 +31,11 @@ class LogRepository {
         return $this->db->execute($sql, $params) > 0;
     }
 
+    /**
+     * @param array $filters
+     * @param int $limit
+     * @return array
+     */
     public function search(array $filters = [], int $limit = 50): array {
         $sql = "SELECT * FROM sys_activity_logs";
         $whereClauses = [];
@@ -58,6 +67,9 @@ class LogRepository {
         return $this->db->query($sql, $params);
     }
 
+    /**
+     * @return bool
+     */
     public function truncate(): bool {
         $sql = "TRUNCATE TABLE sys_activity_logs";
         return $this->db->execute($sql) > 0;

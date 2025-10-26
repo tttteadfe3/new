@@ -10,6 +10,10 @@ class WasteCollectionRepository {
         $this->db = $db;
     }
 
+    /**
+     * @param array $data
+     * @return int|null
+     */
     public function createCollection(array $data): ?int {
         $query = 'INSERT INTO `waste_collections`
                     (`latitude`, `longitude`, `address`, `photo_path`, `issue_date`,
@@ -36,16 +40,29 @@ class WasteCollectionRepository {
         return $newId > 0 ? $newId : null;
     }
 
+    /**
+     * @param int $collectionId
+     * @param string $itemName
+     * @param int $quantity
+     * @return bool
+     */
     public function createCollectionItem(int $collectionId, string $itemName, int $quantity): bool {
         $query = 'INSERT INTO `waste_collection_items` (`collection_id`, `item_name`, `quantity`) VALUES (?, ?, ?)';
         return $this->db->execute($query, [$collectionId, $itemName, $quantity]) > 0;
     }
 
+    /**
+     * @param int $collectionId
+     * @return bool
+     */
     public function deleteItemsByCollectionId(int $collectionId): bool {
         $query = "DELETE FROM `waste_collection_items` WHERE `collection_id` = ?";
         return $this->db->execute($query, [$collectionId]) !== false;
     }
 
+    /**
+     * @return array
+     */
     public function findAllWithItems(): array {
         $query = "
             SELECT
@@ -62,6 +79,10 @@ class WasteCollectionRepository {
         return $this->db->fetchAll($query);
     }
 
+    /**
+     * @param array $filters
+     * @return array
+     */
     public function findAllForAdmin(array $filters): array {
         $baseQuery = "
             SELECT
@@ -103,6 +124,10 @@ class WasteCollectionRepository {
         return $this->db->fetchAll($baseQuery, $params);
     }
 
+    /**
+     * @param int $id
+     * @return array|null
+     */
     public function findById(int $id): ?array {
         $query = "
             SELECT
@@ -118,26 +143,49 @@ class WasteCollectionRepository {
         return $this->db->fetchOne($query, [$id]);
     }
 
+    /**
+     * @param string $address
+     * @param int $employeeId
+     * @return bool
+     */
     public function processByAddress(string $address, int $employeeId): bool {
         $query = "UPDATE `waste_collections` SET `status` = 'processed', `completed_at` = NOW(), `completed_by` = ? WHERE `address` = ? AND `status` = 'unprocessed'";
         return $this->db->execute($query, [$employeeId, $address]) > 0;
     }
 
+    /**
+     * @param int $id
+     * @param int $employeeId
+     * @return bool
+     */
     public function processById(int $id, int $employeeId): bool {
         $query = "UPDATE `waste_collections` SET `status` = 'processed', `completed_at` = NOW(), `completed_by` = ? WHERE `id` = ? AND `status` = 'unprocessed'";
         return $this->db->execute($query, [$employeeId, $id]) > 0;
     }
 
+    /**
+     * @param int $id
+     * @param string $memo
+     * @param int $employeeId
+     * @return bool
+     */
     public function updateAdminMemo(int $id, string $memo, int $employeeId): bool {
         $query = "UPDATE `waste_collections` SET `admin_memo` = ?, `completed_at` = NOW(), `completed_by` = ? WHERE `id` = ?";
         return $this->db->execute($query, [$memo, $employeeId, $id]) > 0;
     }
 
+    /**
+     * @return bool
+     */
     public function clearOnlineSubmissions(): bool {
         $query = "DELETE FROM `waste_collections` WHERE `type` = 'online'";
         return $this->db->execute($query) !== false;
     }
 
+    /**
+     * @param string $dischargeNumber
+     * @return array|null
+     */
     public function findByDischargeNumber(string $dischargeNumber): ?array {
         $query = "SELECT * FROM `waste_collections` WHERE `discharge_number` = ? LIMIT 1";
         $result = $this->db->fetchOne($query, [$dischargeNumber]);

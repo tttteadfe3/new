@@ -24,10 +24,10 @@ class PermissionMiddleware extends BaseMiddleware
                 $this->jsonResponse(['error' => 'Forbidden'], 403);
             } else {
                 http_response_code(403);
-                // Render the 403 error page within the main application layout
-                // to provide a consistent user experience.
-                // To ensure the layout renders correctly with menus,
-                // we need to provide the common view data.
+                // 일관된 사용자 경험을 제공하기 위해
+                // 기본 애플리케이션 레이아웃 내에서 403 오류 페이지를 렌더링합니다.
+                // 메뉴가 있는 레이아웃이 올바르게 렌더링되도록 하려면
+                // 공통 뷰 데이터를 제공해야 합니다.
                 $commonData = $this->viewDataService->getCommonData();
                 $viewData = array_merge($commonData, [
                     'pageTitle' => '접근 권한 없음',

@@ -52,7 +52,7 @@ class Littering extends BaseModel
     ];
 
     /**
-     * Check if this report is pending approval.
+     * 이 보고서가 승인 대기 중인지 확인합니다.
      */
     public function isPending(): bool
     {
@@ -60,7 +60,7 @@ class Littering extends BaseModel
     }
 
     /**
-     * Check if this report is approved.
+     * 이 보고서가 승인되었는지 확인합니다.
      */
     public function isApproved(): bool
     {
@@ -68,7 +68,7 @@ class Littering extends BaseModel
     }
 
     /**
-     * Check if this report is rejected.
+     * 이 보고서가 거부되었는지 확인합니다.
      */
     public function isRejected(): bool
     {
@@ -76,7 +76,7 @@ class Littering extends BaseModel
     }
 
     /**
-     * Check if the issue has been corrected.
+     * 문제가 해결되었는지 확인합니다.
      */
     public function isCorrected(): bool
     {
@@ -84,7 +84,7 @@ class Littering extends BaseModel
     }
 
     /**
-     * Check if the issue is not corrected.
+     * 문제가 해결되지 않았는지 확인합니다.
      */
     public function isNotCorrected(): bool
     {
@@ -92,7 +92,7 @@ class Littering extends BaseModel
     }
 
     /**
-     * Check if the waste has disappeared.
+     * 쓰레기가 사라졌는지 확인합니다.
      */
     public function hasDisappeared(): bool
     {
@@ -100,7 +100,7 @@ class Littering extends BaseModel
     }
 
     /**
-     * Check if the report has been processed.
+     * 보고서가 처리되었는지 확인합니다.
      */
     public function isProcessed(): bool
     {
@@ -108,7 +108,7 @@ class Littering extends BaseModel
     }
 
     /**
-     * Get the location coordinates.
+     * 위치 좌표를 가져옵니다.
      */
     public function getCoordinates(): array
     {
@@ -119,7 +119,7 @@ class Littering extends BaseModel
     }
 
     /**
-     * Get all waste types (primary and secondary).
+     * 모든 폐기물 유형(주 및 보조)을 가져옵니다.
      */
     public function getWasteTypes(): array
     {
@@ -134,7 +134,7 @@ class Littering extends BaseModel
     }
 
     /**
-     * Get all photo paths.
+     * 모든 사진 경로를 가져옵니다.
      */
     public function getPhotos(): array
     {
@@ -156,7 +156,7 @@ class Littering extends BaseModel
     }
 
     /**
-     * Get correction status description.
+     * 수정 상태 설명을 가져옵니다.
      */
     public function getCorrectionStatusDescription(): string
     {
@@ -173,27 +173,27 @@ class Littering extends BaseModel
     }
 
     /**
-     * Validate littering report data with business rules.
+     * 비즈니스 규칙으로 무단투기 보고서 데이터를 확인합니다.
      */
     public function validate(): bool
     {
         $isValid = parent::validate();
 
-        // Business rule: latitude should be within valid range
+        // 비즈니스 규칙: 위도는 유효한 범위 내에 있어야 합니다.
         $latitude = $this->getAttribute('latitude');
         if ($latitude !== null && ($latitude < -90 || $latitude > 90)) {
             $this->errors['latitude'] = '위도는 -90도에서 90도 사이여야 합니다.';
             $isValid = false;
         }
 
-        // Business rule: longitude should be within valid range
+        // 비즈니스 규칙: 경도는 유효한 범위 내에 있어야 합니다.
         $longitude = $this->getAttribute('longitude');
         if ($longitude !== null && ($longitude < -180 || $longitude > 180)) {
             $this->errors['longitude'] = '경도는 -180도에서 180도 사이여야 합니다.';
             $isValid = false;
         }
 
-        // Business rule: corrected status can only be set if status is approved
+        // 비즈니스 규칙: 수정된 상태는 상태가 승인된 경우에만 설정할 수 있습니다.
         $corrected = $this->getAttribute('corrected');
         $status = $this->getAttribute('status');
         if ($corrected && $status !== 'approved') {
@@ -201,7 +201,7 @@ class Littering extends BaseModel
             $isValid = false;
         }
 
-        // Business rule: process_photo should be provided if corrected is set
+        // 비즈니스 규칙: 수정된 경우 처리 사진을 제공해야 합니다.
         if ($corrected && empty($this->getAttribute('proc_photo_path'))) {
             $this->errors['proc_photo_path'] = '개선 여부가 설정된 경우 처리 사진이 필요합니다.';
             $isValid = false;
@@ -211,14 +211,14 @@ class Littering extends BaseModel
     }
 
     /**
-     * Calculate distance from another point in kilometers.
+     * 다른 지점과의 거리를 킬로미터 단위로 계산합니다.
      */
     public function distanceFrom(float $latitude, float $longitude): float
     {
         $myLat = (float) $this->getAttribute('latitude');
         $myLng = (float) $this->getAttribute('longitude');
 
-        $earthRadius = 6371; // Earth's radius in kilometers
+        $earthRadius = 6371; // 지구의 반지름(킬로미터)
 
         $latDelta = deg2rad($latitude - $myLat);
         $lngDelta = deg2rad($longitude - $myLng);

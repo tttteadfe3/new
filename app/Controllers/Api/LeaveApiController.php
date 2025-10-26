@@ -40,8 +40,8 @@ class LeaveApiController extends BaseApiController
     }
 
     /**
-     * Get current user's leave status for a specific year.
-     * Corresponds to GET /api/leaves
+     * 특정 연도의 현재 사용자 휴가 상태를 가져옵니다.
+     * GET /api/leaves에 해당합니다.
      */
     public function index(): void
     {
@@ -68,8 +68,8 @@ class LeaveApiController extends BaseApiController
     }
 
     /**
-     * Submit a new leave request.
-     * Corresponds to POST /api/leaves
+     * 새 휴가 요청을 제출합니다.
+     * POST /api/leaves에 해당합니다.
      */
     public function store(): void
     {
@@ -100,8 +100,8 @@ class LeaveApiController extends BaseApiController
     }
 
     /**
-     * Cancel a leave request.
-     * Corresponds to POST /api/leaves/{id}/cancel
+     * 휴가 요청을 취소합니다.
+     * POST /api/leaves/{id}/cancel에 해당합니다.
      */
     public function cancel(int $id): void
     {
@@ -129,8 +129,8 @@ class LeaveApiController extends BaseApiController
     }
 
     /**
-     * Calculate leave days for a given period.
-     * Corresponds to POST /api/leaves/calculate-days
+     * 주어진 기간 동안의 휴가 일수를 계산합니다.
+     * POST /api/leaves/calculate-days에 해당합니다.
      */
     public function calculateDays(): void
     {

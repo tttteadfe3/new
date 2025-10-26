@@ -36,8 +36,8 @@ class ProfileApiController extends BaseApiController
     }
 
     /**
-     * Get current user's profile data.
-     * Corresponds to GET /api/profile
+     * 현재 사용자의 프로필 데이터를 가져옵니다.
+     * GET /api/profile에 해당합니다.
      */
     public function index(): void
     {
@@ -52,8 +52,8 @@ class ProfileApiController extends BaseApiController
     }
 
     /**
-     * Request an update to the user's profile.
-     * Corresponds to PUT /api/profile
+     * 사용자 프로필 업데이트를 요청합니다.
+     * PUT /api/profile에 해당합니다.
      */
     public function update(): void
     {

@@ -44,7 +44,7 @@ class AdminController extends BaseController
      */
     public function organization(): void
     {
-        // Add Choices.js CSS and JS
+        // Choices.js CSS 및 JS 추가
         View::getInstance()->addCss('https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css');
         View::getInstance()->addJs('https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js');
 

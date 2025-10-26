@@ -16,12 +16,12 @@ abstract class BaseApiController extends BaseController
     protected JsonResponse $jsonResponse;
 
     public function __construct(
-        // Dependencies for parent BaseController
+        // 부모 BaseController에 대한 종속성
         Request $request,
         AuthService $authService,
         ViewDataService $viewDataService,
         ActivityLogger $activityLogger,
-        // Dependencies for BaseApiController
+        // BaseApiController에 대한 종속성
         EmployeeRepository $employeeRepository,
         JsonResponse $jsonResponse
     ) {
@@ -30,17 +30,17 @@ abstract class BaseApiController extends BaseController
         $this->employeeRepository = $employeeRepository;
         $this->jsonResponse = $jsonResponse;
         
-        // Ensure all API requests are AJAX requests
+        // 모든 API 요청이 AJAX 요청인지 확인합니다
         if (!$this->isAjaxRequest()) {
-            $this->apiError('API endpoints only accept AJAX requests', 'INVALID_REQUEST', 400);
+            $this->apiError('API 엔드포인트는 AJAX 요청만 허용합니다', 'INVALID_REQUEST', 400);
         }
         
-        // Set JSON content type for all API responses
+        // 모든 API 응답에 대해 JSON 콘텐츠 유형을 설정합니다
         header('Content-Type: application/json; charset=utf-8');
     }
 
     /**
-     * Check if the request is an AJAX request
+     * 요청이 AJAX 요청인지 확인합니다
      */
     protected function isAjaxRequest(): bool
     {
@@ -49,7 +49,7 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
-     * Send a successful API response
+     * 성공적인 API 응답을 보냅니다
      */
     protected function apiSuccess($data = null, string $message = 'Success'): void
     {
@@ -57,7 +57,7 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
-     * Send an error API response
+     * 오류 API 응답을 보냅니다
      */
     protected function apiError(string $message, string $errorCode = null, int $httpStatus = 400): void
     {
@@ -65,7 +65,7 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
-     * Send a not found API response
+     * 찾을 수 없음 API 응답을 보냅니다
      */
     protected function apiNotFound(string $message = 'Resource not found'): void
     {
@@ -73,7 +73,7 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
-     * Send a forbidden API response
+     * 금지된 API 응답을 보냅니다
      */
     protected function apiForbidden(string $message = 'Access forbidden'): void
     {
@@ -81,7 +81,7 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
-     * Send a bad request API response
+     * 잘못된 요청 API 응답을 보냅니다
      */
     protected function apiBadRequest(string $message = 'Bad request'): void
     {
@@ -89,7 +89,7 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
-     * Get JSON input data from request body
+     * 요청 본문에서 JSON 입력 데이터를 가져옵니다
      */
     protected function getJsonInput(): array
     {
@@ -98,7 +98,7 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
-     * Get action parameter from request
+     * 요청에서 작업 매개변수를 가져옵니다
      */
     protected function getAction(): string
     {
@@ -106,13 +106,13 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
-     * Validate required fields in input data
+     * 입력 데이터에서 필수 필드를 확인합니다
      */
     protected function validateRequired(array $data, array $requiredFields): bool
     {
         foreach ($requiredFields as $field) {
             if (!isset($data[$field]) || empty($data[$field])) {
-                $this->apiBadRequest("Required field '{$field}' is missing or empty");
+                $this->apiBadRequest("필수 필드 '{$field}'가 누락되었거나 비어 있습니다");
                 return false;
             }
         }
@@ -120,7 +120,7 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
-     * Get current user's employee ID
+     * 현재 사용자의 직원 ID를 가져옵니다
      */
     protected function getCurrentEmployeeId(): ?int
     {
@@ -129,12 +129,12 @@ abstract class BaseApiController extends BaseController
             return null;
         }
 
-        // Try to get employee_id from user data
+        // 사용자 데이터에서 직원 ID를 가져오려고 시도합니다
         if (isset($user['employee_id'])) {
             return (int)$user['employee_id'];
         }
 
-        // If not available, try to find through EmployeeRepository
+        // 사용할 수 없는 경우 EmployeeRepository를 통해 찾으려고 시도합니다
         try {
             $employee = $this->employeeRepository->findByUserId($user['id']);
             return $employee ? (int)$employee['id'] : null;
@@ -144,7 +144,7 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
-     * Handle common API exceptions
+     * 일반적인 API 예외를 처리합니다
      */
     protected function handleException(\Exception $e): void
     {

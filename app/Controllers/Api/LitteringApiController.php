@@ -36,8 +36,8 @@ class LitteringApiController extends BaseApiController
     }
 
     /**
-     * Get littering reports based on status.
-     * Corresponds to GET /api/littering
+     * 상태에 따라 무단투기 보고서를 가져옵니다.
+     * GET /api/littering에 해당합니다.
      */
     public function index(): void
     {
@@ -49,7 +49,7 @@ class LitteringApiController extends BaseApiController
             } elseif ($status === 'completed') {
                 $data = $this->litteringService->getCompletedLittering();
             } else {
-                $this->apiError('Invalid status value.', 'INVALID_INPUT', 400);
+                $this->apiError('잘못된 상태 값입니다.', 'INVALID_INPUT', 400);
                 return;
             }
             $this->apiSuccess($data);
@@ -59,17 +59,17 @@ class LitteringApiController extends BaseApiController
     }
 
     /**
-     * Register a new littering report.
-     * Corresponds to POST /api/littering
+     * 새 무단투기 보고서를 등록합니다.
+     * POST /api/littering에 해당합니다.
      */
     public function store(): void
     {
         $employeeId = $this->user()['employee_id'];
         
         try {
-            // Note: File uploads are handled via $_FILES, not JSON body.
+            // 참고: 파일 업로드는 JSON 본문이 아닌 $_FILES를 통해 처리됩니다.
             $result = $this->litteringService->registerLittering(
-                $this->request->all(), // POST data is appropriate here
+                $this->request->all(), // POST 데이터가 여기에 적합합니다.
                 $_FILES,
                 $employeeId
             );
@@ -80,18 +80,18 @@ class LitteringApiController extends BaseApiController
     }
 
     /**
-     * Process a littering report (collection).
-     * Corresponds to POST /api/littering/{id}/process
+     * 무단투기 보고서(수거)를 처리합니다.
+     * POST /api/littering/{id}/process에 해당합니다.
      */
     public function process(int $id): void
     {
         $employeeId = $this->user()['employee_id'];
         
         try {
-            $data = $this->request->all(); // POST data is appropriate here
-            $data['id'] = $id; // Ensure the ID from URL is used
+            $data = $this->request->all(); // POST 데이터가 여기에 적합합니다.
+            $data['id'] = $id; // URL의 ID가 사용되도록 합니다.
 
-            // Note: Accessing $_FILES for file uploads.
+            // 참고: 파일 업로드를 위해 $_FILES에 액세스합니다.
             $result = $this->litteringService->processLittering($data, $_FILES, $employeeId);
             $this->apiSuccess($result, '처리 상태가 성공적으로 업데이트되었습니다.');
         } catch (Exception $e) {

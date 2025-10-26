@@ -11,7 +11,7 @@ class StatusController extends BaseController
     {
         $user = $this->user();
 
-        // If the user is not pending, redirect to dashboard.
+        // 사용자가 보류 중이 아니면 대시보드로 리디렉션합니다.
         if ($user['status'] !== 'pending') {
             $this->redirect('/dashboard');
         }

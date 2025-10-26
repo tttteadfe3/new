@@ -21,6 +21,9 @@ class OrganizationService
         $this->employeeRepository = $employeeRepository;
     }
 
+    /**
+     * @return array
+     */
     public function getOrganizationChartData(): array
     {
         $flatData = $this->departmentRepository->findAllWithEmployees();
@@ -63,6 +66,9 @@ class OrganizationService
         return $tree;
     }
 
+    /**
+     * @return array
+     */
     public function getManagableDepartments(): array
     {
         $permittedDeptIds = $this->_getPermittedDepartmentIds();
@@ -96,6 +102,12 @@ class OrganizationService
         return array_values($visibleDepartments);
     }
 
+    /**
+     * @param int $deptId
+     * @param array $map
+     * @param array $visible
+     * @return void
+     */
     private function findSubtreeRecursive(int $deptId, array &$map, array &$visible)
     {
         if (!isset($map[$deptId]) || isset($visible[$deptId])) {
@@ -110,6 +122,12 @@ class OrganizationService
         }
     }
 
+    /**
+     * @param int $deptId
+     * @param array $map
+     * @param string $separator
+     * @return string
+     */
     private function getHierarchicalName(int $deptId, array &$map, string $separator = '->'): string
     {
         if (!isset($map[$deptId])) return '';
@@ -117,7 +135,7 @@ class OrganizationService
         $path = [];
         $current = $map[$deptId];
         $depth = 0;
-        $maxDepth = 10; // Prevent infinite loops
+        $maxDepth = 10; // 무한 루프 방지
 
         while ($current && $depth < $maxDepth) {
             array_unshift($path, $current['name']);
@@ -126,13 +144,16 @@ class OrganizationService
         }
 
         if ($depth >= $maxDepth) {
-            // Handle cases of deep nesting or circular references gracefully
+            // 깊은 중첩이나 순환 참조의 경우를 우아하게 처리
             array_unshift($path, '...');
         }
 
         return implode($separator, $path);
     }
 
+    /**
+     * @return array|null
+     */
     private function _getPermittedDepartmentIds(): ?array
     {
         $user = $this->authService->user();
@@ -162,6 +183,9 @@ class OrganizationService
         return array_unique($permittedDeptIds);
     }
 
+    /**
+     * @return array|null
+     */
     public function getVisibleDepartmentIdsForCurrentUser(): ?array
     {
         $permittedDeptIds = $this->_getPermittedDepartmentIds();
@@ -181,11 +205,19 @@ class OrganizationService
         return array_unique($allVisibleIds);
     }
 
+    /**
+     * @return array
+     */
     public function getAllDepartments(): array
     {
         return $this->departmentRepository->getAll();
     }
 
+    /**
+     * @param array $data
+     * @return string
+     * @throws \Exception
+     */
     public function createDepartment(array $data): string
     {
         $this->departmentRepository->beginTransaction();
@@ -219,6 +251,12 @@ class OrganizationService
         }
     }
 
+    /**
+     * @param int $id
+     * @param array $data
+     * @return bool
+     * @throws \Exception
+     */
     public function updateDepartment(int $id, array $data): bool
     {
         $this->departmentRepository->beginTransaction();
@@ -254,6 +292,12 @@ class OrganizationService
         }
     }
 
+    /**
+     * @param int|null $parentId
+     * @param int $currentId
+     * @return string
+     * @throws \Exception
+     */
     private function calculateDepartmentPath(?int $parentId, int $currentId): string
     {
         if ($parentId === null) {
@@ -261,11 +305,16 @@ class OrganizationService
         }
         $parent = $this->departmentRepository->findById($parentId);
         if (!$parent) {
-            throw new \Exception("Parent department with ID {$parentId} not found.");
+            throw new \Exception("ID가 {$parentId}인 상위 부서를 찾을 수 없습니다.");
         }
         return rtrim($parent->path ?? '', '/') . "/{$currentId}/";
     }
 
+    /**
+     * @param int $parentId
+     * @param string $parentPath
+     * @return void
+     */
     private function updateSubtreePaths(int $parentId, string $parentPath)
     {
         $children = $this->departmentRepository->findByParentId($parentId);
@@ -277,16 +326,28 @@ class OrganizationService
         }
     }
 
+    /**
+     * @param int $id
+     * @return bool
+     */
     public function deleteDepartment(int $id): bool
     {
         return $this->departmentRepository->delete($id);
     }
 
+    /**
+     * @param int $departmentId
+     * @return array
+     */
     public function getDepartmentViewPermissionIds(int $departmentId): array
     {
         return $this->departmentRepository->findDepartmentViewPermissionIds($departmentId);
     }
 
+    /**
+     * @param int $departmentId
+     * @return array
+     */
     public function getEligibleViewerEmployees(int $departmentId): array
     {
         $ancestorIds = $this->departmentRepository->findAncestorIds($departmentId);
@@ -296,6 +357,9 @@ class OrganizationService
         return $this->employeeRepository->findByDepartmentIds($ancestorIds);
     }
 
+    /**
+     * @return array
+     */
     public function getFormattedDepartmentListWithHierarchy(): array
     {
         $allDepartments = $this->departmentRepository->findAllWithViewers();
@@ -303,7 +367,7 @@ class OrganizationService
             return [];
         }
 
-        // Build a map and a tree structure
+        // 맵 및 트리 구조 빌드
         $departmentMap = [];
         $tree = [];
         foreach ($allDepartments as $dept) {
@@ -317,30 +381,36 @@ class OrganizationService
                 $tree[] = &$dept;
             }
         }
-        unset($dept); // Unset reference
+        unset($dept); // 참조 해제
 
-        // Flatten the tree with hierarchical names
+        // 계층적 이름으로 트리 평탄화
         $formattedList = [];
         $this->flattenTree($tree, $formattedList);
 
         return $formattedList;
     }
 
+    /**
+     * @param array $nodes
+     * @param array $formattedList
+     * @param string $parentPath
+     * @return void
+     */
     private function flattenTree(array $nodes, array &$formattedList, string $parentPath = ''): void
     {
         foreach ($nodes as $node) {
-            // Construct the hierarchical name
+            // 계층적 이름 구성
             $currentPath = $parentPath . (empty($parentPath) ? '' : ' > ') . $node['simple_name'];
 
-            // Create a copy of the node to modify
+            // 수정할 노드의 복사본 생성
             $formattedNode = $node;
             $formattedNode['name'] = $currentPath;
 
-            // Remove children before adding to the list
+            // 목록에 추가하기 전에 자식 제거
             unset($formattedNode['children']);
             $formattedList[] = $formattedNode;
 
-            // Recurse if children exist
+            // 자식이 있는 경우 재귀
             if (!empty($node['children'])) {
                 $this->flattenTree($node['children'], $formattedList, $currentPath);
             }

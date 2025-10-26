@@ -349,7 +349,7 @@ class InteractiveMap {
     setUserLocation() {
         return new Promise((resolve) => {
             if (!navigator.geolocation) {
-                alert('위치 정보를 지원하지 않는 브라우저입니다.');
+                alert('이 브라우저는 위치 정보를 지원하지 않습니다.');
                 resolve(false);
                 return;
             }

@@ -26,7 +26,7 @@ class LitteringController extends BaseController
     }
 
     /**
-     * Display the littering admin page (검토 및 승인)
+     * 무단투기 관리 페이지(검토 및 승인)를 표시합니다.
      */
     public function manage(): void
     {
@@ -35,7 +35,7 @@ class LitteringController extends BaseController
         
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 
-        // Refactored Scripts
+        // 리팩토링된 스크립트
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
@@ -46,7 +46,7 @@ class LitteringController extends BaseController
     }
 
     /**
-     * Display the littering map page (무단투기 신고/처리)
+     * 무단투기 지도 페이지(무단투기 신고/처리)를 표시합니다.
      */
     public function index(): void
     {
@@ -57,7 +57,7 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 
-        // Refactored Scripts
+        // 리팩토링된 스크립트
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
@@ -69,7 +69,7 @@ class LitteringController extends BaseController
     }
 
     /**
-     * Display the littering history page (처리 완료 내역)
+     * 무단투기 내역 페이지(처리 완료 내역)를 표시합니다.
      */
     public function history(): void
     {
@@ -80,7 +80,7 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 
-        // Refactored Scripts
+        // 리팩토링된 스크립트
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
@@ -92,13 +92,13 @@ class LitteringController extends BaseController
     }
 
     /**
-     * Display the deleted littering items page (삭제된 항목)
+     * 삭제된 무단투기 항목 페이지(삭제된 항목)를 표시합니다.
      */
     public function deleted(): void
     {
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 
-        // Refactored Scripts
+        // 리팩토링된 스크립트
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
@@ -109,16 +109,16 @@ class LitteringController extends BaseController
     }
 
     /**
-     * Show create form for new littering report
+     * 새 무단투기 신고를 위한 생성 양식을 표시합니다.
      */
     public function create(): void
     {
-        // This might be handled via AJAX/API, but keeping for completeness
+        // 이것은 AJAX/API를 통해 처리될 수 있지만 완전성을 위해 유지합니다.
         echo $this->render('pages/littering/create', [], 'layouts/app');
     }
 
     /**
-     * Show edit form for littering report
+     * 무단투기 신고를 위한 편집 양식을 표시합니다.
      */
     public function edit(): void
     {

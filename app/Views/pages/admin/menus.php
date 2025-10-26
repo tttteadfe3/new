@@ -13,7 +13,7 @@
             <!-- 메뉴 트리가 여기에 동적으로 렌더링됩니다. -->
             <div class="text-center p-5">
                 <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
+                    <span class="visually-hidden">로딩 중...</span>
                 </div>
             </div>
         </div>

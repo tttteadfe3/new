@@ -25,22 +25,21 @@ class EmployeeController extends BaseController
     }
 
     /**
-     * Display the employee list page
+     * 직원 목록 페이지를 표시합니다
      */
     public function index(): void
     {
         View::getInstance()->addCss(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.css');
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/list.js/list.min.js');
 
-        // Load BaseApp and dependencies
-
+        // BaseApp 및 종속성 로드
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
         
         echo $this->render('pages/employees/index', [], 'layouts/app');
     }
 
     /**
-     * Show the form for creating a new employee
+     * 새 직원을 생성하는 양식을 표시합니다
      */
     public function create(): void
     {
@@ -49,7 +48,7 @@ class EmployeeController extends BaseController
 
 
     /**
-     * Show the form for editing an employee
+     * 직원 편집 양식을 표시합니다
      */
     public function edit(): void
     {

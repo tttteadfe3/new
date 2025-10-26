@@ -20,7 +20,7 @@ class MyPageController extends BaseController
     }
 
     /**
-     * Display the dashboard page
+     * 대시보드 페이지를 표시합니다
      */
     public function index(): void
     {

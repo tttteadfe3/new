@@ -24,7 +24,8 @@ class HolidayService
     }
 
     /**
-     * Get all holidays with department information.
+     * 부서 정보와 함께 모든 휴일을 가져옵니다.
+     * @return array
      */
     public function getAllHolidays(): array
     {
@@ -33,7 +34,8 @@ class HolidayService
     }
 
     /**
-     * Get all departments for dropdown.
+     * 드롭다운을 위해 모든 부서를 가져옵니다.
+     * @return array
      */
     public function getAllDepartments(): array
     {
@@ -41,7 +43,9 @@ class HolidayService
     }
 
     /**
-     * Get holiday by ID.
+     * ID로 휴일을 가져옵니다.
+     * @param int $id
+     * @return array|null
      */
     public function getHoliday(int $id): ?array
     {
@@ -49,28 +53,31 @@ class HolidayService
     }
 
     /**
-     * Create a new holiday.
+     * 새 휴일을 만듭니다.
+     * @param array $data
+     * @return array
+     * @throws Exception
      */
     public function createHoliday(array $data): array
     {
-        // Create and validate model
+        // 모델 생성 및 유효성 검사
         $holiday = Holiday::make($data);
         
         if (!$holiday->validate()) {
-            throw new Exception('Validation failed: ' . implode(', ', $holiday->getErrors()));
+            throw new Exception('유효성 검사 실패: ' . implode(', ', $holiday->getErrors()));
         }
 
-        // Check for duplicate holidays
+        // 중복 휴일 확인
         if ($this->isDuplicateHoliday($data['date'], $data['department_id'] ?? null)) {
             throw new Exception('해당 날짜에 이미 휴일이 설정되어 있습니다.');
         }
 
-        // Business rule: deduct_leave only makes sense for holidays, not workdays
+        // 비즈니스 규칙: deduct_leave는 근무일이 아닌 휴일에만 의미가 있습니다.
         if ($data['type'] === 'workday' && !empty($data['deduct_leave'])) {
             throw new Exception('특정 근무일에는 연차 차감 설정을 할 수 없습니다.');
         }
 
-        // Prepare data for repository
+        // 리포지토리용 데이터 준비
         $holidayData = [
             'name' => $data['name'],
             'date' => $data['date'],
@@ -84,34 +91,38 @@ class HolidayService
     }
 
     /**
-     * Update an existing holiday.
+     * 기존 휴일을 업데이트합니다.
+     * @param int $id
+     * @param array $data
+     * @return array
+     * @throws Exception
      */
     public function updateHoliday(int $id, array $data): array
     {
-        // Check if holiday exists
+        // 휴일이 존재하는지 확인
         $existingHoliday = $this->holidayRepository->findById($id);
         if (!$existingHoliday) {
-            throw new Exception('Holiday not found.');
+            throw new Exception('휴일을 찾을 수 없습니다.');
         }
 
-        // Create and validate model
+        // 모델 생성 및 유효성 검사
         $holiday = Holiday::make($data);
         
         if (!$holiday->validate()) {
-            throw new Exception('Validation failed: ' . implode(', ', $holiday->getErrors()));
+            throw new Exception('유효성 검사 실패: ' . implode(', ', $holiday->getErrors()));
         }
 
-        // Check for duplicate holidays (excluding current one)
+        // 중복 휴일 확인 (현재 휴일 제외)
         if ($this->isDuplicateHoliday($data['date'], $data['department_id'] ?? null, $id)) {
             throw new Exception('해당 날짜에 이미 휴일이 설정되어 있습니다.');
         }
 
-        // Business rule: deduct_leave only makes sense for holidays, not workdays
+        // 비즈니스 규칙: deduct_leave는 근무일이 아닌 휴일에만 의미가 있습니다.
         if ($data['type'] === 'workday' && !empty($data['deduct_leave'])) {
             throw new Exception('특정 근무일에는 연차 차감 설정을 할 수 없습니다.');
         }
 
-        // Prepare data for repository
+        // 리포지토리용 데이터 준비
         $holidayData = [
             'name' => $data['name'],
             'date' => $data['date'],
@@ -125,21 +136,28 @@ class HolidayService
     }
 
     /**
-     * Delete a holiday.
+     * 휴일을 삭제합니다.
+     * @param int $id
+     * @return bool
+     * @throws Exception
      */
     public function deleteHoliday(int $id): bool
     {
-        // Check if holiday exists
+        // 휴일이 존재하는지 확인
         $existingHoliday = $this->holidayRepository->findById($id);
         if (!$existingHoliday) {
-            throw new Exception('Holiday not found.');
+            throw new Exception('휴일을 찾을 수 없습니다.');
         }
 
         return $this->holidayRepository->delete($id);
     }
 
     /**
-     * Get holidays for a specific date range and department.
+     * 특정 날짜 범위 및 부서의 휴일을 가져옵니다.
+     * @param string $startDate
+     * @param string $endDate
+     * @param int|null $departmentId
+     * @return array
      */
     public function getHolidaysForDateRange(string $startDate, string $endDate, ?int $departmentId = null): array
     {
@@ -147,22 +165,25 @@ class HolidayService
     }
 
     /**
-     * Check if a holiday already exists for the given date and department.
-     Gpt-4-1106-preview
+     * 주어진 날짜와 부서에 대해 휴일이 이미 존재하는지 확인합니다.
+     * @param string $date
+     * @param int|null $departmentId
+     * @param int|null $excludeId
+     * @return bool
      */
     private function isDuplicateHoliday(string $date, ?int $departmentId = null, ?int $excludeId = null): bool
     {
         $holidays = $this->holidayRepository->findForDateRange($date, $date, $departmentId);
         
         foreach ($holidays as $holiday) {
-            // Skip if this is the same holiday we're updating
+            // 업데이트 중인 동일한 휴일인 경우 건너뛰기
             if ($excludeId && $holiday['id'] == $excludeId) {
                 continue;
             }
             
-            // Check for exact match on date and department
+            // 날짜와 부서가 정확히 일치하는지 확인
             if ($holiday['date'] === $date) {
-                // If both are null (global) or both match the same department
+                // 둘 다 null(전체)이거나 둘 다 동일한 부서와 일치하는 경우
                 if (($holiday['department_id'] === null && $departmentId === null) ||
                     ($holiday['department_id'] == $departmentId)) {
                     return true;
@@ -174,7 +195,10 @@ class HolidayService
     }
 
     /**
-     * Check if a specific date is a holiday for a department.
+     * 특정 날짜가 부서의 휴일인지 확인합니다.
+     * @param string $date
+     * @param int|null $departmentId
+     * @return bool
      */
     public function isHoliday(string $date, ?int $departmentId = null): bool
     {
@@ -190,7 +214,10 @@ class HolidayService
     }
 
     /**
-     * Check if a specific date is a special workday for a department.
+     * 특정 날짜가 부서의 특별 근무일인지 확인합니다.
+     * @param string $date
+     * @param int|null $departmentId
+     * @return bool
      */
     public function isWorkday(string $date, ?int $departmentId = null): bool
     {

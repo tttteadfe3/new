@@ -10,6 +10,11 @@ class HolidayRepository {
     public function __construct(Database $db) {
         $this->db = $db;
     }
+
+    /**
+     * @param array|null $visibleDepartmentIds
+     * @return array
+     */
     public function getAll(?array $visibleDepartmentIds = null) {
         $sql = "SELECT h.*, d.name as department_name
                 FROM hr_holidays h
@@ -17,7 +22,7 @@ class HolidayRepository {
 
         if ($visibleDepartmentIds !== null) {
             if (empty($visibleDepartmentIds)) {
-                $sql .= " WHERE 1=0"; // Return no results
+                $sql .= " WHERE 1=0"; // 결과 없음
             } else {
                 $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
                 $sql .= " WHERE h.department_id IS NULL OR h.department_id IN ($inClause)";
@@ -28,10 +33,18 @@ class HolidayRepository {
         return $this->db->query($sql);
     }
 
+    /**
+     * @param int $id
+     * @return mixed
+     */
     public function findById(int $id) {
         return $this->db->fetchOne("SELECT * FROM hr_holidays WHERE id = :id", [':id' => $id]);
     }
 
+    /**
+     * @param array $data
+     * @return string
+     */
     public function create(array $data): string {
         $sql = "INSERT INTO hr_holidays (name, date, type, department_id, deduct_leave)
                 VALUES (:name, :date, :type, :department_id, :deduct_leave)";
@@ -48,6 +61,11 @@ class HolidayRepository {
         return $this->db->lastInsertId();
     }
 
+    /**
+     * @param int $id
+     * @param array $data
+     * @return bool
+     */
     public function update(int $id, array $data): bool {
         $sql = "UPDATE hr_holidays SET
                     name = :name,
@@ -69,6 +87,10 @@ class HolidayRepository {
         return $this->db->execute($sql, $params) > 0;
     }
 
+    /**
+     * @param int $id
+     * @return bool
+     */
     public function delete(int $id): bool {
         return $this->db->execute("DELETE FROM hr_holidays WHERE id = :id", [':id' => $id]) > 0;
     }

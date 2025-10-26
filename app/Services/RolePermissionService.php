@@ -15,6 +15,7 @@ class RolePermissionService
 
     /**
      * 모든 역할 목록 조회 (사용자 수 포함)
+     * @return array
      */
     public function getAllRolesWithUserCount(): array
     {
@@ -23,6 +24,7 @@ class RolePermissionService
 
     /**
      * 모든 권한 목록 조회
+     * @return array
      */
     public function getAllPermissions(): array
     {
@@ -31,6 +33,8 @@ class RolePermissionService
 
     /**
      * 특정 역할의 권한 목록 조회
+     * @param int $roleId
+     * @return array
      */
     public function getRolePermissions(int $roleId): array
     {
@@ -39,6 +43,8 @@ class RolePermissionService
 
     /**
      * 역할 권한 업데이트
+     * @param int $roleId
+     * @param array $permissionIds
      */
     public function updateRolePermissions(int $roleId, array $permissionIds): void
     {
@@ -47,6 +53,8 @@ class RolePermissionService
 
     /**
      * 역할 조회
+     * @param int $roleId
+     * @return array|null
      */
     public function getRole(int $roleId): ?array
     {
@@ -55,6 +63,9 @@ class RolePermissionService
 
     /**
      * 역할 생성
+     * @param string $name
+     * @param string $description
+     * @return string
      */
     public function createRole(string $name, string $description): string
     {
@@ -63,6 +74,10 @@ class RolePermissionService
 
     /**
      * 역할 수정
+     * @param int $roleId
+     * @param string $name
+     * @param string $description
+     * @return bool
      */
     public function updateRole(int $roleId, string $name, string $description): bool
     {
@@ -71,6 +86,8 @@ class RolePermissionService
 
     /**
      * 역할 삭제
+     * @param int $roleId
+     * @return bool
      */
     public function deleteRole(int $roleId): bool
     {
@@ -79,6 +96,8 @@ class RolePermissionService
 
     /**
      * 특정 역할에 할당된 사용자 목록 조회
+     * @param int $roleId
+     * @return array
      */
     public function getUsersAssignedToRole(int $roleId): array
     {
@@ -87,6 +106,8 @@ class RolePermissionService
 
     /**
      * 역할에 사용자가 할당되어 있는지 확인
+     * @param int $roleId
+     * @return bool
      */
     public function isUserAssignedToRole(int $roleId): bool
     {

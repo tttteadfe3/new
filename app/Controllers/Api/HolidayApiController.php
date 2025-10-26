@@ -36,7 +36,7 @@ class HolidayApiController extends BaseApiController
     }
 
     /**
-     * Get all holidays and departments.
+     * 모든 휴일 및 부서를 가져옵니다.
      */
     public function index(): void
     {
@@ -55,7 +55,7 @@ class HolidayApiController extends BaseApiController
     }
 
     /**
-     * Get a specific holiday.
+     * 특정 휴일을 가져옵니다.
      */
     public function show(int $id): void
     {
@@ -75,7 +75,7 @@ class HolidayApiController extends BaseApiController
     }
 
     /**
-     * Create a new holiday.
+     * 새 휴일을 생성합니다.
      */
     public function store(): void
     {
@@ -83,7 +83,7 @@ class HolidayApiController extends BaseApiController
         try {
             $data = $this->getJsonInput();
             
-            // Basic validation
+            // 기본 유효성 검사
             if (empty(trim($data['name']))) {
                 $this->apiError('이름은 필수입니다.', 'VALIDATION_ERROR', 422);
                 return;
@@ -97,7 +97,7 @@ class HolidayApiController extends BaseApiController
                 return;
             }
 
-            // Convert boolean to integer for validation and database storage
+            // 유효성 검사 및 데이터베이스 저장을 위해 부울을 정수로 변환
             $data['deduct_leave'] = (int)(isset($data['deduct_leave']) && $data['deduct_leave']);
 
             $holiday = $this->holidayService->createHoliday($data);
@@ -109,7 +109,7 @@ class HolidayApiController extends BaseApiController
     }
 
     /**
-     * Update an existing holiday.
+     * 기존 휴일을 업데이트합니다.
      */
     public function update(int $id): void
     {
@@ -117,7 +117,7 @@ class HolidayApiController extends BaseApiController
         try {
             $data = $this->getJsonInput();
             
-            // Basic validation
+            // 기본 유효성 검사
             if (empty(trim($data['name']))) {
                 $this->apiError('이름은 필수입니다.', 'VALIDATION_ERROR', 422);
                 return;
@@ -131,7 +131,7 @@ class HolidayApiController extends BaseApiController
                 return;
             }
 
-            // Convert boolean to integer for validation and database storage
+            // 유효성 검사 및 데이터베이스 저장을 위해 부울을 정수로 변환
             $data['deduct_leave'] = (int)(isset($data['deduct_leave']) && $data['deduct_leave']);
 
             $holiday = $this->holidayService->updateHoliday($id, $data);
@@ -143,7 +143,7 @@ class HolidayApiController extends BaseApiController
     }
 
     /**
-     * Delete a holiday.
+     * 휴일을 삭제합니다.
      */
     public function destroy(int $id): void
     {

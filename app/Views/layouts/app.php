@@ -1,7 +1,7 @@
 <?php
 use App\Core\View;
 
-// Data is now passed from ViewDataService, no need for static calls here.
+// 데이터는 이제 ViewDataService에서 전달되므로 여기서 정적 호출이 필요하지 않습니다.
 $currentUserNickname = $user['nickname'] ?? '사용자';
 $profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/images/users/avatar.png';
 ?>
@@ -11,41 +11,41 @@ $profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/imag
     <meta charset="utf-8" />
     <title>원진실업(주)<?= isset($pageTitle) ? ' | ' . e($pageTitle) : '' ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- App favicon -->
+    <!-- 앱 파비콘 -->
     <link rel="shortcut icon" href="<?= BASE_ASSETS_URL ?>/assets/images/favicon.ico">
 
-    <!-- Dynamic CSS Section -->
+    <!-- 동적 CSS 섹션 -->
     <?= \App\Core\View::getInstance()->yieldSection('css') ?>
 
-    <!-- Default CSS -->
+    <!-- 기본 CSS -->
     <!-- toastify-js Css -->
     <link href="<?= BASE_ASSETS_URL ?>/assets/libs/toastify-js/src/toastify.css" rel="stylesheet" type="text/css" />
     <!-- sweetalert2 Css -->
     <link href="<?= BASE_ASSETS_URL ?>/assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
     <!-- Bootstrap Css -->
     <link href="<?= BASE_ASSETS_URL ?>/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <!-- Icons Css -->
+    <!-- 아이콘 Css -->
     <link href="<?= BASE_ASSETS_URL ?>/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
-    <!-- App Css-->
+    <!-- 앱 Css-->
     <link href="<?= BASE_ASSETS_URL ?>/assets/css/app.min.css" rel="stylesheet" type="text/css" />
-    <!-- custom Css-->
+    <!-- 사용자 정의 Css-->
     <link href="<?= BASE_ASSETS_URL ?>/assets/css/custom.min.css" rel="stylesheet" type="text/css" />
-    <!-- Custom Layout CSS -->
+    <!-- 사용자 정의 레이아웃 CSS -->
     <link href="<?= BASE_ASSETS_URL ?>/assets/css/custom-layout.css" rel="stylesheet" type="text/css" />
 </head>
 
 <body>
-    <!-- Begin page -->
+    <!-- 페이지 시작 -->
     <div id="layout-wrapper">
 
         <?php include __DIR__ . '/header.php'; ?>
         <?php include __DIR__ . '/sidebar.php'; ?>
         
-        <!-- Vertical Overlay-->
+        <!-- 수직 오버레이-->
         <div class="vertical-overlay"></div>
 
         <!-- ============================================================== -->
-        <!-- Start right Content here -->
+        <!-- 여기에서 오른쪽 콘텐츠 시작 -->
         <!-- ============================================================== -->
         <div class="main-content">
             <div class="page-content">
@@ -67,26 +67,26 @@ $profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/imag
                 </div>
                 <!-- container-fluid -->
             </div>
-            <!-- End Page-content -->
+            <!-- 페이지-콘텐츠 끝 -->
 
             <?php include __DIR__ . '/footer.php'; ?>
         </div>
-        <!-- end main content-->
+        <!-- 메인 콘텐츠 끝-->
 
     </div>
-    <!-- END layout-wrapper -->
+    <!-- 레이아웃-래퍼 끝 -->
 
-    <!--start back-to-top-->
+    <!-- 맨 위로 가기 시작-->
     <button onclick="topFunction()" class="btn btn-danger btn-icon" id="back-to-top">
         <i class="ri-arrow-up-line"></i>
     </button>
-    <!--end back-to-top-->
+    <!-- 맨 위로 가기 끝-->
 
-    <!--preloader-->
+    <!-- 사전 로더-->
     <div id="preloader">
         <div id="status">
             <div class="spinner-border text-primary avatar-sm" role="status">
-                <span class="visually-hidden">Loading...</span>
+                <span class="visually-hidden">로딩 중...</span>
             </div>
         </div>
     </div>
@@ -103,24 +103,24 @@ $profileImageUrl = $user['profile_image_url'] ?? BASE_ASSETS_URL . '/assets/imag
     <script src="<?= BASE_ASSETS_URL ?>/assets/libs/toastify-js/src/toastify.js"></script>
     <!-- sweetalert2 js -->
     <script src="<?= BASE_ASSETS_URL ?>/assets/libs/sweetalert2/sweetalert2.min.js"></script>
-    <!-- Custom UI js -->
+    <!-- 사용자 정의 UI js -->
     <script src="<?= BASE_ASSETS_URL ?>/assets/js/utils/ui-helpers.js"></script>
 
-    <!-- Common Application JS -->
+    <!-- 공통 애플리케이션 JS -->
     <script src="<?= BASE_ASSETS_URL ?>/assets/js/services/api-service.js"></script>
     <script src="<?= BASE_ASSETS_URL ?>/assets/js/core/base-page.js"></script>
 
-    <!-- Conditionally Rendered JS Config from Controller -->
+    <!-- 컨트롤러에서 조건부로 렌더링된 JS 구성 -->
     <?php if (isset($jsConfig)): ?>
     <script>
         window.AppConfig = <?= json_encode($jsConfig) ?>;
     </script>
     <?php endif; ?>
 
-    <!-- Dynamic JS Section -->
+    <!-- 동적 JS 섹션 -->
     <?= \App\Core\View::getInstance()->yieldSection('js') ?>
 
-    <!-- App js -->
+    <!-- 앱 js -->
     <script src="<?= BASE_ASSETS_URL ?>/assets/js/app.js"></script>
 
 </body>

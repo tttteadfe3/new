@@ -19,6 +19,10 @@ class KakaoAuthService
         $this->session = $session;
     }
 
+    /**
+     * @return string
+     * @throws \Exception
+     */
     public function getAuthorizationUrl(): string
     {
         $state = bin2hex(random_bytes(16));
@@ -33,6 +37,11 @@ class KakaoAuthService
         return 'https://kauth.kakao.com/oauth/authorize?' . http_build_query($params);
     }
 
+    /**
+     * @param string $code
+     * @return array
+     * @throws \Exception
+     */
     public function getAccessToken(string $code): array
     {
         $params = [
@@ -54,12 +63,17 @@ class KakaoAuthService
         $token = json_decode($response, true);
 
         if (isset($token['error'])) {
-            throw new \Exception('Failed to get access token: ' . $token['error_description']);
+            throw new \Exception('액세스 토큰을 가져오는 데 실패했습니다: ' . $token['error_description']);
         }
 
         return $token;
     }
 
+    /**
+     * @param string $accessToken
+     * @return array
+     * @throws \Exception
+     */
     public function getUserProfile(string $accessToken): array
     {
         $ch = curl_init();
@@ -74,7 +88,7 @@ class KakaoAuthService
         $userInfo = json_decode($response, true);
 
         if (isset($userInfo['code'])) {
-            throw new \Exception('Failed to get user profile: ' . $userInfo['msg']);
+            throw new \Exception('사용자 프로필을 가져오는 데 실패했습니다: ' . $userInfo['msg']);
         }
 
         return $userInfo;

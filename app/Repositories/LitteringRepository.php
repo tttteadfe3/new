@@ -102,7 +102,7 @@ class LitteringRepository {
      * 관리자가 민원을 확인하고 상태를 'confirmed'로 변경합니다. (id 기준)
      * @param int $caseId
      * @param array $data
-     * @param int $adminId
+     * @param int $employeeId
      * @return bool
      */
     public function confirm(int $caseId, array $data, int $employeeId): bool {
@@ -118,6 +118,11 @@ class LitteringRepository {
         return $this->db->execute($query, $params) > 0;
     }
 
+    /**
+     * @param int $caseId
+     * @param int $employeeId
+     * @return bool
+     */
     public function softDelete(int $caseId, int $employeeId): bool {
         $query = "UPDATE illegal_disposal_cases2 SET status = 'deleted', deleted_by = ?, deleted_at = NOW() WHERE id = ?";
         return $this->db->execute($query, [$employeeId, $caseId]) > 0;
@@ -126,6 +131,7 @@ class LitteringRepository {
     /**
      * 민원 처리를 완료하고 상태를 'processed'로 변경합니다. (id 기준)
      * @param array $data (id 포함)
+     * @param int $employeeId
      * @return bool
      */
     public function process(array $data, int $employeeId): bool {
@@ -153,6 +159,9 @@ class LitteringRepository {
         return $this->db->fetchOne("SELECT * FROM illegal_disposal_cases2 WHERE id = ?", [$id]);
     }
 
+    /**
+     * @return array
+     */
     public function findAllDeleted(): array {
         $query = "
             SELECT 
@@ -168,11 +177,19 @@ class LitteringRepository {
         return $this->db->fetchAll($query);
     }
 
+    /**
+     * @param int $caseId
+     * @return bool
+     */
     public function deletePermanently(int $caseId): bool {
         $query = "DELETE FROM illegal_disposal_cases2 WHERE id = ?";
         return $this->db->execute($query, [$caseId]) > 0;
     }
 
+    /**
+     * @param int $caseId
+     * @return bool
+     */
     public function restore(int $caseId): bool {
         $query = "UPDATE illegal_disposal_cases2 SET status = 'pending', deleted_by = NULL, deleted_at = NULL WHERE id = ?";
         return $this->db->execute($query, [$caseId]) > 0;
@@ -181,7 +198,7 @@ class LitteringRepository {
     /**
      * 관리자가 처리된 민원을 최종 승인하고 상태를 'completed'로 변경합니다.
      * @param int $caseId
-     * @param int $adminId
+     * @param int $employeeId
      * @return bool
      */
     public function approve(int $caseId, int $employeeId): bool {

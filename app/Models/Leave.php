@@ -34,7 +34,7 @@ class Leave extends BaseModel
     ];
 
     /**
-     * Check if this is a pending leave request.
+     * 이것이 보류 중인 휴가 요청인지 확인합니다.
      */
     public function isPending(): bool
     {
@@ -42,7 +42,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Check if this leave is approved.
+     * 이 휴가가 승인되었는지 확인합니다.
      */
     public function isApproved(): bool
     {
@@ -50,7 +50,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Check if this leave is rejected.
+     * 이 휴가가 거부되었는지 확인합니다.
      */
     public function isRejected(): bool
     {
@@ -58,7 +58,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Check if this leave is cancelled.
+     * 이 휴가가 취소되었는지 확인합니다.
      */
     public function isCancelled(): bool
     {
@@ -66,7 +66,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Check if cancellation is requested.
+     * 취소가 요청되었는지 확인합니다.
      */
     public function isCancellationRequested(): bool
     {
@@ -74,7 +74,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Check if this is a half-day leave.
+     * 이것이 반차 휴가인지 확인합니다.
      */
     public function isHalfDay(): bool
     {
@@ -83,7 +83,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Check if this is an annual leave.
+     * 이것이 연차 휴가인지 확인합니다.
      */
     public function isAnnualLeave(): bool
     {
@@ -91,7 +91,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Get the leave duration in days.
+     * 휴가 기간을 일 단위로 가져옵니다.
      */
     public function getDuration(): float
     {
@@ -99,7 +99,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Get start date as DateTime object.
+     * 시작 날짜를 DateTime 객체로 가져옵니다.
      */
     public function getStartDateAsDateTime(): ?\DateTime
     {
@@ -116,7 +116,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Get end date as DateTime object.
+     * 종료 날짜를 DateTime 객체로 가져옵니다.
      */
     public function getEndDateAsDateTime(): ?\DateTime
     {
@@ -133,7 +133,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Check if the leave period overlaps with another period.
+     * 휴가 기간이 다른 기간과 겹치는지 확인합니다.
      */
     public function overlapsWith(\DateTime $startDate, \DateTime $endDate): bool
     {
@@ -148,7 +148,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Check if this leave is in the past.
+     * 이 휴가가 과거인지 확인합니다.
      */
     public function isPast(): bool
     {
@@ -161,7 +161,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Check if this leave is in the future.
+     * 이 휴가가 미래인지 확인합니다.
      */
     public function isFuture(): bool
     {
@@ -174,7 +174,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Check if this leave is currently active.
+     * 이 휴가가 현재 활성 상태인지 확인합니다.
      */
     public function isActive(): bool
     {
@@ -190,13 +190,13 @@ class Leave extends BaseModel
     }
 
     /**
-     * Validate leave data with business rules.
+     * 비즈니스 규칙으로 휴가 데이터를 확인합니다.
      */
     public function validate(): bool
     {
         $isValid = parent::validate();
 
-        // Business rule: end date should be after or equal to start date
+        // 비즈니스 규칙: 종료일은 시작일보다 늦거나 같아야 합니다.
         $startDate = $this->getStartDateAsDateTime();
         $endDate = $this->getEndDateAsDateTime();
 
@@ -205,24 +205,24 @@ class Leave extends BaseModel
             $isValid = false;
         }
 
-        // Business rule: days_count should match the actual date range
+        // 비즈니스 규칙: days_count는 실제 날짜 범위와 일치해야 합니다.
         if ($startDate && $endDate) {
             $calculatedDays = $this->calculateBusinessDays($startDate, $endDate);
             $providedDays = $this->getAttribute('days_count');
 
-            if (abs($calculatedDays - $providedDays) > 0.1) { // Allow small floating point differences
+            if (abs($calculatedDays - $providedDays) > 0.1) { // 작은 부동 소수점 차이 허용
                 $this->errors['days_count'] = '신청 일수가 날짜 범위와 일치하지 않습니다.';
                 $isValid = false;
             }
         }
 
-        // Business rule: half_day leave type should have 0.5 days
+        // 비즈니스 규칙: half_day 휴가 유형은 0.5일이어야 합니다.
         if ($this->getAttribute('leave_type') === 'half_day' && $this->getAttribute('days_count') != 0.5) {
             $this->errors['days_count'] = '반차는 0.5일이어야 합니다.';
             $isValid = false;
         }
 
-        // Business rule: cannot apply for leave in the past (except for sick leave)
+        // 비즈니스 규칙: 과거 날짜로는 휴가를 신청할 수 없습니다(병가 제외).
         if ($startDate && $startDate < new \DateTime() && $this->getAttribute('leave_type') !== 'sick') {
             $this->errors['start_date'] = '과거 날짜로는 연차를 신청할 수 없습니다. (병가 제외)';
             $isValid = false;
@@ -232,7 +232,7 @@ class Leave extends BaseModel
     }
 
     /**
-     * Calculate business days between two dates.
+     * 두 날짜 사이의 영업일을 계산합니다.
      */
     protected function calculateBusinessDays(\DateTime $startDate, \DateTime $endDate): float
     {
@@ -240,7 +240,7 @@ class Leave extends BaseModel
         $current = clone $startDate;
 
         while ($current <= $endDate) {
-            // Skip weekends (Saturday = 6, Sunday = 0)
+            // 주말 건너뛰기 (토요일 = 6, 일요일 = 0)
             $dayOfWeek = (int) $current->format('w');
             if ($dayOfWeek !== 0 && $dayOfWeek !== 6) {
                 $days++;

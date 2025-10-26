@@ -46,7 +46,7 @@ class Employee extends BaseModel
     ];
 
     /**
-     * Check if employee is currently active (not terminated).
+     * 직원이 현재 재직 중인지 확인합니다 (퇴사하지 않음).
      */
     public function isActive(): bool
     {
@@ -54,7 +54,7 @@ class Employee extends BaseModel
     }
 
     /**
-     * Check if employee has pending profile updates.
+     * 직원에게 보류 중인 프로필 업데이트가 있는지 확인합니다.
      */
     public function hasPendingProfileUpdate(): bool
     {
@@ -62,7 +62,7 @@ class Employee extends BaseModel
     }
 
     /**
-     * Get employee's full contact information.
+     * 직원의 전체 연락처 정보를 가져옵니다.
      */
     public function getContactInfo(): array
     {
@@ -75,7 +75,7 @@ class Employee extends BaseModel
     }
 
     /**
-     * Get employee's clothing sizes.
+     * 직원의 의류 사이즈를 가져옵니다.
      */
     public function getClothingSizes(): array
     {
@@ -87,7 +87,7 @@ class Employee extends BaseModel
     }
 
     /**
-     * Calculate years of service.
+     * 근속 연수를 계산합니다.
      */
     public function getYearsOfService(): int
     {
@@ -105,20 +105,20 @@ class Employee extends BaseModel
     }
 
     /**
-     * Validate employee number uniqueness (business rule).
+     * 사번 고유성을 확인합니다 (비즈니스 규칙).
      */
     public function validate(): bool
     {
         $isValid = parent::validate();
 
-        // Additional business rule: employee number should be unique if provided
+        // 추가 비즈니스 규칙: 사번은 제공된 경우 고유해야 합니다
         $employeeNumber = $this->getAttribute('employee_number');
         if ($employeeNumber && $this->isDuplicateEmployeeNumber($employeeNumber)) {
             $this->errors['employee_number'] = '이미 사용 중인 사번입니다.';
             $isValid = false;
         }
 
-        // Business rule: termination date should be after hire date
+        // 비즈니스 규칙: 퇴사일은 입사일보다 늦어야 합니다
         $hireDate = $this->getAttribute('hire_date');
         $terminationDate = $this->getAttribute('termination_date');
         
@@ -136,12 +136,12 @@ class Employee extends BaseModel
     }
 
     /**
-     * Check if employee number is duplicate (placeholder - would need repository).
+     * 사번이 중복되는지 확인합니다 (플레이스홀더 - 리포지토리가 필요함).
      */
     protected function isDuplicateEmployeeNumber(string $employeeNumber): bool
     {
-        // This would typically check against the database via repository
-        // For now, return false as placeholder
+        // 이것은 일반적으로 리포지토리를 통해 데이터베이스를 확인합니다
+        // 지금은 플레이스홀더로 false를 반환합니다
         return false;
     }
 }

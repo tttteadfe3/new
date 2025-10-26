@@ -39,6 +39,9 @@ class EmployeeApiController extends BaseApiController
         $this->organizationService = $organizationService;
     }
 
+    /**
+     * 직원 관리 페이지에 필요한 초기 데이터를 가져옵니다. (부서 및 직급 목록)
+     */
     public function getInitialData(): void
     {
         try {
@@ -52,6 +55,9 @@ class EmployeeApiController extends BaseApiController
         }
     }
 
+    /**
+     * 필터에 따라 모든 직원 목록을 가져옵니다.
+     */
     public function index(): void
     {
         try {
@@ -63,6 +69,10 @@ class EmployeeApiController extends BaseApiController
         }
     }
 
+    /**
+     * 특정 직원의 상세 정보를 가져옵니다.
+     * @param int $id 직원의 ID
+     */
     public function show(int $id): void
     {
         if (!$this->authService->canManageEmployee($id)) {
@@ -81,6 +91,10 @@ class EmployeeApiController extends BaseApiController
         }
     }
 
+    /**
+     * 특정 직원의 정보를 업데이트합니다.
+     * @param int $id 직원의 ID
+     */
     public function update(int $id): void
     {
         if (!$this->authService->canManageEmployee($id)) {
@@ -96,6 +110,10 @@ class EmployeeApiController extends BaseApiController
         }
     }
 
+    /**
+     * 특정 직원을 삭제합니다.
+     * @param int $id 직원의 ID
+     */
     public function destroy(int $id): void
     {
         if (!$this->authService->canManageEmployee($id)) {
@@ -113,6 +131,9 @@ class EmployeeApiController extends BaseApiController
         }
     }
 
+    /**
+     * 시스템 계정에 연결되지 않은 직원 목록을 가져옵니다.
+     */
     public function unlinked(): void
     {
         try {
@@ -123,6 +144,9 @@ class EmployeeApiController extends BaseApiController
         }
     }
 
+    /**
+     * 새 직원을 생성합니다.
+     */
     public function store(): void
     {
         if (!$this->authService->check('employee.create')) {
@@ -145,6 +169,10 @@ class EmployeeApiController extends BaseApiController
         }
     }
 
+    /**
+     * 특정 직원의 정보 변경 이력을 가져옵니다.
+     * @param int $id 직원의 ID
+     */
     public function getChangeHistory(int $id): void
     {
         if (!$this->authService->canManageEmployee($id)) {
@@ -159,6 +187,10 @@ class EmployeeApiController extends BaseApiController
         }
     }
 
+    /**
+     * 직원이 요청한 프로필 변경을 승인합니다.
+     * @param int $id 직원의 ID
+     */
     public function approveUpdate(int $id): void
     {
         if (!$this->authService->check('employee.approve')) {
@@ -176,6 +208,10 @@ class EmployeeApiController extends BaseApiController
         }
     }
 
+    /**
+     * 직원이 요청한 프로필 변경을 반려합니다.
+     * @param int $id 직원의 ID
+     */
     public function rejectUpdate(int $id): void
     {
         if (!$this->authService->check('employee.approve')) {

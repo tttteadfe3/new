@@ -66,8 +66,8 @@
                         <div class="noresult" style="display: none">
                             <div class="text-center">
                                 <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
-                                <h5 class="mt-2">Sorry! No Result Found</h5>
-                                <p class="text-muted mb-0">We've searched more than 150+ employees We did not find any employees for you search.</p>
+                                <h5 class="mt-2">검색 결과가 없습니다.</h5>
+                                <p class="text-muted mb-0">다른 검색어로 다시 시도해주세요.</p>
                             </div>
                         </div>
                     </div>

@@ -8,6 +8,9 @@ use App\Core\FileUploader;
 use App\Core\Validator;
 use Exception;
 
+/**
+ * 폐기물 수거 신고와 관련된 모든 비즈니스 로직을 처리하기 위한 통합 서비스입니다.
+ */
 class WasteCollectionService
 {
     private WasteCollectionRepository $wasteCollectionRepository;
@@ -20,7 +23,8 @@ class WasteCollectionService
     }
 
     /**
-     * Get all waste collections for user view
+     * 사용자 보기를 위한 모든 폐기물 수거 내역을 가져옵니다.
+     * @return array
      */
     public function getCollections(): array
     {
@@ -28,7 +32,10 @@ class WasteCollectionService
     }
 
     /**
-     * Get waste collection by ID
+     * ID로 폐기물 수거 내역을 가져옵니다.
+     * @param int $id
+     * @return array|null
+     * @throws Exception
      */
     public function getCollectionById(int $id): ?array
     {
@@ -40,20 +47,25 @@ class WasteCollectionService
     }
 
     /**
-     * Register new waste collection from field
+     * 현장에서 새로운 폐기물 수거 내역을 등록합니다.
+     * @param array $postData
+     * @param array $files
+     * @param int|null $employeeId
+     * @return array
+     * @throws Exception
      */
     public function registerCollection(array $postData, array $files, ?int $employeeId): array
     {
         $this->db->beginTransaction();
         
         try {
-            // Handle photo upload
+            // 사진 업로드 처리
             $photoPath = null;
             if (isset($files['photo']) && $files['photo']['error'] === UPLOAD_ERR_OK) {
                 $photoPath = FileUploader::validateAndUpload($files['photo'], 'waste', 'coll_');
             }
 
-            // Create waste collection model for validation
+            // 유효성 검사를 위한 폐기물 수거 모델 생성
             $collectionData = [
                 'latitude' => floatval($postData['lat']),
                 'longitude' => floatval($postData['lng']),
@@ -66,19 +78,19 @@ class WasteCollectionService
 
             $collection = WasteCollection::make($collectionData);
 
-            // Use the model's own validation method, which now aligns with BaseModel.
+            // 이제 BaseModel과 일치하는 모델 자체의 유효성 검사 메서드를 사용합니다.
             if (!$collection->validate()) {
-                // Throw an exception with the validation errors for the controller to catch.
+                // 컨트롤러가 잡을 수 있도록 유효성 검사 오류와 함께 예외를 발생시킵니다.
                 throw new Exception(implode(', ', $collection->getErrors()), 400);
             }
 
-            // Save collection
+            // 수거 내역 저장
             $collectionId = $this->wasteCollectionRepository->createCollection($collection->toArray());
             if ($collectionId === null) {
                 throw new Exception("수거 정보 등록에 실패했습니다.", 500);
             }
 
-            // Process items
+            // 품목 처리
             $items = json_decode($postData['items'] ?? '[]', true);
             if (empty($items)) {
                 throw new Exception("품목 정보가 없습니다.", 400);
@@ -105,10 +117,10 @@ class WasteCollectionService
         } catch (Exception $e) {
             $this->db->rollBack();
             
-            // Clean up uploaded file on error
+            // 오류 시 업로드된 파일 정리
             if (isset($photoPath) && !empty($photoPath)) {
-                // $photoPath is a URL like '/uploads/waste/photo.jpg'.
-                // We need to convert it to a full filesystem path using UPLOAD_DIR.
+                // $photoPath는 '/uploads/waste/photo.jpg'와 같은 URL입니다.
+                // UPLOAD_DIR를 사용하여 전체 파일 시스템 경로로 변환해야 합니다.
                 $prefix = UPLOAD_URL_PATH . '/';
                 if (strpos($photoPath, $prefix) === 0) {
                     $relativeFilePath = substr($photoPath, strlen($prefix));
@@ -124,7 +136,11 @@ class WasteCollectionService
     }
 
     /**
-     * Process collections by address
+     * 주소로 수거 내역을 처리합니다.
+     * @param string $address
+     * @param int $employeeId
+     * @return bool
+     * @throws Exception
      */
     public function processCollectionsByAddress(string $address, int $employeeId): bool
     {
@@ -136,7 +152,11 @@ class WasteCollectionService
     }
 
     /**
-     * Process collection by ID
+     * ID로 수거 내역을 처리합니다.
+     * @param int $id
+     * @param int $employeeId
+     * @return bool
+     * @throws Exception
      */
     public function processCollectionById(int $id, int $employeeId): bool
     {
@@ -147,10 +167,12 @@ class WasteCollectionService
         return $this->wasteCollectionRepository->processById($id, $employeeId);
     }
 
-    // === Admin Methods ===
+    // === 관리자 메서드 ===
 
     /**
-     * Get collections for admin view with filters
+     * 필터가 있는 관리자 보기의 수거 내역을 가져옵니다.
+     * @param array $filters
+     * @return array
      */
     public function getAdminCollections(array $filters): array
     {
@@ -163,7 +185,10 @@ class WasteCollectionService
     }
 
     /**
-     * Parse HTML file for batch registration
+     * 일괄 등록을 위해 HTML 파일을 구문 분석합니다.
+     * @param array $file
+     * @return array
+     * @throws Exception
      */
     public function parseHtmlFile(array $file): array
     {
@@ -197,7 +222,7 @@ class WasteCollectionService
                 $timePart = trim(str_replace(['(', ')'], '', $dateNode->childNodes->item(2)->textContent));
             }
 
-            // Extract fee from 7th column (index 6)
+            // 7번째 열(인덱스 6)에서 수수료 추출
             $feeText = trim($cells->item(6)->textContent);
             $fee = (int)preg_replace('/[^0-9]/', '', $feeText);
 
@@ -215,7 +240,11 @@ class WasteCollectionService
     }
 
     /**
-     * Batch register collections from parsed data
+     * 구문 분석된 데이터에서 수거 내역을 일괄 등록합니다.
+     * @param array $collections
+     * @param int $adminUserId
+     * @return array
+     * @throws Exception
      */
     public function batchRegisterCollections(array $collections, int $adminUserId): array
     {
@@ -227,14 +256,14 @@ class WasteCollectionService
             $duplicateCount = 0;
 
             foreach ($collections as $collectionData) {
-                // Check for duplicates
+                // 중복 확인
                 if (!empty($collectionData['receiptNumber']) && 
                     $this->wasteCollectionRepository->findByDischargeNumber($collectionData['receiptNumber'])) {
                     $duplicateCount++;
                     continue;
                 }
 
-                // Get address info from Kakao API
+                // 카카오 API에서 주소 정보 가져오기
                 $addressInfo = $this->getAddressInfoFromKakao($collectionData['address']);
 
                 $dataToSave = [
@@ -276,7 +305,11 @@ class WasteCollectionService
     }
 
     /**
-     * Update collection items
+     * 수거 품목을 업데이트합니다.
+     * @param int $collectionId
+     * @param string $itemsJson
+     * @return bool
+     * @throws Exception
      */
     public function updateCollectionItems(int $collectionId, string $itemsJson): bool
     {
@@ -292,17 +325,17 @@ class WasteCollectionService
         $this->db->beginTransaction();
         
         try {
-            // Delete existing items
+            // 기존 품목 삭제
             $this->wasteCollectionRepository->deleteItemsByCollectionId($collectionId);
 
-            // Add new items
+            // 새 품목 추가
             if (!empty($items)) {
                 foreach ($items as $item) {
                     $itemName = trim($item['name'] ?? '');
                     $quantity = intval($item['quantity'] ?? 0);
 
                     if (empty($itemName) || $quantity <= 0) {
-                        continue; // Skip invalid items
+                        continue; // 잘못된 품목 건너뛰기
                     }
 
                     if (!$this->wasteCollectionRepository->createCollectionItem($collectionId, $itemName, $quantity)) {
@@ -321,7 +354,12 @@ class WasteCollectionService
     }
 
     /**
-     * Update admin memo
+     * 관리자 메모를 업데이트합니다.
+     * @param int $id
+     * @param string $memo
+     * @param int $employeeId
+     * @return bool
+     * @throws Exception
      */
     public function updateAdminMemo(int $id, string $memo, int $employeeId): bool
     {
@@ -333,7 +371,8 @@ class WasteCollectionService
     }
 
     /**
-     * Clear all online submissions
+     * 모든 온라인 제출을 지웁니다.
+     * @return bool
      */
     public function clearOnlineSubmissions(): bool
     {
@@ -341,13 +380,15 @@ class WasteCollectionService
     }
 
     /**
-     * Get address information from Kakao API
+     * 카카오 API에서 주소 정보를 가져옵니다.
+     * @param string $address
+     * @return array|null
      */
     private function getAddressInfoFromKakao(string $address): ?array
     {
-        $apiKey = '42f32b3a748e93c5ac949d79243a526f'; // Replace with actual API key
+        $apiKey = '42f32b3a748e93c5ac949d79243a526f'; // 실제 API 키로 교체
         
-        // Clean address
+        // 주소 정리
         $cleanAddress = trim($address);
         $cleanAddress = preg_replace('/\s+/', ' ', $cleanAddress);
         
@@ -390,13 +431,13 @@ class WasteCollectionService
         }
         
         if (empty($result['documents'])) {
-            // Retry with keyword search
+            // 키워드 검색으로 재시도
             return $this->searchAddressByKeyword($cleanAddress, $apiKey);
         }
         
         $doc = $result['documents'][0];
         
-        // Get jibun and road addresses
+        // 지번 및 도로명 주소 가져오기
         $jibunAddress = null;
         $roadAddress = null;
         $adminDong = null;
@@ -424,7 +465,10 @@ class WasteCollectionService
     }
 
     /**
-     * Search address by keyword as fallback
+     * 대체 수단으로 키워드로 주소 검색
+     * @param string $address
+     * @param string $apiKey
+     * @return array|null
      */
     private function searchAddressByKeyword(string $address, string $apiKey): ?array
     {

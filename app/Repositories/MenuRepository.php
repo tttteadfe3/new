@@ -301,22 +301,27 @@ class MenuRepository
         return false;
     }
 
+    /**
+     * @param int $parentId
+     * @param array $visibleMenus
+     * @return string|null
+     */
     private function findFirstVisibleChildUrl(int $parentId, array $visibleMenus): ?string
     {
         foreach ($visibleMenus as $menu) {
             if ($menu['parent_id'] == $parentId) {
-                // Since visibleMenus is sorted by display_order, this is the first child.
-                // If this child also has children, recurse to find the first leaf.
+                // visibleMenus는 display_order로 정렬되어 있으므로 이것이 첫 번째 자식입니다.
+                // 이 자식에게도 자식이 있으면 첫 번째 리프를 찾기 위해 재귀합니다.
                 if ($this->hasVisibleChildren($menu['id'], $visibleMenus)) {
                     $descendantUrl = $this->findFirstVisibleChildUrl($menu['id'], $visibleMenus);
-                    // If a valid URL is found in the descendants, return it.
+                    // 하위 항목에서 유효한 URL을 찾으면 반환합니다.
                     if ($descendantUrl) {
                         return $descendantUrl;
                     }
                 }
                 
-                // If it's a leaf or its descendants have no valid URL, return this menu's URL.
-                // But only if it's not a placeholder.
+                // 리프이거나 하위 항목에 유효한 URL이 없으면 이 메뉴의 URL을 반환합니다.
+                // 단, 플레이스홀더가 아닌 경우에만 해당됩니다.
                 if (isset($menu['url']) && $menu['url'] !== '#') {
                     return $menu['url'];
                 }
@@ -327,6 +332,8 @@ class MenuRepository
 
     /**
      * 메뉴 생성
+     * @param array $menuData
+     * @return string
      */
     public function create(array $menuData): string {
         $sql = "INSERT INTO sys_menus (name, url, icon, parent_id, display_order, permission_key) 
@@ -344,6 +351,9 @@ class MenuRepository
 
     /**
      * 메뉴 수정
+     * @param int $id
+     * @param array $menuData
+     * @return bool
      */
     public function update(int $id, array $menuData): bool {
         $sql = "UPDATE sys_menus SET 
@@ -367,6 +377,8 @@ class MenuRepository
 
     /**
      * 메뉴 삭제
+     * @param int $id
+     * @return bool
      */
     public function delete(int $id): bool {
         // 하위 메뉴가 있는지 확인
@@ -380,6 +392,8 @@ class MenuRepository
 
     /**
      * 메뉴 조회
+     * @param int $id
+     * @return array|null
      */
     public function findById(int $id): ?array {
         return $this->db->fetchOne("SELECT * FROM sys_menus WHERE id = :id", [':id' => $id]);
@@ -387,6 +401,9 @@ class MenuRepository
 
     /**
      * 메뉴 순서 변경
+     * @param int $id
+     * @param int $displayOrder
+     * @return bool
      */
     public function updateDisplayOrder(int $id, int $displayOrder): bool {
         $sql = "UPDATE sys_menus SET display_order = :display_order WHERE id = :id";
@@ -395,6 +412,9 @@ class MenuRepository
 
     /**
      * 부모 메뉴 변경
+     * @param int $id
+     * @param int|null $parentId
+     * @return bool
      */
     public function updateParent(int $id, ?int $parentId): bool {
         $sql = "UPDATE sys_menus SET parent_id = :parent_id WHERE id = :id";
