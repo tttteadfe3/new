@@ -153,21 +153,24 @@ class AuthService {
             return false;
         }
 
+        $managedDeptIds = $this->departmentRepository->findDepartmentIdsWithEmployeeViewPermission($managerEmployeeId);
+        if (empty($managedDeptIds)) {
+            return false;
+        }
+
         $this->loadDepartmentMap();
 
-        $targetDeptId = $targetEmployee['department_id'];
-        $currentDeptId = $targetDeptId;
+        $currentDeptId = $targetEmployee['department_id'];
 
         while ($currentDeptId) {
-            $department = $this->departmentMap[$currentDeptId] ?? null;
-            if (!$department) {
-                break;
-            }
-
-            if ($department->manager_id === $managerEmployeeId) {
+            if (in_array($currentDeptId, $managedDeptIds)) {
                 return true;
             }
 
+            $department = $this->departmentMap[$currentDeptId] ?? null;
+            if (!$department || !$department->parent_id) {
+                break;
+            }
             $currentDeptId = $department->parent_id;
         }
 
