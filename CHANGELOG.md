@@ -4,6 +4,16 @@
 
 ---
 
+## [1.0.4 - 2025-10-26]
+
+### 🐛 버그 수정 (Bug Fixes)
+- **API 컨트롤러의 Fatal Error 수정**:
+  - **문제**: `/api/employees/unlinked` 엔드포인트 호출 시 `Call to undefined method App\Core\Request::get()` Fatal Error 발생.
+  - **원인**: `EmployeeApiController`에서 `Request` 객체의 존재하지 않는 `get()` 메서드를 호출함.
+  - **수정**: `get()` 메서드 호출을 올바른 `input()` 메서드로 변경하여 API가 정상적으로 작동하도록 수정.
+  - **영향 범위**: `app/Controllers/Api/EmployeeApiController.php`
+  - **함께 수정된 파일**: 없음
+
 ## [1.0.3 - 2025-10-26]
 
 ### 🐛 버그 수정 (Bug Fixes)
