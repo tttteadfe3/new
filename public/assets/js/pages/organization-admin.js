@@ -213,10 +213,11 @@ class DepartmentAdminPage extends BasePage {
 class PositionAdminPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/api/positions'
+            API_URL: '/api/organization' // Use the organization API endpoint
         });
         this.elements = {};
         this.state = {};
+        this.initializeApp(); // Auto-initialize
     }
 
     initializeApp() {
@@ -225,6 +226,7 @@ class PositionAdminPage extends BasePage {
 
         this.state.modal = new bootstrap.Modal(this.elements.modalEl);
         this.setupEventListeners();
+        this.loadPositions(); // Load initial data
     }
 
     cacheDOMElements() {
@@ -275,59 +277,74 @@ class PositionAdminPage extends BasePage {
         }
     }
 
+    async loadPositions() {
+        try {
+            const response = await this.apiCall(`${this.config.API_URL}?type=position`);
+            const positions = response.data;
+
+            if (positions.length === 0) {
+                this.elements.tableBody.innerHTML = '<tr><td colspan="3">직급이 없습니다.</td></tr>';
+                return;
+            }
+
+            this.elements.tableBody.innerHTML = positions.map(pos => `
+                <tr data-id="${pos.id}" data-name="${this._sanitizeHTML(pos.name)}" data-level="${pos.level}">
+                    <td>${this._sanitizeHTML(pos.name)}</td>
+                    <td>${pos.level}</td>
+                    <td>
+                        <button class="btn btn-success btn-sm edit-position-btn">수정</button>
+                        <button class="btn btn-danger btn-sm delete-position-btn">삭제</button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading positions:', error);
+            this.elements.tableBody.innerHTML = '<tr><td colspan="3" class="text-danger">직급 목록 로딩 실패</td></tr>';
+        }
+    }
+
     async handleFormSubmit(e) {
         e.preventDefault();
         const id = this.elements.idInput.value;
-        const url = id ? `${this.config.API_URL}/${id}` : this.config.API_URL;
         const method = id ? 'PUT' : 'POST';
+        const url = id ? `${this.config.API_URL}/${id}` : this.config.API_URL;
 
         const payload = {
             name: this.elements.nameInput.value,
-            level: this.elements.levelInput.value
+            level: this.elements.levelInput.value,
+            type: 'position' // Specify the type
         };
 
         try {
             const result = await this.apiCall(url, { method, body: payload });
-
             this.state.modal.hide();
             Toast.success(result.message);
-            this.updateTable(id, payload, result.data.id);
-
+            await this.loadPositions(); // Reload the list
         } catch (error) {
             console.error('Error saving position:', error);
             Toast.error(`저장 중 오류 발생: ${error.message}`);
         }
     }
 
-    updateTable(id, payload, newId) {
-        const newRow = `
-            <tr data-id="${id || newId}" data-name="${payload.name}" data-level="${payload.level}">
-                <td>${payload.name}</td>
-                <td>${payload.level}</td>
-                <td>
-                    <button class="btn btn-success btn-sm edit-position-btn">수정</button>
-                    <button class="btn btn-danger btn-sm delete-position-btn">삭제</button>
-                </td>
-            </tr>`;
-
-        if (id) {
-            const row = this.elements.tableBody.querySelector(`tr[data-id='${id}']`);
-            if (row) row.outerHTML = newRow;
-        } else {
-            this.elements.tableBody.insertAdjacentHTML('beforeend', newRow);
-        }
-    }
-
     async deletePosition(id) {
         try {
-            const result = await this.apiCall(`${this.config.API_URL}/${id}`, { method: 'DELETE' });
+            const result = await this.apiCall(`${this.config.API_URL}/${id}`, {
+                method: 'DELETE',
+                body: { type: 'position' }
+            });
             Toast.success(result.message);
-            const row = this.elements.tableBody.querySelector(`tr[data-id='${id}']`);
-            if (row) row.remove();
+            await this.loadPositions(); // Reload the list
         } catch (error) {
             console.error('Error deleting position:', error);
             Toast.error(`삭제 중 오류 발생: ${error.message}`);
         }
+    }
+
+    _sanitizeHTML(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
     }
 }
 
