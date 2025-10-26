@@ -4,6 +4,16 @@
 
 ---
 
+## [1.0.2 - 2025-10-26]
+
+### 🐛 버그 수정 (Bug Fixes)
+- **부서 관리자 권한 확인 로직 수정**:
+  - **문제**: 부서 관리자로 지정된 사용자가 부서 데이터를 관리할 수 없는 심각한 버그.
+  - **원인**: `AuthService::canManageEmployee()` 메서드가 `hr_departments` 테이블의 존재하지 않는 `manager_id` 컬럼을 확인하고 있었음. 올바른 로직은 `hr_department_managers` 테이블을 통해 권한을 확인해야 함.
+  - **수정**: `departmentRepository->findDepartmentIdsWithEmployeeViewPermission()`를 호출하여 사용자가 관리하는 부서 목록을 가져온 후, 대상 직원의 부서가 해당 목록 또는 그 상위 부서에 속하는지 재귀적으로 확인하도록 로직을 변경.
+  - **영향 범위**: `app/Services/AuthService.php`
+  - **함께 수정된 파일**: 없음
+
 ## [1.0.1 - 2025-10-26]
 
 ### 🐛 버그 수정 (Bug Fixes)
