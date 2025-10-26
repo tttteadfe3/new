@@ -214,7 +214,7 @@ class DepartmentAdminPage extends BasePage {
 class PositionAdminPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/api/organization' // Use the organization API endpoint
+            API_URL: '/organization' // Use the organization API endpoint
         });
         this.elements = {};
         this.state = {};

@@ -57,17 +57,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($positions as $position): ?>
-                                <tr data-id="<?= $position['id'] ?>" data-name="<?= e($position['name']) ?>" data-level="<?= $position['level'] ?>">
-                                    <td><?= $position['id'] ?></td>
-                                    <td><?= e($position['name']) ?></td>
-                                    <td><?= $position['level'] ?></td>
-                                    <td>
-                                        <button class="btn btn-success btn-sm edit-position-btn">수정</button>
-                                        <button class="btn btn-danger btn-sm delete-position-btn">삭제</button>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
+                            <!-- Position data will be loaded dynamically by JavaScript -->
                         </tbody>
                     </table>
                 </div>
