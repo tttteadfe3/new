@@ -137,7 +137,8 @@ class EmployeeApiController extends BaseApiController
     public function unlinked(): void
     {
         try {
-            $departmentId = $this->request->get('department_id', null, 'int');
+            $departmentId = $this->request->input('department_id', null);
+            $departmentId = $departmentId ? (int)$departmentId : null;
             $unlinkedEmployees = $this->employeeService->getUnlinkedEmployees($departmentId);
             $this->apiSuccess($unlinkedEmployees);
         } catch (Exception $e) {
