@@ -30,18 +30,18 @@ class LeaveController extends BaseController
     }
 
     /**
-     * Display leave management index page for administrators.
-     * Regular users are now directed to the dashboard.
+     * 관리자를 위한 휴가 관리 인덱스 페이지를 표시합니다.
+     * 일반 사용자는 이제 대시보드로 이동합니다.
      */
     public function index(): void
     {
-        // This page is for admins; regular users have this info on their dashboard.
-        // We can redirect to the approval page as a default for admins.
+        // 이 페이지는 관리자를 위한 페이지이며, 일반 사용자는 대시보드에서 이 정보를 확인할 수 있습니다.
+        // 관리자의 기본값으로 승인 페이지로 리디렉션할 수 있습니다.
         $this->redirect('/leaves/approval');
     }
 
     /**
-     * Display leave approval page for administrators
+     * 관리자를 위한 휴가 승인 페이지를 표시합니다
      */
     public function approval(): void
     {
@@ -51,7 +51,7 @@ class LeaveController extends BaseController
     }
 
     /**
-     * Display leave granting page for administrators
+     * 관리자를 위한 휴가 부여 페이지를 표시합니다
      */
     public function granting(): void
     {
@@ -61,13 +61,13 @@ class LeaveController extends BaseController
     }
 
     /**
-     * Display leave history for administrators
+     * 관리자를 위한 휴가 내역을 표시합니다
      */
     public function history(): void
     {
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-history-admin.js');
 
-        // Get all employees for the dropdown via the service layer
+        // 서비스 계층을 통해 드롭다운에 대한 모든 직원을 가져옵니다
         $employees = $this->employeeService->getActiveEmployees();
 
         echo $this->render('pages/leaves/history', compact('employees'), 'layouts/app');

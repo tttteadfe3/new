@@ -23,6 +23,10 @@ class DepartmentRepository {
         return $this->db->fetchAll($sql);
     }
 
+    /**
+     * @param int $id
+     * @return Department|null
+     */
     public function findById(int $id): ?Department {
         $sql = "
             SELECT d.*
@@ -33,12 +37,20 @@ class DepartmentRepository {
         return $result ?: null;
     }
 
+    /**
+     * @param int $parentId
+     * @return array
+     */
     public function findByParentId(int $parentId): array
     {
         $sql = "SELECT * FROM hr_departments WHERE parent_id = :parent_id";
         return $this->db->fetchAll($sql, [':parent_id' => $parentId]);
     }
 
+    /**
+     * @param int $departmentId
+     * @return array
+     */
     public function findDepartmentViewPermissionIds(int $departmentId): array
     {
         $sql = "SELECT permitted_department_id FROM hr_department_view_permissions WHERE department_id = :department_id";
@@ -46,6 +58,10 @@ class DepartmentRepository {
         return array_column($results, 'permitted_department_id');
     }
 
+    /**
+     * @param int $permittedDepartmentId
+     * @return array
+     */
     public function findVisibleDepartmentIdsForGivenDepartment(int $permittedDepartmentId): array
     {
         $sql = "SELECT department_id FROM hr_department_view_permissions WHERE permitted_department_id = :permitted_department_id";
@@ -53,6 +69,10 @@ class DepartmentRepository {
         return array_column($results, 'department_id');
     }
 
+    /**
+     * @param int $employeeId
+     * @return array
+     */
     public function findDepartmentIdsWithEmployeeViewPermission(int $employeeId): array
     {
         $sql = "SELECT department_id FROM hr_department_managers WHERE employee_id = :employee_id";
@@ -60,6 +80,10 @@ class DepartmentRepository {
         return array_column($results, 'department_id');
     }
 
+    /**
+     * @param int $departmentId
+     * @return array
+     */
     public function findSubtreeIds(int $departmentId): array
     {
         $sql = "
@@ -75,6 +99,10 @@ class DepartmentRepository {
         return array_column($results, 'id');
     }
 
+    /**
+     * @param int $departmentId
+     * @return array
+     */
     public function findAncestorIds(int $departmentId): array
     {
         $sql = "
@@ -90,6 +118,9 @@ class DepartmentRepository {
         return array_column($results, 'id');
     }
 
+    /**
+     * @return array
+     */
     public function findAllWithEmployees(): array {
         $sql = "
             SELECT
@@ -111,6 +142,9 @@ class DepartmentRepository {
         return $this->db->query($sql);
     }
 
+    /**
+     * @return array
+     */
     public function findAllWithViewers(): array
     {
         $sql = "
@@ -128,6 +162,10 @@ class DepartmentRepository {
         return $this->db->fetchAll($sql);
     }
 
+    /**
+     * @param array $data
+     * @return string
+     */
     public function create(array $data): string {
         $sql = "INSERT INTO hr_departments (name, parent_id, path) VALUES (:name, :parent_id, :path)";
         $params = [
@@ -139,6 +177,11 @@ class DepartmentRepository {
         return $this->db->lastInsertId();
     }
 
+    /**
+     * @param int $id
+     * @param array $data
+     * @return bool
+     */
     public function update(int $id, array $data): bool {
         $sql = "UPDATE hr_departments SET name = :name, parent_id = :parent_id, path = :path WHERE id = :id";
         $params = [
@@ -150,11 +193,19 @@ class DepartmentRepository {
         return $this->db->execute($sql, $params) > 0;
     }
 
+    /**
+     * @param int $id
+     * @return bool
+     */
     public function isEmployeeAssigned(int $id): bool {
         $sql = "SELECT 1 FROM hr_employees WHERE department_id = :id LIMIT 1";
         return (bool) $this->db->fetchOne($sql, [':id' => $id]);
     }
 
+    /**
+     * @param int $id
+     * @return bool
+     */
     public function delete(int $id): bool {
         if ($this->isEmployeeAssigned($id)) {
             return false;
@@ -162,6 +213,11 @@ class DepartmentRepository {
         return $this->db->execute("DELETE FROM hr_departments WHERE id = :id", [':id' => $id]) > 0;
     }
 
+    /**
+     * @param int $departmentId
+     * @param array $employeeIds
+     * @return void
+     */
     public function replaceEmployeeViewPermissions(int $departmentId, array $employeeIds): void
     {
         $this->db->execute("DELETE FROM hr_department_managers WHERE department_id = :department_id", [':department_id' => $departmentId]);
@@ -183,6 +239,11 @@ class DepartmentRepository {
         $this->db->execute($sql, $params);
     }
 
+    /**
+     * @param int $departmentId
+     * @param array $permittedDepartmentIds
+     * @return void
+     */
     public function replaceDepartmentViewPermissions(int $departmentId, array $permittedDepartmentIds): void
     {
         $this->db->execute("DELETE FROM hr_department_view_permissions WHERE department_id = :department_id", [':department_id' => $departmentId]);
@@ -204,16 +265,25 @@ class DepartmentRepository {
         $this->db->execute($sql, $params);
     }
 
+    /**
+     * @return void
+     */
     public function beginTransaction(): void
     {
         $this->db->beginTransaction();
     }
 
+    /**
+     * @return void
+     */
     public function commit(): void
     {
         $this->db->commit();
     }
 
+    /**
+     * @return void
+     */
     public function rollBack(): void
     {
         $this->db->rollBack();

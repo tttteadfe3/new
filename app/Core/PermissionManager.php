@@ -14,7 +14,7 @@ class PermissionManager
     }
 
     /**
-     * Check if the user can perform a given action.
+     * 사용자가 주어진 작업을 수행할 수 있는지 확인합니다.
      */
     public function can(string $permission): bool
     {
@@ -22,12 +22,12 @@ class PermissionManager
             return false;
         }
 
-        // Admins can do anything.
+        // 관리자는 모든 것을 할 수 있습니다.
         if ($this->user['role'] === 'admin') {
             return true;
         }
 
-        // Check for specific permission for the user's role.
+        // 사용자의 역할에 대한 특정 권한을 확인합니다.
         return Permission::hasPermission($this->user['role'], $permission);
     }
 }

@@ -9,8 +9,8 @@ use App\Core\Database;
 use Exception;
 
 /**
- * A unified service for handling all business logic related to littering reports.
- * This class merges the responsibilities of the old LitteringManager and LitteringService.
+ * 무단투기 신고와 관련된 모든 비즈니스 로직을 처리하기 위한 통합 서비스입니다.
+ * 이 클래스는 이전 LitteringManager와 LitteringService의 책임을 통합합니다.
  */
 class LitteringService
 {
@@ -23,37 +23,63 @@ class LitteringService
         $this->db = $db;
     }
 
+    /**
+     * @return array
+     */
     public function getActiveLittering(): array
     {
         return $this->litteringRepository->findAllActive();
     }
 
+    /**
+     * @return array
+     */
     public function getPendingLittering(): array
     {
         return $this->litteringRepository->findAllPending();
     }
 
+    /**
+     * @return array
+     */
     public function getCompletedLittering(): array
     {
         return $this->litteringRepository->findAllCompleted();
     }
 
+    /**
+     * @return array
+     */
     public function getProcessedLitteringForApproval(): array
     {
         return $this->litteringRepository->findAllProcessedForApproval();
     }
 
+    /**
+     * @return array
+     */
     public function getDeletedLittering(): array
     {
         return $this->litteringRepository->findAllDeleted();
     }
 
+    /**
+     * @param int $id
+     * @return array|null
+     */
     public function getLitteringById(int $id): ?array
     {
-        // Fixed the inefficient implementation from the old service.
+        // 이전 서비스의 비효율적인 구현을 수정했습니다.
         return $this->litteringRepository->findById($id);
     }
 
+    /**
+     * @param array $postData
+     * @param array $files
+     * @param int $employeeId
+     * @return array
+     * @throws Exception
+     */
     public function registerLittering(array $postData, array $files, int $employeeId): array
     {
         $this->validateRegistration($postData, $files);
@@ -91,7 +117,7 @@ class LitteringService
         } catch (Exception $e) {
             $this->db->rollBack();
 
-            // Clean up uploaded files on error
+            // 오류 발생 시 업로드된 파일 정리
             foreach ([$fileName1, $fileName2] as $photoPath) {
                 if (isset($photoPath) && !empty($photoPath)) {
                     $prefix = UPLOAD_URL_PATH . '/';
@@ -109,11 +135,17 @@ class LitteringService
         }
     }
 
+    /**
+     * @param array $postData
+     * @param int $employeeId
+     * @return array
+     * @throws Exception
+     */
     public function confirmLittering(array $postData, int $employeeId): array
     {
         $caseId = intval($postData['id'] ?? 0);
         if (!$caseId) {
-            throw new Exception("Invalid report ID.", 400);
+            throw new Exception("잘못된 보고서 ID입니다.", 400);
         }
 
         $updateData = [
@@ -126,73 +158,102 @@ class LitteringService
         ];
 
         if (!$this->litteringRepository->confirm($caseId, $updateData, $employeeId)) {
-            throw new Exception("Failed to confirm report.", 500);
+            throw new Exception("보고서를 확인하지 못했습니다.", 500);
         }
 
         return $this->getLitteringById($caseId);
     }
 
+    /**
+     * @param array $postData
+     * @param int $employeeId
+     * @return array
+     * @throws Exception
+     */
     public function approveLittering(array $postData, int $employeeId): array
     {
         $caseId = intval($postData['id'] ?? 0);
         if (!$caseId) {
-            throw new Exception("Invalid report ID.", 400);
+            throw new Exception("잘못된 보고서 ID입니다.", 400);
         }
 
         $case = $this->getLitteringById($caseId);
         if ($case['status'] !== 'processed') {
-            throw new Exception("Report must be in 'processed' state to be approved.", 403);
+            throw new Exception("승인하려면 보고서가 '처리됨' 상태여야 합니다.", 403);
         }
 
         if (!$this->litteringRepository->approve($caseId, $employeeId)) {
-            throw new Exception("Failed to approve report.", 500);
+            throw new Exception("보고서를 승인하지 못했습니다.", 500);
         }
 
         return $this->getLitteringById($caseId);
     }
 
+    /**
+     * @param array $postData
+     * @param int $employeeId
+     * @return array
+     * @throws Exception
+     */
     public function deleteLittering(array $postData, int $employeeId): array
     {
         $caseId = intval($postData['id'] ?? 0);
         if (!$caseId) {
-            throw new Exception("Invalid report ID.", 400);
+            throw new Exception("잘못된 보고서 ID입니다.", 400);
         }
 
         if (!$this->litteringRepository->softDelete($caseId, $employeeId)) {
-            throw new Exception("Failed to delete report.", 500);
+            throw new Exception("보고서를 삭제하지 못했습니다.", 500);
         }
 
         return ['id' => $caseId];
     }
 
+    /**
+     * @param array $postData
+     * @return array
+     * @throws Exception
+     */
     public function permanentlyDeleteLittering(array $postData): array
     {
         $caseId = intval($postData['id'] ?? 0);
         if (!$caseId) {
-            throw new Exception("Invalid report ID.", 400);
+            throw new Exception("잘못된 보고서 ID입니다.", 400);
         }
 
         if (!$this->litteringRepository->deletePermanently($caseId)) {
-            throw new Exception("Failed to permanently delete report.", 500);
+            throw new Exception("보고서를 영구적으로 삭제하지 못했습니다.", 500);
         }
 
         return ['id' => $caseId];
     }
 
+    /**
+     * @param array $postData
+     * @return array
+     * @throws Exception
+     */
     public function restoreLittering(array $postData): array
     {
         $caseId = intval($postData['id'] ?? 0);
         if (!$caseId) {
-            throw new Exception("Invalid report ID.", 400);
+            throw new Exception("잘못된 보고서 ID입니다.", 400);
         }
 
         if (!$this->litteringRepository->restore($caseId)) {
-            throw new Exception("Failed to restore report.", 500);
+            throw new Exception("보고서를 복원하지 못했습니다.", 500);
         }
 
         return $this->getLitteringById($caseId);
     }
 
+    /**
+     * @param array $postData
+     * @param array $files
+     * @param int $employeeId
+     * @return array
+     * @throws Exception
+     */
     public function processLittering(array $postData, array $files, int $employeeId): array
     {
         $this->validateProcess($postData, $files);
@@ -200,10 +261,10 @@ class LitteringService
         $caseId = intval($postData['id']);
         $case = $this->getLitteringById($caseId);
         if (!$case) {
-            throw new Exception("Report not found.", 404);
+            throw new Exception("보고서를 찾을 수 없습니다.", 404);
         }
         if ($case['status'] !== 'confirmed') {
-            throw new Exception("Report must be confirmed before processing.", 403);
+            throw new Exception("처리하기 전에 보고서를 확인해야 합니다.", 403);
         }
 
         $data = [
@@ -215,47 +276,67 @@ class LitteringService
         ];
 
         if (!$this->litteringRepository->process($data, $employeeId)) {
-            throw new Exception("Failed to update report status in database.", 500);
+            throw new Exception("데이터베이스에서 보고서 상태를 업데이트하지 못했습니다.", 500);
         }
 
         return $data;
     }
 
+    /**
+     * @return array
+     */
     public function getLitteringStatistics(): array
     {
-        // This logic was originally in the old LitteringService
+        // 이 로직은 원래 이전 LitteringService에 있었습니다.
         return [
             'active_count' => count($this->getActiveLittering()),
             'pending_count' => count($this->getPendingLittering()),
-            'processed_count' => count($this->getProcessedLittering()),
+            'processed_count' => count($this->getProcessedLitteringForApproval()),
             'deleted_count' => count($this->getDeletedLittering()),
         ];
     }
 
+    /**
+     * @param array $postData
+     * @param array $files
+     * @return void
+     * @throws Exception
+     */
     private function validateRegistration(array $postData, array $files): void
     {
         if (!isset($files['photo2']) || $files['photo2']['error'] !== UPLOAD_ERR_OK) {
-            throw new Exception("After photo is required.", 400);
+            throw new Exception("처리 후 사진이 필요합니다.", 400);
         }
-        // ... more validation logic from LitteringManager
+        // ... LitteringManager의 추가 유효성 검사 로직
     }
 
+    /**
+     * @param array $postData
+     * @param array $files
+     * @return void
+     * @throws Exception
+     */
     private function validateProcess(array $postData, array $files): void
     {
         if (empty($postData['corrected'])) {
-            throw new Exception("Correction status is required.", 400);
+            throw new Exception("수정 상태가 필요합니다.", 400);
         }
-        // ... more validation logic from LitteringManager
+        // ... LitteringManager의 추가 유효성 검사 로직
     }
 
+    /**
+     * @param array $file
+     * @return void
+     * @throws Exception
+     */
     private function validateFile(array $file): void
     {
-        // This is a simplified version. In a real app, use constants.
+        // 이것은 단순화된 버전입니다. 실제 앱에서는 상수를 사용하세요.
         if (!in_array($file['type'], ['image/jpeg', 'image/png'])) {
-            throw new Exception("Invalid file type.", 400);
+            throw new Exception("잘못된 파일 형식입니다.", 400);
         }
         if ($file['size'] > 5 * 1024 * 1024) { // 5MB
-            throw new Exception("File size exceeds 5MB.", 400);
+            throw new Exception("파일 크기가 5MB를 초과합니다.", 400);
         }
     }
 }

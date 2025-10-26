@@ -86,7 +86,7 @@ class OrganizationApiController extends BaseApiController
             } elseif ($type === 'position') {
                 $data = $this->positionRepository->getAll();
             } else {
-                 throw new Exception('Invalid entity type specified.');
+                 throw new Exception('잘못된 엔티티 유형이 지정되었습니다.');
             }
             $this->apiSuccess($data);
         } catch (Exception $e) {
@@ -109,12 +109,12 @@ class OrganizationApiController extends BaseApiController
 
             if ($type === 'department') {
                 $entityName = '부서';
-                $newId = $this->organizationService->createDepartment($input); // Pass the whole payload
+                $newId = $this->organizationService->createDepartment($input); // 전체 페이로드 전달
             } elseif ($type === 'position') {
                 $entityName = '직급';
                 $newId = $this->positionRepository->create($name);
             } else {
-                throw new Exception('Invalid entity type specified.');
+                throw new Exception('잘못된 엔티티 유형이 지정되었습니다.');
             }
 
             $this->apiSuccess(['new_id' => $newId], '새 ' . $entityName . '(이)가 생성되었습니다.');
@@ -138,12 +138,12 @@ class OrganizationApiController extends BaseApiController
             $entityName = '';
             if ($type === 'department') {
                 $entityName = '부서';
-                $this->organizationService->updateDepartment($id, $input); // Pass the whole payload
+                $this->organizationService->updateDepartment($id, $input); // 전체 페이로드 전달
             } elseif ($type === 'position') {
                 $entityName = '직급';
                 $this->positionRepository->update($id, $name);
             } else {
-                throw new Exception('Invalid entity type specified.');
+                throw new Exception('잘못된 엔티티 유형이 지정되었습니다.');
             }
 
             $this->apiSuccess(null, $entityName . ' 정보가 수정되었습니다.');
@@ -167,7 +167,7 @@ class OrganizationApiController extends BaseApiController
                 $entityName = '직급';
                 $result = $this->positionRepository->delete($id);
             } else {
-                throw new Exception('Invalid entity type specified.');
+                throw new Exception('잘못된 엔티티 유형이 지정되었습니다.');
             }
 
             if ($result) {

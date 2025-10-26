@@ -36,7 +36,7 @@ class MenuApiController extends BaseApiController
     }
 
     /**
-     * Get all menus
+     * 모든 메뉴를 가져옵니다
      */
     public function index(): void
     {
@@ -49,7 +49,7 @@ class MenuApiController extends BaseApiController
     }
 
     /**
-     * Get a single menu by ID
+     * ID로 단일 메뉴를 가져옵니다
      */
     public function show(int $id): void
     {
@@ -72,7 +72,7 @@ class MenuApiController extends BaseApiController
     }
 
     /**
-     * Create a new menu
+     * 새 메뉴를 만듭니다
      */
     public function store(): void
     {
@@ -98,7 +98,7 @@ class MenuApiController extends BaseApiController
     }
 
     /**
-     * Update an existing menu
+     * 기존 메뉴를 업데이트합니다
      */
     public function update(int $id): void
     {
@@ -129,7 +129,7 @@ class MenuApiController extends BaseApiController
     }
 
     /**
-     * Update menu order and hierarchy
+     * 메뉴 순서 및 계층 구조 업데이트
      */
     public function updateOrder(): void
     {
@@ -140,7 +140,7 @@ class MenuApiController extends BaseApiController
                 return;
             }
 
-            // Frontend sends data wrapped in an 'updates' key
+            // 프론트엔드는 'updates' 키에 래핑된 데이터를 보냅니다
             $updates = $data['updates'] ?? null;
             if (!is_array($updates)) {
                 $this->apiBadRequest('메뉴 업데이트 데이터가 필요합니다.');
@@ -151,13 +151,13 @@ class MenuApiController extends BaseApiController
             $this->apiSuccess(['message' => '메뉴 순서가 업데이트되었습니다.']);
 
         } catch (Exception $e) {
-            // Service layer handles rollback, controller just reports error
+            // 서비스 계층은 롤백을 처리하고 컨트롤러는 오류만 보고합니다
             $this->handleException($e);
         }
     }
 
     /**
-     * Delete a menu
+     * 메뉴 삭제
      */
     public function destroy(int $id): void
     {

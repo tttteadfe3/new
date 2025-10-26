@@ -24,7 +24,7 @@ class WasteCollectionController extends BaseController
     }
 
     /**
-     * Display waste collection map page (for users)
+     * 폐기물 수거 지도 페이지를 표시합니다 (사용자용)
      */
     public function index(): void
     {
@@ -36,7 +36,7 @@ class WasteCollectionController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 
-        // Refactored Scripts
+        // 리팩토링된 스크립트
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
@@ -50,11 +50,11 @@ class WasteCollectionController extends BaseController
     }
 
     /**
-     * Display waste admin page
+     * 폐기물 관리 페이지를 표시합니다
      */
     public function manage(): void
     {
-        // Refactored Scripts
+        // 리팩토링된 스크립트
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/waste-manage.js");
         
         echo $this->render('pages/waste/manage', [], 'layouts/app');

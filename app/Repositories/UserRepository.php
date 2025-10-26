@@ -11,16 +11,28 @@ class UserRepository {
         $this->db = $db;
     }
 
+    /**
+     * @param int $id
+     * @return mixed
+     */
     public function findById(int $id) {
         $sql = "SELECT * FROM sys_users WHERE id = :id";
         return $this->db->fetchOne($sql, [':id' => $id]);
     }
 
+    /**
+     * @param string $kakaoId
+     * @return mixed
+     */
     public function findByKakaoId(string $kakaoId) {
         $sql = "SELECT * FROM sys_users WHERE kakao_id = :kakao_id";
         return $this->db->fetchOne($sql, [':kakao_id' => $kakaoId]);
     }
 
+    /**
+     * @param array $data
+     * @return string
+     */
     public function create(array $data): string {
         $sql = "INSERT INTO sys_users (kakao_id, nickname, email, profile_image_url, status)
                 VALUES (:kakao_id, :nickname, :email, :p_img, 'pending')";
@@ -33,6 +45,11 @@ class UserRepository {
         return $this->db->lastInsertId();
     }
     
+    /**
+     * @param int $userId
+     * @param array $data
+     * @return bool
+     */
     public function update(int $userId, array $data): bool {
         $sql = "UPDATE sys_users SET nickname = :nickname, email = :email, profile_image_url = :p_img WHERE id = :id";
         return $this->db->execute($sql, [
@@ -43,20 +60,36 @@ class UserRepository {
         ]) > 0;
     }
     
+    /**
+     * @param int $userId
+     * @param string $status
+     * @return bool
+     */
     public function updateUserStatus(int $userId, string $status): bool {
         $sql = "UPDATE sys_users SET status = :status WHERE id = :id";
         return $this->db->execute($sql, [':status' => $status, ':id' => $userId]) > 0;
     }
 
+    /**
+     * @return int
+     */
     public function countAll(): int {
         return (int) $this->db->fetchOne("SELECT COUNT(*) as count FROM sys_users")['count'];
     }
 
+    /**
+     * @param string $status
+     * @return int
+     */
     public function countByStatus(string $status): int {
         $sql = "SELECT COUNT(*) as count FROM sys_users WHERE status = :status";
         return (int) $this->db->fetchOne($sql, [':status' => $status])['count'];
     }
 
+    /**
+     * @param int $userId
+     * @return array
+     */
     public function getPermissions(int $userId): array {
         $sql = "SELECT DISTINCT p.`key` FROM sys_user_roles ur
                 JOIN sys_role_permissions rp ON ur.role_id = rp.role_id
@@ -65,6 +98,11 @@ class UserRepository {
         return $this->db->query($sql, [':user_id' => $userId]);
     }
     
+    /**
+     * @param array $filters
+     * @param array|null $visibleDepartmentIds
+     * @return array
+     */
     public function getAllWithRoles(array $filters = [], ?array $visibleDepartmentIds = null): array {
         $baseSql = "SELECT 
                     u.id, u.nickname, u.email, u.status, u.employee_id,
@@ -103,7 +141,7 @@ class UserRepository {
 
         if ($visibleDepartmentIds !== null) {
             if (empty($visibleDepartmentIds)) {
-                $whereClauses[] = "u.employee_id IS NULL"; // Only show unlinked users
+                $whereClauses[] = "u.employee_id IS NULL"; // 링크되지 않은 사용자만 표시
             } else {
                 $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
                 $whereClauses[] = "(e.department_id IN ($inClause) OR u.employee_id IS NULL)";
@@ -120,12 +158,22 @@ class UserRepository {
         return $this->db->query($sql, $params);
     }
 
+    /**
+     * @param int $userId
+     * @return array
+     */
     public function getRoleIdsForUser(int $userId): array {
         $sql = "SELECT role_id FROM sys_user_roles WHERE user_id = :user_id";
         $results = $this->db->query($sql, [':user_id' => $userId]);
         return array_column($results, 'role_id');
     }
 
+    /**
+     * @param int $userId
+     * @param array $roleIds
+     * @return void
+     * @throws \Exception
+     */
     public function updateUserRoles(int $userId, array $roleIds): void {
         $this->db->beginTransaction();
         try {
@@ -154,6 +202,7 @@ class UserRepository {
 
     /**
      * 직원 정보와 아직 연결되지 않은 '활성' 사용자 목록을 가져옵니다.
+     * @return array
      */
     public function findUsersWithoutEmployeeRecord(): array {
         $sql = "SELECT u.id, u.nickname FROM sys_users u
@@ -166,6 +215,7 @@ class UserRepository {
     /**
      * 사용자 계정과 아직 연결되지 않은 직원 목록을 가져옵니다.
      * @param array|null $visibleDepartmentIds 조회 가능한 부서 ID 목록
+     * @return array
      */
     public function getUnlinkedEmployees(?array $visibleDepartmentIds = null): array {
         $params = [];
@@ -189,6 +239,9 @@ class UserRepository {
 
     /**
      * 특정 사용자에게 직원을 연결(매핑)합니다.
+     * @param int $userId
+     * @param int $employeeId
+     * @return bool
      */
     public function linkEmployee(int $userId, int $employeeId): bool {
         $sql = "UPDATE sys_users SET employee_id = :employee_id WHERE id = :user_id";
@@ -197,7 +250,9 @@ class UserRepository {
     
     /**
      * 특정 사용자의 직원 연결을 해제합니다.
-     * (Called when user status is changed to non-active)
+     * (사용자 상태가 비활성으로 변경될 때 호출됨)
+     * @param int $userId
+     * @return bool
      */
     public function unlinkEmployee(int $userId): bool {
         $sql = "UPDATE sys_users SET employee_id = NULL WHERE id = :user_id";
@@ -206,6 +261,7 @@ class UserRepository {
 
     /**
      * 모든 사용자 목록 조회
+     * @return array
      */
     public function getAll(): array {
         return $this->getAllWithRoles();
@@ -213,6 +269,9 @@ class UserRepository {
 
     /**
      * 사용자 삭제
+     * @param int $id
+     * @return bool
+     * @throws \Exception
      */
     public function delete(int $id): bool {
         $this->db->beginTransaction();
@@ -233,6 +292,8 @@ class UserRepository {
 
     /**
      * 사용자 역할 목록 조회
+     * @param int $userId
+     * @return array
      */
     public function getUserRoles(int $userId): array {
         $sql = "SELECT r.id, r.name FROM sys_user_roles ur
@@ -244,6 +305,8 @@ class UserRepository {
 
     /**
      * 사용자 상태 토글 (활성/비활성)
+     * @param int $userId
+     * @return bool
      */
     public function toggleStatus(int $userId): bool {
         $sql = "UPDATE sys_users SET status = CASE 
@@ -255,24 +318,26 @@ class UserRepository {
     }
 
     /**
-     * Finds a user by their Kakao ID or creates a new one.
-     * This encapsulates the logic that was previously in the User model,
-     * and uses the standardized Database helper.
+     * Kakao ID로 사용자를 찾거나 새로 만듭니다.
+     * 이전에는 User 모델에 있던 로직을 캡슐화하고
+     * 표준화된 데이터베이스 헬퍼를 사용합니다.
+     * @param array $kakaoUser
+     * @return array
      */
     public function findOrCreateFromKakao(array $kakaoUser): array
     {
-        // 1. Find user by Kakao ID
+        // 1. Kakao ID로 사용자 찾기
         $user = $this->findByKakaoId($kakaoUser['id']);
 
         if ($user) {
-            // User exists, return their data
+            // 사용자가 존재하면 해당 데이터 반환
             return $user;
         }
 
-        // 2. User does not exist, create a new one using the existing create method
+        // 2. 사용자가 존재하지 않으면 기존 create 메서드를 사용하여 새로 만들기
         $newUserId = $this->create($kakaoUser);
 
-        // 3. Return the newly created user's data
+        // 3. 새로 만든 사용자의 데이터 반환
         return $this->findById((int)$newUserId);
     }
 }

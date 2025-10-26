@@ -303,8 +303,8 @@ $(window).scroll(function () {
 // Offline Mode / Online Mode Detection
 
 // You can change the texts here
-var OnlineText = "Connected to Internet";
-var OfflineText = "No Internet Connection";
+var OnlineText = "인터넷에 연결되었습니다.";
+var OfflineText = "인터넷 연결이 없습니다.";
 
 // Online Mode Toast Append
 function onlineModeToast() {
@@ -521,4 +521,3 @@ dmswitch.on('change', function () {
     dmswitch.prop('checked', this.checked);
 });
 ///////////////////////////////////////////////////////////////////////////
-

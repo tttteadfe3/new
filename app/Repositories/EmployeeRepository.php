@@ -26,7 +26,7 @@ class EmployeeRepository {
     }
 
     /**
-     * Finds active employees who are not linked to any user account.
+     * 사용자 계정에 연결되지 않은 활성 직원을 찾습니다.
      * @return array
      */
     public function findUnlinked(): array
@@ -55,6 +55,10 @@ class EmployeeRepository {
         return $this->db->fetchOne($sql, [':user_id' => $userId]);
     }
 
+    /**
+     * @param array $departmentIds
+     * @return array
+     */
     public function findByDepartmentIds(array $departmentIds): array
     {
         if (empty($departmentIds)) {
@@ -69,6 +73,10 @@ class EmployeeRepository {
         return $this->db->query($sql);
     }
 
+    /**
+     * @param array $employeeIds
+     * @return array
+     */
     public function findByIds(array $employeeIds): array
     {
         if (empty($employeeIds)) {
@@ -99,7 +107,7 @@ class EmployeeRepository {
 
         if ($visibleDepartmentIds !== null) {
             if (empty($visibleDepartmentIds)) {
-                $whereClauses[] = "1=0"; // Return no results if no departments are visible
+                $whereClauses[] = "1=0"; // 보이는 부서가 없으면 결과 없음
             } else {
                 $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
                 $whereClauses[] = "e.department_id IN ($inClause)";
@@ -163,9 +171,9 @@ class EmployeeRepository {
             $data['employee_number'] = $prefix . str_pad($nextSeq, 3, '0', STR_PAD_LEFT);
         }
 
-        if ($id) { // Update
+        if ($id) { // 업데이트
             $sql = "UPDATE hr_employees SET name=:name, employee_number=:employee_number, hire_date=:hire_date, phone_number=:phone_number, address=:address, emergency_contact_name=:emergency_contact_name, emergency_contact_relation=:emergency_contact_relation, clothing_top_size=:clothing_top_size, clothing_bottom_size=:clothing_bottom_size, shoe_size=:shoe_size, department_id=:department_id, position_id=:position_id WHERE id=:id";
-        } else { // Insert
+        } else { // 삽입
             $sql = "INSERT INTO hr_employees (name, employee_number, hire_date, phone_number, address, emergency_contact_name, emergency_contact_relation, clothing_top_size, clothing_bottom_size, shoe_size, department_id, position_id) VALUES (:name, :employee_number, :hire_date, :phone_number, :address, :emergency_contact_name, :emergency_contact_relation, :clothing_top_size, :clothing_bottom_size, :shoe_size, :department_id, :position_id)";
         }
         
@@ -199,6 +207,9 @@ class EmployeeRepository {
 
     /**
      * [사용자용] 프로필 수정 요청을 받아 'pending_profile_data'에 JSON으로 저장합니다.
+     * @param int $userId
+     * @param array $data
+     * @return bool
      */
     public function requestProfileUpdate(int $userId, array $data): bool {
         $sql = "UPDATE hr_employees SET 
@@ -222,6 +233,9 @@ class EmployeeRepository {
 
     /**
      * [관리자용] 프로필 변경을 최종 승인하고 실제 데이터를 업데이트합니다.
+     * @param int $employeeId
+     * @param array $newData
+     * @return bool
      */
     public function applyProfileUpdate(int $employeeId, array $newData): bool {
         $sql = "UPDATE hr_employees SET
@@ -245,6 +259,9 @@ class EmployeeRepository {
 
     /**
      * [관리자용] 프로필 수정을 반려 처리합니다.
+     * @param int $employeeId
+     * @param string $reason
+     * @return bool
      */
     public function rejectProfileUpdate(int $employeeId, string $reason): bool {
         $sql = "UPDATE hr_employees SET 
@@ -257,6 +274,8 @@ class EmployeeRepository {
 
     /**
      * [관리자용] 프로필 변경 요청을 승인 처리합니다. (상태만 변경)
+     * @param int $employeeId
+     * @return bool
      */
     public function approveProfileUpdateStatus(int $employeeId): bool {
         $sql = "UPDATE hr_employees SET profile_update_status = 'none' WHERE id = :id";

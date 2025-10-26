@@ -41,11 +41,11 @@ class LeaveRepository {
         $existing = $this->findEntitlement($data['employee_id'], $data['year']);
 
         if ($existing) {
-            // Update
+            // 업데이트
             $sql = "UPDATE hr_leave_entitlements SET total_days = :total_days WHERE id = :id";
             $params = [':total_days' => $data['total_days'], ':id' => $existing['id']];
         } else {
-            // Insert
+            // 삽입
             $sql = "INSERT INTO hr_leave_entitlements (employee_id, year, total_days) VALUES (:employee_id, :year, :total_days)";
             $params = [
                 ':employee_id' => $data['employee_id'],
@@ -89,7 +89,7 @@ class LeaveRepository {
 
         if ($visibleDepartmentIds !== null) {
             if (empty($visibleDepartmentIds)) {
-                $sql .= " AND 1=0"; // Return no results
+                $sql .= " AND 1=0"; // 결과 없음
             } else {
                 $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
                 $sql .= " AND e.department_id IN ($inClause)";
@@ -155,7 +155,7 @@ class LeaveRepository {
      * @param int $year 해당 연도
      * @param float $adjustedDays 조정된 일수
      * @param string $reason 조정 사유
-     * @param int $adminId 조정을 수행한 관리자의 ID
+     * @param int $adminEmployeeId 조정을 수행한 관리자의 ID
      * @return bool 로그 기록 성공 여부
      */
     public function logAdjustment(int $employeeId, int $year, float $adjustedDays, string $reason, int $adminEmployeeId): bool {
@@ -271,7 +271,7 @@ class LeaveRepository {
      *
      * @param int $id 상태를 변경할 연차 신청의 ID
      * @param string $status 새로운 상태
-     * @param int|null $adminUserId 처리한 관리자의 사용자 ID
+     * @param int|null $adminEmployeeId 처리한 관리자의 직원 ID
      * @param string|null $rejectionReason 반려 사유 (반려 시에만 사용)
      * @return bool 업데이트 성공 여부
      */

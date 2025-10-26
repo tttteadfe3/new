@@ -35,24 +35,38 @@ class AuthService {
         $this->employeeRepository = $employeeRepository;
     }
 
+    /**
+     * @return SessionManager
+     */
     public function getSessionManager(): SessionManager
     {
         return $this->sessionManager;
     }
 
+    /**
+     * @return array|null
+     */
     public function user(): ?array
     {
         return $this->sessionManager->get('user');
     }
 
+    /**
+     * @return bool
+     */
     public function isLoggedIn(): bool
     {
         return $this->sessionManager->has('user');
     }
 
+    /**
+     * @param array $user
+     * @return void
+     * @throws Exception
+     */
     public function login(array $user) {
         if ($user['status'] === 'blocked') {
-            throw new Exception("Blocked accounts cannot log in.");
+            throw new Exception("차단된 계정은 로그인할 수 없습니다.");
         }
 
         $this->_refreshSessionPermissions($user);
@@ -60,12 +74,15 @@ class AuthService {
         $this->logRepository->insert([
             ':user_id' => $user['id'],
             ':user_name' => $user['nickname'],
-            ':action' => 'Login Success',
+            ':action' => '로그인 성공',
             ':details' => null,
             ':ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
         ]);
     }
 
+    /**
+     * @return void
+     */
     public function logout() {
         if ($this->isLoggedIn()) {
             $user = $this->user();
@@ -75,7 +92,7 @@ class AuthService {
             $this->logRepository->insert([
                 ':user_id' => $user['id'],
                 ':user_name' => $nickname,
-                ':action' => 'Logout',
+                ':action' => '로그아웃',
                 ':details' => null,
                 ':ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
             ]);
@@ -85,6 +102,10 @@ class AuthService {
         exit();
     }
 
+    /**
+     * @param string $permission_key
+     * @return bool
+     */
     public function check(string $permission_key): bool {
         if (!$this->isLoggedIn()) {
             return false;
@@ -102,6 +123,10 @@ class AuthService {
         return in_array($permission_key, $permissions);
     }
 
+    /**
+     * @param int $targetEmployeeId
+     * @return bool
+     */
     public function canManageEmployee(int $targetEmployeeId): bool
     {
         if (!$this->isLoggedIn()) {
@@ -149,6 +174,9 @@ class AuthService {
         return false;
     }
 
+    /**
+     * @return void
+     */
     private function loadDepartmentMap(): void
     {
         if ($this->departmentMap === null) {
@@ -160,6 +188,9 @@ class AuthService {
         }
     }
 
+    /**
+     * @return void
+     */
     public function checkAccess() {
         $realtime_status = $this->checkStatus();
         if ($realtime_status === 'active') {
@@ -182,6 +213,9 @@ class AuthService {
         }
     }
 
+    /**
+     * @return string
+     */
     private function checkStatus(): string {
         if (!$this->isLoggedIn()) {
             $this->logout();
@@ -201,6 +235,10 @@ class AuthService {
         return $currentUser['status'];
     }
 
+    /**
+     * @param array $user
+     * @return void
+     */
     private function _refreshSessionPermissions(array $user): void {
         $user['roles'] = $this->roleRepository->getUserRoles($user['id']);
         $permissions = $this->userRepository->getPermissions($user['id']);

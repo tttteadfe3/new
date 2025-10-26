@@ -17,6 +17,7 @@ class MenuManagementService
 
     /**
      * 모든 메뉴 목록 조회 (관리용)
+     * @return array
      */
     public function getAllMenusForAdmin(): array
     {
@@ -25,6 +26,8 @@ class MenuManagementService
 
     /**
      * 메뉴 생성
+     * @param array $menuData
+     * @return string
      */
     public function createMenu(array $menuData): string
     {
@@ -33,6 +36,9 @@ class MenuManagementService
 
     /**
      * 메뉴 수정
+     * @param int $id
+     * @param array $menuData
+     * @return bool
      */
     public function updateMenu(int $id, array $menuData): bool
     {
@@ -41,6 +47,8 @@ class MenuManagementService
 
     /**
      * 메뉴 삭제
+     * @param int $id
+     * @return bool
      */
     public function deleteMenu(int $id): bool
     {
@@ -49,6 +57,8 @@ class MenuManagementService
 
     /**
      * 메뉴 조회
+     * @param int $id
+     * @return array|null
      */
     public function getMenu(int $id): ?array
     {
@@ -57,6 +67,9 @@ class MenuManagementService
 
     /**
      * 메뉴 순서 변경
+     * @param int $id
+     * @param int $displayOrder
+     * @return bool
      */
     public function updateMenuOrder(int $id, int $displayOrder): bool
     {
@@ -65,6 +78,9 @@ class MenuManagementService
 
     /**
      * 부모 메뉴 변경
+     * @param int $id
+     * @param int|null $parentId
+     * @return bool
      */
     public function updateMenuParent(int $id, ?int $parentId): bool
     {
@@ -98,7 +114,7 @@ class MenuManagementService
             return true;
         } catch (\Exception $e) {
             $this->db->rollBack();
-            // Re-throw the exception to be handled by the controller
+            // 컨트롤러에서 처리하도록 예외 다시 발생
             throw $e;
         }
     }

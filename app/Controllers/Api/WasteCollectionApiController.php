@@ -36,8 +36,8 @@ class WasteCollectionApiController extends BaseApiController
     }
 
     /**
-     * Get waste collections for the current user.
-     * Corresponds to GET /api/waste-collections
+     * 현재 사용자의 폐기물 수거 내역을 가져옵니다.
+     * GET /api/waste-collections에 해당합니다.
      */
     public function index(): void
     {
@@ -50,8 +50,8 @@ class WasteCollectionApiController extends BaseApiController
     }
 
     /**
-     * Register a new waste collection request.
-     * Corresponds to POST /api/waste-collections
+     * 새 폐기물 수거 요청을 등록합니다.
+     * POST /api/waste-collections에 해당합니다.
      */
     public function store(): void
     {
@@ -65,8 +65,8 @@ class WasteCollectionApiController extends BaseApiController
     }
 
     /**
-     * Get waste collections for the admin view with filters.
-     * Corresponds to GET /api/waste-collections/admin
+     * 필터가 적용된 관리자 보기의 폐기물 수거 내역을 가져옵니다.
+     * GET /api/waste-collections/admin에 해당합니다.
      */
     public function getAdminCollections(): void
     {
@@ -79,8 +79,8 @@ class WasteCollectionApiController extends BaseApiController
     }
 
     /**
-     * Process a collection item.
-     * Corresponds to POST /api/waste-collections/admin/{id}/process
+     * 수거 항목을 처리합니다.
+     * POST /api/waste-collections/admin/{id}/process에 해당합니다.
      */
     public function processCollection(int $id): void
     {
@@ -94,8 +94,8 @@ class WasteCollectionApiController extends BaseApiController
     }
 
     /**
-     * Update collection items.
-     * Corresponds to PUT /api/waste-collections/admin/{id}/items
+     * 수거 품목을 업데이트합니다.
+     * PUT /api/waste-collections/admin/{id}/items에 해당합니다.
      */
     public function updateItems(int $id): void
     {
@@ -109,8 +109,8 @@ class WasteCollectionApiController extends BaseApiController
     }
 
     /**
-     * Update admin memo.
-     * Corresponds to PUT /api/waste-collections/admin/{id}/memo
+     * 관리자 메모를 업데이트합니다.
+     * PUT /api/waste-collections/admin/{id}/memo에 해당합니다.
      */
     public function updateMemo(int $id): void
     {
@@ -125,8 +125,8 @@ class WasteCollectionApiController extends BaseApiController
     }
 
     /**
-     * Parse HTML file for batch registration.
-     * Corresponds to POST /api/waste-collections/admin/parse-html
+     * 일괄 등록을 위해 HTML 파일을 구문 분석합니다.
+     * POST /api/waste-collections/admin/parse-html에 해당합니다.
      */
     public function parseHtmlFile(): void
     {
@@ -143,8 +143,8 @@ class WasteCollectionApiController extends BaseApiController
     }
 
     /**
-     * Batch register collections.
-     * Corresponds to POST /api/waste-collections/admin/batch-register
+     * 수거 내역을 일괄 등록합니다.
+     * POST /api/waste-collections/admin/batch-register에 해당합니다.
      */
     public function batchRegister(): void
     {
@@ -163,8 +163,8 @@ class WasteCollectionApiController extends BaseApiController
     }
 
     /**
-     * Clear all online submissions.
-     * Corresponds to DELETE /api/waste-collections/admin/online-submissions
+     * 모든 온라인 제출을 지웁니다.
+     * DELETE /api/waste-collections/admin/online-submissions에 해당합니다.
      */
     public function clearOnlineSubmissions(): void
     {

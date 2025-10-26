@@ -15,7 +15,10 @@ class LogService
     }
 
     /**
-     * Search logs with filters
+     * 필터로 로그 검색
+     * @param array $filters
+     * @param int $limit
+     * @return array
      */
     public function searchLogs(array $filters = [], int $limit = 50): array
     {
@@ -23,7 +26,8 @@ class LogService
     }
 
     /**
-     * Clear all logs
+     * 모든 로그 지우기
+     * @return bool
      */
     public function clearLogs(): bool
     {
@@ -31,7 +35,9 @@ class LogService
     }
 
     /**
-     * Log user activity
+     * 사용자 활동 기록
+     * @param array $logData
+     * @return bool
      */
     public function logActivity(array $logData): bool
     {

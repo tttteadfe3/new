@@ -40,14 +40,14 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * List leave requests by status.
-     * Corresponds to GET /api/leaves_admin/requests
+     * 상태별 휴가 요청을 나열합니다.
+     * GET /api/leaves_admin/requests에 해당합니다.
      */
     public function listRequests(): void
     {
         try {
-            // This now uses the service layer, which correctly handles permissions.
-            // The service method defaults to 'pending' and is specifically for the approval page's needs.
+            // 이제 서비스 계층을 사용하며, 이는 권한을 올바르게 처리합니다.
+            // 서비스 메서드는 기본적으로 'pending'이며 승인 페이지의 요구 사항에 맞게 특별히 제작되었습니다.
             $data = $this->leaveService->getPendingLeaveRequests();
             $this->apiSuccess($data);
         } catch (Exception $e) {
@@ -56,8 +56,8 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * Approve a leave request.
-     * Corresponds to POST /api/leaves_admin/requests/{id}/approve
+     * 휴가 요청을 승인합니다.
+     * POST /api/leaves_admin/requests/{id}/approve에 해당합니다.
      */
     public function approveRequest(int $id): void
     {
@@ -76,8 +76,8 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * Reject a leave request.
-     * Corresponds to POST /api/leaves_admin/requests/{id}/reject
+     * 휴가 요청을 거부합니다.
+     * POST /api/leaves_admin/requests/{id}/reject에 해당합니다.
      */
     public function rejectRequest(int $id): void
     {
@@ -102,8 +102,8 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * Approve a leave cancellation request.
-     * Corresponds to POST /api/leaves_admin/cancellations/{id}/approve
+     * 휴가 취소 요청을 승인합니다.
+     * POST /api/leaves_admin/cancellations/{id}/approve에 해당합니다.
      */
     public function approveCancellation(int $id): void
     {
@@ -122,8 +122,8 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * Reject a leave cancellation request.
-     * Corresponds to POST /api/leaves_admin/cancellations/{id}/reject
+     * 휴가 취소 요청을 거부합니다.
+     * POST /api/leaves_admin/cancellations/{id}/reject에 해당합니다.
      */
     public function rejectCancellation(int $id): void
     {
@@ -148,8 +148,8 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * List all employee leave entitlements.
-     * Corresponds to GET /api/leaves_admin/entitlements
+     * 모든 직원의 휴가 부여 내역을 나열합니다.
+     * GET /api/leaves_admin/entitlements에 해당합니다.
      */
     public function listEntitlements(): void
     {
@@ -166,8 +166,8 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * Grant annual leave for all employees for a specific year.
-     * Corresponds to POST /api/leaves_admin/grant-all
+     * 특정 연도에 모든 직원에 대해 연차 휴가를 부여합니다.
+     * POST /api/leaves_admin/grant-all에 해당합니다.
      */
     public function grantForAll(): void
     {
@@ -186,8 +186,8 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * Get leave history for all employees with filters.
-     * Corresponds to GET /api/leaves_admin/history
+     * 필터가 적용된 모든 직원의 휴가 내역을 가져옵니다.
+     * GET /api/leaves_admin/history에 해당합니다.
      */
     public function history(): void
     {
@@ -197,7 +197,7 @@ class LeaveAdminApiController extends BaseApiController
                 'department_id' => $this->request->input('department_id'),
                 'status' => $this->request->input('status')
             ];
-            // Remove any empty filters
+            // 빈 필터 제거
             $filters = array_filter($filters);
 
             $data = $this->leaveService->getLeaveHistory($filters);
@@ -208,8 +208,8 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * Get leave history for a specific employee.
-     * Corresponds to GET /api/leaves_admin/history/{employeeId}
+     * 특정 직원의 휴가 내역을 가져옵니다.
+     * GET /api/leaves_admin/history/{employeeId}에 해당합니다.
      */
     public function getHistoryForEmployee(int $employeeId): void
     {
@@ -229,8 +229,8 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * Manually adjust leave entitlement for an employee.
-     * Corresponds to POST /api/leaves_admin/adjust
+     * 직원의 휴가 부여 내역을 수동으로 조정합니다.
+     * POST /api/leaves_admin/adjust에 해당합니다.
      */
     public function manualAdjustment(): void
     {
@@ -259,8 +259,8 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * Calculate leaves for employees based on filters.
-     * Corresponds to POST /api/leaves_admin/calculate
+     * 필터를 기반으로 직원의 휴가를 계산합니다.
+     * POST /api/leaves_admin/calculate에 해당합니다.
      */
     public function calculateLeaves(): void
     {
@@ -293,8 +293,8 @@ class LeaveAdminApiController extends BaseApiController
     }
 
     /**
-     * Save calculated leave entitlements for multiple employees.
-     * Corresponds to POST /api/leaves_admin/save-entitlements
+     * 여러 직원에 대해 계산된 휴가 부여 내역을 저장합니다.
+     * POST /api/leaves_admin/save-entitlements에 해당합니다.
      */
     public function saveEntitlements(): void
     {

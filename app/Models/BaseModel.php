@@ -16,7 +16,7 @@ abstract class BaseModel
     }
 
     /**
-     * Fill the model with an array of attributes.
+     * 속성 배열로 모델을 채웁니다.
      */
     public function fill(array $attributes): self
     {
@@ -29,7 +29,7 @@ abstract class BaseModel
     }
 
     /**
-     * Create a new model instance.
+     * 새 모델 인스턴스를 만듭니다.
      */
     public static function make(array $attributes): self
     {
@@ -37,7 +37,7 @@ abstract class BaseModel
     }
 
     /**
-     * Get an attribute value.
+     * 속성 값을 가져옵니다.
      */
     public function getAttribute(string $key): mixed
     {
@@ -45,7 +45,7 @@ abstract class BaseModel
     }
 
     /**
-     * Set an attribute value.
+     * 속성 값을 설정합니다.
      */
     public function setAttribute(string $key, mixed $value): void
     {
@@ -55,13 +55,13 @@ abstract class BaseModel
     }
 
     /**
-     * Get all attributes as array.
+     * 모든 속성을 배열로 가져옵니다.
      */
     public function toArray(): array
     {
         $attributes = $this->attributes;
         
-        // Remove hidden attributes
+        // 숨겨진 속성 제거
         foreach ($this->hidden as $hidden) {
             unset($attributes[$hidden]);
         }
@@ -70,7 +70,7 @@ abstract class BaseModel
     }
 
     /**
-     * Validate the model data.
+     * 모델 데이터를 확인합니다.
      */
     public function validate(): bool
     {
@@ -82,7 +82,7 @@ abstract class BaseModel
             
             foreach ($fieldRules as $rule) {
                 if (!$this->validateRule($field, $value, $rule)) {
-                    break; // Stop on first validation error for this field
+                    break; // 이 필드에 대한 첫 번째 유효성 검사 오류에서 중지
                 }
             }
         }
@@ -91,7 +91,7 @@ abstract class BaseModel
     }
 
     /**
-     * Get validation errors.
+     * 유효성 검사 오류를 가져옵니다.
      */
     public function getErrors(): array
     {
@@ -99,7 +99,7 @@ abstract class BaseModel
     }
 
     /**
-     * Validate a single rule.
+     * 단일 규칙을 확인합니다.
      */
     protected function validateRule(string $field, mixed $value, string $rule): bool
     {
@@ -177,7 +177,7 @@ abstract class BaseModel
     }
 
     /**
-     * Check if a value is a valid date.
+     * 값이 유효한 날짜인지 확인합니다.
      */
     protected function isValidDate(string $date): bool
     {
@@ -194,7 +194,7 @@ abstract class BaseModel
     }
 
     /**
-     * Magic getter for attributes.
+     * 속성에 대한 매직 게터입니다.
      */
     public function __get(string $key): mixed
     {
@@ -202,7 +202,7 @@ abstract class BaseModel
     }
 
     /**
-     * Magic setter for attributes.
+     * 속성에 대한 매직 세터입니다.
      */
     public function __set(string $key, mixed $value): void
     {
@@ -210,7 +210,7 @@ abstract class BaseModel
     }
 
     /**
-     * Check if an attribute exists.
+     * 속성이 있는지 확인합니다.
      */
     public function __isset(string $key): bool
     {

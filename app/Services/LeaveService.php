@@ -16,11 +16,11 @@ use Exception;
  * 연차 및 휴가 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
  * 연차 일수 계산, 부여, 신청, 승인/반려/취소 등의 작업을 담당합니다.
  * 
- * Enhanced business logic for leave management including:
- * - Advanced leave calculation algorithms
- * - Comprehensive validation rules
- * - Workflow management for approvals
- * - Integration with employee and holiday systems
+ * 향상된 연차 관리 비즈니스 로직 포함:
+ * - 고급 연차 계산 알고리즘
+ * - 포괄적인 유효성 검사 규칙
+ * - 승인을 위한 워크플로우 관리
+ * - 직원 및 휴일 시스템과의 통합
  */
 class LeaveService {
     private LeaveRepository $leaveRepository;
@@ -140,7 +140,7 @@ class LeaveService {
                 return [false, "시작일이 종료일보다 늦을 수 없습니다."];
             }
 
-            // Check for overlapping leaves
+            // 중복 휴가 확인
             if ($this->leaveRepository->findOverlappingLeaves($employeeId, $data['start_date'], $data['end_date'])) {
                 return [false, "신청하신 기간에 이미 다른 연차 신청 내역이 존재합니다."];
             }
@@ -426,16 +426,16 @@ class LeaveService {
     }
 
     /**
-     * Enhanced method to get comprehensive leave statistics for an employee
+     * 직원의 종합적인 휴가 통계를 가져오는 향상된 메소드
      * 
-     * @param int $employeeId Employee ID
-     * @param int $year Target year
-     * @return array Comprehensive leave statistics
+     * @param int $employeeId 직원 ID
+     * @param int $year 대상 연도
+     * @return array 종합 휴가 통계
      */
     public function getEmployeeLeaveStatistics(int $employeeId, int $year): array
     {
         $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
-        $leaveHistory = $this->leaveRepository->findByEmployeeAndYear($employeeId, $year);
+        $leaveHistory = $this->leaveRepository->findByEmployeeId($employeeId, ['year' => $year]);
         
         $stats = [
             'total_days' => $entitlement['total_days'] ?? 0,
@@ -480,17 +480,17 @@ class LeaveService {
     }
 
     /**
-     * Enhanced validation for leave requests with comprehensive business rules
+     * 포괄적인 비즈니스 규칙으로 휴가 요청을 검증하는 향상된 메소드
      * 
-     * @param array $data Leave request data
-     * @param int $employeeId Employee ID
-     * @return array [isValid, errors]
+     * @param array $data 휴가 요청 데이터
+     * @param int $employeeId 직원 ID
+     * @return array [유효성 여부, 오류 메시지 배열]
      */
     public function validateLeaveRequest(array $data, int $employeeId): array
     {
         $errors = [];
         
-        // Basic validation
+        // 기본 유효성 검사
         if (empty($data['start_date']) || empty($data['end_date'])) {
             $errors[] = "시작일과 종료일을 모두 입력해주세요.";
         }
@@ -503,35 +503,35 @@ class LeaveService {
             $startDate = new DateTime($data['start_date']);
             $endDate = new DateTime($data['end_date']);
             
-            // Date validation
+            // 날짜 유효성 검사
             if ($startDate > $endDate) {
                 $errors[] = "시작일이 종료일보다 늦을 수 없습니다.";
             }
             
-            // Past date validation
+            // 과거 날짜 유효성 검사
             $today = new DateTime();
             if ($startDate < $today->setTime(0, 0, 0)) {
                 $errors[] = "과거 날짜로는 연차를 신청할 수 없습니다.";
             }
             
-            // Future limit validation (e.g., cannot request more than 1 year in advance)
+            // 미래 제한 유효성 검사 (예: 1년 이상 미리 요청할 수 없음)
             $maxFutureDate = (new DateTime())->add(new DateInterval('P1Y'));
             if ($startDate > $maxFutureDate) {
                 $errors[] = "1년 이후의 날짜로는 연차를 신청할 수 없습니다.";
             }
             
-            // Check for overlapping leaves
+            // 중복 휴가 확인
             if ($this->leaveRepository->findOverlappingLeaves($employeeId, $data['start_date'], $data['end_date'])) {
                 $errors[] = "신청하신 기간에 이미 다른 연차 신청 내역이 존재합니다.";
             }
             
-            // Half-day validation
+            // 반차 유효성 검사
             if (($data['leave_type'] ?? '') === 'half_day' && $data['start_date'] !== $data['end_date']) {
                 $errors[] = "반차는 하루만 선택 가능합니다.";
             }
         }
         
-        // Employee validation
+        // 직원 유효성 검사
         $employee = $this->employeeRepository->findById($employeeId);
         if (!$employee) {
             $errors[] = "직원 정보를 찾을 수 없습니다.";
@@ -543,7 +543,7 @@ class LeaveService {
     }
 
     /**
-     * Get leave history with filters, applying department-level visibility.
+     * 부서 수준의 가시성을 적용하여 필터가 있는 휴가 기록을 가져옵니다.
      *
      * @param array $filters
      * @return array
@@ -555,7 +555,8 @@ class LeaveService {
     }
 
     /**
-     * Get pending leave requests with department-level visibility.
+     * 부서 수준의 가시성이 적용된 보류 중인 휴가 요청을 가져옵니다.
+     * @return array
      */
     public function getPendingLeaveRequests(): array
     {
@@ -563,6 +564,11 @@ class LeaveService {
         return $this->leaveRepository->findByStatus('pending', [], $visibleDeptIds);
     }
 
+    /**
+     * 부서 수준의 가시성이 적용된 모든 연차 부여 내역을 가져옵니다.
+     * @param array $filters
+     * @return array
+     */
     public function getAllEntitlements(array $filters = []): array
     {
         $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
@@ -570,16 +576,16 @@ class LeaveService {
     }
 
     /**
-     * Enhanced method to calculate leave balance with projections
+     * 예측을 포함하여 휴가 잔액을 계산하는 향상된 메소드
      * 
-     * @param int $employeeId Employee ID
-     * @param int $year Target year
-     * @return array Leave balance with projections
+     * @param int $employeeId 직원 ID
+     * @param int $year 대상 연도
+     * @return array 예측이 포함된 휴가 잔액
      */
     public function calculateLeaveBalance(int $employeeId, int $year): array
     {
         $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
-        $pendingLeaves = $this->leaveRepository->findPendingByEmployee($employeeId, $year);
+        $pendingLeaves = $this->leaveRepository->findByStatus('pending', ['employee_id' => $employeeId, 'year' => $year]);
         
         $totalDays = $entitlement['total_days'] ?? 0;
         $usedDays = $entitlement['used_days'] ?? 0;

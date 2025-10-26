@@ -11,6 +11,12 @@ class EmployeeChangeLogRepository {
     }
     /**
      * 직원 정보 변경 로그를 기록합니다.
+     * @param int $employeeId
+     * @param int $changerEmployeeId
+     * @param string $fieldName
+     * @param string|null $oldValue
+     * @param string|null $newValue
+     * @return bool
      */
     public function insert(int $employeeId, int $changerEmployeeId, string $fieldName, ?string $oldValue, ?string $newValue): bool {
         $sql = "INSERT INTO hr_employee_change_logs (employee_id, changer_employee_id, field_name, old_value, new_value)
@@ -27,6 +33,8 @@ class EmployeeChangeLogRepository {
 
     /**
      * 특정 직원의 모든 변경 이력을 조회합니다.
+     * @param int $employeeId
+     * @return array
      */
     public function findByEmployeeId(int $employeeId): array {
         $sql = "SELECT l.*, e.name as changer_name

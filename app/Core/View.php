@@ -24,7 +24,7 @@ class View
 
     public function render(string $view, array $data = [], ?string $layout = null): string
     {
-        // Reset per-render properties, but keep jsFiles and cssFiles
+        // 렌더링별 속성을 재설정하지만 jsFiles 및 cssFiles는 유지합니다
         $this->sections = [];
         $this->currentSection = null;
 
@@ -34,7 +34,7 @@ class View
         $viewPath = ROOT_PATH . '/app/Views/' . str_replace('.', '/', $view) . '.php';
 
         if (!file_exists($viewPath)) {
-            throw new \Exception("View not found: {$viewPath}");
+            throw new \Exception("뷰를 찾을 수 없습니다: {$viewPath}");
         }
 
         extract($data);
@@ -59,7 +59,7 @@ class View
         $layoutPath = ROOT_PATH . '/app/Views/' . str_replace('.', '/', $layout) . '.php';
 
         if (!file_exists($layoutPath)) {
-            throw new \Exception("Layout not found: {$layoutPath}");
+            throw new \Exception("레이아웃을 찾을 수 없습니다: {$layoutPath}");
         }
 
         $data['sections'] = $this->sections;
@@ -73,7 +73,7 @@ class View
     public function startSection(string $name): void
     {
         if ($this->currentSection !== null) {
-            throw new \Exception("Cannot start section '{$name}' while section '" . $this->currentSection . "' is still open.");
+            throw new \Exception("섹션 '" . $this->currentSection . "'이(가) 아직 열려 있는 동안에는 섹션 '{$name}'을(를) 시작할 수 없습니다.");
         }
 
         $this->currentSection = $name;
@@ -83,7 +83,7 @@ class View
     public function endSection(): void
     {
         if ($this->currentSection === null) {
-            throw new \Exception("No section to end.");
+            throw new \Exception("종료할 섹션이 없습니다.");
         }
 
         $content = ob_get_clean();
@@ -122,7 +122,7 @@ class View
             $attributes = ' data-options=\'' . htmlspecialchars(json_encode($options), ENT_QUOTES, 'UTF-8') . '\'';
         }
         $jsTag = '<script src="' . htmlspecialchars($path, ENT_QUOTES, 'UTF-8') . '"' . $attributes . '></script>';
-        // Use path as key to prevent duplicates, last one wins
+        // 중복을 방지하기 위해 경로를 키로 사용하고, 마지막 것이 이깁니다.
         $this->jsFiles[$path] = $jsTag;
     }
 

@@ -36,8 +36,8 @@ class LitteringAdminApiController extends BaseApiController
     }
 
     /**
-     * Get littering reports for admin based on status.
-     * Corresponds to GET /api/littering_admin/reports
+     * 상태에 따라 관리자를 위한 무단투기 보고서를 가져옵니다.
+     * GET /api/littering_admin/reports에 해당합니다.
      */
     public function listReports(): void
     {
@@ -56,7 +56,7 @@ class LitteringAdminApiController extends BaseApiController
                     $data = $this->litteringService->getDeletedLittering();
                     break;
                 default:
-                    $this->apiError('Invalid status value.', 'INVALID_INPUT', 400);
+                    $this->apiError('잘못된 상태 값입니다.', 'INVALID_INPUT', 400);
                     return;
             }
             $this->apiSuccess($data);
@@ -66,8 +66,8 @@ class LitteringAdminApiController extends BaseApiController
     }
 
     /**
-     * Confirm a littering report.
-     * Corresponds to POST /api/littering_admin/reports/{id}/confirm
+     * 무단투기 보고서를 확인합니다.
+     * POST /api/littering_admin/reports/{id}/confirm에 해당합니다.
      */
     public function confirm(int $id): void
     {
@@ -75,7 +75,7 @@ class LitteringAdminApiController extends BaseApiController
         
         try {
             $data = $this->getJsonInput();
-            $data['id'] = $id; // Ensure ID from URL is used
+            $data['id'] = $id; // URL의 ID가 사용되도록 합니다.
 
             $result = $this->litteringService->confirmLittering($data, $adminId);
             $this->apiSuccess($result, '민원 정보가 성공적으로 확인되었습니다.');
@@ -85,8 +85,8 @@ class LitteringAdminApiController extends BaseApiController
     }
 
     /**
-     * Approve a processed littering report.
-     * Corresponds to POST /api/littering_admin/reports/{id}/approve
+     * 처리된 무단투기 보고서를 승인합니다.
+     * POST /api/littering_admin/reports/{id}/approve에 해당합니다.
      */
     public function approve(int $id): void
     {
@@ -102,8 +102,8 @@ class LitteringAdminApiController extends BaseApiController
     }
 
     /**
-     * Delete (soft delete) a littering report.
-     * Corresponds to DELETE /api/littering_admin/reports/{id}
+     * 무단투기 보고서를 삭제(소프트 삭제)합니다.
+     * DELETE /api/littering_admin/reports/{id}에 해당합니다.
      */
     public function destroy(int $id): void
     {
@@ -121,8 +121,8 @@ class LitteringAdminApiController extends BaseApiController
     }
 
     /**
-     * Restore a deleted littering report.
-     * Corresponds to POST /api/littering_admin/reports/{id}/restore
+     * 삭제된 무단투기 보고서를 복원합니다.
+     * POST /api/littering_admin/reports/{id}/restore에 해당합니다.
      */
     public function restore(int $id): void
     {
@@ -137,8 +137,8 @@ class LitteringAdminApiController extends BaseApiController
     }
 
     /**
-     * Permanently delete a littering report.
-     * Corresponds to DELETE /api/littering_admin/reports/{id}/permanent
+     * 무단투기 보고서를 영구적으로 삭제합니다.
+     * DELETE /api/littering_admin/reports/{id}/permanent에 해당합니다.
      */
     public function permanentlyDelete(int $id): void
     {

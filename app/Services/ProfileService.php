@@ -18,17 +18,20 @@ class ProfileService
     }
 
     /**
-     * Get user profile with employee information
+     * 직원 정보와 함께 사용자 프로필 가져오기
+     * @param int $userId
+     * @return array
+     * @throws Exception
      */
     public function getUserProfile(int $userId): array
     {
-        // Get basic user information
+        // 기본 사용자 정보 가져오기
         $user = $this->userRepository->findById($userId);
         if (!$user) {
-            throw new Exception('User not found.');
+            throw new Exception('사용자를 찾을 수 없습니다.');
         }
 
-        // Get employee information if linked
+        // 연결된 경우 직원 정보 가져오기
         $employee = null;
         if ($user['employee_id']) {
             $employee = $this->employeeRepository->findById($user['employee_id']);
@@ -41,7 +44,11 @@ class ProfileService
     }
 
     /**
-     * Request profile update
+     * 프로필 업데이트 요청
+     * @param int $userId
+     * @param array $data
+     * @return bool
+     * @throws Exception
      */
     public function requestProfileUpdate(int $userId, array $data): bool
     {

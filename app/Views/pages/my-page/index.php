@@ -5,7 +5,7 @@
             <div id="profile-container">
                 <div class="text-center">
                     <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                        <span class="visually-hidden">로딩...</span>
                     </div>
                     <p class="mt-2">프로필 정보를 불러오는 중...</p>
                 </div>

@@ -27,12 +27,11 @@ class LogController extends BaseController
     }
 
     /**
-     * Display the log viewer page
+     * 로그 뷰어 페이지를 표시합니다
      */
     public function index(): void
     {
-        // Load BaseApp and dependencies
-
+        // BaseApp 및 종속성 로드
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/log-viewer.js');
 
         echo $this->render('pages/logs/index', [], 'layouts/app');

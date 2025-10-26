@@ -36,8 +36,8 @@ class LogApiController extends BaseApiController
     }
 
     /**
-     * Search and retrieve logs.
-     * Corresponds to GET /api/logs
+     * 로그를 검색하고 검색합니다.
+     * GET /api/logs에 해당합니다.
      */
     public function index(): void
     {
@@ -58,8 +58,8 @@ class LogApiController extends BaseApiController
     }
 
     /**
-     * Clear all logs.
-     * Corresponds to DELETE /api/logs
+     * 모든 로그를 지웁니다.
+     * DELETE /api/logs에 해당합니다.
      */
     public function destroy(): void
     {

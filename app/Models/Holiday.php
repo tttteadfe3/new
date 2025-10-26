@@ -21,7 +21,7 @@ class Holiday extends BaseModel
     ];
 
     /**
-     * Check if this is a holiday (not a workday).
+     * 이것이 휴일인지 확인합니다(근무일 아님).
      */
     public function isHoliday(): bool
     {
@@ -29,7 +29,7 @@ class Holiday extends BaseModel
     }
 
     /**
-     * Check if this is a special workday.
+     * 이것이 특별 근무일인지 확인합니다.
      */
     public function isWorkday(): bool
     {
@@ -37,7 +37,7 @@ class Holiday extends BaseModel
     }
 
     /**
-     * Check if this holiday deducts leave days.
+     * 이 휴일이 휴가 일수를 차감하는지 확인합니다.
      */
     public function deductsLeave(): bool
     {
@@ -45,7 +45,7 @@ class Holiday extends BaseModel
     }
 
     /**
-     * Check if this holiday applies to all departments.
+     * 이 휴일이 모든 부서에 적용되는지 확인합니다.
      */
     public function appliesToAllDepartments(): bool
     {
@@ -53,7 +53,7 @@ class Holiday extends BaseModel
     }
 
     /**
-     * Check if this holiday applies to a specific department.
+     * 이 휴일이 특정 부서에 적용되는지 확인합니다.
      */
     public function appliesToDepartment(int $departmentId): bool
     {
@@ -65,7 +65,7 @@ class Holiday extends BaseModel
     }
 
     /**
-     * Get the holiday date as DateTime object.
+     * 휴일 날짜를 DateTime 객체로 가져옵니다.
      */
     public function getDateAsDateTime(): ?\DateTime
     {
@@ -82,7 +82,7 @@ class Holiday extends BaseModel
     }
 
     /**
-     * Check if this holiday is in the past.
+     * 이 휴일이 과거인지 확인합니다.
      */
     public function isPast(): bool
     {
@@ -95,7 +95,7 @@ class Holiday extends BaseModel
     }
 
     /**
-     * Check if this holiday is in the future.
+     * 이 휴일이 미래인지 확인합니다.
      */
     public function isFuture(): bool
     {
@@ -108,7 +108,7 @@ class Holiday extends BaseModel
     }
 
     /**
-     * Check if this holiday is today.
+     * 이 휴일이 오늘인지 확인합니다.
      */
     public function isToday(): bool
     {
@@ -122,19 +122,19 @@ class Holiday extends BaseModel
     }
 
     /**
-     * Validate holiday data with business rules.
+     * 비즈니스 규칙으로 휴일 데이터를 확인합니다.
      */
     public function validate(): bool
     {
         $isValid = parent::validate();
 
-        // Business rule: deduct_leave only makes sense for holidays, not workdays
+        // 비즈니스 규칙: deduct_leave는 근무일이 아닌 휴일에만 의미가 있습니다.
         if ($this->getAttribute('type') === 'workday' && $this->getAttribute('deduct_leave')) {
             $this->errors['deduct_leave'] = '특정 근무일에는 연차 차감 설정을 할 수 없습니다.';
             $isValid = false;
         }
 
-        // Business rule: check for duplicate holidays on the same date for same department
+        // 비즈니스 규칙: 동일한 부서의 동일한 날짜에 중복된 휴일이 있는지 확인합니다.
         if ($this->isDuplicateHoliday()) {
             $this->errors['date'] = '해당 날짜에 이미 휴일이 설정되어 있습니다.';
             $isValid = false;
@@ -144,12 +144,12 @@ class Holiday extends BaseModel
     }
 
     /**
-     * Check if this is a duplicate holiday (placeholder - would need repository).
+     * 이것이 중복된 휴일인지 확인합니다(플레이스홀더 - 리포지토리가 필요함).
      */
     protected function isDuplicateHoliday(): bool
     {
-        // This would typically check against the database via repository
-        // For now, return false as placeholder
+        // 이것은 일반적으로 리포지토리를 통해 데이터베이스를 확인합니다.
+        // 지금은 플레이스홀더로 false를 반환합니다.
         return false;
     }
 }
