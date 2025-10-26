@@ -20,7 +20,7 @@ class DepartmentRepository {
             FROM hr_departments d
             ORDER BY d.name
         ";
-        return $this->db->fetchAll($sql);
+        return $this->db->fetchAllAs(Department::class, $sql);
     }
 
     /**

@@ -83,14 +83,21 @@ ALTER TABLE `hr_leave_adjustments_log` DROP COLUMN `admin_id`;
 -- address -> jibun_address 데이터 마이그레이션
 UPDATE `illegal_disposal_cases2` SET `jibun_address` = `address` WHERE `address` IS NOT NULL;
 
+ALTER TABLE `illegal_disposal_cases2`
+  ADD COLUMN `processed_by` INT(11) DEFAULT NULL COMMENT '개선여부 처리한 직원 ID',
+  ADD COLUMN `completed_by` INT(11) DEFAULT NULL COMMENT '완료 처리한 직원 ID',
+  ADD COLUMN `completed_at` DATETIME DEFAULT NULL COMMENT '완료일시',
+  ADD COLUMN `created_by` INT(11) DEFAULT NULL COMMENT '등록한 직원 ID';
+  
+
 -- 컬럼 이름 변경 및 오래된 컬럼 삭제
 ALTER TABLE `illegal_disposal_cases2`
-  CHANGE COLUMN `updated_by` `processed_by` INT(11) DEFAULT NULL COMMENT '개선여부 처리한 직원 ID',
   CHANGE COLUMN `updated_at` `processed_at` DATETIME DEFAULT NULL COMMENT '개선여부 처리일시',
-  CHANGE COLUMN `approved_by` `completed_by` INT(11) DEFAULT NULL COMMENT '완료 처리한 직원 ID',
-  CHANGE COLUMN `approved_at` `completed_at` DATETIME DEFAULT NULL COMMENT '완료일시',
-  DROP COLUMN `address`;
-
+  DROP COLUMN `address`, 
+  DROP COLUMN `issue_date`, 
+  DROP COLUMN `collect_date`, 
+  DROP COLUMN `user_id`, 
+  DROP COLUMN `employee_id`;
 --
 -- Step 5: `waste_collections` 테이블 마이그레이션
 --
