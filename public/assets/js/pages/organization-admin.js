@@ -110,17 +110,20 @@ class DepartmentAdminPage extends BasePage {
             this.elements.parentIdSelect.value = data.parentId || '';
 
             try {
-                // Correctly fetch ONLY eligible employees for this specific department
-                const empResponse = await this.apiCall(`${this.config.API_URL}/${data.id}/eligible-viewer-employees`);
+                const [empResponse, permResponse] = await Promise.all([
+                    this.apiCall(`${this.config.API_URL}/${data.id}/eligible-viewer-employees`),
+                    this.apiCall(`${this.config.API_URL}/${data.id}/view-permissions`)
+                ]);
+
+                // Set up eligible employees
                 const empChoices = empResponse.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
                 this.choicesInstances.viewerEmployees.setChoices(empChoices, 'value', 'label', true);
 
-                // Set current employee permissions from data attribute
+                // Set current employee permissions
                 const viewerEmployeeIds = data.viewerEmployeeIds ? data.viewerEmployeeIds.split(',') : [];
                 this.choicesInstances.viewerEmployees.setValue(viewerEmployeeIds);
 
-                // Fetch current department view permissions
-                const permResponse = await this.apiCall(`${this.config.API_URL}/${data.id}/view-permissions`);
+                // Set current department permissions
                 const viewerDepartmentIds = permResponse.data.map(id => id.toString());
                 this.choicesInstances.viewerDepartments.setValue(viewerDepartmentIds);
             } catch (error) {
