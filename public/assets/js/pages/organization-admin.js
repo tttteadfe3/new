@@ -37,18 +37,22 @@ class DepartmentAdminPage extends BasePage {
         this.elements.departmentsListContainer.addEventListener('click', (e) => this.handleActionClick(e));
     }
 
-    loadInitialData() {
-        this.loadDepartments();
-        this.loadSelectOptions();
-    }
-
-    async loadSelectOptions() {
+    async loadInitialData() {
         try {
-            const deptResponse = await this.apiCall(`${this.config.API_URL}?type=department`);
-            this.populateSelect(this.elements.parentIdSelect, deptResponse.data, 'id', 'name', '(없음)');
+            const [deptResponse, empResponse] = await Promise.all([
+                this.apiCall(`${this.config.API_URL}?type=department`),
+                this.apiCall('/employees?status=active')
+            ]);
+
+            this.state.departments = deptResponse.data;
+            this.state.employees = empResponse.data;
+
+            this.renderDepartments(this.state.departments);
+            this.populateSelect(this.elements.parentIdSelect, this.state.departments, 'id', 'name', '(없음)');
         } catch (error) {
-            console.error('Failed to load select options:', error);
-            Toast.error('상위 부서 목록을 불러오는데 실패했습니다.');
+            console.error('Error loading initial data:', error);
+            Toast.error('초기 데이터를 불러오는데 실패했습니다.');
+            this.elements.departmentsListContainer.innerHTML = `<div class="list-group-item text-danger">목록 로딩 실패</div>`;
         }
     }
 
@@ -62,28 +66,27 @@ class DepartmentAdminPage extends BasePage {
         });
     }
 
-    async loadDepartments() {
-        try {
-            const response = await this.apiCall(`${this.config.API_URL}?type=department`);
-            if (response.data.length === 0) {
-                this.elements.departmentsListContainer.innerHTML = `<div class="list-group-item">부서가 없습니다.</div>`;
-                return;
-            }
-            this.elements.departmentsListContainer.innerHTML = response.data.map(item => `
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        ${this._sanitizeHTML(item.name)}
-                        ${item.viewer_employee_names ? `<br><small class="text-muted">조회 권한 직원: ${item.viewer_employee_names}</small>` : ''}
-                    </div>
-                    <div>
-                        <button class="btn btn-success btn-sm edit-btn" data-id="${item.id}" data-name="${this._sanitizeHTML(item.name)}" data-parent-id="${item.parent_id || ''}">수정</button>
-                        <button class="btn btn-danger btn-sm delete-btn" data-id="${item.id}" data-name="${this._sanitizeHTML(item.name)}">삭제</button>
-                    </div>
-                </div>`).join('');
-        } catch (error) {
-            console.error('Error loading departments:', error);
-            this.elements.departmentsListContainer.innerHTML = `<div class="list-group-item text-danger">부서 목록 로딩 실패</div>`;
+    renderDepartments(departments) {
+        if (!departments || departments.length === 0) {
+            this.elements.departmentsListContainer.innerHTML = `<div class="list-group-item">부서가 없습니다.</div>`;
+            return;
         }
+
+        this.elements.departmentsListContainer.innerHTML = departments.map(item => `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    ${this._sanitizeHTML(item.name)}
+                    ${item.viewer_employee_names ? `<br><small class="text-muted">조회 권한 직원: ${item.viewer_employee_names}</small>` : ''}
+                </div>
+                <div>
+                    <button class="btn btn-success btn-sm edit-btn"
+                            data-id="${item.id}"
+                            data-name="${this._sanitizeHTML(item.name)}"
+                            data-parent-id="${item.parent_id || ''}"
+                            data-viewer-employee-ids="${item.viewer_employee_ids || ''}">수정</button>
+                    <button class="btn btn-danger btn-sm delete-btn" data-id="${item.id}" data-name="${this._sanitizeHTML(item.name)}">삭제</button>
+                </div>
+            </div>`).join('');
     }
 
     async openModal(data = null) {
@@ -96,6 +99,10 @@ class DepartmentAdminPage extends BasePage {
             this.choicesInstances.viewerDepartments = new Choices(this.elements.viewerDepartmentIdsSelect, { removeItemButton: true, placeholder: true, placeholderValue: '부서를 선택하세요' });
         }
 
+        // Set choices for departments from pre-loaded data
+        const deptChoices = this.state.departments.map(dept => ({ value: dept.id.toString(), label: dept.name }));
+        this.choicesInstances.viewerDepartments.setChoices(deptChoices, 'value', 'label', true);
+
         if (data) { // Editing
             this.elements.modalTitle.textContent = '부서 정보 수정';
             this.elements.deptIdInput.value = data.id;
@@ -103,49 +110,35 @@ class DepartmentAdminPage extends BasePage {
             this.elements.parentIdSelect.value = data.parentId || '';
 
             try {
-                const [empResponse, deptResponse, permResponse] = await Promise.all([
-                    this.apiCall(`${this.config.API_URL}/${data.id}/eligible-viewer-employees`),
-                    this.apiCall(`${this.config.API_URL}?type=department`),
-                    this.apiCall(`${this.config.API_URL}/${data.id}/view-permissions`)
-                ]);
-
+                // Correctly fetch ONLY eligible employees for this specific department
+                const empResponse = await this.apiCall(`${this.config.API_URL}/${data.id}/eligible-viewer-employees`);
                 const empChoices = empResponse.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
                 this.choicesInstances.viewerEmployees.setChoices(empChoices, 'value', 'label', true);
 
-                const currentPerms = await this.apiCall(`/api/organization/${data.id}`);
-                const viewerEmployeeIds = currentPerms.data.viewer_employee_ids ? currentPerms.data.viewer_employee_ids.split(',').map(id => id.trim().toString()) : [];
+                // Set current employee permissions from data attribute
+                const viewerEmployeeIds = data.viewerEmployeeIds ? data.viewerEmployeeIds.split(',') : [];
                 this.choicesInstances.viewerEmployees.setValue(viewerEmployeeIds);
 
-                const deptChoices = deptResponse.data.map(dept => ({ value: dept.id.toString(), label: dept.name }));
-                this.choicesInstances.viewerDepartments.setChoices(deptChoices, 'value', 'label', true);
-
+                // Fetch current department view permissions
+                const permResponse = await this.apiCall(`${this.config.API_URL}/${data.id}/view-permissions`);
                 const viewerDepartmentIds = permResponse.data.map(id => id.toString());
                 this.choicesInstances.viewerDepartments.setValue(viewerDepartmentIds);
-
             } catch (error) {
-                console.error('Failed to load select options for editing:', error);
+                 console.error('Failed to load permissions for editing:', error);
                 Toast.error('권한 목록을 불러오는데 실패했습니다.');
             }
+
         } else { // Adding
             this.elements.modalTitle.textContent = '새 부서 추가';
             this.elements.deptIdInput.value = '';
-            try {
-                 const [empResponse, deptResponse] = await Promise.all([
-                    this.apiCall('/employees?status=active'),
-                    this.apiCall(`${this.config.API_URL}?type=department`)
-                ]);
 
-                const empChoices = empResponse.data.map(emp => ({ value: emp.id.toString(), label: emp.name }));
-                this.choicesInstances.viewerEmployees.setChoices(empChoices, 'value', 'label', true);
-                this.choicesInstances.viewerEmployees.setValue([]);
+            // Use pre-loaded employees for the 'Add New' modal
+            const empChoices = this.state.employees.map(emp => ({ value: emp.id.toString(), label: emp.name }));
+            this.choicesInstances.viewerEmployees.setChoices(empChoices, 'value', 'label', true);
 
-                const deptChoices = deptResponse.data.map(dept => ({ value: dept.id.toString(), label: dept.name }));
-                this.choicesInstances.viewerDepartments.setChoices(deptChoices, 'value', 'label', true);
-                this.choicesInstances.viewerDepartments.setValue([]);
-            } catch (error) {
-                console.error('Failed to load select options for new department:', error);
-                Toast.error('권한 목록을 불러오는데 실패했습니다.');
-            }
+            // Reset selections for new department
+            this.choicesInstances.viewerEmployees.setValue([]);
+            this.choicesInstances.viewerDepartments.setValue([]);
         }
         this.state.deptModal.show();
     }
@@ -168,8 +161,7 @@ class DepartmentAdminPage extends BasePage {
             const result = await this.apiCall(url, { method, body: payload });
             Toast.success(result.message);
             this.state.deptModal.hide();
-            this.loadDepartments();
-            this.loadSelectOptions();
+            await this.loadInitialData(); // Reload all data
         } catch (error) {
             console.error('Error saving department:', error);
             Toast.error(`저장 중 오류 발생: ${error.message}`);
@@ -180,13 +172,13 @@ class DepartmentAdminPage extends BasePage {
         const target = e.target.closest('.edit-btn, .delete-btn');
         if (!target) return;
 
-        const { id, name, parentId } = target.dataset;
+        const data = target.dataset;
 
         if (target.classList.contains('edit-btn')) {
-            this.openModal({ id, name, parentId });
+            this.openModal(data);
         } else if (target.classList.contains('delete-btn')) {
-            Confirm.fire('삭제 확인', `'${name}' 부서를 정말 삭제하시겠습니까?`).then(result => {
-                if (result.isConfirmed) this.deleteItem(id);
+            Confirm.fire('삭제 확인', `'${data.name}' 부서를 정말 삭제하시겠습니까?`).then(result => {
+                if (result.isConfirmed) this.deleteItem(data.id);
             });
         }
     }
@@ -195,8 +187,7 @@ class DepartmentAdminPage extends BasePage {
         try {
             const result = await this.apiCall(`${this.config.API_URL}/${id}`, { method: 'DELETE', body: { type: 'department' } });
             Toast.success(result.message);
-            this.loadDepartments();
-            this.loadSelectOptions();
+            await this.loadInitialData(); // Reload all data
         } catch(error) {
             console.error('Error deleting department:', error);
             Toast.error(`부서 삭제 중 오류가 발생했습니다: ${error.message}`);
