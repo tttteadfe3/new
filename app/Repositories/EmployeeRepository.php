@@ -29,15 +29,22 @@ class EmployeeRepository {
      * 사용자 계정에 연결되지 않은 활성 직원을 찾습니다.
      * @return array
      */
-    public function findUnlinked(): array
+    public function findUnlinked(?int $departmentId = null): array
     {
+        $params = [];
         $sql = "SELECT e.*, p.level
                 FROM hr_employees e
                 LEFT JOIN sys_users u ON e.id = u.employee_id
                 LEFT JOIN hr_positions p ON e.position_id = p.id
-                WHERE u.employee_id IS NULL AND e.termination_date IS NULL
-                ORDER BY p.level ASC, e.hire_date ASC";
-        return $this->db->query($sql);
+                WHERE u.employee_id IS NULL AND e.termination_date IS NULL";
+
+        if ($departmentId) {
+            $sql .= " AND e.department_id = :department_id";
+            $params[':department_id'] = $departmentId;
+        }
+
+        $sql .= " ORDER BY p.level ASC, e.hire_date ASC";
+        return $this->db->query($sql, $params);
     }
 
     /**
