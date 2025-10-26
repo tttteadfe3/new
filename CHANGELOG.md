@@ -4,6 +4,16 @@
 
 ---
 
+## [1.0.1 - 2025-10-26]
+
+### 🐛 버그 수정 (Bug Fixes)
+- **조직도 데이터 접근 권한 수정**:
+  - **문제**: `hr_department_managers`에 등록된 사용자임에도 불구하고 조직도 조회 시 권한이 없다는 오류가 발생하는 문제.
+  - **원인**: `OrganizationService::getOrganizationChartData()` 메서드가 모든 부서 정보를 필터링 없이 반환하여, 프론트엔드에서 권한 없는 데이터에 접근 시도.
+  - **수정**: `getVisibleDepartmentIdsForCurrentUser()`를 사용하여 현재 사용자가 볼 수 있는 부서만 필터링하도록 로직 추가.
+  - **영향 범위**: `app/Services/OrganizationService.php`
+  - **함께 수정된 파일**: 없음
+
 ## [버전 - YYYY-MM-DD]
 
 ### ✨ 새로운 기능 (Features)
