@@ -62,6 +62,7 @@ UPDATE `illegal_disposal_cases2` SET `status` =
         WHEN `status` = 'pending' THEN '대기'
         WHEN `status` = 'confirmed' THEN '확인'
         WHEN `status` = 'processed' THEN '처리완료'
+        WHEN `status` = 'completed' THEN '승인완료'
         ELSE `status`
     END
 WHERE `status` IN ('pending', 'confirmed', 'processed');
