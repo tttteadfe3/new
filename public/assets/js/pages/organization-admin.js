@@ -7,7 +7,7 @@ class DepartmentAdminPage extends BasePage {
         this.choicesInstances = {};
         this.state.departments = [];
         this.state.employees = [];
-        this.initializeApp();
+        // BasePage's constructor will call initializeApp on DOMContentLoaded
     }
 
     initializeApp() {
@@ -342,7 +342,7 @@ class PositionAdminPage extends BasePage {
         });
         this.elements = {};
         this.state.positions = [];
-        this.initializeApp();
+        // BasePage's constructor will call initializeApp on DOMContentLoaded
     }
 
     initializeApp() {

@@ -55,6 +55,11 @@
   - **원인**: `OrganizationService::updateSubtreePaths` 메소드가 하위 부서들의 경로(`path`)를 재귀적으로 업데이트하면서 `name` 필드를 전달하지 않아, `UPDATE` 쿼리에서 이름이 누락됨.
   - **수정**: `updateSubtreePaths` 메소드가 하위 부서 정보를 업데이트할 때, 기존의 `name`과 `parent_id`를 함께 전달하도록 수정하여 데이터 유실을 방지.
   - **영향 범위**: `app/Services/OrganizationService.php`
+- **관리 페이지 API 중복 호출 오류 수정 (Frontend)**:
+  - **문제**: 부서 및 직급 관리(`/admin/organization`) 페이지 로드 시, 초기 데이터 조회를 위한 API가 두 번씩 호출되는 문제.
+  - **원인**: `BasePage` 클래스와 이를 상속하는 자식 클래스(`DepartmentAdminPage` 등) 양쪽에서 페이지 초기화 함수(`initializeApp`)를 각각 호출하여 중복 실행됨.
+  - **수정**: 자식 클래스 생성자에서 `initializeApp`을 직접 호출하는 코드를 제거하여, `BasePage`가 `DOMContentLoaded` 이벤트 시점에 한 번만 초기화하도록 수정.
+  - **영향 범위**: `public/assets/js/pages/organization-admin.js`
 
 ## [1.1.0 - 2025-10-27]
 
