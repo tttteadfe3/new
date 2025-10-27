@@ -10,7 +10,8 @@
   - **문제**: 데이터베이스 마이그레이션(`20251026_translate_status_enums.sql`)을 통해 DB의 `ENUM` 값들이 한글로 변경되었으나, 일부 PHP 서비스 로직 코드에 이전의 영어 상태 값(`pending`, `active` 등)이 하드코딩되어 남아있어 로직이 올바르게 동작하지 않는 문제 발생.
   - **원인**: `CHANGELOG.md` v1.0.6에서 코드 베이스 전체가 수정되었다고 기록되었으나, 일부 서비스 클래스(`ProfileService`, `LeaveService`, `UserService`)가 누락됨.
   - **수정**: `grep`을 통해 영어 상태 값을 사용하는 부분을 모두 찾아내어, 데이터베이스와 일치하도록 한글 값으로 수정.
-  - **영향 범위**: `app/Services/ProfileService.php`, `app/Services/LeaveService.php`, `app/Services/UserService.php`, `app/Controllers/Api/LitteringAdminApiController.php`, `app/Models/WasteCollection.php`, `public/assets/js/pages/waste-index.js`
+  - **영향 범위**: `app/Services/ProfileService.php`, `app/Services/LeaveService.php`, `app/Services/UserService.php`, `app/Controllers/Api/LitteringAdminApiController.php`, `app/Models/WasteCollection.php`, `public/assets/js/pages/waste-index.js`, `app/Repositories/WasteCollectionRepository.php`, `app/Views/pages/waste/manage.php`
+  - **함께 수정된 파일**: `database/20251026_translate_status_enums2.sql` (신규)
 
 ## [1.1.0 - 2025-10-27]
 

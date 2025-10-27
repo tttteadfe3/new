@@ -30,7 +30,7 @@ class WasteCollectionRepository {
             $data['submitter_name'] ?? null,
             $data['submitter_phone'] ?? null,
             $data['fee'] ?? 0,
-            'unprocessed',
+            '미처리',
             $data['type'], // 'field' or 'online'
             $data['geocoding_status'] ?? 'success',
             $data['created_by']
@@ -73,7 +73,7 @@ class WasteCollectionRepository {
                     WHERE wci.collection_id = wc.id
                 ), '[]') AS items
             FROM `waste_collections` wc
-            WHERE wc.status = 'unprocessed'
+            WHERE wc.status = '미처리'
             ORDER BY wc.created_at DESC
         ";
         return $this->db->fetchAll($query);
@@ -149,7 +149,7 @@ class WasteCollectionRepository {
      * @return bool
      */
     public function processByAddress(string $address, int $employeeId): bool {
-        $query = "UPDATE `waste_collections` SET `status` = 'processed', `completed_at` = NOW(), `completed_by` = ? WHERE `address` = ? AND `status` = 'unprocessed'";
+        $query = "UPDATE `waste_collections` SET `status` = '처리완료', `completed_at` = NOW(), `completed_by` = ? WHERE `address` = ? AND `status` = '미처리'";
         return $this->db->execute($query, [$employeeId, $address]) > 0;
     }
 
@@ -159,7 +159,7 @@ class WasteCollectionRepository {
      * @return bool
      */
     public function processById(int $id, int $employeeId): bool {
-        $query = "UPDATE `waste_collections` SET `status` = 'processed', `completed_at` = NOW(), `completed_by` = ? WHERE `id` = ? AND `status` = 'unprocessed'";
+        $query = "UPDATE `waste_collections` SET `status` = '처리완료', `completed_at` = NOW(), `completed_by` = ? WHERE `id` = ? AND `status` = '미처리'";
         return $this->db->execute($query, [$employeeId, $id]) > 0;
     }
 

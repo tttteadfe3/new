@@ -19,8 +19,8 @@
                 <div class="col-md-3">
                     <select id="searchStatus" name="searchStatus" class="form-select" title="처리여부">
                         <option value="">처리여부 (전체)</option>
-                        <option value="unprocessed">미처리</option>
-                        <option value="processed">처리완료</option>
+                        <option value="미처리">미처리</option>
+                        <option value="처리완료">처리완료</option>
                     </select>
                 </div>
             </div>
