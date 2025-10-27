@@ -28,7 +28,7 @@ class LitteringDeletedAdminPage extends BasePage {
 
     async loadInitialData() {
         try {
-            const response = await this.apiCall(`${this.config.API_URL}?status=deleted`);
+            const response = await this.apiCall(`${this.config.API_URL}?status=삭제`);
             this.state.deletedList = response.data || [];
             this.renderDeletedList();
         } catch (error) {
