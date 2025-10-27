@@ -93,9 +93,18 @@ class LitteringAdminApiController extends BaseApiController
         $adminId = $this->user()['employee_id'];
 
         try {
-            $postData = ['id' => $id];
-            $result = $this->litteringService->approveLittering($postData, $adminId);
+            $input = $this->getJsonInput();
+            $correctedStatus = $input['corrected'] ?? 'o'; // 기본값을 'o' (개선)으로 설정
+
+            $data = [
+                'id' => $id,
+                'corrected' => $correctedStatus
+            ];
+
+            $result = $this->litteringService->approveLittering($data, $adminId);
             $this->apiSuccess($result, '처리가 최종 승인되었습니다.');
+        } catch (\InvalidArgumentException $e) {
+            $this->apiBadRequest($e->getMessage());
         } catch (Exception $e) {
             $this->apiError($e->getMessage(), 'OPERATION_FAILED', 422);
         }

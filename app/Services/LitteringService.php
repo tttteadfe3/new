@@ -170,11 +170,17 @@ class LitteringService
      * @return array
      * @throws Exception
      */
-    public function approveLittering(array $postData, int $employeeId): array
+    public function approveLittering(array $data, int $employeeId): array
     {
-        $caseId = intval($postData['id'] ?? 0);
+        $caseId = intval($data['id'] ?? 0);
         if (!$caseId) {
-            throw new Exception("잘못된 보고서 ID입니다.", 400);
+            throw new \InvalidArgumentException("잘못된 보고서 ID입니다.");
+        }
+
+        $correctedStatus = $data['corrected'] ?? 'o';
+        $allowedStatuses = ['o', 'x', '='];
+        if (!in_array($correctedStatus, $allowedStatuses)) {
+            throw new \InvalidArgumentException("잘못된 개선 상태 값입니다.");
         }
 
         $case = $this->getLitteringById($caseId);
@@ -182,7 +188,7 @@ class LitteringService
             throw new Exception("승인하려면 보고서가 '처리됨' 상태여야 합니다.", 403);
         }
 
-        if (!$this->litteringRepository->approve($caseId, $employeeId)) {
+        if (!$this->litteringRepository->approve($caseId, $employeeId, $correctedStatus)) {
             throw new Exception("보고서를 승인하지 못했습니다.", 500);
         }
 

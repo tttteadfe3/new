@@ -201,11 +201,11 @@ class LitteringRepository {
      * @param int $employeeId
      * @return bool
      */
-    public function approve(int $caseId, int $employeeId): bool {
+    public function approve(int $caseId, int $employeeId, string $correctedStatus): bool {
         $query = 'UPDATE `illegal_disposal_cases2`
-                  SET `status` = ?, `completed_by` = ?, `completed_at` = NOW()
+                  SET `status` = ?, `completed_by` = ?, `completed_at` = NOW(), `corrected` = ?
                   WHERE `id` = ?';
-        $params = ['승인완료', $employeeId, $caseId];
+        $params = ['승인완료', $employeeId, $correctedStatus, $caseId];
         return $this->db->execute($query, $params) > 0;
     }
 }

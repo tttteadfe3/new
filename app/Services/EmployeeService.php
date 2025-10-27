@@ -252,11 +252,11 @@ class EmployeeService
                 if ($key === 'department_id') {
                     $oldValue = $oldData['department_name'] ?? $oldValue;
                     $department = $this->departmentRepository->findById($newValue);
-                    $newValue = $department['name'] ?? $newValue;
+                    $newValue = $department ? $department->name : $newValue;
                 } elseif ($key === 'position_id') {
                     $oldValue = $oldData['position_name'] ?? $oldValue;
                     $position = $this->positionRepository->findById($newValue);
-                    $newValue = $position['name'] ?? $newValue;
+                    $newValue = $position ? $position->name : $newValue;
                 }
 
                 $this->employeeChangeLogRepository->insert(

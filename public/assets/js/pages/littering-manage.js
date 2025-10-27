@@ -188,6 +188,16 @@ class LitteringAdminPage extends BasePage {
         document.getElementById('approve-btn').classList.toggle('d-none', type !== '처리완료');
         document.getElementById('delete-btn').classList.toggle('d-none', type !== '대기');
 
+        // 개선여부 드롭다운 표시 로직
+        const improvementWrapper = document.getElementById('improvement-status-wrapper');
+        if (type === 'processed') {
+            const improvementSelect = document.getElementById('improvement-status-select');
+            improvementSelect.value = selected.corrected || 'o'; // 'o'를 기본값으로 설정
+            improvementWrapper.classList.remove('d-none');
+        } else {
+            improvementWrapper.classList.add('d-none');
+        }
+
         document.getElementById('detail-view').classList.remove('d-none');
         if (window.SplitLayout) {
             SplitLayout.show();
@@ -293,10 +303,13 @@ class LitteringAdminPage extends BasePage {
         if (!this.state.selectedReport || this.state.selectedReport.status !== '처리완료') return;
 
         const reportId = this.state.selectedReport.id;
+        const correctedStatus = document.getElementById('improvement-status-select').value;
+
         this.setButtonLoading('#approve-btn', '승인 중...');
         try {
             await this.apiCall(`${this.config.API_URL}/${reportId}/approve`, {
-                method: 'POST'
+                method: 'POST',
+                body: { corrected: correctedStatus }
             });
             Toast.success('성공적으로 승인되었습니다.');
             this.removeReportFromList(reportId, '처리완료');
