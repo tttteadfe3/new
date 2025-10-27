@@ -182,10 +182,16 @@ class UserRepository {
 
             // 새 역할 추가
             if (!empty($roleIds)) {
-                $sql = "INSERT INTO sys_user_roles (user_id, role_id) VALUES (:user_id, :role_id)";
-                foreach ($roleIds as $roleId) {
-                    $this->db->execute($sql, [':user_id' => $userId, ':role_id' => $roleId]);
+                $sql = "INSERT INTO sys_user_roles (user_id, role_id) VALUES ";
+                $placeholders = [];
+                $params = [':user_id' => $userId];
+                foreach ($roleIds as $index => $roleId) {
+                    $key = ":role_id" . $index;
+                    $placeholders[] = "(:user_id, {$key})";
+                    $params[$key] = $roleId;
                 }
+                $sql .= implode(', ', $placeholders);
+                $this->db->execute($sql, $params);
             }
             $this->db->commit();
         } catch (\Exception $e) {

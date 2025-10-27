@@ -208,4 +208,16 @@ class LitteringRepository {
         $params = ['completed', $employeeId, $caseId];
         return $this->db->execute($query, $params) > 0;
     }
+
+    /**
+     * 민원의 개선 상태(corrected)를 업데이트합니다.
+     * @param int $caseId
+     * @param string $status
+     * @return bool
+     */
+    public function updateCorrectedStatus(int $caseId, string $status): bool
+    {
+        $query = "UPDATE `illegal_disposal_cases2` SET `corrected` = ? WHERE `id` = ?";
+        return $this->db->execute($query, [$status, $caseId]) > 0;
+    }
 }

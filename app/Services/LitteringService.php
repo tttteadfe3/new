@@ -325,6 +325,31 @@ class LitteringService
     }
 
     /**
+     * @param int $caseId
+     * @param string $status
+     * @return bool
+     * @throws \InvalidArgumentException|Exception
+     */
+    public function updateImprovementStatus(int $caseId, string $status): bool
+    {
+        $allowedStatuses = ['o', 'x', '='];
+        if (!in_array($status, $allowedStatuses)) {
+            throw new \InvalidArgumentException("잘못된 개선 상태 값입니다.");
+        }
+
+        $case = $this->getLitteringById($caseId);
+        if (!$case) {
+            throw new Exception("보고서를 찾을 수 없습니다.", 404);
+        }
+
+        if ($case['status'] !== 'processed') {
+            throw new Exception("승인 대기 상태의 보고서만 개선 여부를 수정할 수 있습니다.", 403);
+        }
+
+        return $this->litteringRepository->updateCorrectedStatus($caseId, $status);
+    }
+
+    /**
      * @param array $file
      * @return void
      * @throws Exception
