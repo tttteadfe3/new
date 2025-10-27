@@ -229,15 +229,16 @@ class OrganizationService
         $this->departmentRepository->beginTransaction();
         try {
             $viewerEmployeeIds = $data['viewer_employee_ids'] ?? [];
-            unset($data['viewer_employee_ids']);
             $viewerDepartmentIds = $data['viewer_department_ids'] ?? [];
-            unset($data['viewer_department_ids']);
-            unset($data['path']);
 
-            $parentId = !empty($data['parent_id']) ? (int)$data['parent_id'] : null;
-            $data['parent_id'] = $parentId;
+            $departmentData = [
+                'name' => $data['name'],
+                'parent_id' => !empty($data['parent_id']) ? (int)$data['parent_id'] : null,
+                'path' => null
+            ];
 
-            $newDeptId = $this->departmentRepository->create($data);
+            $parentId = $departmentData['parent_id'];
+            $newDeptId = $this->departmentRepository->create($departmentData);
 
             $path = $this->calculateDepartmentPath($parentId, $newDeptId);
             $this->departmentRepository->update($newDeptId, ['path' => $path]);
