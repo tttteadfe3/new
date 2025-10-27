@@ -305,7 +305,7 @@ class LeaveService {
                 if (empty($reason)) {
                     return [false, "승인된 연차를 취소하려면 사유를 반드시 입력해야 합니다."];
                 }
-                if ($this->leaveRepository->requestCancellation($leaveId, $reason)) {
+                if ($this->leaveRepository->updateStatus($leaveId, '취소요청', null, $reason)) {
                     return [true, "연차 취소 요청이 완료되었습니다. 관리자 승인 후 최종 처리됩니다."];
                 }
                 break;

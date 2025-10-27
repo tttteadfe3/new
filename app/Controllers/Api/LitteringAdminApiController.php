@@ -41,18 +41,18 @@ class LitteringAdminApiController extends BaseApiController
      */
     public function listReports(): void
     {
-        $status = $this->request->input('status', 'pending'); // 'pending', 'processed_for_approval', 'deleted'
+        $status = $this->request->input('status', '대기'); // '대기', '처리완료', '삭제'
 
         try {
             $data = [];
             switch ($status) {
-                case 'pending':
+                case '대기':
                     $data = $this->litteringService->getPendingLittering();
                     break;
-                case 'processed_for_approval':
+                case '처리완료':
                     $data = $this->litteringService->getProcessedLitteringForApproval();
                     break;
-                case 'deleted':
+                case '삭제':
                     $data = $this->litteringService->getDeletedLittering();
                     break;
                 default:

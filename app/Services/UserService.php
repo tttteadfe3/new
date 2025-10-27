@@ -65,7 +65,7 @@ class UserService
 
         $this->userRepository->updateUserStatus($userId, $newStatus);
 
-        if ($newStatus !== 'active') {
+        if ($newStatus !== '활성') {
             // 사용자가 비활성, 차단 등으로 설정되면 직원과의 연결을 끊고 모든 역할을 제거합니다.
             $this->userRepository->unlinkEmployee($userId);
             $this->userRepository->updateUserRoles($userId, []);

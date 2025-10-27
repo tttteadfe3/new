@@ -60,6 +60,15 @@
   - **원인**: `BasePage` 클래스와 이를 상속하는 자식 클래스(`DepartmentAdminPage` 등) 양쪽에서 페이지 초기화 함수(`initializeApp`)를 각각 호출하여 중복 실행됨.
   - **수정**: 자식 클래스 생성자에서 `initializeApp`을 직접 호출하는 코드를 제거하여, `BasePage`가 `DOMContentLoaded` 이벤트 시점에 한 번만 초기화하도록 수정.
   - **영향 범위**: `public/assets/js/pages/organization-admin.js`
+## [1.1.1 - 2025-10-27]
+
+### 🐛 버그 수정 (Bug Fixes)
+- **애플리케이션 코드의 상태 값 한글화**:
+  - **문제**: 데이터베이스 마이그레이션(`20251026_translate_status_enums.sql`)을 통해 DB의 `ENUM` 값들이 한글로 변경되었으나, 일부 PHP 서비스 로직 코드에 이전의 영어 상태 값(`pending`, `active` 등)이 하드코딩되어 남아있어 로직이 올바르게 동작하지 않는 문제 발생.
+  - **원인**: `CHANGELOG.md` v1.0.6에서 코드 베이스 전체가 수정되었다고 기록되었으나, 일부 서비스 클래스(`ProfileService`, `LeaveService`, `UserService`)가 누락됨.
+  - **수정**: `grep`을 통해 영어 상태 값을 사용하는 부분을 모두 찾아내어, 데이터베이스와 일치하도록 한글 값으로 수정.
+  - **영향 범위**: `app/Services/ProfileService.php`, `app/Services/LeaveService.php`, `app/Services/UserService.php`, `app/Controllers/Api/LitteringAdminApiController.php`, `app/Models/WasteCollection.php`, `public/assets/js/pages/waste-index.js`, `app/Repositories/WasteCollectionRepository.php`, `app/Views/pages/waste/manage.php`
+  - **함께 수정된 파일**: `database/20251026_translate_status_enums2.sql` (신규)
 
 ## [1.1.0 - 2025-10-27]
 
