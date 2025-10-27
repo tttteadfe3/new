@@ -177,9 +177,6 @@ class OrganizationService
         $employee = $this->employeeRepository->findById($user['employee_id']);
 
         $permittedDeptIds = [];
-        if ($employee && $employee['department_id']) {
-            $permittedDeptIds[] = $employee['department_id'];
-        }
 
         $employeePermitted = $this->departmentRepository->findDepartmentIdsWithEmployeeViewPermission($user['employee_id']);
         $permittedDeptIds = array_merge($permittedDeptIds, $employeePermitted);
