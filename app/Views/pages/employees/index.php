@@ -33,8 +33,8 @@
                         <div class="col-xl-4">
                             <select class="form-select" id="filter-status">
                                 <option value="">모든 직원</option>
-                                <option value="active" selected>재직중</option>
-                                <option value="inactive">퇴사</option>
+                                <option value="재직중" selected>재직중</option>
+                                <option value="퇴사">퇴사</option>
                             </select>
                         </div>
                     </div>
