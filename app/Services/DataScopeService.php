@@ -13,11 +13,16 @@ class DataScopeService
 {
     private AuthService $authService;
     private DepartmentRepository $departmentRepo;
+    private \App\Repositories\EmployeeRepository $employeeRepo;
 
-    public function __construct(AuthService $authService, DepartmentRepository $departmentRepo)
-    {
+    public function __construct(
+        AuthService $authService,
+        DepartmentRepository $departmentRepo,
+        \App\Repositories\EmployeeRepository $employeeRepo
+    ) {
         $this->authService = $authService;
         $this->departmentRepo = $departmentRepo;
+        $this->employeeRepo = $employeeRepo;
     }
 
     /**
@@ -105,5 +110,39 @@ class DataScopeService
         }
 
         return [$sql, $params];
+    }
+
+    /**
+     * 현재 사용자가 대상 직원을 관리할 수 있는지 확인합니다.
+     *
+     * @param int $targetEmployeeId 대상 직원의 ID
+     * @return bool 관리할 수 있으면 true, 그렇지 않으면 false
+     */
+    public function canManageEmployee(int $targetEmployeeId): bool
+    {
+        // 1. 전체 관리 권한 확인
+        if ($this->authService->check('employee.manage')) {
+            return true;
+        }
+
+        $currentUser = $this->authService->user();
+        $currentEmployeeId = $currentUser['employee_id'] ?? null;
+
+        // 2. 자기 자신은 항상 관리 가능
+        if ($currentEmployeeId === $targetEmployeeId) {
+            return true;
+        }
+
+        // 3. 대상 직원의 정보 조회
+        $targetEmployee = $this->employeeRepo->findById($targetEmployeeId);
+        if (!$targetEmployee || empty($targetEmployee['department_id'])) {
+            return false; // 대상 직원이 없거나 부서에 소속되지 않은 경우
+        }
+
+        // 4. 현재 사용자가 볼 수 있는 부서 목록 가져오기
+        $visibleDeptIds = $this->getVisibleDepartmentIdsForCurrentUser();
+
+        // 5. 대상 직원의 부서가 보이는 부서 목록에 포함되는지 확인
+        return in_array($targetEmployee['department_id'], $visibleDeptIds);
     }
 }

@@ -14,6 +14,12 @@
     - `AuthService`에서 데이터 조회 범위와 관련된 책임을 제거하여, 인증 및 기능 권한 관리에만 집중하도록 역할을 명확히 함.
   - **영향 범위**: `app/Services/OrganizationService.php`, `app/Services/EmployeeService.php`, `app/Services/LeaveService.php`, `app/Services/HolidayService.php`, `app/Services/UserService.php`, `app/Services/AuthService.php`, `app/Controllers/Api/OrganizationApiController.php`, `app/Controllers/Api/EmployeeApiController.php`
   - **함께 수정된 파일**: `public/index.php` (DI 컨테이너 설정), `app/Repositories/DepartmentRepository.php` (`findByIds` 메소드 추가)
+- **직원 데이터 접근 권한 로직 중앙화**:
+  - **변경 이유**: 부서 데이터 접근 권한 중앙화의 후속 조치로, 특정 직원을 관리할 수 있는지 확인하는 로직(`canManageEmployee`)을 `AuthService`에서 `DataScopeService`로 이전하여 데이터 접근 범위 관련 책임을 일원화함.
+  - **변경 내용**:
+    - `DataScopeService`에 `canManageEmployee` 메소드를 구현하고, `getVisibleDepartmentIdsForCurrentUser`를 활용하여 효율적으로 권한을 확인하도록 개선.
+    - `EmployeeApiController`가 `AuthService` 대신 `DataScopeService`의 `canManageEmployee`를 호출하도록 수정.
+  - **영향 범위**: `app/Services/DataScopeService.php`, `app/Controllers/Api/EmployeeApiController.php`
 
 ## [1.1.0 - 2025-10-27]
 
