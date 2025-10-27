@@ -46,12 +46,6 @@ class LitteringAdminPage extends BasePage {
         document.getElementById('confirm-btn').addEventListener('click', () => this.confirmReport());
         document.getElementById('approve-btn').addEventListener('click', () => this.approveReport());
         document.getElementById('delete-btn').addEventListener('click', () => this.deleteReport());
-        document.getElementById('improvement-status-select').addEventListener('change', (e) => {
-            const reportId = this.state.selectedReport?.id;
-            if (reportId) {
-                this.updateImprovementStatus(reportId, e.target.value);
-            }
-        });
     }
 
     async loadInitialData() {
@@ -196,16 +190,6 @@ class LitteringAdminPage extends BasePage {
         document.getElementById('confirm-btn').classList.toggle('d-none', type !== 'pending');
         document.getElementById('approve-btn').classList.toggle('d-none', type !== 'processed');
         document.getElementById('delete-btn').classList.toggle('d-none', type !== 'pending'); // Can only delete pending reports
-
-        // 개선여부 드롭다운 표시 로직
-        const improvementWrapper = document.getElementById('improvement-status-wrapper');
-        if (type === 'processed') {
-            const improvementSelect = document.getElementById('improvement-status-select');
-            improvementSelect.value = selected.corrected || 'o'; // 'o'를 기본값으로 설정
-            improvementWrapper.classList.remove('d-none');
-        } else {
-            improvementWrapper.classList.add('d-none');
-        }
 
         document.getElementById('detail-view').classList.remove('d-none');
         if (window.SplitLayout) {
@@ -374,30 +358,6 @@ class LitteringAdminPage extends BasePage {
         super.cleanup();
         if (this.state.mapService) {
             this.state.mapService.destroy();
-        }
-    }
-
-    async updateImprovementStatus(reportId, newStatus) {
-        try {
-            await this.apiCall(`${this.config.API_URL}/${reportId}/improvement-status`, {
-                method: 'PUT',
-                body: { corrected: newStatus }
-            });
-            Toast.success('개선 상태가 성공적으로 업데이트되었습니다.');
-
-            // 로컬 상태와 목록 텍스트 업데이트
-            const report = this.state.processedReports.find(r => r.id === parseInt(reportId));
-            if (report) {
-                report.corrected = newStatus;
-                this.renderProcessedList(); // 목록을 다시 렌더링하여 배지를 업데이트
-            }
-        } catch (error) {
-            Toast.error('상태 업데이트에 실패했습니다: ' + error.message);
-            // 오류 발생 시 select를 원래 값으로 되돌리기
-            const report = this.state.processedReports.find(r => r.id === parseInt(reportId));
-            if (report) {
-                document.getElementById('improvement-status-select').value = report.corrected || 'o';
-            }
         }
     }
 }

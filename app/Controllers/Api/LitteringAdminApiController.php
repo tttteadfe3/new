@@ -151,28 +151,4 @@ class LitteringAdminApiController extends BaseApiController
             $this->apiError($e->getMessage(), 'OPERATION_FAILED', 422);
         }
     }
-
-    /**
-     * 무단투기 보고서의 개선 상태를 업데이트합니다.
-     * PUT /api/littering_admin/reports/{id}/improvement-status
-     */
-    public function updateImprovementStatus(int $id): void
-    {
-        try {
-            $input = $this->getJsonInput();
-            $correctedStatus = $input['corrected'] ?? null;
-
-            if ($correctedStatus === null) {
-                $this->apiBadRequest('개선 상태(corrected) 값이 필요합니다.');
-                return;
-            }
-
-            $result = $this->litteringService->updateImprovementStatus($id, $correctedStatus);
-            $this->apiSuccess($result, '개선 상태가 업데이트되었습니다.');
-        } catch (\InvalidArgumentException $e) {
-            $this->apiBadRequest($e->getMessage());
-        } catch (Exception $e) {
-            $this->handleException($e);
-        }
-    }
 }

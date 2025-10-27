@@ -101,16 +101,6 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3 d-none" id="improvement-status-wrapper">
-                                                <label for="improvement-status-select" class="form-label">개선여부</label>
-                                                <select class="form-select form-select-sm" id="improvement-status-select">
-                                                    <option value="o">개선</option>
-                                                    <option value="x">미개선</option>
-                                                    <option value="=">없어짐</option>
-                                                </select>
-                                            </div>
-                                        </div>
                                         <div class="d-flex justify-content-end gap-2">
                                             <button type="button" class="btn btn-danger btn-sm" id="delete-btn">
                                                 <i class="ri-delete-bin-line me-1"></i>삭제
