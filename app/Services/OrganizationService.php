@@ -83,21 +83,17 @@ class OrganizationService
     {
         $permittedDeptIds = $this->_getPermittedDepartmentIds();
 
+        $allDepartments = $this->departmentRepository->getAll();
+        $departmentMap = [];
+        foreach ($allDepartments as $dept) {
+            $departmentMap[$dept->id] = $dept;
+        }
+
         if ($permittedDeptIds === null) {
-            $allDepartments = $this->departmentRepository->getAll();
-            $departmentMap = [];
-            foreach ($allDepartments as $dept) {
-                $departmentMap[$dept['id']] = (array)$dept;
-            }
             $visibleDepartments = $departmentMap;
         } else {
             if (empty($permittedDeptIds)) {
                 return [];
-            }
-            $allDepartments = $this->departmentRepository->getAll();
-            $departmentMap = [];
-            foreach ($allDepartments as $dept) {
-                $departmentMap[$dept['id']] = (array)$dept;
             }
             $visibleDepartments = [];
             foreach ($permittedDeptIds as $permittedDeptId) {
@@ -105,11 +101,14 @@ class OrganizationService
             }
         }
 
-        foreach ($visibleDepartments as &$dept) {
-            $dept['name'] = $this->getHierarchicalName($dept['id'], $departmentMap);
+        $result = [];
+        foreach ($visibleDepartments as $dept) {
+            $deptArray = (array)$dept;
+            $deptArray['name'] = $this->getHierarchicalName($dept->id, $departmentMap);
+            $result[] = $deptArray;
         }
 
-        return array_values($visibleDepartments);
+        return $result;
     }
 
     /**
@@ -126,8 +125,8 @@ class OrganizationService
         $visible[$deptId] = $map[$deptId];
 
         foreach ($map as $child) {
-            if ($child['parent_id'] == $deptId) {
-                $this->findSubtreeRecursive($child['id'], $map, $visible);
+            if ($child->parent_id == $deptId) {
+                $this->findSubtreeRecursive($child->id, $map, $visible);
             }
         }
     }
@@ -148,8 +147,8 @@ class OrganizationService
         $maxDepth = 10; // 무한 루프 방지
 
         while ($current && $depth < $maxDepth) {
-            array_unshift($path, $current['name']);
-            $current = $current['parent_id'] ? ($map[$current['parent_id']] ?? null) : null;
+            array_unshift($path, $current->name);
+            $current = $current->parent_id ? ($map[$current->parent_id] ?? null) : null;
             $depth++;
         }
 
@@ -178,9 +177,6 @@ class OrganizationService
         $employee = $this->employeeRepository->findById($user['employee_id']);
 
         $permittedDeptIds = [];
-        if ($employee && $employee['department_id']) {
-            $permittedDeptIds[] = $employee['department_id'];
-        }
 
         $employeePermitted = $this->departmentRepository->findDepartmentIdsWithEmployeeViewPermission($user['employee_id']);
         $permittedDeptIds = array_merge($permittedDeptIds, $employeePermitted);
@@ -233,15 +229,16 @@ class OrganizationService
         $this->departmentRepository->beginTransaction();
         try {
             $viewerEmployeeIds = $data['viewer_employee_ids'] ?? [];
-            unset($data['viewer_employee_ids']);
             $viewerDepartmentIds = $data['viewer_department_ids'] ?? [];
-            unset($data['viewer_department_ids']);
-            unset($data['path']);
 
-            $parentId = !empty($data['parent_id']) ? (int)$data['parent_id'] : null;
-            $data['parent_id'] = $parentId;
+            $departmentData = [
+                'name' => $data['name'],
+                'parent_id' => !empty($data['parent_id']) ? (int)$data['parent_id'] : null,
+                'path' => null
+            ];
 
-            $newDeptId = $this->departmentRepository->create($data);
+            $parentId = $departmentData['parent_id'];
+            $newDeptId = $this->departmentRepository->create($departmentData);
 
             $path = $this->calculateDepartmentPath($parentId, $newDeptId);
             $this->departmentRepository->update($newDeptId, ['path' => $path]);

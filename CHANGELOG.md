@@ -4,6 +4,31 @@
 
 ---
 
+## [1.1.0 - 2025-10-27]
+
+### ✨ 새로운 기능 (Features)
+- **직원 관리 부서 필터에 권한 로직 적용**:
+  - **설명**: `/employees` 페이지의 부서 선택 드롭다운에 현재 로그인한 사용자의 조회 권한(`hr_department_managers` 기반)이 적용되도록 개선했습니다.
+  - **변경 내용**: `EmployeeApiController::getInitialData()`가 권한이 적용된 부서 목록을 반환하는 `OrganizationService::getManagableDepartments()`를 호출하도록 수정하여, 권한이 있는 부서만 필터에 표시되도록 변경했습니다.
+  - **영향 범위**: `app/Controllers/Api/EmployeeApiController.php`
+
+### 🐛 버그 수정 (Bug Fixes)
+- **데이터 조회 권한 로직 수정**:
+  - **문제**: 데이터 조회 권한이 없는 사용자에게도 자신의 소속 부서가 기본적으로 보여지는 문제.
+  - **원인**: `OrganizationService::_getPermittedDepartmentIds()` 메서드가 `hr_department_managers` 확인 로직과 별개로 현재 사용자의 소속 부서를 항상 포함시키고 있었음.
+  - **수정**: `OrganizationService`에서 자신의 소속 부서를 자동으로 포함하는 로직을 제거하여, `hr_department_managers` 테이블에 명시적으로 부여된 권한만 적용되도록 수정했습니다.
+  - **영향 범위**: `app/Services/OrganizationService.php`
+- **모델 객체 처리 관련 치명적 오류 수정 (Fullstack)**:
+  - **문제**: `OrganizationService`와 `EmployeeService`에서 `Department` 및 `Position` 모델 객체를 배열처럼 접근하여 "Cannot use object of type ... as array" Fatal Error가 발생하는 문제.
+  - **원인**: `DepartmentRepository` 등이 반환하는 객체 배열을 처리하는 과정에서 잘못된 배열 구문(`$model['property']`)을 사용함.
+  - **수정**: `OrganizationService::getManagableDepartments`, `EmployeeService::logChanges` 및 관련 헬퍼 메서드 내에서 객체 속성에 접근할 때 올바른 객체 구문(`$model->property`)을 사용하도록 일괄 수정했습니다.
+  - **영향 범위**: `app/Services/OrganizationService.php`, `app/Services/EmployeeService.php`
+- **부서 생성 시 'name' 필드 누락 오류 수정**:
+  - **문제**: 부서 생성 API 호출 시 `SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'name' cannot be null` 오류 발생.
+  - **원인**: `OrganizationService::createDepartment` 메서드에서 `DepartmentRepository::create`로 전달하는 데이터 배열에 `name` 필드가 누락됨.
+  - **수정**: `createDepartment` 메서드 내에서 `create` 메서드로 전달할 데이터 배열을 명시적으로 생성하여 `name` 필드가 항상 포함되도록 수정했습니다.
+  - **영향 범위**: `app/Services/OrganizationService.php`
+
 ## [1.0.9 - 2025-10-26]
 
 ### ✨ 새로운 기능 (Features)
