@@ -18,11 +18,11 @@
   - **원인**: `OrganizationService::_getPermittedDepartmentIds()` 메서드가 `hr_department_managers` 확인 로직과 별개로 현재 사용자의 소속 부서를 항상 포함시키고 있었음.
   - **수정**: `OrganizationService`에서 자신의 소속 부서를 자동으로 포함하는 로직을 제거하여, `hr_department_managers` 테이블에 명시적으로 부여된 권한만 적용되도록 수정했습니다.
   - **영향 범위**: `app/Services/OrganizationService.php`
-- **부서 목록 조회 시 치명적 오류 수정**:
-  - **문제**: `OrganizationService::getManagableDepartments()` 메서드가 `Department` 모델 객체를 배열처럼 접근하여 "Cannot use object of type App\Models\Department as array" Fatal Error가 발생하는 문제.
-  - **원인**: `DepartmentRepository::getAll()`이 반환하는 객체 배열을 처리하는 과정에서 잘못된 배열 구문(`$dept['id']`)을 사용함.
-  - **수정**: `getManagableDepartments` 및 관련 헬퍼 메서드(`findSubtreeRecursive`, `getHierarchicalName`) 내에서 객체 속성에 접근할 때 올바른 객체 구문(`$dept->id`)을 사용하도록 수정했습니다.
-  - **영향 범위**: `app/Services/OrganizationService.php`
+- **모델 객체 처리 관련 치명적 오류 수정 (Fullstack)**:
+  - **문제**: `OrganizationService`와 `EmployeeService`에서 `Department` 및 `Position` 모델 객체를 배열처럼 접근하여 "Cannot use object of type ... as array" Fatal Error가 발생하는 문제.
+  - **원인**: `DepartmentRepository` 등이 반환하는 객체 배열을 처리하는 과정에서 잘못된 배열 구문(`$model['property']`)을 사용함.
+  - **수정**: `OrganizationService::getManagableDepartments`, `EmployeeService::logChanges` 및 관련 헬퍼 메서드 내에서 객체 속성에 접근할 때 올바른 객체 구문(`$model->property`)을 사용하도록 일괄 수정했습니다.
+  - **영향 범위**: `app/Services/OrganizationService.php`, `app/Services/EmployeeService.php`
 
 ## [1.0.9 - 2025-10-26]
 
