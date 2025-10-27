@@ -126,22 +126,34 @@ class OrganizationService
             $viewerDepartmentIds = $data['viewer_department_ids'] ?? [];
 
             $departmentData = [
-                'name' => $data['name'],
+                'name' => trim($data['name'] ?? ''),
                 'parent_id' => !empty($data['parent_id']) ? (int)$data['parent_id'] : null,
                 'path' => null
             ];
 
+            if (empty($departmentData['name'])) {
+                 throw new \InvalidArgumentException('Department name is required.');
+            }
+
             $parentId = $departmentData['parent_id'];
             $newDeptId = $this->departmentRepository->create($departmentData);
+            $newDeptIdInt = (int)$newDeptId;
 
-            $path = $this->calculateDepartmentPath($parentId, $newDeptId);
-            $this->departmentRepository->update($newDeptId, ['path' => $path]);
+            $path = $this->calculateDepartmentPath($parentId, $newDeptIdInt);
+
+            // 경로 업데이트 시 name과 parent_id를 유지해야 함
+            $updateData = [
+                'name' => $departmentData['name'],
+                'parent_id' => $departmentData['parent_id'],
+                'path' => $path,
+            ];
+            $this->departmentRepository->update($newDeptIdInt, $updateData);
 
             if (!empty($viewerEmployeeIds)) {
-                $this->departmentRepository->replaceEmployeeViewPermissions($newDeptId, $viewerEmployeeIds);
+                $this->departmentRepository->replaceEmployeeViewPermissions($newDeptIdInt, $viewerEmployeeIds);
             }
             if (!empty($viewerDepartmentIds)) {
-                $this->departmentRepository->replaceDepartmentViewPermissions($newDeptId, $viewerDepartmentIds);
+                $this->departmentRepository->replaceDepartmentViewPermissions($newDeptIdInt, $viewerDepartmentIds);
             }
 
             $this->departmentRepository->commit();
