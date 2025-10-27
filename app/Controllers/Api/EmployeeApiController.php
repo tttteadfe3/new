@@ -18,7 +18,7 @@ class EmployeeApiController extends BaseApiController
     private EmployeeService $employeeService;
     private DepartmentRepository $departmentRepository;
     private PositionRepository $positionRepository;
-    private \App\Services\OrganizationService $organizationService;
+    private \App\Services\DataScopeService $dataScopeService;
 
     public function __construct(
         Request $request,
@@ -30,13 +30,13 @@ class EmployeeApiController extends BaseApiController
         EmployeeService $employeeService,
         DepartmentRepository $departmentRepository,
         PositionRepository $positionRepository,
-        \App\Services\OrganizationService $organizationService
+        \App\Services\DataScopeService $dataScopeService
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->employeeService = $employeeService;
         $this->departmentRepository = $departmentRepository;
         $this->positionRepository = $positionRepository;
-        $this->organizationService = $organizationService;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
@@ -45,8 +45,21 @@ class EmployeeApiController extends BaseApiController
     public function getInitialData(): void
     {
         try {
+            $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
+
+            if ($visibleDeptIds === null) {
+                // 전체 조회 권한
+                $departments = $this->departmentRepository->getAll();
+            } elseif (empty($visibleDeptIds)) {
+                // 조회 권한 부서 없음
+                $departments = [];
+            } else {
+                // ID 목록으로 부서 정보 조회
+                $departments = $this->departmentRepository->findByIds($visibleDeptIds);
+            }
+
             $data = [
-                'departments' => $this->organizationService->getManagableDepartments(),
+                'departments' => $departments,
                 'positions' => $this->positionRepository->getAll(),
             ];
             $this->apiSuccess($data);
@@ -75,7 +88,7 @@ class EmployeeApiController extends BaseApiController
      */
     public function show(int $id): void
     {
-        if (!$this->authService->canManageEmployee($id)) {
+        if (!$this->dataScopeService->canManageEmployee($id)) {
             $this->apiForbidden('해당 직원의 정보를 조회할 권한이 없습니다.');
             return;
         }
@@ -97,7 +110,7 @@ class EmployeeApiController extends BaseApiController
      */
     public function update(int $id): void
     {
-        if (!$this->authService->canManageEmployee($id)) {
+        if (!$this->dataScopeService->canManageEmployee($id)) {
             $this->apiForbidden('해당 직원의 정보를 수정할 권한이 없습니다.');
             return;
         }
@@ -116,7 +129,7 @@ class EmployeeApiController extends BaseApiController
      */
     public function destroy(int $id): void
     {
-        if (!$this->authService->canManageEmployee($id)) {
+        if (!$this->dataScopeService->canManageEmployee($id)) {
             $this->apiForbidden('해당 직원을 삭제할 권한이 없습니다.');
             return;
         }
@@ -177,7 +190,7 @@ class EmployeeApiController extends BaseApiController
      */
     public function getChangeHistory(int $id): void
     {
-        if (!$this->authService->canManageEmployee($id)) {
+        if (!$this->dataScopeService->canManageEmployee($id)) {
             $this->apiForbidden('해당 직원의 변경 이력을 조회할 권한이 없습니다.');
             return;
         }
