@@ -7,8 +7,6 @@
 function renderBootstrapMenuItems(array $items, int $level = 0) {
     foreach ($items as $index => $item) {
         $hasChildren = !empty($item['children']);
-        $isActive = $item['is_active'] ?? false;
-        $hasVisibleChildren = $item['has_children'] ?? false;
         
         // Generate unique IDs for collapsible elements
         $collapseId = 'sidebar' . ucfirst(str_replace([' ', '.', '-'], '', $item['name'])) . $level . $index;
@@ -39,9 +37,8 @@ function renderBootstrapMenuItems(array $items, int $level = 0) {
             
         } else {
             // 단일 메뉴 아이템
-            $activeClass = $isActive ? ' active' : '';
             echo '<li class="nav-item">';
-            echo '<a href="' . BASE_URL . e($item['url']) . '" class="nav-link menu-link' . $activeClass . '" data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">';
+            echo '<a href="' . BASE_URL . e($item['url']) . '" class="nav-link menu-link" data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">';
             
             // Icon (only for top level items without children)
             if (!empty($item['icon']) && $level === 0) {
@@ -63,7 +60,6 @@ function renderBootstrapMenuItems(array $items, int $level = 0) {
 function renderBootstrapMenuItemsAdvanced(array $items, int $level = 0) {
     foreach ($items as $index => $item) {
         $hasChildren = !empty($item['children']);
-        $isActive = $item['is_active'] ?? false;
         
         // Generate a cleaner, more unique ID for collapsible elements
         $safeName = preg_replace('/[^a-zA-Z0-9]/', '', $item['name']);
@@ -78,11 +74,8 @@ function renderBootstrapMenuItemsAdvanced(array $items, int $level = 0) {
 
         } elseif ($hasChildren) {
             // --- 하위 부모 메뉴 아이템 ---
-            $ariaExpanded = $isActive ? 'true' : 'false';
-            $showClass = $isActive ? 'show' : '';
-            
             echo '<li class="nav-item">';
-            echo '<a class="nav-link menu-link" href="#' . $collapseId . '" data-bs-toggle="collapse" role="button" aria-expanded="' . $ariaExpanded . '" aria-controls="' . $collapseId . '">';
+            echo '<a class="nav-link menu-link" href="#' . $collapseId . '" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="' . $collapseId . '">';
             
             if (!empty($item['icon'])) {
                 echo '<i class="' . e($item['icon']) . '"></i> ';
@@ -91,7 +84,7 @@ function renderBootstrapMenuItemsAdvanced(array $items, int $level = 0) {
             echo '<span data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">' . e($item['name']) . '</span>';
             echo '</a>';
             
-            echo '<div class="collapse menu-dropdown ' . $showClass . '" id="' . $collapseId . '">';
+            echo '<div class="collapse menu-dropdown" id="' . $collapseId . '">';
             echo '<ul class="nav nav-sm flex-column">';
             renderBootstrapMenuItemsAdvanced($item['children'], $level + 1);
             echo '</ul>';
@@ -100,14 +93,13 @@ function renderBootstrapMenuItemsAdvanced(array $items, int $level = 0) {
             
         } else {
             // --- 단일 메뉴 아이템 ---
-            $activeClass = $isActive ? ' active' : '';
             $url = (isset($item['url']) && $item['url'] !== '#') ? BASE_URL . e($item['url']) : 'javascript:void(0);';
 
             echo '<li class="nav-item">';
 
             // 최상위 단일 메뉴
             if ($level === 0) {
-                echo '<a class="nav-link menu-link' . $activeClass . '" href="' . $url . '">';
+                echo '<a class="nav-link menu-link" href="' . $url . '">';
                 if (!empty($item['icon'])) {
                     echo '<i class="' . e($item['icon']) . '"></i> ';
                 }
@@ -115,7 +107,7 @@ function renderBootstrapMenuItemsAdvanced(array $items, int $level = 0) {
                 echo '</a>';
             } else {
             // 하위 단일 메뉴
-                echo '<a href="' . $url . '" class="nav-link' . $activeClass . '" data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">';
+                echo '<a href="' . $url . '" class="nav-link" data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">';
                 if (!empty($item['icon'])) {
                     echo '<i class="' . e($item['icon']) . '"></i> ';
                 }
