@@ -21,6 +21,14 @@
     - `EmployeeApiController`가 `AuthService` 대신 `DataScopeService`의 `canManageEmployee`를 호출하도록 수정.
   - **영향 범위**: `app/Services/DataScopeService.php`, `app/Controllers/Api/EmployeeApiController.php`
 
+### 🐛 버그 수정 (Bug Fixes)
+- **리팩토링 과정에서 발생한 DI 컨테이너 및 메소드 호출 오류 수정**:
+  - **문제**: 데이터 조회 권한 로직 중앙화 리팩토링 중 `OrganizationService`에 잘못된 의존성이 주입되고, `DataScopeService`에서 존재하지 않는 메소드를 호출하여 Fatal Error가 발생하는 문제.
+  - **수정**:
+    - `public/index.php`에서 `OrganizationService`의 생성자에 `DataScopeService`가 올바르게 주입되도록 수정.
+    - `DataScopeService` 내에서 `authService->getCurrentUser()`로 잘못 호출된 부분을 `authService->user()`로 수정.
+  - **영향 범위**: `public/index.php`, `app/Services/DataScopeService.php`
+
 ## [1.1.0 - 2025-10-27]
 
 ### ✨ 새로운 기능 (Features)

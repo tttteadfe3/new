@@ -43,7 +43,7 @@ class DataScopeService
             return null; // null은 '전체 조회'를 의미
         }
 
-        $user = $this->authService->getCurrentUser();
+        $user = $this->authService->user();
         if (!$user) {
             return []; // 로그인하지 않은 경우 빈 배열 반환
         }

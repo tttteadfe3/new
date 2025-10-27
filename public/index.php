@@ -81,7 +81,7 @@ $container->register(\App\Services\LogService::class, fn($c) => new \App\Service
 $container->register(\App\Services\MenuManagementService::class, fn($c) => new \App\Services\MenuManagementService($c->resolve(\App\Repositories\MenuRepository::class), $c->resolve(Database::class)));
 $container->register(\App\Services\OrganizationService::class, fn($c) => new \App\Services\OrganizationService(
     $c->resolve(\App\Repositories\DepartmentRepository::class),
-    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\DataScopeService::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class)
 ));
 $container->register(\App\Services\PositionService::class, fn($c) => new \App\Services\PositionService($c->resolve(\App\Repositories\PositionRepository::class)));
