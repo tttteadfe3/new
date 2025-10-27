@@ -45,7 +45,8 @@ $container->register(\App\Services\AuthService::class, fn($c) => new \App\Servic
     $c->resolve(SessionManager::class),
     $c->resolve(\App\Repositories\UserRepository::class),
     $c->resolve(\App\Repositories\RoleRepository::class),
-    $c->resolve(\App\Repositories\LogRepository::class)
+    $c->resolve(\App\Repositories\LogRepository::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class)
 ));
 $container->register(\App\Services\DataScopeService::class, fn($c) => new \App\Services\DataScopeService(
     $c->resolve(\App\Services\AuthService::class),

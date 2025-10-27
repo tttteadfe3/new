@@ -6,6 +6,7 @@ use App\Core\SessionManager;
 use App\Repositories\UserRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\LogRepository;
+use App\Repositories\EmployeeRepository;
 use Exception;
 
 class AuthService {
@@ -13,17 +14,20 @@ class AuthService {
     private UserRepository $userRepository;
     private RoleRepository $roleRepository;
     private LogRepository $logRepository;
+    private EmployeeRepository $employeeRepository;
 
     public function __construct(
         SessionManager $sessionManager,
         UserRepository $userRepository,
         RoleRepository $roleRepository,
-        LogRepository $logRepository
+        LogRepository $logRepository,
+        EmployeeRepository $employeeRepository
     ) {
         $this->sessionManager = $sessionManager;
         $this->userRepository = $userRepository;
         $this->roleRepository = $roleRepository;
         $this->logRepository = $logRepository;
+        $this->employeeRepository = $employeeRepository;
     }
 
     /**
@@ -167,6 +171,13 @@ class AuthService {
      * @return void
      */
     private function _refreshSessionPermissions(array $user): void {
+        // 직원 정보 로드
+        if (!empty($user['employee_id'])) {
+            $user['employee'] = $this->employeeRepository->findById($user['employee_id']);
+        } else {
+            $user['employee'] = null;
+        }
+
         $user['roles'] = $this->roleRepository->getUserRoles($user['id']);
         $permissions = $this->userRepository->getPermissions($user['id']);
         $user['permissions'] = array_column($permissions, 'key');
