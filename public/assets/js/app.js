@@ -132,8 +132,6 @@
     function highlightActiveMenu() {
         var currentPath = location.pathname + location.search; // 경로 + 쿼리 파라미터
         
-        console.log("현재 경로 (쿼리 포함):", currentPath);
-        
         // 루트 경로 처리
         if (currentPath === "/" || currentPath === "") {
             currentPath = "index.html";
@@ -144,14 +142,9 @@
         // 정확히 일치하는 링크 찾기 (쿼리 파라미터 포함)
         var activeLink = document.getElementById("navbar-nav")?.querySelector('[href="' + currentPath + '"]');
         
-        console.log("매칭된 링크:", activeLink);
-        
         if (!activeLink) {
-            console.log("활성 링크를 찾을 수 없음:", currentPath);
             return;
         }
-        
-        console.log("최종 활성 링크:", activeLink);
         
         activeLink.classList.add("active");
         
