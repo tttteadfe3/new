@@ -38,20 +38,6 @@ class DepartmentRepository {
     }
 
     /**
-     * @param array $ids
-     * @return array
-     */
-    public function findByIds(array $ids): array
-    {
-        if (empty($ids)) {
-            return [];
-        }
-        $inClause = implode(',', array_map('intval', $ids));
-        $sql = "SELECT * FROM hr_departments WHERE id IN ($inClause)";
-        return $this->db->fetchAllAs(Department::class, $sql);
-    }
-
-    /**
      * @param int $parentId
      * @return array
      */

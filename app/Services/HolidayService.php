@@ -11,16 +11,16 @@ class HolidayService
 {
     private HolidayRepository $holidayRepository;
     private DepartmentRepository $departmentRepository;
-    private DataScopeService $dataScopeService;
+    private OrganizationService $organizationService;
 
     public function __construct(
         HolidayRepository $holidayRepository,
         DepartmentRepository $departmentRepository,
-        DataScopeService $dataScopeService
+        OrganizationService $organizationService
     ) {
         $this->holidayRepository = $holidayRepository;
         $this->departmentRepository = $departmentRepository;
-        $this->dataScopeService = $dataScopeService;
+        $this->organizationService = $organizationService;
     }
 
     /**
@@ -29,7 +29,7 @@ class HolidayService
      */
     public function getAllHolidays(): array
     {
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
         return $this->holidayRepository->getAll($visibleDeptIds);
     }
 

@@ -13,16 +13,16 @@ class UserService
 {
     private UserRepository $userRepository;
     private RoleRepository $roleRepository;
-    private DataScopeService $dataScopeService;
+    private OrganizationService $organizationService;
 
     public function __construct(
         UserRepository $userRepository,
         RoleRepository $roleRepository,
-        DataScopeService $dataScopeService
+        OrganizationService $organizationService
     ) {
         $this->userRepository = $userRepository;
         $this->roleRepository = $roleRepository;
-        $this->dataScopeService = $dataScopeService;
+        $this->organizationService = $organizationService;
     }
 
     /**
@@ -32,7 +32,7 @@ class UserService
      */
     public function getAllUsers(array $filters = []): array
     {
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
         return $this->userRepository->getAllWithRoles($filters, $visibleDeptIds);
     }
 
@@ -142,7 +142,7 @@ class UserService
      */
     public function getUnlinkedEmployees(): array
     {
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
         return $this->userRepository->getUnlinkedEmployees($visibleDeptIds);
     }
 

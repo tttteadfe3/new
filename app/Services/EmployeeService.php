@@ -9,6 +9,7 @@ use App\Repositories\DepartmentRepository;
 use App\Repositories\PositionRepository;
 use App\Repositories\LogRepository;
 use App\Models\Employee;
+use App\Services\OrganizationService;
 
 class EmployeeService
 {
@@ -18,7 +19,7 @@ class EmployeeService
     private PositionRepository $positionRepository;
     private LogRepository $logRepository;
     private SessionManager $sessionManager;
-    private DataScopeService $dataScopeService;
+    private OrganizationService $organizationService;
 
     public function __construct(
         EmployeeRepository $employeeRepository,
@@ -27,7 +28,7 @@ class EmployeeService
         PositionRepository $positionRepository,
         LogRepository $logRepository,
         SessionManager $sessionManager,
-        DataScopeService $dataScopeService
+        OrganizationService $organizationService
     ) {
         $this->employeeRepository = $employeeRepository;
         $this->employeeChangeLogRepository = $employeeChangeLogRepository;
@@ -35,7 +36,7 @@ class EmployeeService
         $this->positionRepository = $positionRepository;
         $this->logRepository = $logRepository;
         $this->sessionManager = $sessionManager;
-        $this->dataScopeService = $dataScopeService;
+        $this->organizationService = $organizationService;
     }
 
     /**
@@ -54,7 +55,7 @@ class EmployeeService
      */
     public function getAllEmployees(array $filters = []): array
     {
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
+        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
         return $this->employeeRepository->getAll($filters, $visibleDeptIds);
     }
 
