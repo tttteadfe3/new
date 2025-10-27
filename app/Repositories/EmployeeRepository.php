@@ -184,26 +184,36 @@ class EmployeeRepository {
         }
 
         if ($id) { // 업데이트
-            $sql = "UPDATE hr_employees SET name=:name, employee_number=:employee_number, hire_date=:hire_date, phone_number=:phone_number, address=:address, emergency_contact_name=:emergency_contact_name, emergency_contact_relation=:emergency_contact_relation, clothing_top_size=:clothing_top_size, clothing_bottom_size=:clothing_bottom_size, shoe_size=:shoe_size, department_id=:department_id, position_id=:position_id WHERE id=:id";
+            $sql = "UPDATE hr_employees SET phone_number=:phone_number, address=:address, emergency_contact_name=:emergency_contact_name, emergency_contact_relation=:emergency_contact_relation, clothing_top_size=:clothing_top_size, clothing_bottom_size=:clothing_bottom_size, shoe_size=:shoe_size WHERE id=:id";
+            $params = [
+                ':id' => $id,
+                ':phone_number' => $data['phone_number'] ?? null,
+                ':address' => $data['address'] ?? null,
+                ':emergency_contact_name' => $data['emergency_contact_name'] ?? null,
+                ':emergency_contact_relation' => $data['emergency_contact_relation'] ?? null,
+                ':clothing_top_size' => $data['clothing_top_size'] ?? null,
+                ':clothing_bottom_size' => $data['clothing_bottom_size'] ?? null,
+                ':shoe_size' => $data['shoe_size'] ?? null,
+            ];
         } else { // 삽입
             $sql = "INSERT INTO hr_employees (name, employee_number, hire_date, phone_number, address, emergency_contact_name, emergency_contact_relation, clothing_top_size, clothing_bottom_size, shoe_size, department_id, position_id) VALUES (:name, :employee_number, :hire_date, :phone_number, :address, :emergency_contact_name, :emergency_contact_relation, :clothing_top_size, :clothing_bottom_size, :shoe_size, :department_id, :position_id)";
+            $params = [
+                ':name' => $data['name'],
+                ':employee_number' => $data['employee_number'],
+                ':hire_date' => $data['hire_date'] ?: null,
+                ':phone_number' => $data['phone_number'] ?: null,
+                ':address' => $data['address'] ?: null,
+                ':emergency_contact_name' => $data['emergency_contact_name'] ?: null,
+                ':emergency_contact_relation' => $data['emergency_contact_relation'] ?: null,
+                ':clothing_top_size' => $data['clothing_top_size'] ?: null,
+                ':clothing_bottom_size' => $data['clothing_bottom_size'] ?: null,
+                ':shoe_size' => $data['shoe_size'] ?: null,
+                ':department_id' => $data['department_id'] ?: null,
+                ':position_id' => $data['position_id'] ?: null,
+            ];
         }
         
-        $this->db->execute($sql, [
-            ':id' => $id,
-            ':name' => $data['name'],
-            ':employee_number' => $data['employee_number'],
-            ':hire_date' => $data['hire_date'] ?: null,
-            ':phone_number' => $data['phone_number'] ?: null,
-            ':address' => $data['address'] ?: null,
-            ':emergency_contact_name' => $data['emergency_contact_name'] ?: null,
-            ':emergency_contact_relation' => $data['emergency_contact_relation'] ?: null,
-            ':clothing_top_size' => $data['clothing_top_size'] ?: null,
-            ':clothing_bottom_size' => $data['clothing_bottom_size'] ?: null,
-            ':shoe_size' => $data['shoe_size'] ?: null,
-            ':department_id' => $data['department_id'] ?: null,
-            ':position_id' => $data['position_id'] ?: null,
-        ]);
+        $this->db->execute($sql, $params);
 
         return $id ?: $this->db->lastInsertId();
     }
@@ -292,5 +302,40 @@ class EmployeeRepository {
     public function approveProfileUpdateStatus(int $employeeId): bool {
         $sql = "UPDATE hr_employees SET profile_update_status = 'none' WHERE id = :id";
         return $this->db->execute($sql, [':id' => $employeeId]) > 0;
+    }
+
+    /**
+     * 직원의 퇴사일을 설정하고 관련 사용자 계정을 비활성화합니다.
+     * @param int $employeeId
+     * @param string $terminationDate
+     * @return bool
+     */
+    public function setTerminationDate(int $employeeId, string $terminationDate): bool
+    {
+        $this->db->beginTransaction();
+
+        try {
+            // 1. 퇴사일 설정
+            $sqlEmployee = "UPDATE hr_employees SET termination_date = :termination_date WHERE id = :id";
+            $this->db->execute($sqlEmployee, [
+                ':termination_date' => $terminationDate,
+                ':id' => $employeeId
+            ]);
+
+            // 2. 연결된 사용자 계정 비활성화
+            $sqlUser = "UPDATE sys_users SET status = 'inactive' WHERE employee_id = :employee_id";
+            $this->db->execute($sqlUser, [':employee_id' => $employeeId]);
+
+            // 3. 연결된 사용자의 모든 역할(권한) 제거
+            $sqlDeleteRoles = "DELETE FROM sys_user_roles WHERE user_id = (SELECT id FROM sys_users WHERE employee_id = :employee_id)";
+            $this->db->execute($sqlDeleteRoles, [':employee_id' => $employeeId]);
+
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            // TODO: Log error
+            return false;
+        }
     }
 }

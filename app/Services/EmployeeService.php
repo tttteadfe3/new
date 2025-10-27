@@ -145,6 +145,28 @@ class EmployeeService
     }
 
     /**
+     * 직원을 퇴사 처리합니다.
+     * @param int $employeeId
+     * @param string $terminationDate
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function terminateEmployee(int $employeeId, string $terminationDate): bool
+    {
+        $employee = $this->employeeRepository->findById($employeeId);
+        if (!$employee) {
+            throw new \InvalidArgumentException('직원을 찾을 수 없습니다.');
+        }
+
+        // 간단한 날짜 유효성 검사
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $terminationDate)) {
+            throw new \InvalidArgumentException('잘못된 날짜 형식입니다. (YYYY-MM-DD)');
+        }
+
+        return $this->employeeRepository->setTerminationDate($employeeId, $terminationDate);
+    }
+
+    /**
      * 프로필 업데이트 요청을 승인합니다.
      * @param int $employeeId
      * @return bool
@@ -228,9 +250,6 @@ class EmployeeService
     private function logChanges(int $employeeId, array $oldData, array $newData, int $changerId): void
     {
         $fields = [
-            'name' => '이름', 
-            'employee_number' => '사번', 
-            'hire_date' => '입사일',
             'phone_number' => '연락처', 
             'address' => '주소',
             'emergency_contact_name' => '비상연락처', 
@@ -238,8 +257,6 @@ class EmployeeService
             'clothing_top_size' => '상의', 
             'clothing_bottom_size' => '하의', 
             'shoe_size' => '신발',
-            'department_id' => '부서', 
-            'position_id' => '직급'
         ];
 
         foreach ($fields as $key => $label) {
@@ -247,17 +264,6 @@ class EmployeeService
             $newValue = $newData[$key] ?? null;
             
             if (isset($newData[$key]) && (string)$oldValue !== (string)$newValue) {
-                // 로깅을 위해 부서 및 직책 ID를 이름으로 변환
-                if ($key === 'department_id') {
-                    $oldValue = $oldData['department_name'] ?? $oldValue;
-                    $department = $this->departmentRepository->findById($newValue);
-                    $newValue = $department ? $department->name : $newValue;
-                } elseif ($key === 'position_id') {
-                    $oldValue = $oldData['position_name'] ?? $oldValue;
-                    $position = $this->positionRepository->findById($newValue);
-                    $newValue = $position ? $position->name : $newValue;
-                }
-
                 $this->employeeChangeLogRepository->insert(
                     $employeeId, 
                     $changerId, 

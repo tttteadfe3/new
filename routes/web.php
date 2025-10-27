@@ -6,6 +6,7 @@ use App\Controllers\Web\DashboardController;
 use App\Controllers\Web\MyPageController;
 use App\Controllers\Web\EmployeeController;
 use App\Controllers\Web\HolidayController;
+use App\Controllers\Web\HumanResourceController;
 use App\Controllers\Web\LeaveController;
 use App\Controllers\Web\LitteringController;
 use App\Controllers\Web\LogController;
@@ -30,6 +31,10 @@ use App\Controllers\Web\OrganizationController;
 $router->get('/employees', [EmployeeController::class, 'index'])->name('employees.index')->middleware('auth')->middleware('permission', 'employee.view');
 $router->get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create')->middleware('auth')->middleware('permission', 'employee.create');
 $router->get('/employees/edit', [EmployeeController::class, 'edit'])->name('employees.edit')->middleware('auth')->middleware('permission', 'employee.update');
+
+// --- 인사 발령 ---
+$router->get('/hr/order/create', [HumanResourceController::class, 'create'])->name('hr.order.create')->middleware('auth')->middleware('permission', 'employee.assign');
+$router->get('/hr/history', [HumanResourceController::class, 'history'])->name('hr.history')->middleware('auth')->middleware('permission', 'employee.view_history');
 
 // --- 조직 관리 ---
 $router->get('/organization/chart', [OrganizationController::class, 'chart'])->name('organization.chart')->middleware('auth')->middleware('permission', 'organization.view');

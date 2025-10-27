@@ -9,6 +9,8 @@ INSERT INTO `sys_permissions` (`id`, `key`, `description`) VALUES
 (12, 'employee.update', '직원 정보 수정'),
 (13, 'employee.delete', '직원 정보 삭제'),
 (14, 'employee.approve', '직원 정보 변경 요청 승인/거부'),
+(15, 'employee.terminate', '직원 퇴사 처리'),
+(16, 'employee.assign', '직원 인사 발령(부서/직급 변경)'),
 
 -- Leave Management (5)
 (20, 'leave.request', '휴가 신청 및 취소'),

@@ -90,6 +90,7 @@
                 <form id="employee-form">
                     <input type="hidden" id="id" name="id">
 
+                    <!-- 기본 정보 -->
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="name" class="form-label">직원 이름</label>
@@ -97,64 +98,81 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="employee_number" class="form-label">사번</label>
-                            <input type="text" class="form-control" id="employee_number" name="employee_number" placeholder="신규 등록 시 자동 생성됩니다" readonly>
+                            <input type="text" class="form-control" id="employee_number" name="employee_number" placeholder="입사일 지정 후 자동 생성" readonly>
                         </div>
                     </div>
-
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="department_id" class="form-label">부서</label>
-                            <select class="form-select" id="department_id" name="department_id">
+                            <select class="form-select" id="department_id" name="department_id" required>
                                 <option value="">부서 선택</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="position_id" class="form-label">직급</label>
-                            <select class="form-select" id="position_id" name="position_id">
+                            <select class="form-select" id="position_id" name="position_id" required>
                                 <option value="">직급 선택</option>
                             </select>
                         </div>
                     </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="hire_date" class="form-label">입사일</label>
-                            <input type="date" class="form-control" id="hire_date" name="hire_date" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="phone_number" class="form-label">연락처</label>
-                            <input type="tel" class="form-control" id="phone_number" name="phone_number">
-                        </div>
-                    </div>
-
                     <div class="mb-3">
-                        <label for="address" class="form-label">주소</label>
-                        <input type="text" class="form-control" id="address" name="address">
+                        <label for="hire_date" class="form-label">입사일</label>
+                        <input type="date" class="form-control" id="hire_date" name="hire_date" required>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="emergency_contact_name" class="form-label">비상연락처</label>
-                            <input type="text" class="form-control" id="emergency_contact_name" name="emergency_contact_name">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="emergency_contact_relation" class="form-label">비상연락처와의 관계</label>
-                            <input type="text" class="form-control" id="emergency_contact_relation" name="emergency_contact_relation">
-                        </div>
-                    </div>
+                    <hr/>
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="clothing_top_size" class="form-label">상의 사이즈</label>
-                            <input type="text" class="form-control" id="clothing_top_size" name="clothing_top_size">
+                    <!-- 수정 가능 정보 (탭 UI) -->
+                    <ul class="nav nav-tabs nav-justified mb-3" role="tablist" id="editable-info-tabs">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#contact-info" role="tab" aria-selected="true">연락처/주소</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#emergency-contact" role="tab" aria-selected="false">비상 연락처</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#clothing-sizes" role="tab" aria-selected="false">의류 사이즈</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="contact-info" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="phone_number" class="form-label">연락처</label>
+                                <input type="tel" class="form-control" id="phone_number" name="phone_number">
+                            </div>
+                            <div class="mb-3">
+                                <label for="address" class="form-label">주소</label>
+                                <input type="text" class="form-control" id="address" name="address">
+                            </div>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="clothing_bottom_size" class="form-label">하의 사이즈</label>
-                            <input type="text" class="form-control" id="clothing_bottom_size" name="clothing_bottom_size">
+                        <div class="tab-pane" id="emergency-contact" role="tabpanel">
+                             <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="emergency_contact_name" class="form-label">비상연락처 이름</label>
+                                    <input type="text" class="form-control" id="emergency_contact_name" name="emergency_contact_name">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="emergency_contact_relation" class="form-label">관계</label>
+                                    <input type="text" class="form-control" id="emergency_contact_relation" name="emergency_contact_relation">
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="shoe_size" class="form-label">신발 사이즈</label>
-                            <input type="text" class="form-control" id="shoe_size" name="shoe_size">
+                        <div class="tab-pane" id="clothing-sizes" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="clothing_top_size" class="form-label">상의</label>
+                                    <input type="text" class="form-control" id="clothing_top_size" name="clothing_top_size">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="clothing_bottom_size" class="form-label">하의</label>
+                                    <input type="text" class="form-control" id="clothing_bottom_size" name="clothing_bottom_size">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="shoe_size" class="form-label">신발</label>
+                                    <input type="text" class="form-control" id="shoe_size" name="shoe_size">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>
