@@ -67,8 +67,7 @@ class LeaveHistoryAdminPage extends BasePage {
             return;
         }
 
-        const statusBadges = { pending: 'bg-warning', approved: 'bg-success', rejected: 'bg-danger', cancelled: 'bg-secondary', cancellation_requested: 'bg-info' };
-        const statusText = { pending: '대기', approved: '승인', rejected: '반려', cancelled: '취소', cancellation_requested: '취소요청' };
+        const statusBadges = { '대기': 'bg-warning', '승인': 'bg-success', '반려': 'bg-danger', '취소': 'bg-secondary', '취소요청': 'bg-info' };
 
         const rowsHtml = data.map(leave => `
             <tr>
@@ -77,7 +76,7 @@ class LeaveHistoryAdminPage extends BasePage {
                 <td>${leave.leave_type}</td>
                 <td>${leave.start_date} ~ ${leave.end_date}</td>
                 <td>${leave.days_count}</td>
-                <td><span class="badge ${statusBadges[leave.status] || 'bg-light text-dark'}">${statusText[leave.status] || leave.status}</span></td>
+                <td><span class="badge ${statusBadges[leave.status] || 'bg-light text-dark'}">${leave.status}</span></td>
                 <td>${new Date(leave.created_at).toLocaleDateString()}</td>
             </tr>
         `).join('');

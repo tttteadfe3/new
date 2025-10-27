@@ -145,17 +145,17 @@ class LeaveService {
                 return [false, "신청하신 기간에 이미 다른 연차 신청 내역이 존재합니다."];
             }
 
-            $isHalfDay = ($data['leave_type'] ?? '') === 'half_day';
+            $isHalfDay = ($data['leave_type'] ?? '') === '반차';
             $calculatedDays = $this->calculateLeaveDays($data['start_date'], $data['end_date'], $employeeId, $isHalfDay);
 
             $daysToUse = $calculatedDays;
-            $data['leave_type'] = $isHalfDay ? 'half_day' : ($data['leave_type'] ?? 'annual');
+            $data['leave_type'] = $isHalfDay ? '반차' : ($data['leave_type'] ?? '연차');
 
             if ($daysToUse <= 0) {
                  return [false, "신청하신 기간은 연차 사용일수에 포함되지 않습니다. (주말 또는 휴일)"];
             }
 
-            if (in_array($data['leave_type'], ['annual', 'half_day'])) {
+            if (in_array($data['leave_type'], ['연차', '반차'])) {
                 $year = (int)$startDate->format('Y');
                 $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
                 $remaining_days = ($entitlement['total_days'] ?? 0) - ($entitlement['used_days'] ?? 0);
@@ -242,13 +242,13 @@ class LeaveService {
      */
     public function approveRequest(int $leaveId, int $adminUserId): array {
         $leave = $this->leaveRepository->findById($leaveId);
-        if (!$leave || $leave['status'] !== 'pending') {
+        if (!$leave || $leave['status'] !== '대기') {
             return [false, "승인할 수 없는 신청 건입니다."];
         }
 
         $year = (int)(new DateTime($leave['start_date']))->format('Y');
 
-        $updatedStatus = $this->leaveRepository->updateStatus($leaveId, 'approved', $adminUserId, null);
+        $updatedStatus = $this->leaveRepository->updateStatus($leaveId, '승인', $adminUserId, null);
         if ($updatedStatus) {
             $updatedDays = $this->leaveRepository->updateUsedDays($leave['employee_id'], $year, $leave['days_count']);
             if ($updatedDays) {
@@ -268,11 +268,11 @@ class LeaveService {
      */
     public function rejectRequest(int $leaveId, int $adminUserId, string $reason): array {
         $leave = $this->leaveRepository->findById($leaveId);
-        if (!$leave || $leave['status'] !== 'pending') {
+        if (!$leave || $leave['status'] !== '대기') {
             return [false, "반려할 수 없는 신청 건입니다."];
         }
 
-        if ($this->leaveRepository->updateStatus($leaveId, 'rejected', $adminUserId, $reason)) {
+        if ($this->leaveRepository->updateStatus($leaveId, '반려', $adminUserId, $reason)) {
             return [true, "연차 신청을 반려 처리했습니다."];
         }
         return [false, "처리 중 오류가 발생했습니다."];
@@ -295,13 +295,13 @@ class LeaveService {
         }
 
         switch ($leave['status']) {
-            case 'pending':
-                if ($this->leaveRepository->updateStatus($leaveId, 'cancelled', null, "사용자 취소")) {
+            case '대기':
+                if ($this->leaveRepository->updateStatus($leaveId, '취소', null, "사용자 취소")) {
                     return [true, "신청이 취소되었습니다."];
                 }
                 break;
             
-            case 'approved':
+            case '승인':
                 if (empty($reason)) {
                     return [false, "승인된 연차를 취소하려면 사유를 반드시 입력해야 합니다."];
                 }
@@ -386,7 +386,7 @@ class LeaveService {
      */
     public function approveCancellation(int $leaveId, int $adminUserId): array {
         $leave = $this->leaveRepository->findById($leaveId);
-        if (!$leave || $leave['status'] !== 'cancellation_requested') {
+        if (!$leave || $leave['status'] !== '취소요청') {
             return [false, "승인할 수 없는 취소 요청입니다."];
         }
 
@@ -394,7 +394,7 @@ class LeaveService {
         
         // 1. 연차 상태를 'cancelled'로 변경
         $reason = "관리자 승인에 의한 취소";
-        if ($this->leaveRepository->updateStatus($leaveId, 'cancelled', $adminUserId, $reason)) {
+        if ($this->leaveRepository->updateStatus($leaveId, '취소', $adminUserId, $reason)) {
             // 2. 사용했던 연차 일수 복원
             $this->leaveRepository->updateUsedDays($leave['employee_id'], $year, -$leave['days_count']);
             return [true, "연차 취소 요청이 승인되었습니다."];
@@ -413,12 +413,12 @@ class LeaveService {
      */
     public function rejectCancellation(int $leaveId, int $adminUserId, string $reason): array {
         $leave = $this->leaveRepository->findById($leaveId);
-        if (!$leave || $leave['status'] !== 'cancellation_requested') {
+        if (!$leave || $leave['status'] !== '취소요청') {
             return [false, "반려할 수 없는 취소 요청입니다."];
         }
 
         // 상태를 다시 'approved'로 변경하고 반려 사유를 기록
-        if ($this->leaveRepository->updateStatus($leaveId, 'approved', $adminUserId, $reason)) {
+        if ($this->leaveRepository->updateStatus($leaveId, '승인', $adminUserId, $reason)) {
             return [true, "연차 취소 요청을 반려 처리했습니다."];
         }
         
@@ -450,16 +450,16 @@ class LeaveService {
         
         foreach ($leaveHistory as $leave) {
             switch ($leave['status']) {
-                case 'pending':
+                case '대기':
                     $stats['pending_requests']++;
                     break;
-                case 'approved':
+                case '승인':
                     $stats['approved_requests']++;
                     break;
-                case 'rejected':
+                case '반려':
                     $stats['rejected_requests']++;
                     break;
-                case 'cancelled':
+                case '취소':
                     $stats['cancelled_requests']++;
                     break;
             }
@@ -526,7 +526,7 @@ class LeaveService {
             }
             
             // 반차 유효성 검사
-            if (($data['leave_type'] ?? '') === 'half_day' && $data['start_date'] !== $data['end_date']) {
+            if (($data['leave_type'] ?? '') === '반차' && $data['start_date'] !== $data['end_date']) {
                 $errors[] = "반차는 하루만 선택 가능합니다.";
             }
         }
@@ -535,7 +535,7 @@ class LeaveService {
         $employee = $this->employeeRepository->findById($employeeId);
         if (!$employee) {
             $errors[] = "직원 정보를 찾을 수 없습니다.";
-        } elseif ($employee['status'] !== 'active') {
+        } elseif ($employee['status'] !== '활성') {
             $errors[] = "비활성 상태의 직원은 연차를 신청할 수 없습니다.";
         }
         
@@ -561,7 +561,7 @@ class LeaveService {
     public function getPendingLeaveRequests(): array
     {
         $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
-        return $this->leaveRepository->findByStatus('pending', [], $visibleDeptIds);
+        return $this->leaveRepository->findByStatus('대기', [], $visibleDeptIds);
     }
 
     /**
@@ -585,7 +585,7 @@ class LeaveService {
     public function calculateLeaveBalance(int $employeeId, int $year): array
     {
         $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
-        $pendingLeaves = $this->leaveRepository->findByStatus('pending', ['employee_id' => $employeeId, 'year' => $year]);
+        $pendingLeaves = $this->leaveRepository->findByStatus('대기', ['employee_id' => $employeeId, 'year' => $year]);
         
         $totalDays = $entitlement['total_days'] ?? 0;
         $usedDays = $entitlement['used_days'] ?? 0;

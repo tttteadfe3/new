@@ -81,8 +81,8 @@ class MyPage extends BasePage {
         if (!this.state.profileData) return;
 
         const { user, employee } = this.state.profileData;
-        const isPending = employee?.profile_update_status === 'pending';
-        const isRejected = employee?.profile_update_status === 'rejected';
+        const isPending = employee?.profile_update_status === '대기';
+        const isRejected = employee?.profile_update_status === '반려';
 
         let statusMessage = '';
         if (isPending) {
@@ -213,17 +213,16 @@ class MyPage extends BasePage {
             return;
         }
 
-        const statusBadges = { pending: 'bg-warning', approved: 'bg-success', rejected: 'bg-danger', cancelled: 'bg-secondary', cancellation_requested: 'bg-info' };
-        const statusText = { pending: '대기', approved: '승인', rejected: '반려', cancelled: '취소', cancellation_requested: '취소요청' };
+        const statusBadges = { '대기': 'bg-warning', '승인': 'bg-success', '반려': 'bg-danger', '취소': 'bg-secondary', '취소요청': 'bg-info' };
 
         const rowsHtml = data.leaves.map(leave => {
-            const canCancel = leave.status === 'pending' || leave.status === 'approved';
+            const canCancel = leave.status === '대기' || leave.status === '승인';
             const cancelButton = canCancel ? `<button class="btn btn-link btn-sm p-0 cancel-btn" data-id="${leave.id}" data-status="${leave.status}">취소</button>` : '';
 
             let reasonText = '';
-            if (leave.status === 'rejected' && leave.rejection_reason) reasonText = `(반려: ${leave.rejection_reason})`;
-            else if (leave.status === 'cancellation_requested' && leave.cancellation_reason) reasonText = `(취소요청: ${leave.cancellation_reason})`;
-            else if (leave.status === 'approved' && leave.rejection_reason) reasonText = `(취소반려: ${leave.rejection_reason})`;
+            if (leave.status === '반려' && leave.rejection_reason) reasonText = `(반려: ${leave.rejection_reason})`;
+            else if (leave.status === '취소요청' && leave.cancellation_reason) reasonText = `(취소요청: ${leave.cancellation_reason})`;
+            else if (leave.status === '승인' && leave.rejection_reason) reasonText = `(취소반려: ${leave.rejection_reason})`;
             else if (leave.reason) reasonText = `(사유: ${leave.reason})`;
 
             return `
@@ -233,7 +232,7 @@ class MyPage extends BasePage {
                         <small class="text-muted ms-2">${this._sanitizeHTML(reasonText)}</small>
                     </div>
                     <div>
-                        <span class="badge ${statusBadges[leave.status] || 'bg-light text-dark'}">${statusText[leave.status] || leave.status}</span>
+                        <span class="badge ${statusBadges[leave.status] || 'bg-light text-dark'}">${leave.status}</span>
                         ${cancelButton}
                     </div>
                 </div>`;
@@ -351,7 +350,7 @@ class MyPage extends BasePage {
             }
         };
 
-        if (status === 'approved') {
+        if (status === '승인') {
             const { value: reason } = await Swal.fire({
                 title: '승인된 연차 취소 요청',
                 input: 'textarea', inputLabel: '취소 사유',
@@ -361,7 +360,7 @@ class MyPage extends BasePage {
                 inputValidator: (value) => !value && '취소 사유를 반드시 입력해야 합니다.'
             });
             if (reason) cancelRequest(reason);
-        } else if (status === 'pending') {
+        } else if (status === '대기') {
             const result = await Confirm.fire('연차 신청 취소', '이 신청을 취소하시겠습니까?');
             if (result.isConfirmed) cancelRequest();
         }

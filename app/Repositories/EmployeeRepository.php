@@ -132,9 +132,9 @@ class EmployeeRepository {
         }
 
         if (isset($filters['status']) && $filters['status']) {
-            if ($filters['status'] === 'active') {
+            if ($filters['status'] === '활성') {
                 $whereClauses[] = "e.termination_date IS NULL";
-            } elseif ($filters['status'] === 'inactive') {
+            } elseif ($filters['status'] === '비활성') {
                 $whereClauses[] = "e.termination_date IS NOT NULL";
             }
         }
@@ -225,7 +225,7 @@ class EmployeeRepository {
      */
     public function requestProfileUpdate(int $userId, array $data): bool {
         $sql = "UPDATE hr_employees SET 
-                    profile_update_status = 'pending',
+                    profile_update_status = '대기',
                     profile_update_rejection_reason = NULL,
                     pending_profile_data = :pending_data
                 WHERE id = (SELECT employee_id FROM sys_users WHERE id = :user_id)";
@@ -277,7 +277,7 @@ class EmployeeRepository {
      */
     public function rejectProfileUpdate(int $employeeId, string $reason): bool {
         $sql = "UPDATE hr_employees SET 
-                    profile_update_status = 'rejected',
+                    profile_update_status = '반려',
                     profile_update_rejection_reason = :reason,
                     pending_profile_data = NULL
                 WHERE id = :id";

@@ -170,7 +170,7 @@ class LitteringMapPage extends BasePage {
 
     addReportMarkerToMap(data) {
         const wasteType = data.waste_type || '생활폐기물';
-        const status = data.status || 'pending';
+        const status = data.status || '대기';
         const markerTypeKey = `${wasteType}_${status}`;
 
         const markerInfo = this.state.mapService.mapManager.addMarker({
@@ -225,14 +225,14 @@ class LitteringMapPage extends BasePage {
         const statusMessage = document.getElementById('procStatusMessage');
         const processBtn = document.getElementById('processBtn');
 
-        if (reportData.status === 'pending') {
+        if (reportData.status === '대기') {
             statusMessage.innerHTML = '<i class="ri-error-warning-line me-1"></i>관리자 확인 대기 중인 민원입니다.';
             statusMessage.style.display = 'block';
             formFields.style.display = 'block';
             formFields.querySelectorAll('input, textarea, select').forEach(el => el.disabled = true);
             processBtn.style.display = 'block';
             processBtn.disabled = true;
-        } else { // 'confirmed'
+        } else { // '확인'
             statusMessage.style.display = 'none';
             formFields.style.display = 'block';
             formFields.querySelectorAll('input, textarea, select').forEach(el => el.disabled = false);
@@ -247,7 +247,7 @@ class LitteringMapPage extends BasePage {
 
     generateMarkerTypes() {
         const markerTypes = {};
-        const statuses = ['pending', 'confirmed', 'active'];
+        const statuses = ['대기', '확인'];
         const wasteTypeColors = {
             '생활폐기물': '#666666', '음식물': '#FF9800', '재활용': '#00A6FB',
             '대형': '#DC2626', '소각': '#FF5722'

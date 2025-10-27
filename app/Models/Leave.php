@@ -24,12 +24,12 @@ class Leave extends BaseModel
 
     protected array $rules = [
         'employee_id' => 'required|integer',
-        'leave_type' => 'required|in:annual,sick,special,other,half_day',
+        'leave_type' => 'required|in:연차,병가,특별휴가,기타,반차',
         'start_date' => 'required|date',
         'end_date' => 'required|date',
         'days_count' => 'required|numeric',
         'reason' => 'string',
-        'status' => 'in:pending,approved,rejected,cancelled,cancellation_requested',
+        'status' => 'in:대기,승인,반려,취소,취소요청',
         'approver_employee_id' => 'integer'
     ];
 
@@ -38,7 +38,7 @@ class Leave extends BaseModel
      */
     public function isPending(): bool
     {
-        return $this->getAttribute('status') === 'pending';
+        return $this->getAttribute('status') === '대기';
     }
 
     /**
@@ -46,7 +46,7 @@ class Leave extends BaseModel
      */
     public function isApproved(): bool
     {
-        return $this->getAttribute('status') === 'approved';
+        return $this->getAttribute('status') === '승인';
     }
 
     /**
@@ -54,7 +54,7 @@ class Leave extends BaseModel
      */
     public function isRejected(): bool
     {
-        return $this->getAttribute('status') === 'rejected';
+        return $this->getAttribute('status') === '반려';
     }
 
     /**
@@ -62,7 +62,7 @@ class Leave extends BaseModel
      */
     public function isCancelled(): bool
     {
-        return $this->getAttribute('status') === 'cancelled';
+        return $this->getAttribute('status') === '취소';
     }
 
     /**
@@ -70,7 +70,7 @@ class Leave extends BaseModel
      */
     public function isCancellationRequested(): bool
     {
-        return $this->getAttribute('status') === 'cancellation_requested';
+        return $this->getAttribute('status') === '취소요청';
     }
 
     /**
@@ -78,7 +78,7 @@ class Leave extends BaseModel
      */
     public function isHalfDay(): bool
     {
-        return $this->getAttribute('leave_type') === 'half_day' || 
+        return $this->getAttribute('leave_type') === '반차' ||
                $this->getAttribute('days_count') == 0.5;
     }
 
@@ -87,7 +87,7 @@ class Leave extends BaseModel
      */
     public function isAnnualLeave(): bool
     {
-        return $this->getAttribute('leave_type') === 'annual';
+        return $this->getAttribute('leave_type') === '연차';
     }
 
     /**
@@ -217,13 +217,13 @@ class Leave extends BaseModel
         }
 
         // 비즈니스 규칙: half_day 휴가 유형은 0.5일이어야 합니다.
-        if ($this->getAttribute('leave_type') === 'half_day' && $this->getAttribute('days_count') != 0.5) {
+        if ($this->getAttribute('leave_type') === '반차' && $this->getAttribute('days_count') != 0.5) {
             $this->errors['days_count'] = '반차는 0.5일이어야 합니다.';
             $isValid = false;
         }
 
         // 비즈니스 규칙: 과거 날짜로는 휴가를 신청할 수 없습니다(병가 제외).
-        if ($startDate && $startDate < new \DateTime() && $this->getAttribute('leave_type') !== 'sick') {
+        if ($startDate && $startDate < new \DateTime() && $this->getAttribute('leave_type') !== '병가') {
             $this->errors['start_date'] = '과거 날짜로는 연차를 신청할 수 없습니다. (병가 제외)';
             $isValid = false;
         }

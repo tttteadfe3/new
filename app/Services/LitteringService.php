@@ -184,10 +184,7 @@ class LitteringService
         }
 
         $case = $this->getLitteringById($caseId);
-        if (!$case) {
-            throw new Exception("보고서를 찾을 수 없습니다.", 404);
-        }
-        if ($case['status'] !== 'processed') {
+        if ($case['status'] !== '처리완료') {
             throw new Exception("승인하려면 보고서가 '처리됨' 상태여야 합니다.", 403);
         }
 
@@ -272,7 +269,7 @@ class LitteringService
         if (!$case) {
             throw new Exception("보고서를 찾을 수 없습니다.", 404);
         }
-        if ($case['status'] !== 'confirmed') {
+        if ($case['status'] !== '확인') {
             throw new Exception("처리하기 전에 보고서를 확인해야 합니다.", 403);
         }
 

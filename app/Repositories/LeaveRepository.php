@@ -247,7 +247,7 @@ class LeaveRepository {
         $sql = "SELECT COUNT(*)
                 FROM hr_leaves
                 WHERE employee_id = :employee_id
-                  AND status NOT IN ('rejected', 'cancelled')
+                  AND status NOT IN ('반려', '취소')
                   AND start_date <= :end_date
                   AND end_date >= :start_date";
 
@@ -297,8 +297,8 @@ class LeaveRepository {
      */
     public function requestCancellation(int $id, string $reason): bool {
         $sql = "UPDATE hr_leaves
-                SET status = 'cancellation_requested', cancellation_reason = :reason
-                WHERE id = :id AND status = 'approved'";
+                SET status = '취소요청', cancellation_reason = :reason
+                WHERE id = :id AND status = '승인'";
 
         return $this->db->execute($sql, [
             ':id' => $id,

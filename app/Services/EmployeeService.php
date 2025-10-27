@@ -154,7 +154,7 @@ class EmployeeService
     {
         // 업데이트 전 현재 데이터 가져오기
         $oldData = $this->employeeRepository->findById($employeeId);
-        if (!$oldData || $oldData['profile_update_status'] !== 'pending' || empty($oldData['pending_profile_data'])) {
+        if (!$oldData || $oldData['profile_update_status'] !== '대기' || empty($oldData['pending_profile_data'])) {
             return false;
         }
         

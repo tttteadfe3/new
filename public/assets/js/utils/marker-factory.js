@@ -72,18 +72,18 @@ class MarkerFactory {
      */
     static getStatusIconSVG(status) {
         switch(status) {
-            case 'pending':
+            case '대기':
                 return `
                     <circle cx="24" cy="8" r="6" fill="#FFA500"/>
                     <circle cx="24" cy="8" r="4" fill="#fff"/>
                     <path d="M24 6L24 8L25.5 9.5" stroke="#FFA500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 `;
-            case 'confirmed':
+            case '확인':
                 return `
                     <circle cx="24" cy="8" r="6" fill="#28a745"/>
                     <path d="M21 8L23 10L27 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 `;
-            case 'processed':
+            case '처리완료':
                  return `
                     <circle cx="24" cy="8" r="6" fill="#0d6efd"/>
                     <path d="M21 8L23 10L27 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
