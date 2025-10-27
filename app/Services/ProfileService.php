@@ -58,7 +58,7 @@ class ProfileService
             throw new Exception('수정할 직원 정보가 없습니다.');
         }
 
-        if ($employee['profile_update_status'] === 'pending') {
+        if ($employee['profile_update_status'] === '대기') {
             throw new Exception('이미 프로필 변경 요청이 승인 대기 중입니다.');
         }
 

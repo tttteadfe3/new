@@ -3,6 +3,15 @@
 이 문서는 프로젝트의 주요 변경 사항, 특히 기존 코드베이스에 영향을 줄 수 있는 중요한 수정 내역을 기록합니다. 모든 개발 에이전트는 코드 변경 시 이 문서를 참조하고, 자신의 변경 사항을 아래 형식에 맞게 기록해야 합니다.
 
 ---
+## [1.1.1 - 2025-10-27]
+
+### 🐛 버그 수정 (Bug Fixes)
+- **애플리케이션 코드의 상태 값 한글화**:
+  - **문제**: 데이터베이스 마이그레이션(`20251026_translate_status_enums.sql`)을 통해 DB의 `ENUM` 값들이 한글로 변경되었으나, 일부 PHP 서비스 로직 코드에 이전의 영어 상태 값(`pending`, `active` 등)이 하드코딩되어 남아있어 로직이 올바르게 동작하지 않는 문제 발생.
+  - **원인**: `CHANGELOG.md` v1.0.6에서 코드 베이스 전체가 수정되었다고 기록되었으나, 일부 서비스 클래스(`ProfileService`, `LeaveService`, `UserService`)가 누락됨.
+  - **수정**: `grep`을 통해 영어 상태 값을 사용하는 부분을 모두 찾아내어, 데이터베이스와 일치하도록 한글 값으로 수정.
+  - **영향 범위**: `app/Services/ProfileService.php`, `app/Services/LeaveService.php`, `app/Services/UserService.php`, `app/Controllers/Api/LitteringAdminApiController.php`
+
 ## [1.1.0 - 2025-10-27]
 
 ### ✨ 새로운 기능 (Features)
