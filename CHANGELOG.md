@@ -34,11 +34,11 @@
   - **수정**: `DataScopeService`에서 자신의 소속 부서를 기본값으로 포함하는 로직을 제거하여, **명시적으로 권한이 부여된 부서와 그 하위 조직에 대해서만** 데이터를 조회할 수 있도록 권한 범위를 정확하게 수정.
   - **영향 범위**: `app/Services/DataScopeService.php`
 - **세션 데이터 누락으로 인한 권한 조회 실패 오류 수정**:
-  - **문제**: 관리 권한을 부여받은 사용자(예: a부장)가 로그인해도 아무 부서 데이터도 보지 못하는 심각한 문제.
-  - **원인**: `AuthService`가 로그인 처리 시, 세션에 사용자의 직원(`employee`) 정보를 포함시키지 않아 `DataScopeService`가 권한 계산의 기반 데이터를 얻지 못하고 항상 빈 결과를 반환함.
+  - **문제**: 리팩토링 이후, 관리 권한을 가진 사용자가 재로그인하기 전까지 권한이 적용되지 않는 문제.
+  - **원인**: `AuthService`가 로그인 시점에만 직원 정보를 세션에 기록하고, 기존 세션에는 직원 정보가 없어 `DataScopeService`가 권한 계산에 실패함.
   - **수정**:
     - `AuthService`가 `EmployeeRepository`에 의존하도록 DI 컨테이너(`public/index.php`)를 수정.
-    - `AuthService`의 `_refreshSessionPermissions` 메소드를 수정하여, 로그인 시 `employee_id`를 기반으로 전체 직원 정보를 조회하고 세션(`$_SESSION['user']['employee']`)에 저장하도록 변경.
+    - `AuthService`의 `_refreshSessionPermissions` 메소드가 `employee_id`를 기반으로 직원 정보를 조회하여 세션(`$_SESSION['user']['employee']`)에 저장하도록 로직 추가. 이로써 로그인 또는 세션 갱신 시 항상 최신 직원 정보가 보장됨.
   - **영향 범위**: `app/Services/AuthService.php`, `public/index.php`
 
 ## [1.1.0 - 2025-10-27]
