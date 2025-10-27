@@ -40,6 +40,11 @@
     - `AuthService`가 `EmployeeRepository`에 의존하도록 DI 컨테이너(`public/index.php`)를 수정.
     - `AuthService`의 `_refreshSessionPermissions` 메소드가 `employee_id`를 기반으로 직원 정보를 조회하여 세션(`$_SESSION['user']['employee']`)에 저장하도록 로직 추가. 이로써 로그인 또는 세션 갱신 시 항상 최신 직원 정보가 보장됨.
   - **영향 범위**: `app/Services/AuthService.php`, `public/index.php`
+- **부서 정보 업데이트 API 오류 수정**:
+  - **문제**: 부서 정보 수정 API(`/api/organization/{id}`) 호출 시, 요청 본문에 `name` 필드가 포함되지 않으면 `Column 'name' cannot be null` SQL 오류가 발생하는 문제.
+  - **원인**: `OrganizationService::updateDepartment` 메소드가 API로부터 받은 데이터를 그대로 `DepartmentRepository::update`로 전달하여, `name` 필드가 누락될 경우를 처리하지 못함.
+  - **수정**: `OrganizationService::updateDepartment` 메소드에 방어 코드를 추가하여, 요청 데이터에 `name`이 없는 경우 DB에서 기존 부서 정보를 조회하여 `name` 값을 유지하도록 수정.
+  - **영향 범위**: `app/Services/OrganizationService.php`
 
 ## [1.1.0 - 2025-10-27]
 

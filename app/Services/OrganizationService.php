@@ -168,7 +168,15 @@ class OrganizationService
             unset($data['viewer_department_ids']);
 
             $oldDepartment = $this->departmentRepository->findById($id);
+            if (!$oldDepartment) {
+                throw new \Exception("ID가 {$id}인 부서를 찾을 수 없습니다.");
+            }
             $oldPath = $oldDepartment->path;
+
+            // name이 전달되지 않은 경우, 기존 이름 사용
+            if (!isset($data['name'])) {
+                $data['name'] = $oldDepartment->name;
+            }
 
             $parentId = !empty($data['parent_id']) ? (int)$data['parent_id'] : null;
             $data['parent_id'] = $parentId;
