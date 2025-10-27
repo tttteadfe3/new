@@ -30,7 +30,7 @@ class User extends BaseModel
     protected array $rules = [
         'nickname' => 'required|string|max:255',
         'email' => 'email|max:255',
-        'status' => 'required|in:pending,active,inactive,deleted'
+        'status' => 'required|in:대기,활성,비활성,삭제,차단'
     ];
 
     // 직접적인 DB 쿼리를 포함했던 findOrCreateFromKakao 메서드는

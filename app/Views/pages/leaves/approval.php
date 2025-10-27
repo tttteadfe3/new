@@ -25,16 +25,16 @@
                      <div class="col-sm-auto">
                         <ul class="nav nav-pills card-header-pills" role="tablist">
                             <li class="nav-item">
-                                <a class="nav-link active" data-bs-toggle="tab" href="#pending-tab" role="tab">대기중</a>
+                                <a class="nav-link active" data-bs-toggle="tab" href="#대기-tab" role="tab">대기중</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" data-bs-toggle="tab" href="#approved-tab" role="tab">승인</a>
+                                <a class="nav-link" data-bs-toggle="tab" href="#승인-tab" role="tab">승인</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" data-bs-toggle="tab" href="#rejected-tab" role="tab">반려</a>
+                                <a class="nav-link" data-bs-toggle="tab" href="#반려-tab" role="tab">반려</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" data-bs-toggle="tab" href="#cancellation-tab" role="tab">취소 요청</a>
+                                <a class="nav-link" data-bs-toggle="tab" href="#취소요청-tab" role="tab">취소 요청</a>
                             </li>
                         </ul>
                     </div>
@@ -42,7 +42,7 @@
             </div>
             <div class="card-body">
                 <div class="tab-content">
-                    <div class="tab-pane active" id="pending-tab" role="tabpanel">
+                    <div class="tab-pane active" id="대기-tab" role="tabpanel">
                         <div class="table-responsive table-card">
                             <table class="table align-middle table-nowrap table-striped mb-0">
                                 <thead class="table-light">
@@ -60,7 +60,7 @@
                             </table>
                         </div>
                     </div>
-                    <div class="tab-pane" id="approved-tab" role="tabpanel">
+                    <div class="tab-pane" id="승인-tab" role="tabpanel">
                         <div class="table-responsive table-card">
                            <table class="table align-middle table-nowrap table-striped mb-0">
                                 <thead class="table-light">
@@ -77,7 +77,7 @@
                             </table>
                         </div>
                     </div>
-                    <div class="tab-pane" id="rejected-tab" role="tabpanel">
+                    <div class="tab-pane" id="반려-tab" role="tabpanel">
                          <div class="table-responsive table-card">
                            <table class="table align-middle table-nowrap table-striped mb-0">
                                 <thead class="table-light">
@@ -95,7 +95,7 @@
                             </table>
                         </div>
                     </div>
-                     <div class="tab-pane" id="cancellation-tab" role="tabpanel">
+                     <div class="tab-pane" id="취소요청-tab" role="tabpanel">
                         <div class="table-responsive table-card">
                            <table class="table align-middle table-nowrap table-striped mb-0">
                                 <thead class="table-light">

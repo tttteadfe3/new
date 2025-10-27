@@ -65,7 +65,7 @@ class AuthService {
      * @throws Exception
      */
     public function login(array $user) {
-        if ($user['status'] === 'blocked') {
+        if ($user['status'] === '차단') {
             throw new Exception("차단된 계정은 로그인할 수 없습니다.");
         }
 
@@ -196,7 +196,7 @@ class AuthService {
      */
     public function checkAccess() {
         $realtime_status = $this->checkStatus();
-        if ($realtime_status === 'active') {
+        if ($realtime_status === '활성') {
             return;
         }
 
@@ -205,11 +205,11 @@ class AuthService {
         }
 
         switch ($realtime_status) {
-            case 'pending':
+            case '대기':
                 header('Location: /status');
                 exit();
 
-            case 'blocked':
+            case '차단':
             default:
                 $this->logout();
                 break;

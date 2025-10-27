@@ -4,6 +4,17 @@
 
 ---
 
+## [1.0.6 - 2025-10-26]
+
+### ♻️ 리팩토링 (Refactoring)
+- **데이터베이스 및 애플리케이션 전반의 상태 값 한글화 (수정 반영)**:
+  - **변경 이유**: 코드 가독성 향상, 데이터 일관성 확보, 프론트엔드 변환 로직 제거를 위해 시스템 전반의 영어 상태 값을 한글로 통일. (기존 작업의 오류 수정)
+  - **변경 내용**:
+    - **[수정]** 마이그레이션 스크립트(`database/20251026_translate_status_enums.sql`)를 보완하여 누락된 상태 값(`illegal_disposal_cases2`의 'processed')을 추가하고, 불일치하던 상태 값(`'확인'`과 `'처리완료'` 등)을 코드와 통일. `sys_users`에 '차단' 상태를 추가.
+    - **[수정]** PHP 백엔드 코드(`app/` 전체)와 JavaScript 프론트엔드 코드(`public/assets/js/` 전체)를 **수정된 스크립트와 완벽히 일치**하도록 재수정. 특히 `Littering` 관련 기능의 상태 값 불일치 오류를 해결.
+  - **영향 범위**: `database/schema.sql`, `app/` 디렉토리 전체, `public/assets/js/` 디렉토리 전체
+  - **함께 수정된 파일**: `database/20251026_translate_status_enums.sql` (신규), `app/Views/pages/leaves/approval.php`
+
 ## [1.0.5 - 2025-10-26]
 
 ### ♻️ 리팩토링 (Refactoring)

@@ -36,7 +36,7 @@ class Employee extends BaseModel
         'clothing_top_size' => 'string|max:50',
         'clothing_bottom_size' => 'string|max:50',
         'shoe_size' => 'string|max:50',
-        'profile_update_status' => 'in:none,pending,rejected',
+        'profile_update_status' => 'in:none,대기,반려',
         'phone_number' => 'string|max:255',
         'address' => 'string',
         'emergency_contact_name' => 'string|max:255',
@@ -58,7 +58,7 @@ class Employee extends BaseModel
      */
     public function hasPendingProfileUpdate(): bool
     {
-        return $this->getAttribute('profile_update_status') === 'pending';
+        return $this->getAttribute('profile_update_status') === '대기';
     }
 
     /**

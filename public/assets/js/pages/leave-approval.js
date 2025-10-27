@@ -17,10 +17,10 @@ class LeaveApprovalPage extends BasePage {
         this.elements.yearFilter = document.getElementById('year-filter');
         this.elements.departmentFilter = document.getElementById('department-filter');
         this.elements.bodies = {
-            pending: document.getElementById('pending-requests-body'),
-            approved: document.getElementById('approved-requests-body'),
-            rejected: document.getElementById('rejected-requests-body'),
-            cancellation: document.getElementById('cancellation-requests-body')
+            '대기': document.getElementById('pending-requests-body'),
+            '승인': document.getElementById('approved-requests-body'),
+            '반려': document.getElementById('rejected-requests-body'),
+            '취소요청': document.getElementById('cancellation-requests-body')
         };
     }
 
@@ -49,7 +49,9 @@ class LeaveApprovalPage extends BasePage {
 
     loadInitialData() {
         this.loadFilterOptions();
-        this.loadRequestsByStatus('pending');
+        const activeTab = document.querySelector('.nav-link.active');
+        const status = this.getStatusFromTab(activeTab);
+        this.loadRequestsByStatus(status);
     }
 
     async loadFilterOptions() {
@@ -99,19 +101,19 @@ class LeaveApprovalPage extends BasePage {
         let detailsColumn = '';
 
         switch(status) {
-            case 'pending':
+            case '대기':
                 detailsColumn = `<td>${new Date(item.created_at).toLocaleDateString()}</td><td>${item.reason || ''}</td>`;
                 actionButtons = `
                     <button class="btn btn-success btn-sm approve-btn" data-id="${item.id}">승인</button>
                     <button class="btn btn-danger btn-sm reject-btn ms-1" data-id="${item.id}">반려</button>`;
                 break;
-            case 'approved':
+            case '승인':
                 detailsColumn = `<td>${new Date(item.updated_at).toLocaleDateString()}</td><td>${item.approver_name || 'N/A'}</td>`;
                 break;
-            case 'rejected':
+            case '반려':
                 detailsColumn = `<td>${new Date(item.updated_at).toLocaleDateString()}</td><td>${item.rejection_reason || ''}</td><td>${item.approver_name || 'N/A'}</td>`;
                 break;
-            case 'cancellation':
+            case '취소요청':
                 detailsColumn = `<td>${item.cancellation_reason || ''}</td>`;
                 actionButtons = `
                     <button class="btn btn-success btn-sm approve-cancel-btn" data-id="${item.id}">취소 승인</button>
@@ -185,7 +187,9 @@ class LeaveApprovalPage extends BasePage {
     }
 
     getStatusFromTab(tabElement) {
-        return tabElement.getAttribute('href').replace('-tab', '').substring(1);
+        const href = tabElement.getAttribute('href');
+        const statusEncoded = href.replace('-tab', '').substring(1);
+        return decodeURIComponent(statusEncoded);
     }
 }
 

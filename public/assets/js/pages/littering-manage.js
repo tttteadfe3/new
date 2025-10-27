@@ -51,8 +51,8 @@ class LitteringAdminPage extends BasePage {
     async loadInitialData() {
         try {
             const [pendingResponse, processedResponse] = await Promise.all([
-                this.apiCall(`${this.config.API_URL}?status=pending`),
-                this.apiCall(`${this.config.API_URL}?status=processed_for_approval`)
+                this.apiCall(`${this.config.API_URL}?status=대기`),
+                this.apiCall(`${this.config.API_URL}?status=처리완료`)
             ]);
             this.state.pendingReports = pendingResponse.data || [];
             this.state.processedReports = processedResponse.data || [];
@@ -69,7 +69,7 @@ class LitteringAdminPage extends BasePage {
             'pending-list',
             this.state.pendingReports,
             '확인 대기 중인 자료가 없습니다.',
-            'pending'
+            '대기'
         );
     }
 
@@ -78,7 +78,7 @@ class LitteringAdminPage extends BasePage {
             'processed-list',
             this.state.processedReports,
             '승인 대기 중인 자료가 없습니다.',
-            'processed'
+            '처리완료'
         );
     }
 
@@ -93,14 +93,14 @@ class LitteringAdminPage extends BasePage {
 
         items.forEach(item => {
             let personInfo = '';
-            if (type === 'pending') {
+            if (type === '대기') {
                 personInfo = `등록 : ${item.created_by_name}`;
-            } else if (type === 'processed') {
+            } else if (type === '처리완료') {
                 personInfo = `등록 : ${item.created_by_name} 처리 : ${item.processed_by_name}`;
             }
 
             let correctedBadge = '';
-            if (type === 'processed' && item.corrected) {
+            if (type === '처리완료' && item.corrected) {
                 let badgeClass = '';
                 let correctedText = '';
                 switch (item.corrected) {
@@ -137,9 +137,7 @@ class LitteringAdminPage extends BasePage {
                 e.preventDefault();
                 this.selectReport(parseInt(item.id), type);
 
-                // Remove active class from all lists
                 document.querySelectorAll('.list-group-item.active').forEach(active => active.classList.remove('active'));
-
                 itemNode.classList.add('active');
             });
             listContainer.appendChild(itemNode);
@@ -147,7 +145,7 @@ class LitteringAdminPage extends BasePage {
     }
 
     selectReport(reportId, type) {
-        const sourceList = type === 'pending' ? this.state.pendingReports : this.state.processedReports;
+        const sourceList = type === '대기' ? this.state.pendingReports : this.state.processedReports;
         const selected = sourceList.find(item => item.id === reportId);
         if (!selected) return;
 
@@ -163,9 +161,9 @@ class LitteringAdminPage extends BasePage {
         document.getElementById('waste_type2').value = selected.waste_type2;
 
         let personInfo = '';
-        if (selected.status === 'pending') {
+        if (selected.status === '대기') {
             personInfo = `등록 : ${selected.created_by_name}`;
-        } else if (selected.status === 'processed') {
+        } else if (selected.status === '처리완료') {
             personInfo = `등록 : ${selected.created_by_name} 처리 : ${selected.processed_by_name}`;
         }
         document.getElementById('registrant-info').textContent = personInfo;
@@ -186,10 +184,9 @@ class LitteringAdminPage extends BasePage {
             }
         });
 
-        // Toggle button visibility based on type
-        document.getElementById('confirm-btn').classList.toggle('d-none', type !== 'pending');
-        document.getElementById('approve-btn').classList.toggle('d-none', type !== 'processed');
-        document.getElementById('delete-btn').classList.toggle('d-none', type !== 'pending'); // Can only delete pending reports
+        document.getElementById('confirm-btn').classList.toggle('d-none', type !== '대기');
+        document.getElementById('approve-btn').classList.toggle('d-none', type !== '처리완료');
+        document.getElementById('delete-btn').classList.toggle('d-none', type !== '대기');
 
         document.getElementById('detail-view').classList.remove('d-none');
         if (window.SplitLayout) {
@@ -202,13 +199,12 @@ class LitteringAdminPage extends BasePage {
         container.innerHTML = '';
 
         let photoSlots = [];
-			console.log(reportData);
-        if (reportData.status === 'pending') {
+        if (reportData.status === '대기') {
             photoSlots = [
                 { title: '작업전', src: reportData.reg_photo_path },
                 { title: '작업후', src: reportData.reg_photo_path2 }
             ];
-        } else { // 'processed'
+        } else { // '처리완료'
             photoSlots = [
                 { title: '작업전', src: reportData.reg_photo_path },
                 { title: '작업후', src: reportData.reg_photo_path2 },
@@ -267,14 +263,12 @@ class LitteringAdminPage extends BasePage {
             id: document.getElementById('case-id').value,
             latitude: document.getElementById('latitude').value,
             longitude: document.getElementById('longitude').value,
-            jibun_address: document.getElementById('address').value, // The visible field is treated as the jibun address
+            jibun_address: document.getElementById('address').value,
             road_address: document.getElementById('road_address').value,
             waste_type: document.getElementById('waste_type').value,
             waste_type2: document.getElementById('waste_type2').value
         };
 
-        // If the main address was edited manually, clear the road_address
-        // as it might be inconsistent.
         const originalDisplayAddress = this.state.selectedReport.jibun_address || this.state.selectedReport.road_address || '';
         if (document.getElementById('address').value !== originalDisplayAddress) {
             updatedData.road_address = '';
@@ -287,7 +281,7 @@ class LitteringAdminPage extends BasePage {
                 body: updatedData
             });
             Toast.success('성공적으로 확인 및 저장되었습니다.');
-            this.removeReportFromList(updatedData.id, 'pending');
+            this.removeReportFromList(updatedData.id, '대기');
         } catch (error) {
             Toast.error('저장에 실패했습니다: ' + error.message);
         } finally {
@@ -296,7 +290,7 @@ class LitteringAdminPage extends BasePage {
     }
 
     async approveReport() {
-        if (!this.state.selectedReport || this.state.selectedReport.status !== 'processed') return;
+        if (!this.state.selectedReport || this.state.selectedReport.status !== '처리완료') return;
 
         const reportId = this.state.selectedReport.id;
         this.setButtonLoading('#approve-btn', '승인 중...');
@@ -305,7 +299,7 @@ class LitteringAdminPage extends BasePage {
                 method: 'POST'
             });
             Toast.success('성공적으로 승인되었습니다.');
-            this.removeReportFromList(reportId, 'processed');
+            this.removeReportFromList(reportId, '처리완료');
         } catch (error) {
             Toast.error('승인에 실패했습니다: ' + error.message);
         } finally {
@@ -323,7 +317,7 @@ class LitteringAdminPage extends BasePage {
             try {
                 await this.apiCall(`${this.config.API_URL}/${reportId}`, { method: 'DELETE' });
                 Toast.success('성공적으로 삭제되었습니다.');
-                this.removeReportFromList(reportId, 'pending');
+                this.removeReportFromList(reportId, '대기');
             } catch (error) {
                 Toast.error('삭제에 실패했습니다: ' + error.message);
             } finally {
@@ -333,10 +327,10 @@ class LitteringAdminPage extends BasePage {
     }
 
     removeReportFromList(reportId, type) {
-        if (type === 'pending') {
+        if (type === '대기') {
             this.state.pendingReports = this.state.pendingReports.filter(item => item.id !== parseInt(reportId));
             this.renderPendingList();
-        } else if (type === 'processed') {
+        } else if (type === '처리완료') {
             this.state.processedReports = this.state.processedReports.filter(item => item.id !== parseInt(reportId));
             this.renderProcessedList();
         }
@@ -351,9 +345,7 @@ class LitteringAdminPage extends BasePage {
         const activeItem = document.querySelector('.list-group-item.active');
         if (activeItem) activeItem.classList.remove('active');
     }
-    /**
-     * @override
-     */
+
     cleanup() {
         super.cleanup();
         if (this.state.mapService) {

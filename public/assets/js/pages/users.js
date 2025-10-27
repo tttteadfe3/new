@@ -89,7 +89,7 @@ class UsersAdminPage extends BasePage {
             return;
         }
         const rowsHtml = users.map(user => {
-            const statusBadgeClass = { 'active': 'bg-success', 'pending': 'bg-warning', 'blocked': 'bg-danger' }[user.status] || 'bg-secondary';
+            const statusBadgeClass = { '활성': 'bg-success', '대기': 'bg-warning', '차단': 'bg-danger', '비활성': 'bg-secondary' }[user.status] || 'bg-light text-dark';
             const mappingInfo = user.employee_id
                 ? `<span class="badge bg-info">${this._sanitizeHTML(user.employee_name)}</span>`
                 : `<span class="text-muted"><i>연결 안됨</i></span>`;

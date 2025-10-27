@@ -14,7 +14,7 @@ class LitteringRepository {
      * @return array
      */
     public function findAllActive(): array {
-        $query = "SELECT * FROM `illegal_disposal_cases2` WHERE `status` NOT IN ('processed', 'completed', 'deleted') AND `deleted_at` IS NULL ORDER BY `created_at` DESC";
+        $query = "SELECT * FROM `illegal_disposal_cases2` WHERE `status` NOT IN ('처리완료', '승인완료', '삭제') AND `deleted_at` IS NULL ORDER BY `created_at` DESC";
         return $this->db->fetchAll($query);
     }
 
@@ -30,7 +30,7 @@ class LitteringRepository {
                 COALESCE(e.name, '알 수 없음') as created_by_name
             FROM `illegal_disposal_cases2` idc
             LEFT JOIN `hr_employees` e ON idc.created_by = e.id
-            WHERE idc.status = 'pending' AND idc.deleted_at IS NULL
+            WHERE idc.status = '대기' AND idc.deleted_at IS NULL
             ORDER BY idc.created_at DESC
         ";
         return $this->db->fetchAll($query);
@@ -49,7 +49,7 @@ class LitteringRepository {
             FROM `illegal_disposal_cases2` idc
             LEFT JOIN `hr_employees` e ON idc.created_by = e.id
             LEFT JOIN `hr_employees` e2 ON idc.completed_by = e2.id
-            WHERE idc.status = 'completed' AND idc.deleted_at IS NULL
+            WHERE idc.status = '승인완료' AND idc.deleted_at IS NULL
             ORDER BY idc.completed_at DESC
         ";
         return $this->db->fetchAll($query);
@@ -69,7 +69,7 @@ class LitteringRepository {
             FROM `illegal_disposal_cases2` idc
             LEFT JOIN `hr_employees` e ON idc.created_by = e.id
             LEFT JOIN `hr_employees` e2 ON idc.processed_by = e2.id
-            WHERE idc.status = 'processed' AND idc.deleted_at IS NULL
+            WHERE idc.status = '처리완료' AND idc.deleted_at IS NULL
             ORDER BY idc.created_at DESC
         ";
         return $this->db->fetchAll($query);
@@ -87,7 +87,7 @@ class LitteringRepository {
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)';
         
         $params = [
-            'pending',
+            '대기',
             $data['latitude'], $data['longitude'], $data['jibun_address'], $data['road_address'],
             $data['waste_type'], $data['waste_type2'],
             $data['fileName1'], $data['fileName2'],
@@ -112,7 +112,7 @@ class LitteringRepository {
                   WHERE `id` = ?';
         $params = [
             $data['latitude'], $data['longitude'], $data['jibun_address'], $data['road_address'],
-            $data['waste_type'], $data['waste_type2'], 'confirmed',
+            $data['waste_type'], $data['waste_type2'], '확인',
             $employeeId, $caseId
         ];
         return $this->db->execute($query, $params) > 0;
@@ -124,7 +124,7 @@ class LitteringRepository {
      * @return bool
      */
     public function softDelete(int $caseId, int $employeeId): bool {
-        $query = "UPDATE illegal_disposal_cases2 SET status = 'deleted', deleted_by = ?, deleted_at = NOW() WHERE id = ?";
+        $query = "UPDATE illegal_disposal_cases2 SET status = '삭제', deleted_by = ?, deleted_at = NOW() WHERE id = ?";
         return $this->db->execute($query, [$employeeId, $caseId]) > 0;
     }
 
@@ -136,7 +136,7 @@ class LitteringRepository {
      */
     public function process(array $data, int $employeeId): bool {
         $updateFields = '`corrected` = ?, `note` = ?, `status` = ?, `processed_by` = ?';
-        $params = [$data['corrected'], $data['note'], 'processed', $employeeId];
+        $params = [$data['corrected'], $data['note'], '처리완료', $employeeId];
         if (!empty($data['procFileName'])) {
             $updateFields .= ', `proc_photo_path` = ?';
             $params[] = $data['procFileName'];
@@ -171,7 +171,7 @@ class LitteringRepository {
             FROM `illegal_disposal_cases2` idc
             LEFT JOIN `hr_employees` e ON idc.created_by = e.id
             LEFT JOIN `hr_employees` e2 ON idc.deleted_by = e2.id
-            WHERE idc.status = 'deleted' 
+            WHERE idc.status = '삭제'
             ORDER BY idc.deleted_at DESC
         ";
         return $this->db->fetchAll($query);
@@ -191,7 +191,7 @@ class LitteringRepository {
      * @return bool
      */
     public function restore(int $caseId): bool {
-        $query = "UPDATE illegal_disposal_cases2 SET status = 'pending', deleted_by = NULL, deleted_at = NULL WHERE id = ?";
+        $query = "UPDATE illegal_disposal_cases2 SET status = '대기', deleted_by = NULL, deleted_at = NULL WHERE id = ?";
         return $this->db->execute($query, [$caseId]) > 0;
     }
 
@@ -205,7 +205,7 @@ class LitteringRepository {
         $query = 'UPDATE `illegal_disposal_cases2`
                   SET `status` = ?, `completed_by` = ?, `completed_at` = NOW()
                   WHERE `id` = ?';
-        $params = ['completed', $employeeId, $caseId];
+        $params = ['승인완료', $employeeId, $caseId];
         return $this->db->execute($query, $params) > 0;
     }
 }

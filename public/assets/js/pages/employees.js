@@ -89,10 +89,10 @@ class EmployeesPage extends BasePage {
 
         const rowsHtml = employeeList.map(employee => {
             const linkedUser = employee.nickname ? `<span class="badge bg-primary">${this.sanitizeHTML(employee.nickname)}</span>` : '<span class="text-muted"><i>없음</i></span>';
-            const statusInfo = employee.profile_update_status === 'pending' ? `<span class="badge bg-warning ms-2">수정 요청</span>`
-                            : (employee.profile_update_status === 'rejected' ? `<span class="badge bg-danger ms-2">반려됨</span>` : '');
+            const statusInfo = employee.profile_update_status === '대기' ? `<span class="badge bg-warning ms-2">수정 요청</span>`
+                            : (employee.profile_update_status === '반려' ? `<span class="badge bg-danger ms-2">반려됨</span>` : '');
 
-            const actionButtons = employee.profile_update_status === 'pending'
+            const actionButtons = employee.profile_update_status === '대기'
                 ? `<button class="btn btn-success btn-sm approve-btn" data-id="${employee.id}">승인</button>
                    <button class="btn btn-danger btn-sm reject-btn ms-1" data-id="${employee.id}">반려</button>`
                 : '';

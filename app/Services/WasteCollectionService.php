@@ -270,7 +270,7 @@ class WasteCollectionService
                     'latitude' => $addressInfo['latitude'] ?? 0,
                     'longitude' => $addressInfo['longitude'] ?? 0,
                     'address' => $addressInfo['final_address'] ?? $collectionData['address'],
-                    'geocoding_status' => $addressInfo ? 'success' : 'failure',
+                    'geocoding_status' => $addressInfo ? '성공' : '실패',
                     'photo_path' => null,
                     'created_by' => $adminUserId,
                     'issue_date' => $collectionData['dischargeDate'],

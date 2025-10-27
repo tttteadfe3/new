@@ -35,7 +35,7 @@ class UserRepository {
      */
     public function create(array $data): string {
         $sql = "INSERT INTO sys_users (kakao_id, nickname, email, profile_image_url, status)
-                VALUES (:kakao_id, :nickname, :email, :p_img, 'pending')";
+                VALUES (:kakao_id, :nickname, :email, :p_img, '대기')";
         $this->db->execute($sql, [
             ':kakao_id' => $data['id'],
             ':nickname' => $data['properties']['nickname'],
@@ -207,7 +207,7 @@ class UserRepository {
     public function findUsersWithoutEmployeeRecord(): array {
         $sql = "SELECT u.id, u.nickname FROM sys_users u
                 LEFT JOIN hr_employees e ON u.id = e.user_id
-                WHERE e.user_id IS NULL AND u.status = 'active'
+                WHERE e.user_id IS NULL AND u.status = '활성'
                 ORDER BY u.nickname";
         return $this->db->query($sql);
     }
@@ -310,8 +310,8 @@ class UserRepository {
      */
     public function toggleStatus(int $userId): bool {
         $sql = "UPDATE sys_users SET status = CASE 
-                    WHEN status = 'active' THEN 'inactive' 
-                    ELSE 'active' 
+                    WHEN status = '활성' THEN '비활성'
+                    ELSE '활성'
                 END 
                 WHERE id = :id";
         return $this->db->execute($sql, [':id' => $userId]) > 0;
