@@ -4,6 +4,26 @@
 
 ---
 
+## [1.0.9 - 2025-10-26]
+
+### ✨ 새로운 기능 (Features)
+- **무단투기 승인 시 개선여부 상태 함께 처리**:
+  - **설명**: `/littering/manage` 페이지의 상세 보기에서 '개선여부' 상태를 선택한 후, '승인' 버튼을 누를 때 해당 상태가 최종적으로 함께 서버에 저장되도록 기능을 개선했습니다.
+  - **변경 내용**:
+    - **Backend**: `approve` API가 요청 본문에 `corrected` 상태 값을 포함하여 처리하도록 컨트롤러, 서비스, 리포지토리 로직을 수정했습니다.
+    - **Frontend**: '승인' 버튼 클릭 시, 상세 보기 내의 '개선여부' 드롭다운 값을 읽어 API 요청에 포함하도록 `littering-manage.js`의 `approveReport` 메서드를 수정했습니다.
+  - **영향 범위**: `app/Controllers/Api/LitteringAdminApiController.php`, `app/Services/LitteringService.php`, `app/Repositories/LitteringRepository.php`, `app/Views/pages/littering/manage.php`, `public/assets/js/pages/littering-manage.js`
+
+## [1.0.8 - 2025-10-26]
+
+### 🐛 버그 수정 (Bug Fixes)
+- **직원 API 목록 부서 필터 기능 수정**:
+  - **문제**: `/api/employees` 엔드포인트에 `department_id` 쿼리 파라미터를 전달해도 부서별로 직원 목록이 필터링되지 않는 문제.
+  - **원인**: `EmployeeRepository::getAll` 메서드에서 `department_id` 필터를 처리하는 SQL `WHERE` 조건절 생성이 누락되었음.
+  - **수정**: `EmployeeRepository::getAll` 메서드에 `department_id` 파라미터가 존재할 경우, `WHERE` 절에 부서 필터링 조건을 추가하는 로직을 구현.
+  - **영향 범위**: `app/Repositories/EmployeeRepository.php`
+  - **함께 수정된 파일**: 없음
+
 ## [1.0.5 - 2025-10-26]
 
 ### ♻️ 리팩토링 (Refactoring)

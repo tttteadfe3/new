@@ -121,6 +121,11 @@ class EmployeeRepository {
             }
         }
 
+        if (!empty($filters['department_id'])) {
+            $whereClauses[] = "e.department_id = :department_id";
+            $params[':department_id'] = $filters['department_id'];
+        }
+
         if (!empty($filters['position_id'])) {
             $whereClauses[] = "e.position_id = :position_id";
             $params[':position_id'] = $filters['position_id'];
