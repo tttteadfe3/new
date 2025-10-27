@@ -32,7 +32,7 @@ class WasteCollectionRepository {
             $data['fee'] ?? 0,
             '미처리',
             $data['type'], // 'field' or 'online'
-            $data['geocoding_status'] ?? 'success',
+            $data['geocoding_status'] ?? '성공',
             $data['created_by']
         ];
 

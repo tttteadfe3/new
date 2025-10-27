@@ -22,12 +22,21 @@ UPDATE `illegal_disposal_cases2` SET `status` =
         ELSE `status`
     END;
 
+-- waste_collections: geocoding_status
+UPDATE `waste_collections` SET `geocoding_status` =
+    CASE
+        WHEN `geocoding_status` = 'success' THEN '성공'
+        WHEN `geocoding_status` = 'failure' THEN '실패'
+        ELSE `geocoding_status`
+    END;
+
 -- =================================================================
 -- 2. 스키마 변경 (ALTER TABLE)
 -- =================================================================
 
 -- waste_collections
 ALTER TABLE `waste_collections` MODIFY `status` ENUM('미처리','처리완료') NOT NULL DEFAULT '미처리' COMMENT '수거 상태';
+ALTER TABLE `waste_collections` MODIFY `geocoding_status` ENUM('성공','실패') NOT NULL DEFAULT '실패' COMMENT '지오코딩 상태';
 
 -- illegal_disposal_cases2
-ALTER TABLE `illegal_disposal_cases2` MODIFY `status` VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '처리 상태 (대기, 확인, 처리완료, 삭제)';
+ALTER TABLE `illegal_disposal_cases2` MODIFY `status` ENUM('대기','확인','처리완료','승인완료','삭제') NOT NULL DEFAULT '대기' COMMENT '처리 상태';
