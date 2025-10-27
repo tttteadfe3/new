@@ -132,9 +132,9 @@ class EmployeeRepository {
         }
 
         if (isset($filters['status']) && $filters['status']) {
-            if ($filters['status'] === '활성') {
+            if ($filters['status'] === '재직중') {
                 $whereClauses[] = "e.termination_date IS NULL";
-            } elseif ($filters['status'] === '비활성') {
+            } elseif ($filters['status'] === '퇴사') {
                 $whereClauses[] = "e.termination_date IS NOT NULL";
             }
         }
