@@ -86,15 +86,17 @@ UPDATE waste_collections SET geocoding_status =
     END
 WHERE geocoding_status IN ('success', 'failure');
 
--- 테이블: illegal_disposal_cases2 (VARCHAR 타입이므로 직접 업데이트)
+-- 테이블: illegal_disposal_cases2 (처리상태)
 UPDATE illegal_disposal_cases2 SET status =
     CASE status
         WHEN 'pending' THEN '대기'
         WHEN 'confirmed' THEN '확인'
         WHEN 'processed' THEN '처리완료'
+        WHEN 'completed' THEN '승인완료'
+        WHEN 'deleted' THEN '삭제'
         ELSE status
     END
-WHERE status IN ('pending', 'confirmed', 'processed');
+WHERE status IN ('pending', 'confirmed', 'processed', 'completed', 'deleted');
 
 
 -- =================================================================
@@ -115,6 +117,9 @@ ALTER TABLE waste_collections MODIFY COLUMN status ENUM('미처리','처리완�
 
 -- 테이블: waste_collections (지오코딩 상태)
 ALTER TABLE waste_collections MODIFY COLUMN geocoding_status ENUM('성공','실패') NOT NULL DEFAULT '실패' COMMENT '지오코딩 성공/실패 상태';
+
+-- 테이블: illegal_disposal_cases2 (지오코딩 상태)
+ALTER TABLE illegal_disposal_cases2 MODIFY COLUMN status ENUM('대기', '확인', '처리완료', '승인완료', '삭제') NOT NULL DEFAULT '대기' COMMENT '	처리 상태 (대기, 확인, 처리완료, 승인완료, 삭제)';
 
 
 -- =================================================================
