@@ -50,6 +50,11 @@
   - **원인**: 부서 목록 API가 목록 표시를 위해 `name` 필드의 값을 계층 전체 경로로 덮어썼고, 프론트엔드가 이 값을 수정 폼에서 그대로 사용함.
   - **수정**: `OrganizationService`의 `flattenTree` 메소드를 수정하여, API 응답 시 순수한 부서명은 `name` 필드에 유지하고, 전체 경로는 `hierarchical_name`이라는 새로운 필드에 담아 보내도록 변경.
   - **영향 범위**: `app/Services/OrganizationService.php`
+- **부서 경로 업데이트 시 이름 초기화 오류 수정**:
+  - **문제**: 최상위 부서의 소속을 변경할 때, 해당 부서의 모든 하위 부서 이름이 `null`로 초기화되는 문제.
+  - **원인**: `OrganizationService::updateSubtreePaths` 메소드가 하위 부서들의 경로(`path`)를 재귀적으로 업데이트하면서 `name` 필드를 전달하지 않아, `UPDATE` 쿼리에서 이름이 누락됨.
+  - **수정**: `updateSubtreePaths` 메소드가 하위 부서 정보를 업데이트할 때, 기존의 `name`과 `parent_id`를 함께 전달하도록 수정하여 데이터 유실을 방지.
+  - **영향 범위**: `app/Services/OrganizationService.php`
 
 ## [1.1.0 - 2025-10-27]
 

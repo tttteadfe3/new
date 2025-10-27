@@ -230,7 +230,15 @@ class OrganizationService
         foreach ($children as $child) {
             $childId = $child['id'];
             $newPath = rtrim($parentPath, '/') . "/{$childId}/";
-            $this->departmentRepository->update($childId, ['path' => $newPath]);
+
+            // path를 업데이트할 때 name 필드도 함께 전달하여 null이 되지 않도록 방지
+            $updateData = [
+                'path' => $newPath,
+                'name' => $child['name'], // 기존 이름을 그대로 유지
+                'parent_id' => $child['parent_id'] // parent_id도 유지
+            ];
+            $this->departmentRepository->update($childId, $updateData);
+
             $this->updateSubtreePaths($childId, $newPath);
         }
     }
