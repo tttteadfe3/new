@@ -158,7 +158,7 @@ class WasteCollectionPage extends BasePage {
     }
 
     addCollectionToMap(data) {
-        if (data.status === 'processed') return;
+        if (data.status === '처리완료') return;
         const collectionInfo = this.state.mapService.mapManager.addMarker({
             position: { lat: data.latitude, lng: data.longitude },
             type: data.type,
@@ -183,7 +183,7 @@ class WasteCollectionPage extends BasePage {
             const feeBadge = (c.type === 'online' && c.fee > 0) ? `<span class="badge bg-dark ms-1">${c.fee.toLocaleString()}원</span>` : '';
 
             let cardFooter = '';
-            if (c.type === 'field' && c.status === 'unprocessed') {
+            if (c.type === 'field' && c.status === '미처리') {
                 cardFooter = `<div class="card-footer p-2 text-end"><button class="btn btn-sm btn-primary" onclick="window.wasteCollectionApp.processFieldCollection(${c.id})">수거 완료</button></div>`;
             }
 

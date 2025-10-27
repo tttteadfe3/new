@@ -58,7 +58,7 @@ class WasteCollection extends BaseModel
         'address' => 'required|string|max:500',
         'issue_date' => 'required|date',
         'type' => 'required|in:field,online',
-        'status' => 'in:unprocessed,processed',
+        'status' => 'in:미처리,처리완료',
         'fee' => 'numeric|min:0',
         'submitter_phone' => 'string|max:20'
     ];
@@ -85,7 +85,7 @@ class WasteCollection extends BaseModel
      */
     public function isProcessed(): bool
     {
-        return ($this->attributes['status'] ?? 'unprocessed') === 'processed';
+        return ($this->attributes['status'] ?? '미처리') === '처리완료';
     }
 
     /**
