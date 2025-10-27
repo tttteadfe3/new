@@ -3,6 +3,18 @@
 이 문서는 프로젝트의 주요 변경 사항, 특히 기존 코드베이스에 영향을 줄 수 있는 중요한 수정 내역을 기록합니다. 모든 개발 에이전트는 코드 변경 시 이 문서를 참조하고, 자신의 변경 사항을 아래 형식에 맞게 기록해야 합니다.
 
 ---
+## [1.2.0 - 2025-10-27]
+
+### ♻️ 리팩토링 (Refactoring)
+- **데이터 조회 권한 로직 중앙화**:
+  - **변경 이유**: 여러 서비스(`OrganizationService`, `EmployeeService`, `LeaveService` 등)에 분산되어 있던 부서 데이터 조회 권한 로직을 하나로 통합하여 유지보수성을 높이고 중복을 제거하기 위함.
+  - **변경 내용**:
+    - `DataScopeService`를 신설하여, 현재 사용자가 조회할 수 있는 부서 ID 목록을 계산하는 모든 권한 관련 로직을 중앙에서 관리하도록 함.
+    - 기존에 각 서비스가 자체적으로 수행하던 권한 확인 로직을 모두 제거하고, `DataScopeService`를 호출하는 방식으로 통일함.
+    - `AuthService`에서 데이터 조회 범위와 관련된 책임을 제거하여, 인증 및 기능 권한 관리에만 집중하도록 역할을 명확히 함.
+  - **영향 범위**: `app/Services/OrganizationService.php`, `app/Services/EmployeeService.php`, `app/Services/LeaveService.php`, `app/Services/HolidayService.php`, `app/Services/UserService.php`, `app/Services/AuthService.php`, `app/Controllers/Api/OrganizationApiController.php`, `app/Controllers/Api/EmployeeApiController.php`
+  - **함께 수정된 파일**: `public/index.php` (DI 컨테이너 설정), `app/Repositories/DepartmentRepository.php` (`findByIds` 메소드 추가)
+
 ## [1.1.0 - 2025-10-27]
 
 ### ✨ 새로운 기능 (Features)

@@ -6,8 +6,6 @@ use App\Core\SessionManager;
 use App\Repositories\UserRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\LogRepository;
-use App\Repositories\DepartmentRepository;
-use App\Repositories\EmployeeRepository;
 use Exception;
 
 class AuthService {
@@ -15,24 +13,17 @@ class AuthService {
     private UserRepository $userRepository;
     private RoleRepository $roleRepository;
     private LogRepository $logRepository;
-    private DepartmentRepository $departmentRepository;
-    private EmployeeRepository $employeeRepository;
-    private ?array $departmentMap = null;
 
     public function __construct(
         SessionManager $sessionManager,
         UserRepository $userRepository,
         RoleRepository $roleRepository,
-        LogRepository $logRepository,
-        DepartmentRepository $departmentRepository,
-        EmployeeRepository $employeeRepository
+        LogRepository $logRepository
     ) {
         $this->sessionManager = $sessionManager;
         $this->userRepository = $userRepository;
         $this->roleRepository = $roleRepository;
         $this->logRepository = $logRepository;
-        $this->departmentRepository = $departmentRepository;
-        $this->employeeRepository = $employeeRepository;
     }
 
     /**
@@ -123,73 +114,6 @@ class AuthService {
         return in_array($permission_key, $permissions);
     }
 
-    /**
-     * @param int $targetEmployeeId
-     * @return bool
-     */
-    public function canManageEmployee(int $targetEmployeeId): bool
-    {
-        if (!$this->isLoggedIn()) {
-            return false;
-        }
-
-        if ($this->check('employee.manage_all')) {
-            return true;
-        }
-
-        $currentUser = $this->user();
-        $managerEmployeeId = $currentUser['employee_id'] ?? null;
-
-        if (!$managerEmployeeId) {
-            return false;
-        }
-
-        if ($managerEmployeeId === $targetEmployeeId) {
-            return true;
-        }
-
-        $targetEmployee = $this->employeeRepository->findById($targetEmployeeId);
-        if (!$targetEmployee || !$targetEmployee['department_id']) {
-            return false;
-        }
-
-        $managedDeptIds = $this->departmentRepository->findDepartmentIdsWithEmployeeViewPermission($managerEmployeeId);
-        if (empty($managedDeptIds)) {
-            return false;
-        }
-
-        $this->loadDepartmentMap();
-
-        $currentDeptId = $targetEmployee['department_id'];
-
-        while ($currentDeptId) {
-            if (in_array($currentDeptId, $managedDeptIds)) {
-                return true;
-            }
-
-            $department = $this->departmentMap[$currentDeptId] ?? null;
-            if (!$department || !$department->parent_id) {
-                break;
-            }
-            $currentDeptId = $department->parent_id;
-        }
-
-        return false;
-    }
-
-    /**
-     * @return void
-     */
-    private function loadDepartmentMap(): void
-    {
-        if ($this->departmentMap === null) {
-            $allDepartments = $this->departmentRepository->getAll();
-            $this->departmentMap = [];
-            foreach ($allDepartments as $dept) {
-                $this->departmentMap[$dept->id] = $dept;
-            }
-        }
-    }
 
     /**
      * @return void

@@ -8,16 +8,16 @@ use App\Repositories\EmployeeRepository;
 class OrganizationService
 {
     private DepartmentRepository $departmentRepository;
-    private AuthService $authService;
+    private DataScopeService $dataScopeService;
     private EmployeeRepository $employeeRepository;
 
     public function __construct(
         DepartmentRepository $departmentRepository,
-        AuthService $authService,
+        DataScopeService $dataScopeService,
         \App\Repositories\EmployeeRepository $employeeRepository
     ) {
         $this->departmentRepository = $departmentRepository;
-        $this->authService = $authService;
+        $this->dataScopeService = $dataScopeService;
         $this->employeeRepository = $employeeRepository;
     }
 
@@ -31,8 +31,8 @@ class OrganizationService
             return [];
         }
 
-        // 현재 사용자가 볼 수 있는 부서 ID 목록을 가져옵니다.
-        $visibleDeptIds = $this->getVisibleDepartmentIdsForCurrentUser();
+        // 중앙 집중식 데이터 스코프 서비스를 사용하여 현재 사용자가 볼 수 있는 부서 ID 목록을 가져옵니다.
+        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
 
         // visibleDeptIds가 null이 아니면(즉, 전체 보기 권한이 없는 경우) 데이터를 필터링합니다.
         if ($visibleDeptIds !== null) {
@@ -77,61 +77,6 @@ class OrganizationService
     }
 
     /**
-     * @return array
-     */
-    public function getManagableDepartments(): array
-    {
-        $permittedDeptIds = $this->_getPermittedDepartmentIds();
-
-        $allDepartments = $this->departmentRepository->getAll();
-        $departmentMap = [];
-        foreach ($allDepartments as $dept) {
-            $departmentMap[$dept->id] = $dept;
-        }
-
-        if ($permittedDeptIds === null) {
-            $visibleDepartments = $departmentMap;
-        } else {
-            if (empty($permittedDeptIds)) {
-                return [];
-            }
-            $visibleDepartments = [];
-            foreach ($permittedDeptIds as $permittedDeptId) {
-                $this->findSubtreeRecursive($permittedDeptId, $departmentMap, $visibleDepartments);
-            }
-        }
-
-        $result = [];
-        foreach ($visibleDepartments as $dept) {
-            $deptArray = (array)$dept;
-            $deptArray['name'] = $this->getHierarchicalName($dept->id, $departmentMap);
-            $result[] = $deptArray;
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param int $deptId
-     * @param array $map
-     * @param array $visible
-     * @return void
-     */
-    private function findSubtreeRecursive(int $deptId, array &$map, array &$visible)
-    {
-        if (!isset($map[$deptId]) || isset($visible[$deptId])) {
-            return;
-        }
-        $visible[$deptId] = $map[$deptId];
-
-        foreach ($map as $child) {
-            if ($child->parent_id == $deptId) {
-                $this->findSubtreeRecursive($child->id, $map, $visible);
-            }
-        }
-    }
-
-    /**
      * @param int $deptId
      * @param array $map
      * @param string $separator
@@ -158,57 +103,6 @@ class OrganizationService
         }
 
         return implode($separator, $path);
-    }
-
-    /**
-     * @return array|null
-     */
-    private function _getPermittedDepartmentIds(): ?array
-    {
-        $user = $this->authService->user();
-        if (!$user || $this->authService->check('employee.view_all')) {
-            return null;
-        }
-
-        if (empty($user['employee_id'])) {
-            return [];
-        }
-
-        $employee = $this->employeeRepository->findById($user['employee_id']);
-
-        $permittedDeptIds = [];
-
-        $employeePermitted = $this->departmentRepository->findDepartmentIdsWithEmployeeViewPermission($user['employee_id']);
-        $permittedDeptIds = array_merge($permittedDeptIds, $employeePermitted);
-
-        if ($employee && $employee['department_id']) {
-            $departmentPermitted = $this->departmentRepository->findVisibleDepartmentIdsForGivenDepartment($employee['department_id']);
-            $permittedDeptIds = array_merge($permittedDeptIds, $departmentPermitted);
-        }
-
-        return array_unique($permittedDeptIds);
-    }
-
-    /**
-     * @return array|null
-     */
-    public function getVisibleDepartmentIdsForCurrentUser(): ?array
-    {
-        $permittedDeptIds = $this->_getPermittedDepartmentIds();
-        if ($permittedDeptIds === null) {
-            return null;
-        }
-        if (empty($permittedDeptIds)) {
-            return [];
-        }
-
-        $allVisibleIds = [];
-        foreach ($permittedDeptIds as $deptId) {
-            $subtreeIds = $this->departmentRepository->findSubtreeIds($deptId);
-            $allVisibleIds = array_merge($allVisibleIds, $subtreeIds);
-        }
-
-        return array_unique($allVisibleIds);
     }
 
     /**
