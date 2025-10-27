@@ -3,6 +3,54 @@
 이 문서는 프로젝트의 주요 변경 사항, 특히 기존 코드베이스에 영향을 줄 수 있는 중요한 수정 내역을 기록합니다. 모든 개발 에이전트는 코드 변경 시 이 문서를 참조하고, 자신의 변경 사항을 아래 형식에 맞게 기록해야 합니다.
 
 ---
+## [1.2.0 - 2025-10-27]
+
+### ♻️ 리팩토링 (Refactoring)
+- **데이터 조회 권한 로직 중앙화**:
+  - **변경 이유**: 여러 서비스(`OrganizationService`, `EmployeeService`, `LeaveService` 등)에 분산되어 있던 부서 데이터 조회 권한 로직을 하나로 통합하여 유지보수성을 높이고 중복을 제거하기 위함.
+  - **변경 내용**:
+    - `DataScopeService`를 신설하여, 현재 사용자가 조회할 수 있는 부서 ID 목록을 계산하는 모든 권한 관련 로직을 중앙에서 관리하도록 함.
+    - 기존에 각 서비스가 자체적으로 수행하던 권한 확인 로직을 모두 제거하고, `DataScopeService`를 호출하는 방식으로 통일함.
+    - `AuthService`에서 데이터 조회 범위와 관련된 책임을 제거하여, 인증 및 기능 권한 관리에만 집중하도록 역할을 명확히 함.
+  - **영향 범위**: `app/Services/OrganizationService.php`, `app/Services/EmployeeService.php`, `app/Services/LeaveService.php`, `app/Services/HolidayService.php`, `app/Services/UserService.php`, `app/Services/AuthService.php`, `app/Controllers/Api/OrganizationApiController.php`, `app/Controllers/Api/EmployeeApiController.php`
+  - **함께 수정된 파일**: `public/index.php` (DI 컨테이너 설정), `app/Repositories/DepartmentRepository.php` (`findByIds` 메소드 추가)
+- **직원 데이터 접근 권한 로직 중앙화**:
+  - **변경 이유**: 부서 데이터 접근 권한 중앙화의 후속 조치로, 특정 직원을 관리할 수 있는지 확인하는 로직(`canManageEmployee`)을 `AuthService`에서 `DataScopeService`로 이전하여 데이터 접근 범위 관련 책임을 일원화함.
+  - **변경 내용**:
+    - `DataScopeService`에 `canManageEmployee` 메소드를 구현하고, `getVisibleDepartmentIdsForCurrentUser`를 활용하여 효율적으로 권한을 확인하도록 개선.
+    - `EmployeeApiController`가 `AuthService` 대신 `DataScopeService`의 `canManageEmployee`를 호출하도록 수정.
+  - **영향 범위**: `app/Services/DataScopeService.php`, `app/Controllers/Api/EmployeeApiController.php`
+
+### 🐛 버그 수정 (Bug Fixes)
+- **리팩토링 과정에서 발생한 DI 컨테이너 및 메소드 호출 오류 수정**:
+  - **문제**: 데이터 조회 권한 로직 중앙화 리팩토링 중 `OrganizationService`에 잘못된 의존성이 주입되고, `DataScopeService`에서 존재하지 않는 메소드를 호출하여 Fatal Error가 발생하는 문제.
+  - **수정**:
+    - `public/index.php`에서 `OrganizationService`의 생성자에 `DataScopeService`가 올바르게 주입되도록 수정.
+    - `DataScopeService` 내에서 `authService->getCurrentUser()`로 잘못 호출된 부분을 `authService->user()`로 수정.
+  - **영향 범위**: `public/index.php`, `app/Services/DataScopeService.php`
+- **데이터 조회 권한 범위 재수정**:
+  - **문제**: 리팩토링 과정에서 데이터 조회 범위가 '자신의 소속 부서 및 하위 부서'로 잘못 확장되는 오류 발생.
+  - **원인**: `DataScopeService`에 자신의 소속 부서를 기본적으로 포함하는 로직이 추가되어, `hr_department_managers` 등에 명시된 권한 이상으로 데이터가 노출됨.
+  - **수정**: `DataScopeService`에서 자신의 소속 부서를 기본값으로 포함하는 로직을 제거하여, **명시적으로 권한이 부여된 부서와 그 하위 조직에 대해서만** 데이터를 조회할 수 있도록 권한 범위를 정확하게 수정.
+  - **영향 범위**: `app/Services/DataScopeService.php`
+- **세션 데이터 누락으로 인한 권한 조회 실패 오류 수정**:
+  - **문제**: 리팩토링 이후, 관리 권한을 가진 사용자가 재로그인하기 전까지 권한이 적용되지 않는 문제.
+  - **원인**: `AuthService`가 로그인 시점에만 직원 정보를 세션에 기록하고, 기존 세션에는 직원 정보가 없어 `DataScopeService`가 권한 계산에 실패함.
+  - **수정**:
+    - `AuthService`가 `EmployeeRepository`에 의존하도록 DI 컨테이너(`public/index.php`)를 수정.
+    - `AuthService`의 `_refreshSessionPermissions` 메소드가 `employee_id`를 기반으로 직원 정보를 조회하여 세션(`$_SESSION['user']['employee']`)에 저장하도록 로직 추가. 이로써 로그인 또는 세션 갱신 시 항상 최신 직원 정보가 보장됨.
+  - **영향 범위**: `app/Services/AuthService.php`, `public/index.php`
+- **부서 정보 업데이트 API 오류 수정**:
+  - **문제**: 부서 정보 수정 API(`/api/organization/{id}`) 호출 시, 요청 본문에 `name` 필드가 포함되지 않으면 `Column 'name' cannot be null` SQL 오류가 발생하는 문제.
+  - **원인**: `OrganizationService::updateDepartment` 메소드가 API로부터 받은 데이터를 그대로 `DepartmentRepository::update`로 전달하여, `name` 필드가 누락될 경우를 처리하지 못함.
+  - **수정**: `OrganizationService::updateDepartment` 메소드에 방어 코드를 추가하여, 요청 데이터에 `name`이 없는 경우 DB에서 기존 부서 정보를 조회하여 `name` 값을 유지하도록 수정.
+  - **영향 범위**: `app/Services/OrganizationService.php`
+- **부서 수정 폼 이름 표시 오류 수정**:
+  - **문제**: 부서 관리 페이지에서 부서 정보를 수정하려고 할 때, 이름 입력 폼에 '가로청소' 대신 '관리부 > 가로청소'와 같이 전체 경로가 표시되는 문제.
+  - **원인**: 부서 목록 API가 목록 표시를 위해 `name` 필드의 값을 계층 전체 경로로 덮어썼고, 프론트엔드가 이 값을 수정 폼에서 그대로 사용함.
+  - **수정**: `OrganizationService`의 `flattenTree` 메소드를 수정하여, API 응답 시 순수한 부서명은 `name` 필드에 유지하고, 전체 경로는 `hierarchical_name`이라는 새로운 필드에 담아 보내도록 변경.
+  - **영향 범위**: `app/Services/OrganizationService.php`
+
 ## [1.1.0 - 2025-10-27]
 
 ### ✨ 새로운 기능 (Features)

@@ -29,7 +29,7 @@ class LeaveService {
     private LogRepository $logRepository;
     private AuthService $authService;
     private \App\Repositories\DepartmentRepository $departmentRepository;
-    private OrganizationService $organizationService;
+    private DataScopeService $dataScopeService;
 
     public function __construct(
         LeaveRepository $leaveRepository,
@@ -38,7 +38,7 @@ class LeaveService {
         LogRepository $logRepository,
         AuthService $authService,
         \App\Repositories\DepartmentRepository $departmentRepository,
-        OrganizationService $organizationService
+        DataScopeService $dataScopeService
     ) {
         $this->leaveRepository = $leaveRepository;
         $this->employeeRepository = $employeeRepository;
@@ -46,7 +46,7 @@ class LeaveService {
         $this->logRepository = $logRepository;
         $this->authService = $authService;
         $this->departmentRepository = $departmentRepository;
-        $this->organizationService = $organizationService;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
@@ -550,7 +550,7 @@ class LeaveService {
      */
     public function getLeaveHistory(array $filters = []): array
     {
-        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
         return $this->leaveRepository->findAll($filters, $visibleDeptIds);
     }
 
@@ -560,7 +560,7 @@ class LeaveService {
      */
     public function getPendingLeaveRequests(): array
     {
-        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
         return $this->leaveRepository->findByStatus('대기', [], $visibleDeptIds);
     }
 
@@ -571,7 +571,7 @@ class LeaveService {
      */
     public function getAllEntitlements(array $filters = []): array
     {
-        $visibleDeptIds = $this->organizationService->getVisibleDepartmentIdsForCurrentUser();
+        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
         return $this->leaveRepository->getAllEntitlements($filters, $visibleDeptIds);
     }
 
