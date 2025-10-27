@@ -28,10 +28,10 @@
     - `public/index.php`에서 `OrganizationService`의 생성자에 `DataScopeService`가 올바르게 주입되도록 수정.
     - `DataScopeService` 내에서 `authService->getCurrentUser()`로 잘못 호출된 부분을 `authService->user()`로 수정.
   - **영향 범위**: `public/index.php`, `app/Services/DataScopeService.php`
-- **관리자 데이터 조회 권한 오류 수정**:
-  - **문제**: 리팩토링 이후, 최상위 부서 관리자를 포함한 모든 사용자가 하위 부서의 데이터를 볼 수 없는 문제 발생.
-  - **원인**: `DataScopeService`의 `getVisibleDepartmentIdsForCurrentUser` 메소드가 명시적으로 권한이 부여된 부서만 반환하고, 사용자의 소속 부서 및 그 하위 부서를 기본적으로 포함하지 않았음.
-  - **수정**: `DataScopeService`의 로직을 수정하여, 모든 사용자가 자신의 소속 부서와 모든 하위 부서를 기본적으로 조회할 수 있도록 변경.
+- **데이터 조회 권한 범위 재수정**:
+  - **문제**: 리팩토링 과정에서 데이터 조회 범위가 '자신의 소속 부서 및 하위 부서'로 잘못 확장되는 오류 발생.
+  - **원인**: `DataScopeService`에 자신의 소속 부서를 기본적으로 포함하는 로직이 추가되어, `hr_department_managers` 등에 명시된 권한 이상으로 데이터가 노출됨.
+  - **수정**: `DataScopeService`에서 자신의 소속 부서를 기본값으로 포함하는 로직을 제거하여, **명시적으로 권한이 부여된 부서와 그 하위 조직에 대해서만** 데이터를 조회할 수 있도록 권한 범위를 정확하게 수정.
   - **영향 범위**: `app/Services/DataScopeService.php`
 
 ## [1.1.0 - 2025-10-27]

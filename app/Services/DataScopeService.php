@@ -68,12 +68,6 @@ class DataScopeService
             }
         }
 
-        // 4. 자신의 소속 부서와 모든 하위 부서는 기본적으로 조회 가능
-        if (!empty($employee['department_id'])) {
-            $myDeptSubtree = $this->departmentRepo->findSubtreeIds($employee['department_id']);
-            $permittedDeptIds = array_merge($permittedDeptIds, $myDeptSubtree);
-        }
-
         return array_values(array_unique($permittedDeptIds));
     }
 
