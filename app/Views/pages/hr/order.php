@@ -11,6 +11,15 @@
                 </div>
                 <div class="card-body">
                     <form id="hr-order-form">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="filter_department" class="form-label">부서 필터</label>
+                                <select class="form-select" id="filter_department">
+                                    <option value="">전체 부서</option>
+                                    <!-- JS로 채워짐 -->
+                                </select>
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <label for="employee_id" class="form-label">발령 대상 직원</label>
                             <select class="form-select" id="employee_id" name="employee_id" required>
