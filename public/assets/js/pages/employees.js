@@ -169,7 +169,7 @@ class EmployeesPage extends BasePage {
         let changesHtml = '';
         for (const key in pendingData) {
             if (fields[key]) {
-                const oldValue = this.sanitizeHTML(employee[key] || '<i>없음</i>');
+                const oldValue = (employee[key] === null || employee[key] === undefined) ? '<i>없음</i>' : this.sanitizeHTML(employee[key]);
                 const newValue = this.sanitizeHTML(pendingData[key] || '<i>없음</i>');
                 if (oldValue !== newValue) {
                      changesHtml += `
@@ -259,13 +259,19 @@ class EmployeesPage extends BasePage {
         `;
         this.elements.detailsContainer.innerHTML = formHtml;
 
-        // Populate dropdowns for the form
-        if (isCreate) {
-            this.populateDropdown(document.getElementById('form-department-id'), this.state.allDepartments, '부서 선택');
-            this.populateDropdown(document.getElementById('form-position-id'), this.state.allPositions, '직급 선택');
-            document.getElementById('form-department-id').value = employee?.department_id || '';
-            document.getElementById('form-position-id').value = employee?.position_id || '';
+        // Populate dropdowns for the form in both create and edit modes
+        this.populateDropdown(document.getElementById('form-department-id'), this.state.allDepartments, '부서 선택');
+        this.populateDropdown(document.getElementById('form-position-id'), this.state.allPositions, '직급 선택');
+
+        // Set the selected values if in edit mode
+        if (employee) {
+            document.getElementById('form-department-id').value = employee.department_id || '';
+            document.getElementById('form-position-id').value = employee.position_id || '';
         }
+
+        // Directly bind the submit event to the new form
+        const form = document.getElementById('employee-form');
+        form.addEventListener('submit', (e) => this.handleFormSubmit(e));
     }
 
     // --- Event Handlers ---
@@ -300,10 +306,6 @@ class EmployeesPage extends BasePage {
             } else {
                  this.renderWelcomeView();
                  document.querySelectorAll('#employee-list-container .list-group-item').forEach(el => el.classList.remove('active'));
-            }
-        } else if (target.closest('#employee-form')) {
-            if (e.type === 'submit') {
-                this.handleFormSubmit(e);
             }
         }
     }
@@ -384,6 +386,48 @@ class EmployeesPage extends BasePage {
                 this.loadEmployees();
             } catch (error) {
                 Toast.error(`퇴사 처리 실패: ${error.message}`);
+            }
+        }
+    }
+
+    async approveProfileUpdate(employeeId) {
+        const result = await Confirm.fire({
+            title: '승인 확인',
+            text: '이 사용자의 프로필 변경 요청을 승인하시겠습니까?'
+        });
+        if (!result.isConfirmed) return;
+
+        try {
+            const response = await this.apiCall(`/employees/${employeeId}/approve-update`, { method: 'POST' });
+            Toast.success(response.message);
+            await this.loadEmployees();
+            this.renderDetailsView(employeeId); // Refresh details view
+        } catch (error) {
+            Toast.error('승인 처리 중 오류가 발생했습니다.');
+        }
+    }
+
+    async rejectProfileUpdate(employeeId) {
+        const { value: reason } = await Swal.fire({
+            title: '프로필 변경 요청 반려',
+            input: 'text',
+            inputPlaceholder: '반려 사유를 입력해주세요.',
+            showCancelButton: true,
+            cancelButtonText: '취소',
+            confirmButtonText: '확인',
+            inputValidator: (value) => !value && '반려 사유를 반드시 입력해야 합니다.'
+        });
+
+        if (reason) {
+            try {
+                const response = await this.apiCall(`/employees/${employeeId}/reject-update`, {
+                    method: 'POST', body: { reason: reason }
+                });
+                Toast.success(response.message);
+                await this.loadEmployees();
+                this.renderDetailsView(employeeId); // Refresh details view
+            } catch (error) {
+                Toast.error(`반려 처리 중 오류: ${error.message}`);
             }
         }
     }
