@@ -311,6 +311,13 @@ class EmployeesPage extends BasePage {
         });
         select.value = currentValue;
     }
+
+    sanitizeHTML(str) {
+        if (str === null || str === undefined) return '';
+        const temp = document.createElement('div');
+        temp.textContent = str;
+        return temp.innerHTML;
+    }
 }
 
 new EmployeesPage();
