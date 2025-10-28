@@ -1,8 +1,7 @@
 <?php
 // app/Views/pages/hr/history.php
-$this->layout('layouts/app', ['title' => '인사 발령 기록']);
+\App\Core\View::getInstance()->startSection('content');
 ?>
-
 <div class="container-fluid">
     <h1>인사 발령 기록 (직원 ID: <?= htmlspecialchars($employee_id) ?>)</h1>
     <p>이곳에 해당 직원의 인사 발령 기록이 표시됩니다.</p>
@@ -36,3 +35,4 @@ $this->layout('layouts/app', ['title' => '인사 발령 기록']);
         </tbody>
     </table>
 </div>
+<?php \App.Core\View::getInstance()->endSection(); ?>

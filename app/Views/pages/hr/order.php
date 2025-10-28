@@ -1,8 +1,7 @@
 <?php
 // app/Views/pages/hr/order.php
-$this->layout('layouts/app', ['title' => '인사 발령 등록']);
+\App\Core\View::getInstance()->startSection('content');
 ?>
-
 <div class="container-fluid">
     <div class="row">
         <div class="col-lg-8">
@@ -65,3 +64,4 @@ $this->layout('layouts/app', ['title' => '인사 발령 등록']);
         </div>
     </div>
 </div>
+<?php \App\Core\View::getInstance()->endSection(); ?>

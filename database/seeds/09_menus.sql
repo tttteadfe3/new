@@ -20,6 +20,7 @@ INSERT INTO `sys_menus` (`id`, `parent_id`, `name`, `url`, `icon`, `permission_k
 (921, 920, '연차 부여/계산', '/leaves/granting', 'ri-user-add-line', 'leave.manage_entitlement', 10),
 (922, 920, '연차 신청 승인', '/leaves/approval', 'ri-check-double-line', 'leave.approve', 20),
 (923, 920, '직원 연차 내역', '/leaves/history', 'ri-user-search-line', 'leave.view_all', 30),
+(925, 920, '인사 발령 등록', '/hr/order/create', 'ri-user-follow-line', 'employee.assign', 35),
 (924, 920, '휴일/근무일 설정', '/holidays', 'ri-calendar-2-line', 'holiday.manage', 40),
 (930, 900, '사이트 관리', '#', 'ri-article-line', '', 30),
 (931, 930, '공지사항 관리', '/admin/notices', 'ri-megaphone-line', NULL, 10), -- 'notice_admin' was not in the original list, so setting to NULL for now
