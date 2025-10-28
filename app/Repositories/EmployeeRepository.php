@@ -322,13 +322,21 @@ class EmployeeRepository {
                 ':id' => $employeeId
             ]);
 
-            // 2. 연결된 사용자 계정 비활성화
-            $sqlUser = "UPDATE sys_users SET status = 'inactive' WHERE employee_id = :employee_id";
-            $this->db->execute($sqlUser, [':employee_id' => $employeeId]);
+            // 2. employee_id에 연결된 user_id를 먼저 조회합니다.
+            $user = $this->db->fetchOne("SELECT id FROM sys_users WHERE employee_id = :employee_id", [':employee_id' => $employeeId]);
 
-            // 3. 연결된 사용자의 모든 역할(권한) 제거
-            $sqlDeleteRoles = "DELETE FROM sys_user_roles WHERE user_id = (SELECT id FROM sys_users WHERE employee_id = :employee_id)";
-            $this->db->execute($sqlDeleteRoles, [':employee_id' => $employeeId]);
+            // 3. 연결된 사용자가 있는 경우에만 후속 조치를 처리합니다.
+            if ($user && $user['id']) {
+                $userId = $user['id'];
+
+                // 3-1. 사용자 계정 비활성화
+                $sqlUser = "UPDATE sys_users SET status = 'inactive' WHERE id = :user_id";
+                $this->db->execute($sqlUser, [':user_id' => $userId]);
+
+                // 3-2. 사용자의 모든 역할(권한) 제거
+                $sqlDeleteRoles = "DELETE FROM sys_user_roles WHERE user_id = :user_id";
+                $this->db->execute($sqlDeleteRoles, [':user_id' => $userId]);
+            }
 
             $this->db->commit();
             return true;

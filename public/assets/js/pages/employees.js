@@ -1,46 +1,37 @@
 class EmployeesPage extends BasePage {
     constructor() {
-        super(); // No specific config needed as we'll use resource-based URLs
-
+        super();
         this.state = {
             ...this.state,
             allDepartments: [],
             allPositions: [],
-            employeeModal: null
+            currentEmployee: null,
+            viewMode: 'welcome', // 'welcome', 'view', 'edit', 'create'
         };
     }
 
     initializeApp() {
         this.cacheDOMElements();
-        this.state.employeeModal = new bootstrap.Modal(document.getElementById('employee-modal'));
         this.setupEventListeners();
         this.loadInitialData();
     }
 
     cacheDOMElements() {
         this.elements = {
-            tableBody: document.getElementById('employee-table-body'),
+            listContainer: document.getElementById('employee-list-container'),
+            detailsContainer: document.getElementById('employee-details-container'),
             addBtn: document.getElementById('add-employee-btn'),
-            form: document.getElementById('employee-form'),
-            modalTitle: document.getElementById('modal-title'),
-            historyContainer: document.getElementById('change-history-container'),
-            // View Modal elements
-            viewModal: new bootstrap.Modal(document.getElementById('view-employee-modal')),
-            viewModalBody: document.getElementById('view-employee-modal-body'),
-            viewModalEditBtn: document.getElementById('modal-edit-btn'),
-            viewModalTerminateBtn: document.getElementById('modal-terminate-btn'),
-            historySeparator: document.getElementById('history-separator'),
-            historyList: document.getElementById('history-log-list'),
             filterDepartment: document.getElementById('filter-department'),
             filterPosition: document.getElementById('filter-position'),
-            filterStatus: document.getElementById('filter-status')
+            filterStatus: document.getElementById('filter-status'),
+            noResultDiv: document.getElementById('no-employee-result'),
         };
     }
 
     setupEventListeners() {
-        this.elements.addBtn.addEventListener('click', () => this.openEmployeeModal());
-        this.elements.tableBody.addEventListener('click', (e) => this.handleTableClick(e));
-        this.elements.form.addEventListener('submit', (e) => this.handleFormSubmit(e));
+        this.elements.addBtn.addEventListener('click', () => this.handleCreateClick());
+        this.elements.listContainer.addEventListener('click', (e) => this.handleListClick(e));
+        this.elements.detailsContainer.addEventListener('click', (e) => this.handleDetailsClick(e));
 
         this.elements.filterDepartment.addEventListener('change', () => this.loadEmployees());
         this.elements.filterPosition.addEventListener('change', () => this.loadEmployees());
@@ -49,21 +40,18 @@ class EmployeesPage extends BasePage {
 
     async loadInitialData() {
         try {
-            // Fetch dropdown data and then load the main employee list
             const response = await this.apiCall('/employees/initial-data');
             const { departments, positions } = response.data;
-
             this.state.allDepartments = departments;
             this.state.allPositions = positions;
 
-            this.populateDropdowns([this.elements.form.department_id, this.elements.filterDepartment], this.state.allDepartments, '부서 선택');
-            this.populateDropdowns([this.elements.form.position_id, this.elements.filterPosition], this.state.allPositions, '직급 선택');
+            this.populateDropdown(this.elements.filterDepartment, this.state.allDepartments, '모든 부서');
+            this.populateDropdown(this.elements.filterPosition, this.state.allPositions, '모든 직급');
 
-            // Now, load the employees with the current filters
             await this.loadEmployees();
         } catch (error) {
-            console.error('Error loading initial data:', error);
-            this.elements.tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">초기 정보 로딩 실패: ${error.message}</td></tr>`;
+            Toast.error('초기 데이터 로딩 실패');
+            this.elements.listContainer.innerHTML = '<p class="text-danger p-3">목록 로딩에 실패했습니다.</p>';
         }
     }
 
@@ -77,180 +65,227 @@ class EmployeesPage extends BasePage {
 
         try {
             const response = await this.apiCall(`/employees?${params.toString()}`);
-            this.renderEmployeeTable(response.data);
+            this.renderEmployeeList(response.data);
+            this.renderWelcomeView();
         } catch (error) {
-            console.error('Error loading employees:', error);
-            this.elements.tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">목록 로딩 실패: ${error.message}</td></tr>`;
+            Toast.error('직원 목록 로딩 실패');
+            this.elements.listContainer.innerHTML = `<p class="text-danger p-3">목록 로딩 실패: ${error.message}</p>`;
         }
     }
 
-    renderEmployeeTable(employeeList) {
-        this.elements.tableBody.innerHTML = '';
+    renderEmployeeList(employeeList) {
+        this.elements.listContainer.innerHTML = '';
         if (!employeeList || employeeList.length === 0) {
-            this.elements.tableBody.innerHTML = `<tr><td colspan="8" class="text-center">해당 조건의 직원이 없습니다.</td></tr>`;
+            this.elements.noResultDiv.style.display = 'block';
             return;
         }
+        this.elements.noResultDiv.style.display = 'none';
 
-        const rowsHtml = employeeList.map(employee => {
-            const linkedUser = employee.nickname ? `<span class="badge bg-primary">${this.sanitizeHTML(employee.nickname)}</span>` : '<span class="text-muted"><i>없음</i></span>';
-            const statusInfo = employee.profile_update_status === '대기' ? `<span class="badge bg-warning ms-2">수정 요청</span>`
-                            : (employee.profile_update_status === '반려' ? `<span class="badge bg-danger ms-2">반려됨</span>` : '');
-
-            const terminationDate = employee.termination_date ? `<span class="text-danger">${this.sanitizeHTML(employee.termination_date)}</span>` : '';
-
-            let actionButtonsHtml = `<button class="btn btn-primary btn-sm view-btn" data-id="${employee.id}">정보 보기</button>`;
-
-            if (employee.profile_update_status === '대기') {
-                 actionButtonsHtml += `
-                    <button class="btn btn-success btn-sm approve-btn ms-1" data-id="${employee.id}">승인</button>
-                    <button class="btn btn-danger btn-sm reject-btn ms-1" data-id="${employee.id}">반려</button>
-                 `;
-            }
-
-            return `
-                <tr>
-                    <td>${this.sanitizeHTML(employee.name)} ${statusInfo}</td>
-                    <td>${this.sanitizeHTML(employee.department_name) || '<i>미지정</i>'}</td>
-                    <td>${this.sanitizeHTML(employee.position_name) || '<i>미지정</i>'}</td>
-                    <td>${this.sanitizeHTML(employee.employee_number)}</td>
-                    <td>${this.sanitizeHTML(employee.hire_date)}</td>
-                    <td>${terminationDate}</td>
-                    <td>${linkedUser}</td>
-                    <td class="text-nowrap">${actionButtonsHtml}</td>
-                </tr>`;
-        }).join('');
-        this.elements.tableBody.innerHTML = rowsHtml;
+        const listHtml = employeeList.map(employee => `
+            <a href="#" class="list-group-item list-group-item-action" data-id="${employee.id}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${this.sanitizeHTML(employee.name)}</h6>
+                    <small>${this.sanitizeHTML(employee.position_name) || '미지정'}</small>
+                </div>
+                <p class="mb-1">${this.sanitizeHTML(employee.department_name) || '미지정'}</p>
+                ${employee.termination_date ? `<small class="text-danger">퇴사: ${this.sanitizeHTML(employee.termination_date)}</small>` : ''}
+            </a>
+        `).join('');
+        this.elements.listContainer.innerHTML = listHtml;
     }
 
-    openEmployeeModal(employeeData = null) {
-        this.elements.form.reset();
-        this.elements.historyContainer.classList.add('d-none');
-        this.elements.historySeparator.classList.add('d-none');
-        this.elements.historyList.innerHTML = '';
+    // --- View Rendering ---
 
-        const basicInfoFields = ['name', 'employee_number', 'department_id', 'position_id', 'hire_date'];
-
-        if (employeeData) { // 수정 모드
-            this.elements.modalTitle.textContent = '직원 정보 수정';
-
-            basicInfoFields.forEach(field => {
-                if(this.elements.form[field]) this.elements.form[field].disabled = true;
-            });
-
-            Object.keys(employeeData).forEach(key => {
-                const formElement = this.elements.form[key];
-                if (formElement) {
-                    formElement.value = employeeData[key] || '';
-                }
-            });
-            this.elements.form.id.value = employeeData.id;
-
-        } else { // 신규 등록 모드
-            this.elements.modalTitle.textContent = '신규 직원 정보 등록';
-            this.elements.form.id.value = '';
-
-            [...this.elements.form.elements].forEach(el => el.disabled = false);
-            this.elements.form.employee_number.readOnly = true;
-            this.elements.form.employee_number.placeholder = '입사일 지정 후 자동 생성';
-        }
-
-        this.state.employeeModal.show();
+    renderWelcomeView() {
+        this.elements.detailsContainer.innerHTML = `
+            <div class="text-center p-5">
+                <i class="bi bi-person-circle fs-1 text-muted"></i>
+                <p class="mt-3 text-muted">왼쪽 목록에서 직원을 선택하거나 '신규 등록' 버튼을 클릭하여 시작하세요.</p>
+            </div>
+        `;
     }
 
-    async handleTableClick(e) {
-        const target = e.target;
-        const employeeId = target.dataset.id;
-        if (!employeeId) return;
-
-        if (target.classList.contains('view-btn')) {
-            this.openViewModal(employeeId);
-        } else if (target.classList.contains('approve-btn')) {
-            this.approveProfileUpdate(employeeId);
-        } else if (target.classList.contains('reject-btn')) {
-            this.rejectProfileUpdate(employeeId);
-        }
-    }
-
-    async openViewModal(employeeId) {
+    async renderDetailsView(employeeId) {
         try {
             const response = await this.apiCall(`/employees/${employeeId}`);
-            const employee = response.data;
-            this.state.currentViewingEmployee = employee; // 현재 직원 정보 저장
+            this.state.currentEmployee = response.data;
+            const employee = this.state.currentEmployee;
 
-            const modalBody = this.elements.viewModalBody;
-            modalBody.innerHTML = `
+            const isTerminated = !!employee.termination_date;
+            const buttonsHtml = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="/hr/order/create?employee_id=${employee.id}" class="btn btn-info" ${isTerminated ? 'disabled' : ''}>인사발령</a>
+                        <button class="btn btn-warning terminate-btn" data-id="${employee.id}" ${isTerminated ? 'disabled' : ''}>퇴사 처리</button>
+                    </div>
+                    <div>
+                        <button class="btn btn-secondary cancel-btn">목록으로</button>
+                        <button class="btn btn-primary edit-btn" data-id="${employee.id}" ${isTerminated ? 'disabled' : ''}>수정하기</button>
+                    </div>
+                </div>
+            `;
+
+            this.elements.detailsContainer.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">${this.sanitizeHTML(employee.name)} (${this.sanitizeHTML(employee.employee_number)})</h4>
+                    <div>${employee.nickname ? `<span class="badge bg-primary">${this.sanitizeHTML(employee.nickname)}</span>` : ''}</div>
+                </div>
                 <dl class="row">
-                    <dt class="col-sm-3">이름</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.name)}</dd>
-                    <dt class="col-sm-3">사번</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.employee_number)}</dd>
                     <dt class="col-sm-3">부서</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.department_name)}</dd>
                     <dt class="col-sm-3">직급</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.position_name)}</dd>
                     <dt class="col-sm-3">입사일</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.hire_date)}</dd>
+                    ${isTerminated ? `<dt class="col-sm-3 text-danger">퇴사일</dt><dd class="col-sm-9 text-danger">${this.sanitizeHTML(employee.termination_date)}</dd>` : ''}
                     <hr class="my-2">
                     <dt class="col-sm-3">연락처</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.phone_number) || '<i>-</i>'}</dd>
                     <dt class="col-sm-3">주소</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.address) || '<i>-</i>'}</dd>
-                    <hr class="my-2">
-                    <dt class="col-sm-3">비상연락처</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.emergency_contact_name)} (${this.sanitizeHTML(employee.emergency_contact_relation) || '관계 미지정'})</dd>
-                     <hr class="my-2">
-                    <dt class="col-sm-3">상의 사이즈</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.clothing_top_size) || '<i>-</i>'}</dd>
-                    <dt class="col-sm-3">하의 사이즈</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.clothing_bottom_size) || '<i>-</i>'}</dd>
-                    <dt class="col-sm-3">신발 사이즈</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.shoe_size) || '<i>-</i>'}</dd>
                 </dl>
+                <hr class="my-3">
+                ${buttonsHtml}
             `;
-
-            // 퇴사한 직원이면 수정/퇴사 버튼 비활성화
-            const isTerminated = !!employee.termination_date;
-            this.elements.viewModalEditBtn.disabled = isTerminated;
-            this.elements.viewModalTerminateBtn.disabled = isTerminated;
-
-            this.elements.viewModalEditBtn.onclick = () => this.handleEditFromViewModal();
-            this.elements.viewModalTerminateBtn.onclick = () => this.handleTerminateClick(employeeId);
-
-            this.elements.viewModal.show();
+            this.state.viewMode = 'view';
         } catch (error) {
-            Toast.error('직원 상세 정보를 불러오는 데 실패했습니다.');
+            Toast.error('직원 상세 정보 로딩 실패');
         }
     }
 
-    async handleEditFromViewModal() {
-        if (!this.state.currentViewingEmployee) return;
-        const employeeId = this.state.currentViewingEmployee.id;
+    renderFormView(employee = null) {
+        this.state.viewMode = employee ? 'edit' : 'create';
+        const isCreate = !employee;
+
+        const formHtml = `
+            <h4>${isCreate ? '신규 직원 등록' : '직원 정보 수정'}</h4>
+            <form id="employee-form">
+                <input type="hidden" name="id" value="${employee?.id || ''}">
+
+                <!-- 기본 정보 (신규 시에만 입력) -->
+                <fieldset ${isCreate ? '' : 'disabled'}>
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label for="name" class="form-label">이름</label><input type="text" class="form-control" name="name" value="${this.sanitizeHTML(employee?.name || '')}" required></div>
+                        <div class="col-md-6 mb-3"><label for="employee_number" class="form-label">사번</label><input type="text" class="form-control" value="${this.sanitizeHTML(employee?.employee_number || '')}" readonly placeholder="자동 생성"></div>
+                        <div class="col-md-6 mb-3"><label for="department_id" class="form-label">부서</label><select class="form-select" name="department_id" id="form-department-id" required></select></div>
+                        <div class="col-md-6 mb-3"><label for="position_id" class="form-label">직급</label><select class="form-select" name="position_id" id="form-position-id" required></select></div>
+                        <div class="col-md-12 mb-3"><label for="hire_date" class="form-label">입사일</label><input type="date" class="form-control" name="hire_date" value="${this.sanitizeHTML(employee?.hire_date || '')}" required></div>
+                    </div>
+                </fieldset>
+                <hr>
+
+                <!-- 수정 가능 정보 -->
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label for="phone_number" class="form-label">연락처</label><input type="tel" class="form-control" name="phone_number" value="${this.sanitizeHTML(employee?.phone_number || '')}"></div>
+                    <div class="col-md-6 mb-3"><label for="address" class="form-label">주소</label><input type="text" class="form-control" name="address" value="${this.sanitizeHTML(employee?.address || '')}"></div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary cancel-btn">취소</button>
+                    <button type="submit" class="btn btn-primary">${isCreate ? '등록하기' : '저장하기'}</button>
+                </div>
+            </form>
+        `;
+        this.elements.detailsContainer.innerHTML = formHtml;
+
+        // Populate dropdowns for the form
+        if (isCreate) {
+            this.populateDropdown(document.getElementById('form-department-id'), this.state.allDepartments, '부서 선택');
+            this.populateDropdown(document.getElementById('form-position-id'), this.state.allPositions, '직급 선택');
+            document.getElementById('form-department-id').value = employee?.department_id || '';
+            document.getElementById('form-position-id').value = employee?.position_id || '';
+        }
+    }
+
+    // --- Event Handlers ---
+
+    handleListClick(e) {
+        e.preventDefault();
+        const target = e.target.closest('.list-group-item');
+        if (target) {
+            const employeeId = target.dataset.id;
+            // Highlight active item
+            document.querySelectorAll('#employee-list-container .list-group-item').forEach(el => el.classList.remove('active'));
+            target.classList.add('active');
+            this.renderDetailsView(employeeId);
+        }
+    }
+
+    handleDetailsClick(e) {
+        const target = e.target;
+        const employeeId = target.dataset.id || this.state.currentEmployee?.id;
+
+        if (target.classList.contains('edit-btn')) {
+            this.renderFormView(this.state.currentEmployee);
+        } else if (target.classList.contains('terminate-btn')) {
+            this.handleTerminateClick(employeeId);
+        } else if (target.classList.contains('cancel-btn')) {
+            if (this.state.viewMode === 'edit') {
+                 this.renderDetailsView(employeeId);
+            } else {
+                 this.renderWelcomeView();
+                 document.querySelectorAll('#employee-list-container .list-group-item').forEach(el => el.classList.remove('active'));
+            }
+        } else if (target.closest('#employee-form')) {
+            if (e.type === 'submit') {
+                this.handleFormSubmit(e);
+            }
+        }
+    }
+
+    handleCreateClick() {
+        document.querySelectorAll('#employee-list-container .list-group-item').forEach(el => el.classList.remove('active'));
+        this.renderFormView();
+    }
+
+    async handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const rawData = Object.fromEntries(formData.entries());
+        const employeeId = rawData.id;
+
+        const method = employeeId ? 'PUT' : 'POST';
+        const url = employeeId ? `/employees/${employeeId}` : '/employees';
+
+        let dataToSend;
+        if (method === 'PUT') {
+            dataToSend = {
+                id: employeeId,
+                phone_number: rawData.phone_number,
+                address: rawData.address,
+            };
+        } else {
+            dataToSend = rawData;
+        }
 
         try {
-            const historyRes = await this.apiCall(`/employees/${employeeId}/history`);
-            this.elements.viewModal.hide();
-            this.openEmployeeModal(this.state.currentViewingEmployee);
-            this.renderHistory(historyRes.data);
+            const response = await this.apiCall(url, { method, body: dataToSend });
+            Toast.success(response.message);
+            await this.loadEmployees();
+            if (response.data && response.data.id) {
+                this.renderDetailsView(response.data.id);
+            } else if (employeeId) {
+                this.renderDetailsView(employeeId);
+            }
         } catch (error) {
-             Toast.error('직원 변경 이력을 불러오는 데 실패했습니다.');
+            Toast.error(`저장 실패: ${error.message}`);
         }
     }
 
     async handleTerminateClick(employeeId) {
-        this.elements.viewModal.hide(); // 정보 모달 먼저 닫기
-
         const { value: terminationDate } = await Swal.fire({
             title: '퇴사 처리',
             html: `<p>퇴사일을 지정해주세요.</p>`,
             input: 'date',
-            inputPlaceholder: '퇴사일을 선택하세요',
             showCancelButton: true,
-            cancelButtonText: '취소',
             confirmButtonText: '확인',
+            cancelButtonText: '취소',
             didOpen: () => {
-                const today = new Date().toISOString().split('T')[0];
-                Swal.getInput().value = today;
+                Swal.getInput().value = new Date().toISOString().split('T')[0];
             },
-            inputValidator: (value) => {
-                if (!value) {
-                    return '퇴사일을 지정해야 합니다.';
-                }
-            }
+            inputValidator: (value) => !value && '퇴사일을 지정해야 합니다.'
         });
 
         if (terminationDate) {
-             const result = await Confirm.fire({
+            const result = await Confirm.fire({
                 title: '퇴사 처리 확인',
-                text: `정말로 이 직원을 ${terminationDate}일자로 퇴사 처리하시겠습니까? 퇴사 처리 후에는 복구할 수 없습니다.`
+                text: `정말로 이 직원을 ${terminationDate}일자로 퇴사 처리하시겠습니까?`
             });
             if (!result.isConfirmed) return;
 
@@ -262,116 +297,20 @@ class EmployeesPage extends BasePage {
                 Toast.success(response.message);
                 this.loadEmployees();
             } catch (error) {
-                Toast.error(`퇴사 처리 중 오류: ${error.message}`);
+                Toast.error(`퇴사 처리 실패: ${error.message}`);
             }
         }
     }
 
-    renderHistory(historyData) {
-        if (historyData && historyData.length > 0) {
-            const historyHtml = historyData.map(log => `
-                <div class="list-group-item">
-                    <p class="mb-1"><strong>${this.sanitizeHTML(log.field_name)}:</strong> <span class="text-danger text-decoration-line-through">${this.sanitizeHTML(log.old_value)}</span> → <span class="text-success fw-bold">${this.sanitizeHTML(log.new_value)}</span></p>
-                    <small class="text-muted">${log.changed_at} by ${this.sanitizeHTML(log.changer_name) || 'System'}</small>
-                </div>`
-            ).join('');
-            this.elements.historyList.innerHTML = historyHtml;
-            this.elements.historySeparator.classList.remove('d-none');
-            this.elements.historyContainer.classList.remove('d-none');
-        }
-    }
-
-    async approveProfileUpdate(employeeId) {
-        const result = await Confirm.fire('승인 확인', '이 사용자의 프로필 변경 요청을 승인하시겠습니까?');
-        if (!result.isConfirmed) return;
-
-        try {
-            const response = await this.apiCall(`/employees/${employeeId}/approve-update`, { method: 'POST' });
-            Toast.success(response.message);
-            this.loadEmployees();
-        } catch (error) {
-            Toast.error('승인 처리 중 오류가 발생했습니다.');
-        }
-    }
-
-    async rejectProfileUpdate(employeeId) {
-        const { value: reason } = await Swal.fire({
-            title: '프로필 변경 요청 반려',
-            input: 'text',
-            inputPlaceholder: '반려 사유를 입력해주세요.',
-            showCancelButton: true,
-            cancelButtonText: '취소',
-            confirmButtonText: '확인',
-            inputValidator: (value) => !value && '반려 사유를 반드시 입력해야 합니다.'
+    // --- Utilities ---
+    populateDropdown(select, data, defaultOptionText) {
+        const currentValue = select.value;
+        select.innerHTML = `<option value="">${defaultOptionText}</option>`;
+        data.forEach(item => {
+            select.insertAdjacentHTML('beforeend', `<option value="${item.id}">${this.sanitizeHTML(item.name)}</option>`);
         });
-
-        if (reason) {
-            try {
-                const response = await this.apiCall(`/employees/${employeeId}/reject-update`, {
-                    method: 'POST', body: { reason: reason }
-                });
-                Toast.success(response.message);
-                this.loadEmployees();
-            } catch (error) {
-                Toast.error(`반려 처리 중 오류: ${error.message}`);
-            }
-        }
+        select.value = currentValue;
     }
-
-    async handleFormSubmit(e) {
-        e.preventDefault();
-        const formData = new FormData(this.elements.form);
-        const rawData = Object.fromEntries(formData.entries());
-        const employeeId = rawData.id;
-
-        let dataToSend;
-        const method = employeeId ? 'PUT' : 'POST';
-        const url = employeeId ? `/employees/${employeeId}` : '/employees';
-
-        if (method === 'PUT') {
-            // 수정 시에는 수정 가능한 필드만 포함
-            dataToSend = {
-                id: employeeId,
-                phone_number: rawData.phone_number,
-                address: rawData.address,
-                emergency_contact_name: rawData.emergency_contact_name,
-                emergency_contact_relation: rawData.emergency_contact_relation,
-                clothing_top_size: rawData.clothing_top_size,
-                clothing_bottom_size: rawData.clothing_bottom_size,
-                shoe_size: rawData.shoe_size,
-            };
-        } else {
-            // 신규 등록 시에는 모든 필드 포함
-            dataToSend = rawData;
-        }
-
-        try {
-            const response = await this.apiCall(url, { method, body: dataToSend });
-            Toast.success(response.message);
-            this.state.employeeModal.hide();
-            this.loadEmployees();
-        } catch (error) {
-            Toast.error(`저장 처리 중 오류: ${error.message}`);
-        }
-    }
-
-    populateDropdowns(selects, data, defaultOptionText) {
-        selects.forEach(select => {
-            const currentValue = select.value;
-            select.innerHTML = `<option value="">${defaultOptionText}</option>`;
-            data.forEach(item => {
-                select.insertAdjacentHTML('beforeend', `<option value="${item.id}">${this.sanitizeHTML(item.name)}</option>`);
-            });
-            select.value = currentValue;
-        });
-    }
-
-    sanitizeHTML = (str) => {
-        if (str === null || str === undefined) return '';
-        const temp = document.createElement('div');
-        temp.textContent = str;
-        return temp.innerHTML;
-    };
 }
 
 new EmployeesPage();
