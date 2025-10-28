@@ -108,10 +108,13 @@ class EmployeeService
             throw new \InvalidArgumentException('직원을 찾을 수 없습니다');
         }
 
-        // Employee 모델을 사용하여 데이터 유효성 검사
-        $employee = Employee::make($data);
+        // 기존 데이터와 요청 데이터를 병합하여 완전한 객체를 만듭니다.
+        $updatedData = array_merge($oldData, $data);
+
+        // 병합된 데이터로 모델의 유효성을 검사합니다.
+        $employee = Employee::make($updatedData);
         if (!$employee->validate()) {
-            throw new \InvalidArgumentException('잘못된 직원 데이터');
+            throw new \InvalidArgumentException('잘못된 직원 데이터: 유효성 검사 실패');
         }
 
         $data['id'] = $id;
@@ -142,28 +145,6 @@ class EmployeeService
         }
 
         return $this->employeeRepository->delete($id);
-    }
-
-    /**
-     * 직원을 퇴사 처리합니다.
-     * @param int $employeeId
-     * @param string $terminationDate
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function terminateEmployee(int $employeeId, string $terminationDate): bool
-    {
-        $employee = $this->employeeRepository->findById($employeeId);
-        if (!$employee) {
-            throw new \InvalidArgumentException('직원을 찾을 수 없습니다.');
-        }
-
-        // 간단한 날짜 유효성 검사
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $terminationDate)) {
-            throw new \InvalidArgumentException('잘못된 날짜 형식입니다. (YYYY-MM-DD)');
-        }
-
-        return $this->employeeRepository->setTerminationDate($employeeId, $terminationDate);
     }
 
     /**
@@ -250,6 +231,9 @@ class EmployeeService
     private function logChanges(int $employeeId, array $oldData, array $newData, int $changerId): void
     {
         $fields = [
+            'name' => '이름',
+            'employee_number' => '사번',
+            'hire_date' => '입사일',
             'phone_number' => '연락처', 
             'address' => '주소',
             'emergency_contact_name' => '비상연락처', 
@@ -257,6 +241,8 @@ class EmployeeService
             'clothing_top_size' => '상의', 
             'clothing_bottom_size' => '하의', 
             'shoe_size' => '신발',
+            'department_id' => '부서',
+            'position_id' => '직급'
         ];
 
         foreach ($fields as $key => $label) {
@@ -264,6 +250,17 @@ class EmployeeService
             $newValue = $newData[$key] ?? null;
             
             if (isset($newData[$key]) && (string)$oldValue !== (string)$newValue) {
+                // 로깅을 위해 부서 및 직책 ID를 이름으로 변환
+                if ($key === 'department_id') {
+                    $oldValue = $oldData['department_name'] ?? $oldValue;
+                    $department = $this->departmentRepository->findById($newValue);
+                    $newValue = $department ? $department->name : $newValue;
+                } elseif ($key === 'position_id') {
+                    $oldValue = $oldData['position_name'] ?? $oldValue;
+                    $position = $this->positionRepository->findById($newValue);
+                    $newValue = $position ? $position->name : $newValue;
+                }
+
                 $this->employeeChangeLogRepository->insert(
                     $employeeId, 
                     $changerId, 

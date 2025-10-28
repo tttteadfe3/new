@@ -113,9 +113,14 @@ class EmployeesPage extends BasePage {
 
     async renderDetailsView(employeeId) {
         try {
-            const response = await this.apiCall(`/employees/${employeeId}`);
-            this.state.currentEmployee = response.data;
+            const [detailsRes, historyRes] = await Promise.all([
+                this.apiCall(`/employees/${employeeId}`),
+                this.apiCall(`/employees/${employeeId}/history`)
+            ]);
+
+            this.state.currentEmployee = detailsRes.data;
             const employee = this.state.currentEmployee;
+            const history = historyRes.data;
 
             // If there's a pending update, render the approval view instead
             if (employee.profile_update_status === '대기' && employee.pending_profile_data) {
@@ -145,13 +150,42 @@ class EmployeesPage extends BasePage {
                     <dt class="col-sm-3">연락처</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.phone_number) || '<i>-</i>'}</dd>
                     <dt class="col-sm-3">주소</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.address) || '<i>-</i>'}</dd>
                 </dl>
+
+                <div id="change-history-container" class="mt-4"></div>
+
                 <hr class="my-3">
                 ${buttonsHtml}
             `;
+
+            this.renderHistory(history);
             this.state.viewMode = 'view';
         } catch (error) {
             Toast.error('직원 상세 정보 로딩 실패');
         }
+    }
+
+    renderHistory(historyData) {
+        const container = document.getElementById('change-history-container');
+        if (!container) return;
+
+        if (!historyData || historyData.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const historyHtml = historyData.map(log => `
+            <div class="list-group-item">
+                <p class="mb-1"><strong>${this.sanitizeHTML(log.field_name)}:</strong> <span class="text-danger text-decoration-line-through">${this.sanitizeHTML(log.old_value || '없음')}</span> → <span class="text-success fw-bold">${this.sanitizeHTML(log.new_value || '없음')}</span></p>
+                <small class="text-muted">${log.changed_at} by ${this.sanitizeHTML(log.changer_name) || 'System'}</small>
+            </div>`
+        ).join('');
+
+        container.innerHTML = `
+            <h5><i class="bi bi-clock-history"></i> 변경 이력</h5>
+            <div class="list-group list-group-flush border" style="max-height: 200px; overflow-y: auto;">
+                ${historyHtml}
+            </div>
+        `;
     }
 
     renderApprovalView(employee) {
