@@ -127,6 +127,4 @@ class HrOrderPage extends BasePage {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    new HrOrderPage();
-});
+new HrOrderPage();
