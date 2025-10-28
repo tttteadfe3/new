@@ -40,6 +40,19 @@ abstract class BaseApiController extends BaseController
     }
 
     /**
+     * API 요청을 기록하기 위해 부모 메서드를 오버라이드합니다.
+     */
+    protected function logRequest(): void
+    {
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN';
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+        $body = file_get_contents('php://input');
+
+        $this->activityLogger->logApiCall($method, $uri, $body);
+    }
+
+
+    /**
      * 요청이 AJAX 요청인지 확인합니다
      */
     protected function isAjaxRequest(): bool

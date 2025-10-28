@@ -23,25 +23,52 @@ class ActivityLogger
     }
 
     /**
-     * 사용자의 메뉴 페이지 접근 활동을 기록합니다.
-     * @param string $pageTitle 접근한 페이지의 제목
+     * 공통 로그 기록 메서드
+     * @param string $action
+     * @param string $details
      */
-    public function logMenuAccess(string $pageTitle): void
+    private function _log(string $action, string $details): void
     {
-        if ($this->sessionManager->has('user')) {
-            $user = $this->sessionManager->get('user');
-            
-            // UserRepository를 통해 최신 닉네임 조회
-            $currentUser = $this->userRepository->findById($user['id']);
-            $userName = $currentUser['nickname'] ?? $user['nickname'];
+        $user = $this->sessionManager->get('user');
+        $userId = $user['id'] ?? null;
+        $userName = 'Unauthenticated';
 
-            $this->logRepository->insert([
-                ':user_id' => $user['id'],
-                ':user_name' => $userName,
-                ':action' => '메뉴 접근',
-                ':details' => "페이지: " . $pageTitle,
-                ':ip_address' => $_SERVER['REMOTE_ADDR']
-            ]);
+        if ($userId) {
+            $currentUser = $this->userRepository->findById($userId);
+            $userName = $currentUser['nickname'] ?? ($user['nickname'] ?? 'Unknown');
         }
+
+        $this->logRepository->insert([
+            'user_id' => $userId,
+            'user_name' => $userName,
+            'action' => $action,
+            'details' => $details,
+            'ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'N/A'
+        ]);
+    }
+
+
+    /**
+     * 사용자의 웹 페이지 접근 활동을 기록합니다.
+     * @param string $uri 접근한 URI
+     */
+    public function logPageAccess(string $uri): void
+    {
+        $this->_log('페이지 접근', "URI: {$uri}");
+    }
+
+    /**
+     * 사용자의 API 호출 활동을 기록합니다.
+     * @param string $method HTTP 메소드
+     * @param string $uri 호출한 URI
+     * @param string|null $body 요청 본문
+     */
+    public function logApiCall(string $method, string $uri, ?string $body): void
+    {
+        $details = "Method: {$method}, URI: {$uri}";
+        if ($body && in_array(strtoupper($method), ['POST', 'PUT', 'PATCH', 'DELETE'])) {
+            $details .= "\nBody: " . $body;
+        }
+        $this->_log('API 호출', $details);
     }
 }

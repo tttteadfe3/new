@@ -3,6 +3,25 @@
 이 문서는 프로젝트의 주요 변경 사항, 특히 기존 코드베이스에 영향을 줄 수 있는 중요한 수정 내역을 기록합니다. 모든 개발 에이전트는 코드 변경 시 이 문서를 참조하고, 자신의 변경 사항을 아래 형식에 맞게 기록해야 합니다.
 
 ---
+## [1.4.5 - 2025-10-28]
+
+### ✨ 새로운 기능 (Features)
+- **사이트 전체 활동 로깅 기능 추가**:
+  - **설명**: 모든 사용자의 사이트 이용 행위(페이지 접근, API 호출)를 추적하고 감사할 수 있도록 `sys_activity_logs` 테이블에 기록하는 기능을 구현했습니다.
+  - **변경 내용**:
+    - `ActivityLogger` 서비스를 확장하여 페이지 접근(`logPageAccess`) 및 API 호출(`logApiCall`)을 기록하는 메서드를 추가했습니다.
+    - `Web/BaseController`와 `Api/BaseApiController`의 생성자에서 `ActivityLogger`를 호출하여, 모든 웹 페이지 요청과 API 호출이 자동으로 기록되도록 수정했습니다.
+    - 로그인, 정적 에셋(.js, .css) 등 불필요한 요청은 로그 대상에서 제외하여 효율성을 높였습니다.
+  - **영향 범위**: `app/Services/ActivityLogger.php`, `app/Controllers/Web/BaseController.php`, `app/Controllers/Api/BaseApiController.php`
+
+### ♻️ 리팩토링 (Refactoring)
+- **활동 로그 중복 제거**:
+  - **변경 이유**: '메뉴 접근' 로그와 '페이지 접근' 로그가 중복으로 기록되는 문제를 해결하고 코드를 단순화했습니다.
+  - **변경 내용**:
+    - `ViewDataService`에서 `logMenuAccess` 메서드 호출을 제거했습니다.
+    - `ActivityLogger` 서비스에서 더 이상 사용되지 않는 `logMenuAccess` 메서드를 삭제하여 `logPageAccess`로 로깅을 일원화했습니다.
+  - **영향 범위**: `app/Services/ViewDataService.php`, `app/Services/ActivityLogger.php`
+
 ## [1.4.4 - 2025-10-28]
 
 ### ♻️ 리팩토링 (Refactoring)

@@ -46,9 +46,6 @@ class ViewDataService
 
         // 활성 메뉴를 찾아 페이지 제목을 결정합니다.
         $pageTitle = $this->findActiveMenuName($allMenus);
-        if ($pageTitle) {
-            $this->activityLogger->logMenuAccess($pageTitle);
-        }
 
         // 플래시 메시지를 가져와 데이터 배열에 추가합니다.
         $flashSuccess = $this->sessionManager->getFlash('success');
