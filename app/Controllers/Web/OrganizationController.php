@@ -15,6 +15,6 @@ class OrganizationController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/organization-chart.js");
 
         // 3. 에코로 뷰를 렌더링하고 레이아웃 지정
-        echo $this->render('organization/chart', [], 'layouts/app');
+        echo $this->render('pages/organization/chart', [], 'layouts/app');
     }
 }
