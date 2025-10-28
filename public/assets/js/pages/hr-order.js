@@ -124,7 +124,10 @@ class HrOrderPage extends BasePage {
             발령일: ${data.order_date}
         `;
 
-        const result = await Confirm.fire('인사 발령 확인', confirmationText);
+        const result = await Confirm.fire({
+            title: '인사 발령 확인',
+            html: confirmationText
+        });
         if (!result.isConfirmed) return;
 
         try {

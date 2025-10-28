@@ -38,7 +38,6 @@ $container->register(\App\Repositories\PositionRepository::class, fn($c) => new 
 $container->register(\App\Repositories\RoleRepository::class, fn($c) => new \App\Repositories\RoleRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\UserRepository::class, fn($c) => new \App\Repositories\UserRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\WasteCollectionRepository::class, fn($c) => new \App\Repositories\WasteCollectionRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\HumanResourceRepository::class, fn($c) => new \App\Repositories\HumanResourceRepository($c->resolve(Database::class)));
 
 // Register all services with their correct dependencies
 $container->register(\App\Services\ActivityLogger::class, fn($c) => new \App\Services\ActivityLogger($c->resolve(SessionManager::class), $c->resolve(\App\Repositories\LogRepository::class), $c->resolve(\App\Repositories\UserRepository::class)));
@@ -67,14 +66,6 @@ $container->register(\App\Services\HolidayService::class, fn($c) => new \App\Ser
     $c->resolve(\App\Repositories\HolidayRepository::class),
     $c->resolve(\App\Repositories\DepartmentRepository::class),
     $c->resolve(\App\Services\DataScopeService::class)
-));
-$container->register(\App\Services\HumanResourceService::class, fn($c) => new \App\Services\HumanResourceService(
-    $c->resolve(\App\Repositories\HumanResourceRepository::class),
-    $c->resolve(\App\Repositories\EmployeeRepository::class),
-    $c->resolve(\App\Repositories\DepartmentRepository::class),
-    $c->resolve(\App\Repositories\PositionRepository::class),
-    $c->resolve(\App\Repositories\EmployeeChangeLogRepository::class),
-    $c->resolve(SessionManager::class)
 ));
 $container->register(\App\Services\KakaoAuthService::class, fn($c) => new \App\Services\KakaoAuthService($c->resolve(SessionManager::class)));
 $container->register(\App\Services\LeaveService::class, fn($c) => new \App\Services\LeaveService(
@@ -130,24 +121,8 @@ $container->register(\App\Controllers\Web\AdminController::class, fn($c) => new 
     $c->resolve(\App\Services\MenuManagementService::class),
     $c->resolve(\App\Services\PositionService::class)
 ));
-$container->register(\App\Controllers\Web\HumanResourceController::class, fn($c) => new \App\Controllers\Web\HumanResourceController(
-    $c->resolve(Request::class),
-    $c->resolve(\App\Services\AuthService::class),
-    $c->resolve(\App\Services\ViewDataService::class),
-    $c->resolve(\App\Services\ActivityLogger::class),
-    $c->resolve(\App\Services\HumanResourceService::class)
-));
 
 // Register API Controllers
-$container->register(\App\Controllers\Api\HumanResourceApiController::class, fn($c) => new \App\Controllers\Api\HumanResourceApiController(
-    $c->resolve(Request::class),
-    $c->resolve(\App\Services\AuthService::class),
-    $c->resolve(\App\Services\ViewDataService::class),
-    $c->resolve(\App\Services\ActivityLogger::class),
-    $c->resolve(\App\Repositories\EmployeeRepository::class),
-    $c->resolve(JsonResponse::class),
-    $c->resolve(\App\Services\HumanResourceService::class)
-));
 $container->register(\App\Controllers\Api\OrganizationApiController::class, fn($c) => new \App\Controllers\Api\OrganizationApiController(
     $c->resolve(Request::class),
     $c->resolve(\App\Services\AuthService::class),

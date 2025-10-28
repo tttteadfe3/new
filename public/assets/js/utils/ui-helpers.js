@@ -36,16 +36,25 @@ const Toast = {
 };
 
 const Confirm = {
-    fire: (title, text) => {
-        return Swal.fire({
-            title: title,
-            text: text,
+    fire: function(options) {
+        const swalOptions = {
+            title: options.title,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
             confirmButtonText: '확인',
             cancelButtonText: '취소'
-        });
+        };
+
+        if (options.text) {
+            swalOptions.text = options.text;
+        }
+
+        if (options.html) {
+            swalOptions.html = options.html;
+        }
+
+        return Swal.fire(swalOptions);
     }
 };

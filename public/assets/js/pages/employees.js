@@ -23,8 +23,12 @@ class EmployeesPage extends BasePage {
             addBtn: document.getElementById('add-employee-btn'),
             form: document.getElementById('employee-form'),
             modalTitle: document.getElementById('modal-title'),
-            deleteBtn: document.getElementById('delete-btn'),
             historyContainer: document.getElementById('change-history-container'),
+            // View Modal elements
+            viewModal: new bootstrap.Modal(document.getElementById('view-employee-modal')),
+            viewModalBody: document.getElementById('view-employee-modal-body'),
+            viewModalEditBtn: document.getElementById('modal-edit-btn'),
+            viewModalTerminateBtn: document.getElementById('modal-terminate-btn'),
             historySeparator: document.getElementById('history-separator'),
             historyList: document.getElementById('history-log-list'),
             filterDepartment: document.getElementById('filter-department'),
@@ -92,21 +96,9 @@ class EmployeesPage extends BasePage {
             const statusInfo = employee.profile_update_status === '대기' ? `<span class="badge bg-warning ms-2">수정 요청</span>`
                             : (employee.profile_update_status === '반려' ? `<span class="badge bg-danger ms-2">반려됨</span>` : '');
 
-            const actionButtons = employee.profile_update_status === '대기'
-                ? `<button class="btn btn-success btn-sm approve-btn" data-id="${employee.id}">승인</button>
-                   <button class="btn btn-danger btn-sm reject-btn ms-1" data-id="${employee.id}">반려</button>`
-                : '';
-
             const terminationDate = employee.termination_date ? `<span class="text-danger">${this.sanitizeHTML(employee.termination_date)}</span>` : '';
-            let actionButtonsHtml = `<button class="btn btn-secondary btn-sm edit-btn" data-id="${employee.id}">수정</button>`;
 
-            if (!employee.termination_date) {
-                // 재직중인 직원에게만 인사 발령 및 퇴사 처리 버튼 표시
-                actionButtonsHtml += `
-                    <a href="/hr/order/create?employee_id=${employee.id}" class="btn btn-info btn-sm ms-1">인사발령</a>
-                    <button class="btn btn-warning btn-sm ms-1 terminate-btn" data-id="${employee.id}">퇴사처리</button>
-                `;
-            }
+            let actionButtonsHtml = `<button class="btn btn-primary btn-sm view-btn" data-id="${employee.id}">정보 보기</button>`;
 
             if (employee.profile_update_status === '대기') {
                  actionButtonsHtml += `
@@ -124,9 +116,7 @@ class EmployeesPage extends BasePage {
                     <td>${this.sanitizeHTML(employee.hire_date)}</td>
                     <td>${terminationDate}</td>
                     <td>${linkedUser}</td>
-                    <td class="text-nowrap">
-                        ${actionButtonsHtml}
-                    </td>
+                    <td class="text-nowrap">${actionButtonsHtml}</td>
                 </tr>`;
         }).join('');
         this.elements.tableBody.innerHTML = rowsHtml;
@@ -138,19 +128,15 @@ class EmployeesPage extends BasePage {
         this.elements.historySeparator.classList.add('d-none');
         this.elements.historyList.innerHTML = '';
 
-        // 기본 정보 필드 목록
         const basicInfoFields = ['name', 'employee_number', 'department_id', 'position_id', 'hire_date'];
 
         if (employeeData) { // 수정 모드
             this.elements.modalTitle.textContent = '직원 정보 수정';
-            this.elements.deleteBtn.classList.remove('d-none');
 
-            // 기본 정보 필드 비활성화
             basicInfoFields.forEach(field => {
                 if(this.elements.form[field]) this.elements.form[field].disabled = true;
             });
 
-            // 데이터 채우기
             Object.keys(employeeData).forEach(key => {
                 const formElement = this.elements.form[key];
                 if (formElement) {
@@ -161,12 +147,10 @@ class EmployeesPage extends BasePage {
 
         } else { // 신규 등록 모드
             this.elements.modalTitle.textContent = '신규 직원 정보 등록';
-            this.elements.deleteBtn.classList.add('d-none');
             this.elements.form.id.value = '';
 
-            // 모든 필드 활성화
             [...this.elements.form.elements].forEach(el => el.disabled = false);
-            this.elements.form.employee_number.readOnly = true; // 사번은 항상 readonly
+            this.elements.form.employee_number.readOnly = true;
             this.elements.form.employee_number.placeholder = '입사일 지정 후 자동 생성';
         }
 
@@ -178,27 +162,72 @@ class EmployeesPage extends BasePage {
         const employeeId = target.dataset.id;
         if (!employeeId) return;
 
-        if (target.classList.contains('edit-btn')) {
-            try {
-                const [detailsRes, historyRes] = await Promise.all([
-                    this.apiCall(`/employees/${employeeId}`),
-                    this.apiCall(`/employees/${employeeId}/history`)
-                ]);
-                this.openEmployeeModal(detailsRes.data);
-                this.renderHistory(historyRes.data);
-            } catch (error) {
-                Toast.error('직원 정보를 불러오는 데 실패했습니다.');
-            }
+        if (target.classList.contains('view-btn')) {
+            this.openViewModal(employeeId);
         } else if (target.classList.contains('approve-btn')) {
             this.approveProfileUpdate(employeeId);
         } else if (target.classList.contains('reject-btn')) {
             this.rejectProfileUpdate(employeeId);
-        } else if (target.classList.contains('terminate-btn')) {
-            this.handleTerminateClick(employeeId);
+        }
+    }
+
+    async openViewModal(employeeId) {
+        try {
+            const response = await this.apiCall(`/employees/${employeeId}`);
+            const employee = response.data;
+            this.state.currentViewingEmployee = employee; // 현재 직원 정보 저장
+
+            const modalBody = this.elements.viewModalBody;
+            modalBody.innerHTML = `
+                <dl class="row">
+                    <dt class="col-sm-3">이름</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.name)}</dd>
+                    <dt class="col-sm-3">사번</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.employee_number)}</dd>
+                    <dt class="col-sm-3">부서</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.department_name)}</dd>
+                    <dt class="col-sm-3">직급</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.position_name)}</dd>
+                    <dt class="col-sm-3">입사일</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.hire_date)}</dd>
+                    <hr class="my-2">
+                    <dt class="col-sm-3">연락처</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.phone_number) || '<i>-</i>'}</dd>
+                    <dt class="col-sm-3">주소</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.address) || '<i>-</i>'}</dd>
+                    <hr class="my-2">
+                    <dt class="col-sm-3">비상연락처</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.emergency_contact_name)} (${this.sanitizeHTML(employee.emergency_contact_relation) || '관계 미지정'})</dd>
+                     <hr class="my-2">
+                    <dt class="col-sm-3">상의 사이즈</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.clothing_top_size) || '<i>-</i>'}</dd>
+                    <dt class="col-sm-3">하의 사이즈</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.clothing_bottom_size) || '<i>-</i>'}</dd>
+                    <dt class="col-sm-3">신발 사이즈</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.shoe_size) || '<i>-</i>'}</dd>
+                </dl>
+            `;
+
+            // 퇴사한 직원이면 수정/퇴사 버튼 비활성화
+            const isTerminated = !!employee.termination_date;
+            this.elements.viewModalEditBtn.disabled = isTerminated;
+            this.elements.viewModalTerminateBtn.disabled = isTerminated;
+
+            this.elements.viewModalEditBtn.onclick = () => this.handleEditFromViewModal();
+            this.elements.viewModalTerminateBtn.onclick = () => this.handleTerminateClick(employeeId);
+
+            this.elements.viewModal.show();
+        } catch (error) {
+            Toast.error('직원 상세 정보를 불러오는 데 실패했습니다.');
+        }
+    }
+
+    async handleEditFromViewModal() {
+        if (!this.state.currentViewingEmployee) return;
+        const employeeId = this.state.currentViewingEmployee.id;
+
+        try {
+            const historyRes = await this.apiCall(`/employees/${employeeId}/history`);
+            this.elements.viewModal.hide();
+            this.openEmployeeModal(this.state.currentViewingEmployee);
+            this.renderHistory(historyRes.data);
+        } catch (error) {
+             Toast.error('직원 변경 이력을 불러오는 데 실패했습니다.');
         }
     }
 
     async handleTerminateClick(employeeId) {
+        this.elements.viewModal.hide(); // 정보 모달 먼저 닫기
+
         const { value: terminationDate } = await Swal.fire({
             title: '퇴사 처리',
             html: `<p>퇴사일을 지정해주세요.</p>`,
@@ -219,7 +248,10 @@ class EmployeesPage extends BasePage {
         });
 
         if (terminationDate) {
-            const result = await Confirm.fire('퇴사 처리 확인', `정말로 이 직원을 ${terminationDate}일자로 퇴사 처리하시겠습니까? 퇴사 처리 후에는 복구할 수 없습니다.`);
+             const result = await Confirm.fire({
+                title: '퇴사 처리 확인',
+                text: `정말로 이 직원을 ${terminationDate}일자로 퇴사 처리하시겠습니까? 퇴사 처리 후에는 복구할 수 없습니다.`
+            });
             if (!result.isConfirmed) return;
 
             try {
@@ -292,51 +324,35 @@ class EmployeesPage extends BasePage {
         const rawData = Object.fromEntries(formData.entries());
         const employeeId = rawData.id;
 
-        const isDelete = e.submitter && e.submitter.id === 'delete-btn';
+        let dataToSend;
+        const method = employeeId ? 'PUT' : 'POST';
+        const url = employeeId ? `/employees/${employeeId}` : '/employees';
 
-        if (isDelete) {
-            // ... (delete logic remains the same)
-            const result = await Confirm.fire('삭제 확인', '정말로 이 직원의 정보를 삭제하시겠습니까? 사용자 계정과의 연결도 해제됩니다.');
-            if (!result.isConfirmed) return;
-
-            try {
-                const response = await this.apiCall(`/employees/${employeeId}`, { method: 'DELETE' });
-                Toast.success(response.message);
-            } catch (error) {
-                Toast.error(`삭제 처리 중 오류: ${error.message}`);
-            }
+        if (method === 'PUT') {
+            // 수정 시에는 수정 가능한 필드만 포함
+            dataToSend = {
+                id: employeeId,
+                phone_number: rawData.phone_number,
+                address: rawData.address,
+                emergency_contact_name: rawData.emergency_contact_name,
+                emergency_contact_relation: rawData.emergency_contact_relation,
+                clothing_top_size: rawData.clothing_top_size,
+                clothing_bottom_size: rawData.clothing_bottom_size,
+                shoe_size: rawData.shoe_size,
+            };
         } else {
-            let dataToSend;
-            const method = employeeId ? 'PUT' : 'POST';
-            const url = employeeId ? `/employees/${employeeId}` : '/employees';
-
-            if (method === 'PUT') {
-                // 수정 시에는 수정 가능한 필드만 포함
-                dataToSend = {
-                    id: employeeId,
-                    phone_number: rawData.phone_number,
-                    address: rawData.address,
-                    emergency_contact_name: rawData.emergency_contact_name,
-                    emergency_contact_relation: rawData.emergency_contact_relation,
-                    clothing_top_size: rawData.clothing_top_size,
-                    clothing_bottom_size: rawData.clothing_bottom_size,
-                    shoe_size: rawData.shoe_size,
-                };
-            } else {
-                // 신규 등록 시에는 모든 필드 포함
-                dataToSend = rawData;
-            }
-
-            try {
-                const response = await this.apiCall(url, { method, body: dataToSend });
-                Toast.success(response.message);
-            } catch (error) {
-                Toast.error(`저장 처리 중 오류: ${error.message}`);
-            }
+            // 신규 등록 시에는 모든 필드 포함
+            dataToSend = rawData;
         }
 
-        this.state.employeeModal.hide();
-        this.loadEmployees();
+        try {
+            const response = await this.apiCall(url, { method, body: dataToSend });
+            Toast.success(response.message);
+            this.state.employeeModal.hide();
+            this.loadEmployees();
+        } catch (error) {
+            Toast.error(`저장 처리 중 오류: ${error.message}`);
+        }
     }
 
     populateDropdowns(selects, data, defaultOptionText) {

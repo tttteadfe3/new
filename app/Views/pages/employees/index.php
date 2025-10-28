@@ -184,10 +184,34 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="submit" form="employee-form" id="delete-btn" class="btn btn-danger me-auto">삭제</button>
-                <div class="hstack gap-2">
+                <div class="hstack gap-2 justify-content-end">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">닫기</button>
-                    <button type="submit" form="employee-form" class="btn btn-primary">저장하기</button>
+                    <button type="submit" form="employee-form" class="btn btn-primary" id="save-btn">저장하기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- 정보 보기 모달 -->
+<div class="modal fade" id="view-employee-modal" tabindex="-1" aria-labelledby="view-employee-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="view-employee-modal-label">직원 상세 정보</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="view-employee-modal-body">
+                <!-- JS will populate this -->
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div>
+                    <button type="button" class="btn btn-warning" id="modal-terminate-btn">퇴사 처리</button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-primary" id="modal-edit-btn">수정하기</button>
                 </div>
             </div>
         </div>

@@ -1,1 +1,68 @@
 
+[2025-10-28 12:41:01] Uncaught Exception: could not find driver
+in /app/app/Core/Database.php:23
+#0 /app/app/Core/Database.php(23): PDO->__construct()
+#1 /app/public/index.php(24): App\Core\Database->__construct()
+#2 /app/app/Core/Container.php(24): {closure}()
+#3 /app/app/Core/Container.php(38): App\Core\Container->App\Core\{closure}()
+#4 /app/public/index.php(39): App\Core\Container->resolve()
+#5 /app/app/Core/Container.php(38): {closure}()
+#6 /app/public/index.php(47): App\Core\Container->resolve()
+#7 /app/app/Core/Container.php(38): {closure}()
+#8 /app/app/Core/Container.php(80): App\Core\Container->resolve()
+#9 /app/app/Core/Container.php(59): App\Core\Container->resolveDependencies()
+#10 /app/app/Core/Container.php(41): App\Core\Container->build()
+#11 /app/app/Core/Router.php(192): App\Core\Container->resolve()
+#12 /app/public/index.php(205): App\Core\Router->dispatch()
+#13 {main}
+
+[2025-10-28 12:55:35] Uncaught Exception: could not find driver
+in /app/app/Core/Database.php:23
+#0 /app/app/Core/Database.php(23): PDO->__construct()
+#1 /app/public/index.php(24): App\Core\Database->__construct()
+#2 /app/app/Core/Container.php(24): {closure}()
+#3 /app/app/Core/Container.php(38): App\Core\Container->App\Core\{closure}()
+#4 /app/public/index.php(39): App\Core\Container->resolve()
+#5 /app/app/Core/Container.php(38): {closure}()
+#6 /app/public/index.php(47): App\Core\Container->resolve()
+#7 /app/app/Core/Container.php(38): {closure}()
+#8 /app/app/Core/Container.php(80): App\Core\Container->resolve()
+#9 /app/app/Core/Container.php(59): App\Core\Container->resolveDependencies()
+#10 /app/app/Core/Container.php(41): App\Core\Container->build()
+#11 /app/app/Core/Router.php(192): App\Core\Container->resolve()
+#12 /app/public/index.php(205): App\Core\Router->dispatch()
+#13 {main}
+
+[2025-10-28 12:58:57] Uncaught Exception: SQLSTATE[HY000] [1045] Access denied for user 'erp'@'localhost' (using password: NO)
+in /app/app/Core/Database.php:23
+#0 /app/app/Core/Database.php(23): PDO->__construct()
+#1 /app/public/index.php(24): App\Core\Database->__construct()
+#2 /app/app/Core/Container.php(24): {closure}()
+#3 /app/app/Core/Container.php(38): App\Core\Container->App\Core\{closure}()
+#4 /app/public/index.php(39): App\Core\Container->resolve()
+#5 /app/app/Core/Container.php(38): {closure}()
+#6 /app/public/index.php(47): App\Core\Container->resolve()
+#7 /app/app/Core/Container.php(38): {closure}()
+#8 /app/app/Core/Container.php(80): App\Core\Container->resolve()
+#9 /app/app/Core/Container.php(59): App\Core\Container->resolveDependencies()
+#10 /app/app/Core/Container.php(41): App\Core\Container->build()
+#11 /app/app/Core/Router.php(192): App\Core\Container->resolve()
+#12 /app/public/index.php(205): App\Core\Router->dispatch()
+#13 {main}
+
+[2025-10-28 13:05:24] Uncaught Exception: SQLSTATE[HY000] [1045] Access denied for user 'erp'@'localhost' (using password: NO)
+in /app/app/Core/Database.php:23
+#0 /app/app/Core/Database.php(23): PDO->__construct()
+#1 /app/public/index.php(24): App\Core\Database->__construct()
+#2 /app/app/Core/Container.php(24): {closure}()
+#3 /app/app/Core/Container.php(38): App\Core\Container->App\Core\{closure}()
+#4 /app/public/index.php(39): App\Core\Container->resolve()
+#5 /app/app/Core/Container.php(38): {closure}()
+#6 /app/public/index.php(47): App\Core\Container->resolve()
+#7 /app/app/Core/Container.php(38): {closure}()
+#8 /app/app/Core/Container.php(80): App\Core\Container->resolve()
+#9 /app/app/Core/Container.php(59): App\Core\Container->resolveDependencies()
+#10 /app/app/Core/Container.php(41): App\Core\Container->build()
+#11 /app/app/Core/Router.php(192): App\Core\Container->resolve()
+#12 /app/public/index.php(205): App\Core\Router->dispatch()
+#13 {main}
