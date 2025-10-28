@@ -131,7 +131,6 @@ class EmployeesPage extends BasePage {
             const isTerminated = !!employee.termination_date;
             const buttonsHtml = `
                 <div class="d-flex justify-content-end align-items-center gap-2">
-                    <button class="btn btn-warning terminate-btn" data-id="${employee.id}" ${isTerminated ? 'disabled' : ''}>퇴사 처리</button>
                     <button class="btn btn-primary edit-btn" data-id="${employee.id}" ${isTerminated ? 'disabled' : ''}>수정하기</button>
                 </div>
             `;
@@ -313,9 +312,14 @@ class EmployeesPage extends BasePage {
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-end gap-2 mt-3">
-                    <button type="button" class="btn btn-secondary cancel-btn">취소</button>
-                    <button type="submit" class="btn btn-primary">${isCreate ? '등록하기' : '저장하기'}</button>
+                <div class="d-flex justify-content-between gap-2 mt-3">
+                    <div>
+                        ${!isCreate ? `<button type="button" class="btn btn-outline-danger terminate-btn" data-id="${employee.id}">퇴사 처리</button>` : ''}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-secondary cancel-btn">취소</button>
+                        <button type="submit" class="btn btn-primary">${isCreate ? '등록하기' : '저장하기'}</button>
+                    </div>
                 </div>
             </form>
         `;
