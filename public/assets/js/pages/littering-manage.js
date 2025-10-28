@@ -190,7 +190,7 @@ class LitteringAdminPage extends BasePage {
 
         // 개선여부 드롭다운 표시 로직
         const improvementWrapper = document.getElementById('improvement-status-wrapper');
-        if (type === 'processed') {
+        if (type === '처리완료') {
             const improvementSelect = document.getElementById('improvement-status-select');
             improvementSelect.value = selected.corrected || 'o'; // 'o'를 기본값으로 설정
             improvementWrapper.classList.remove('d-none');
