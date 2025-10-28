@@ -136,6 +136,35 @@ class EmployeesPage extends BasePage {
                 </div>
             `;
 
+            const tabbedInfoHtml = `
+                <ul class="nav nav-tabs nav-justified mb-3" role="tablist">
+                    <li class="nav-item" role="presentation"><a class="nav-link active" data-bs-toggle="tab" href="#view-contact-info" role="tab" aria-selected="true">연락처/주소</a></li>
+                    <li class="nav-item" role="presentation"><a class="nav-link" data-bs-toggle="tab" href="#view-emergency-contact" role="tab" aria-selected="false">비상 연락처</a></li>
+                    <li class="nav-item" role="presentation"><a class="nav-link" data-bs-toggle="tab" href="#view-clothing-sizes" role="tab" aria-selected="false">의류 사이즈</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="view-contact-info" role="tabpanel">
+                        <dl class="row">
+                            <dt class="col-sm-3">연락처</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.phone_number) || '<i>-</i>'}</dd>
+                            <dt class="col-sm-3">주소</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.address) || '<i>-</i>'}</dd>
+                        </dl>
+                    </div>
+                    <div class="tab-pane" id="view-emergency-contact" role="tabpanel">
+                        <dl class="row">
+                            <dt class="col-sm-3">비상연락처 이름</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.emergency_contact_name) || '<i>-</i>'}</dd>
+                            <dt class="col-sm-3">관계</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.emergency_contact_relation) || '<i>-</i>'}</dd>
+                        </dl>
+                    </div>
+                    <div class="tab-pane" id="view-clothing-sizes" role="tabpanel">
+                        <dl class="row">
+                             <dt class="col-sm-3">상의</dt><dd class="col-sm-3">${this.sanitizeHTML(employee.clothing_top_size) || '<i>-</i>'}</dd>
+                             <dt class="col-sm-3">하의</dt><dd class="col-sm-3">${this.sanitizeHTML(employee.clothing_bottom_size) || '<i>-</i>'}</dd>
+                             <dt class="col-sm-3">신발</dt><dd class="col-sm-3">${this.sanitizeHTML(employee.shoe_size) || '<i>-</i>'}</dd>
+                        </dl>
+                    </div>
+                </div>
+            `;
+
             this.elements.detailsContainer.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4 class="mb-0">${this.sanitizeHTML(employee.name)} (${this.sanitizeHTML(employee.employee_number)})</h4>
@@ -146,10 +175,9 @@ class EmployeesPage extends BasePage {
                     <dt class="col-sm-3">직급</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.position_name)}</dd>
                     <dt class="col-sm-3">입사일</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.hire_date)}</dd>
                     ${isTerminated ? `<dt class="col-sm-3 text-danger">퇴사일</dt><dd class="col-sm-9 text-danger">${this.sanitizeHTML(employee.termination_date)}</dd>` : ''}
-                    <hr class="my-2">
-                    <dt class="col-sm-3">연락처</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.phone_number) || '<i>-</i>'}</dd>
-                    <dt class="col-sm-3">주소</dt><dd class="col-sm-9">${this.sanitizeHTML(employee.address) || '<i>-</i>'}</dd>
                 </dl>
+                <hr class="my-2">
+                ${tabbedInfoHtml}
 
                 <div id="change-history-container" class="mt-4"></div>
 
