@@ -81,16 +81,22 @@ class EmployeesPage extends BasePage {
         }
         this.elements.noResultDiv.style.display = 'none';
 
-        const listHtml = employeeList.map(employee => `
+        const listHtml = employeeList.map(employee => {
+            const statusBadge = employee.profile_update_status === '대기'
+                ? '<span class="badge bg-warning float-end">수정 요청</span>'
+                : '';
+
+            return `
             <a href="#" class="list-group-item list-group-item-action" data-id="${employee.id}">
                 <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">${this.sanitizeHTML(employee.name)}</h6>
+                    <h6 class="mb-1">${this.sanitizeHTML(employee.name)} ${statusBadge}</h6>
                     <small>${this.sanitizeHTML(employee.position_name) || '미지정'}</small>
                 </div>
                 <p class="mb-1">${this.sanitizeHTML(employee.department_name) || '미지정'}</p>
                 ${employee.termination_date ? `<small class="text-danger">퇴사: ${this.sanitizeHTML(employee.termination_date)}</small>` : ''}
             </a>
-        `).join('');
+            `;
+        }).join('');
         this.elements.listContainer.innerHTML = listHtml;
     }
 
@@ -111,17 +117,17 @@ class EmployeesPage extends BasePage {
             this.state.currentEmployee = response.data;
             const employee = this.state.currentEmployee;
 
+            // If there's a pending update, render the approval view instead
+            if (employee.profile_update_status === '대기' && employee.pending_profile_data) {
+                this.renderApprovalView(employee);
+                return;
+            }
+
             const isTerminated = !!employee.termination_date;
             const buttonsHtml = `
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <a href="/hr/order/create?employee_id=${employee.id}" class="btn btn-info" ${isTerminated ? 'disabled' : ''}>인사발령</a>
-                        <button class="btn btn-warning terminate-btn" data-id="${employee.id}" ${isTerminated ? 'disabled' : ''}>퇴사 처리</button>
-                    </div>
-                    <div>
-                        <button class="btn btn-secondary cancel-btn">목록으로</button>
-                        <button class="btn btn-primary edit-btn" data-id="${employee.id}" ${isTerminated ? 'disabled' : ''}>수정하기</button>
-                    </div>
+                <div class="d-flex justify-content-end align-items-center gap-2">
+                    <button class="btn btn-warning terminate-btn" data-id="${employee.id}" ${isTerminated ? 'disabled' : ''}>퇴사 처리</button>
+                    <button class="btn btn-primary edit-btn" data-id="${employee.id}" ${isTerminated ? 'disabled' : ''}>수정하기</button>
                 </div>
             `;
 
@@ -148,6 +154,56 @@ class EmployeesPage extends BasePage {
         }
     }
 
+    renderApprovalView(employee) {
+        const pendingData = JSON.parse(employee.pending_profile_data);
+        const fields = {
+            phone_number: '연락처',
+            address: '주소',
+            emergency_contact_name: '비상연락처 이름',
+            emergency_contact_relation: '비상연락처 관계',
+            clothing_top_size: '상의 사이즈',
+            clothing_bottom_size: '하의 사이즈',
+            shoe_size: '신발 사이즈'
+        };
+
+        let changesHtml = '';
+        for (const key in pendingData) {
+            if (fields[key]) {
+                const oldValue = this.sanitizeHTML(employee[key] || '<i>없음</i>');
+                const newValue = this.sanitizeHTML(pendingData[key] || '<i>없음</i>');
+                if (oldValue !== newValue) {
+                     changesHtml += `
+                        <dt class="col-sm-3">${fields[key]}</dt>
+                        <dd class="col-sm-9">
+                            <span class="text-danger text-decoration-line-through">${oldValue}</span> → <span class="text-success fw-bold">${newValue}</span>
+                        </dd>
+                    `;
+                }
+            }
+        }
+
+        const buttonsHtml = `
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button class="btn btn-danger reject-btn" data-id="${employee.id}">반려</button>
+                <button class="btn btn-success approve-btn" data-id="${employee.id}">승인</button>
+            </div>
+        `;
+
+        this.elements.detailsContainer.innerHTML = `
+            <h4 class="mb-3">프로필 변경 요청 승인</h4>
+            <p><strong>${this.sanitizeHTML(employee.name)}</strong>님이 아래와 같이 정보 수정을 요청했습니다.</p>
+            <div class="card">
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        ${changesHtml}
+                    </dl>
+                </div>
+            </div>
+            ${buttonsHtml}
+        `;
+        this.state.viewMode = 'approval';
+    }
+
     renderFormView(employee = null) {
         this.state.viewMode = employee ? 'edit' : 'create';
         const isCreate = !employee;
@@ -169,13 +225,33 @@ class EmployeesPage extends BasePage {
                 </fieldset>
                 <hr>
 
-                <!-- 수정 가능 정보 -->
-                <div class="row">
-                    <div class="col-md-6 mb-3"><label for="phone_number" class="form-label">연락처</label><input type="tel" class="form-control" name="phone_number" value="${this.sanitizeHTML(employee?.phone_number || '')}"></div>
-                    <div class="col-md-6 mb-3"><label for="address" class="form-label">주소</label><input type="text" class="form-control" name="address" value="${this.sanitizeHTML(employee?.address || '')}"></div>
+                <!-- 수정 가능 정보 (탭 UI) -->
+                <ul class="nav nav-tabs nav-justified mb-3" role="tablist">
+                    <li class="nav-item" role="presentation"><a class="nav-link active" data-bs-toggle="tab" href="#contact-info" role="tab" aria-selected="true">연락처/주소</a></li>
+                    <li class="nav-item" role="presentation"><a class="nav-link" data-bs-toggle="tab" href="#emergency-contact" role="tab" aria-selected="false">비상 연락처</a></li>
+                    <li class="nav-item" role="presentation"><a class="nav-link" data-bs-toggle="tab" href="#clothing-sizes" role="tab" aria-selected="false">의류 사이즈</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="contact-info" role="tabpanel">
+                        <div class="mb-3"><label for="phone_number" class="form-label">연락처</label><input type="tel" class="form-control" name="phone_number" value="${this.sanitizeHTML(employee?.phone_number || '')}"></div>
+                        <div class="mb-3"><label for="address" class="form-label">주소</label><input type="text" class="form-control" name="address" value="${this.sanitizeHTML(employee?.address || '')}"></div>
+                    </div>
+                    <div class="tab-pane" id="emergency-contact" role="tabpanel">
+                         <div class="row">
+                            <div class="col-md-6 mb-3"><label for="emergency_contact_name" class="form-label">비상연락처 이름</label><input type="text" class="form-control" name="emergency_contact_name" value="${this.sanitizeHTML(employee?.emergency_contact_name || '')}"></div>
+                            <div class="col-md-6 mb-3"><label for="emergency_contact_relation" class="form-label">관계</label><input type="text" class="form-control" name="emergency_contact_relation" value="${this.sanitizeHTML(employee?.emergency_contact_relation || '')}"></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="clothing-sizes" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-4 mb-3"><label for="clothing_top_size" class="form-label">상의</label><input type="text" class="form-control" name="clothing_top_size" value="${this.sanitizeHTML(employee?.clothing_top_size || '')}"></div>
+                            <div class="col-md-4 mb-3"><label for="clothing_bottom_size" class="form-label">하의</label><input type="text" class="form-control" name="clothing_bottom_size" value="${this.sanitizeHTML(employee?.clothing_bottom_size || '')}"></div>
+                            <div class="col-md-4 mb-3"><label for="shoe_size" class="form-label">신발</label><input type="text" class="form-control" name="shoe_size" value="${this.sanitizeHTML(employee?.shoe_size || '')}"></div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="d-flex justify-content-end gap-2">
+                <div class="d-flex justify-content-end gap-2 mt-3">
                     <button type="button" class="btn btn-secondary cancel-btn">취소</button>
                     <button type="submit" class="btn btn-primary">${isCreate ? '등록하기' : '저장하기'}</button>
                 </div>
@@ -214,6 +290,10 @@ class EmployeesPage extends BasePage {
             this.renderFormView(this.state.currentEmployee);
         } else if (target.classList.contains('terminate-btn')) {
             this.handleTerminateClick(employeeId);
+        } else if (target.classList.contains('approve-btn')) {
+            this.approveProfileUpdate(employeeId);
+        } else if (target.classList.contains('reject-btn')) {
+            this.rejectProfileUpdate(employeeId);
         } else if (target.classList.contains('cancel-btn')) {
             if (this.state.viewMode === 'edit') {
                  this.renderDetailsView(employeeId);
@@ -245,10 +325,16 @@ class EmployeesPage extends BasePage {
 
         let dataToSend;
         if (method === 'PUT') {
+            // 수정 시에는 수정 가능한 모든 필드를 포함
             dataToSend = {
                 id: employeeId,
                 phone_number: rawData.phone_number,
                 address: rawData.address,
+                emergency_contact_name: rawData.emergency_contact_name,
+                emergency_contact_relation: rawData.emergency_contact_relation,
+                clothing_top_size: rawData.clothing_top_size,
+                clothing_bottom_size: rawData.clothing_bottom_size,
+                shoe_size: rawData.shoe_size,
             };
         } else {
             dataToSend = rawData;
