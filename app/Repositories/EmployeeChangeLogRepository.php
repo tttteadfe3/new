@@ -18,16 +18,17 @@ class EmployeeChangeLogRepository {
      * @param string|null $newValue
      * @return bool
      */
-    public function insert(int $employeeId, int $changerEmployeeId, string $fieldName, ?string $oldValue, ?string $newValue): bool {
-        $sql = "INSERT INTO hr_employee_change_logs (employee_id, changer_employee_id, field_name, old_value, new_value)
-                VALUES (:employee_id, :changer_employee_id, :field_name, :old_value, :new_value)";
+    public function insert(int $employeeId, int $changerEmployeeId, string $fieldName, ?string $oldValue, ?string $newValue, ?string $changedAt = null): bool {
+        $sql = "INSERT INTO hr_employee_change_logs (employee_id, changer_employee_id, field_name, old_value, new_value, changed_at)
+                VALUES (:employee_id, :changer_employee_id, :field_name, :old_value, :new_value, :changed_at)";
         
         return $this->db->execute($sql, [
             ':employee_id' => $employeeId,
             ':changer_employee_id' => $changerEmployeeId,
             ':field_name' => $fieldName,
             ':old_value' => $oldValue,
-            ':new_value' => $newValue
+            ':new_value' => $newValue,
+            ':changed_at' => $changedAt ?? date('Y-m-d H:i:s')
         ]);
     }
 
@@ -41,6 +42,20 @@ class EmployeeChangeLogRepository {
                 FROM hr_employee_change_logs l
                 LEFT JOIN hr_employees e ON l.changer_employee_id = e.id
                 WHERE l.employee_id = :employee_id 
+                ORDER BY l.changed_at DESC";
+        return $this->db->query($sql, [':employee_id' => $employeeId]);
+    }
+
+    /**
+     * 특정 직원의 부서/직급 변경 이력을 조회합니다.
+     * @param int $employeeId
+     * @return array
+     */
+    public function findAssignmentHistoryByEmployeeId(int $employeeId): array {
+        $sql = "SELECT l.*, e.name as changer_name
+                FROM hr_employee_change_logs l
+                LEFT JOIN hr_employees e ON l.changer_employee_id = e.id
+                WHERE l.employee_id = :employee_id AND l.field_name IN ('부서', '직급')
                 ORDER BY l.changed_at DESC";
         return $this->db->query($sql, [':employee_id' => $employeeId]);
     }

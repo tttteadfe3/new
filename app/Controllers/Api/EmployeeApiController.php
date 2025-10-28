@@ -251,4 +251,35 @@ class EmployeeApiController extends BaseApiController
             $this->handleException($e);
         }
     }
+
+    /**
+     * 직원을 퇴사 처리합니다.
+     * @param int $id 직원의 ID
+     */
+    public function terminate(int $id): void
+    {
+        if (!$this->authService->check('employee.terminate')) {
+            $this->apiForbidden('직원을 퇴사 처리할 권한이 없습니다.');
+            return;
+        }
+        try {
+            $data = $this->getJsonInput();
+            $terminationDate = $data['termination_date'] ?? null;
+
+            if (empty($terminationDate)) {
+                $this->apiBadRequest('퇴사일을 지정해야 합니다.');
+                return;
+            }
+
+            if ($this->employeeService->terminateEmployee($id, $terminationDate)) {
+                $this->apiSuccess(null, '직원이 성공적으로 퇴사 처리되었습니다.');
+            } else {
+                $this->apiError('직원 퇴사 처리에 실패했습니다.');
+            }
+        } catch (\InvalidArgumentException $e) {
+            $this->apiBadRequest($e->getMessage());
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
 }

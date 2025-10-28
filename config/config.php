@@ -33,9 +33,9 @@ define('ROOT_PATH', dirname(__DIR__));
 
 // 3. 데이터베이스 설정 (.env 파일 사용)
 define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');
-define('DB_NAME', $_ENV['DB_NAME'] ?? 'erp');
-define('DB_USER', $_ENV['DB_USER'] ?? 'erp');
-define('DB_PASS', $_ENV['DB_PASS'] ?? '');
+define('DB_NAME', $_ENV['DB_DATABASE'] ?? 'erp');
+define('DB_USER', $_ENV['DB_USERNAME'] ?? 'erp');
+define('DB_PASS', $_ENV['DB_PASSWORD'] ?? '');
 define('DB_CHARSET', $_ENV['DB_CHARSET'] ?? 'utf8mb4');
 
 // 4. 카카오 인증 설정 (.env 파일 사용)

@@ -108,10 +108,13 @@ class EmployeeService
             throw new \InvalidArgumentException('직원을 찾을 수 없습니다');
         }
 
-        // Employee 모델을 사용하여 데이터 유효성 검사
-        $employee = Employee::make($data);
+        // 기존 데이터와 요청 데이터를 병합하여 완전한 객체를 만듭니다.
+        $updatedData = array_merge($oldData, $data);
+
+        // 병합된 데이터로 모델의 유효성을 검사합니다.
+        $employee = Employee::make($updatedData);
         if (!$employee->validate()) {
-            throw new \InvalidArgumentException('잘못된 직원 데이터');
+            throw new \InvalidArgumentException('잘못된 직원 데이터: 유효성 검사 실패');
         }
 
         $data['id'] = $id;
@@ -228,8 +231,8 @@ class EmployeeService
     private function logChanges(int $employeeId, array $oldData, array $newData, int $changerId): void
     {
         $fields = [
-            'name' => '이름', 
-            'employee_number' => '사번', 
+            'name' => '이름',
+            'employee_number' => '사번',
             'hire_date' => '입사일',
             'phone_number' => '연락처', 
             'address' => '주소',
@@ -238,7 +241,7 @@ class EmployeeService
             'clothing_top_size' => '상의', 
             'clothing_bottom_size' => '하의', 
             'shoe_size' => '신발',
-            'department_id' => '부서', 
+            'department_id' => '부서',
             'position_id' => '직급'
         ];
 

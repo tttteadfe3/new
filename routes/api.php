@@ -2,6 +2,7 @@
 
 use App\Controllers\Api\EmployeeApiController;
 use App\Controllers\Api\HolidayApiController;
+use App\Controllers\Api\HumanResourceApiController;
 use App\Controllers\Api\LeaveApiController;
 use App\Controllers\Api\LeaveAdminApiController;
 use App\Controllers\Api\LitteringApiController;
@@ -24,9 +25,13 @@ $router->group('/api', function($router) {
     $router->get('/employees/{id}', [EmployeeApiController::class, 'show'])->name('api.employees.show')->middleware('auth')->middleware('permission', 'employee.view');
     $router->put('/employees/{id}', [EmployeeApiController::class, 'update'])->name('api.employees.update')->middleware('auth')->middleware('permission', 'employee.update');
     $router->delete('/employees/{id}', [EmployeeApiController::class, 'destroy'])->name('api.employees.destroy')->middleware('auth')->middleware('permission', 'employee.delete');
+    $router->post('/employees/{id}/terminate', [EmployeeApiController::class, 'terminate'])->name('api.employees.terminate')->middleware('auth')->middleware('permission', 'employee.terminate');
     $router->get('/employees/{id}/history', [EmployeeApiController::class, 'getChangeHistory'])->name('api.employees.history')->middleware('auth')->middleware('permission', 'employee.view');
     $router->post('/employees/{id}/approve-update', [EmployeeApiController::class, 'approveUpdate'])->name('api.employees.approve-update')->middleware('auth')->middleware('permission', 'employee.approve');
     $router->post('/employees/{id}/reject-update', [EmployeeApiController::class, 'rejectUpdate'])->name('api.employees.reject-update')->middleware('auth')->middleware('permission', 'employee.approve');
+
+    // Human Resource (HR) Order API routes
+    $router->post('/hr/orders', [HumanResourceApiController::class, 'store'])->name('api.hr.orders.store')->middleware('auth')->middleware('permission', 'employee.assign');
 
     // Holiday API routes
     $router->get('/holidays', [HolidayApiController::class, 'index'])->name('api.holidays.index')->middleware('auth')->middleware('permission', 'holiday.manage');

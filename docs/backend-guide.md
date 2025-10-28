@@ -133,7 +133,23 @@
     ```
 
 6.  **뷰 생성 (`app/Views/pages/notices/index.php`)**:
-    `$notices` 변수를 사용하여 공지사항 목록을 HTML로 렌더링합니다.
+    `$notices` 변수를 사용하여 공지사항 목록을 HTML로 렌더링합니다. 모든 뷰 파일은 `layouts/app.php` 레이아웃을 상속받으므로, 반드시 `startSection('content')`와 `endSection()`으로 콘텐츠 영역을 감싸야 합니다.
+
+    ```php
+    <?php \App\Core\View::getInstance()->startSection('content'); ?>
+
+    <h1>공지사항</h1>
+    <div class="list-group">
+        <?php foreach ($notices as $notice): ?>
+            <a href="#" class="list-group-item list-group-item-action">
+                <h5 class="mb-1"><?= htmlspecialchars($notice['title']) ?></h5>
+                <small><?= htmlspecialchars($notice['created_at']) ?></small>
+            </a>
+        <?php endforeach; ?>
+    </div>
+
+    <?php \App\Core\View::getInstance()->endSection(); ?>
+    ```
 
 7.  **DI 컨테이너 등록 (`public/index.php`)**:
     위에서 생성한 `NoticeRepository`, `NoticeService`, `NoticeController`를 DI 컨테이너에 순서대로 등록합니다.
