@@ -36,24 +36,32 @@ const Toast = {
 };
 
 const Confirm = {
-    fire: function(options) {
+    fire: function(titleOrOptions, text = null) {
+        let options = {};
+
+        if (typeof titleOrOptions === 'string') {
+            // 이전 방식 호출 핸들링: Confirm.fire('제목', '내용')
+            options.title = titleOrOptions;
+            if (text) {
+                options.text = text;
+            }
+        } else if (typeof titleOrOptions === 'object' && titleOrOptions !== null) {
+            // 새로운 방식 호출 핸들링: Confirm.fire({ title: '...', html: '...' })
+            options = titleOrOptions;
+        } else if (titleOrOptions) {
+            // 인자가 하나만 있는 경우 핸들링: Confirm.fire('제목만')
+            options.title = titleOrOptions;
+        }
+
         const swalOptions = {
-            title: options.title,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
             confirmButtonText: '확인',
-            cancelButtonText: '취소'
+            cancelButtonText: '취소',
+            ...options // 전달된 옵션들을 여기에 병합
         };
-
-        if (options.text) {
-            swalOptions.text = options.text;
-        }
-
-        if (options.html) {
-            swalOptions.html = options.html;
-        }
 
         return Swal.fire(swalOptions);
     }

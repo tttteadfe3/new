@@ -1,7 +1,0 @@
-[Tue Oct 28 04:14:40 2025] PHP 8.3.6 Development Server (http://localhost:8000) started
-[Tue Oct 28 04:14:47 2025] 127.0.0.1:48300 Accepted
-[Tue Oct 28 04:14:47 2025] 127.0.0.1:48300 [200]: GET /login
-[Tue Oct 28 04:14:47 2025] 127.0.0.1:48300 Closing
-[Tue Oct 28 04:14:47 2025] 127.0.0.1:48306 Accepted
-[Tue Oct 28 04:14:47 2025] 127.0.0.1:48306 [200]: GET /assets/images/logo-sm.png
-[Tue Oct 28 04:14:47 2025] 127.0.0.1:48306 Closing
