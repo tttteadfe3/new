@@ -57,63 +57,73 @@ function renderBootstrapMenuItems(array $items, int $level = 0) {
  * @param array $items 렌더링할 메뉴 아이템 배열
  * @param int $level 메뉴 깊이 레벨
  */
-function renderBootstrapMenuItemsAdvanced(array $items, int $level = 0) {
+ function renderBootstrapMenuItemsAdvanced(array $items, int $level = 0) {
     foreach ($items as $index => $item) {
         $hasChildren = !empty($item['children']);
         
-        // Generate a cleaner, more unique ID for collapsible elements
+        // Collapse ID 생성
         $safeName = preg_replace('/[^a-zA-Z0-9]/', '', $item['name']);
-        $collapseId = 'sidebar' . ucfirst($safeName) . $item['id'];
+        $collapseId = 'sidebar' . ucfirst($safeName) . ($item['id'] ?? uniqid());
 
-        // 특별 요청: 최상위 부모 메뉴($level=0, $hasChildren=true)는 'menu-title'로 렌더링
+        // --- 최상위 부모 메뉴 (menu-title) ---
         if ($level === 0 && $hasChildren) {
-            echo '<li class="menu-title"><span data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">' . e($item['name']) . '</span></li>';
+            echo '<li class="menu-title">';
+            echo '<span data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">' . e($item['name']) . '</span>';
+            echo '</li>';
 
-            // 자식들을 직접 렌더링
             renderBootstrapMenuItemsAdvanced($item['children'], $level + 1);
+        }
 
-        } elseif ($hasChildren) {
-            // --- 하위 부모 메뉴 아이템 ---
+        // --- 하위 부모 메뉴 ---
+        elseif ($hasChildren) {
             echo '<li class="nav-item">';
-            echo '<a class="nav-link menu-link" href="#' . $collapseId . '" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="' . $collapseId . '">';
+
+            // menu-link 클래스는 $level < 2일 때만 추가
+            $linkClass = ($level < 2) ? 'menu-link' : '';
             
-            if (!empty($item['icon'])) {
+            echo '<a class="nav-link ' . $linkClass . '" href="#' . $collapseId . '" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="' . $collapseId . '">';
+
+            if (!empty($item['icon']) && $level < 2) {
                 echo '<i class="' . e($item['icon']) . '"></i> ';
             }
-            
-            echo '<span data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">' . e($item['name']) . '</span>';
+
+            if ($level < 2) {
+                echo '<span data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">' . e($item['name']) . '</span>';
+            } else {
+                echo e($item['name']);
+            }
+
             echo '</a>';
-            
+
             echo '<div class="collapse menu-dropdown" id="' . $collapseId . '">';
             echo '<ul class="nav nav-sm flex-column">';
             renderBootstrapMenuItemsAdvanced($item['children'], $level + 1);
             echo '</ul>';
             echo '</div>';
             echo '</li>';
-            
-        } else {
-            // --- 단일 메뉴 아이템 ---
-            $url = (isset($item['url']) && $item['url'] !== '#') ? BASE_URL . e($item['url']) : 'javascript:void(0);';
+        }
 
+        // --- 단일 메뉴 ---
+        else {
+            $url = (isset($item['url']) && $item['url'] !== '#') ? BASE_URL . e($item['url']) : 'javascript:void(0);';
             echo '<li class="nav-item">';
 
-            // 최상위 단일 메뉴
-            if ($level === 0) {
-                echo '<a class="nav-link menu-link" href="' . $url . '">';
-                if (!empty($item['icon'])) {
-                    echo '<i class="' . e($item['icon']) . '"></i> ';
-                }
-                echo '<span data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">' . e($item['name']) . '</span>';
-                echo '</a>';
-            } else {
-            // 하위 단일 메뉴
-                echo '<a href="' . $url . '" class="nav-link" data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">';
-                if (!empty($item['icon'])) {
-                    echo '<i class="' . e($item['icon']) . '"></i> ';
-                }
-                echo e($item['name']);
-                echo '</a>';
+            // menu-link 클래스는 $level < 2일 때만 추가
+            $linkClass = ($level < 2) ? 'menu-link' : '';
+            
+            echo '<a class="nav-link ' . $linkClass . '" href="' . $url . '">';
+
+            if (!empty($item['icon']) && $level < 2) {
+                echo '<i class="' . e($item['icon']) . '"></i> ';
             }
+
+            if ($level < 2) {
+                echo '<span data-key="t-' . strtolower(str_replace(' ', '-', $item['name'])) . '">' . e($item['name']) . '</span>';
+            } else {
+                echo e($item['name']);
+            }
+
+            echo '</a>';
             echo '</li>';
         }
     }
