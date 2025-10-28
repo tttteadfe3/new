@@ -25,6 +25,31 @@ abstract class BaseController
         $this->authService = $authService;
         $this->viewDataService = $viewDataService;
         $this->activityLogger = $activityLogger;
+
+        $this->logRequest();
+    }
+
+    /**
+     * 요청을 기록합니다.
+     */
+    protected function logRequest(): void
+    {
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+
+        // 특정 URI 패턴은 로그에서 제외
+        $excludedPatterns = [
+            '/login',
+            '/auth/kakao/callback',
+            '/assets/'
+        ];
+
+        foreach ($excludedPatterns as $pattern) {
+            if (str_starts_with($uri, $pattern)) {
+                return;
+            }
+        }
+
+        $this->activityLogger->logPageAccess($uri);
     }
 
     /**
