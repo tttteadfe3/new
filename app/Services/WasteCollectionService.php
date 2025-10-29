@@ -256,6 +256,13 @@ class WasteCollectionService
             $duplicateCount = 0;
 
             foreach ($collections as $collectionData) {
+                // 3주 기간 제한 확인
+                $dischargeDate = new \DateTime($collectionData['dischargeDate']);
+                $threeWeeksAgo = new \DateTime('-3 weeks');
+                if ($dischargeDate < $threeWeeksAgo) {
+                    continue;
+                }
+
                 // 중복 확인
                 if (!empty($collectionData['receiptNumber']) && 
                     $this->wasteCollectionRepository->findByDischargeNumber($collectionData['receiptNumber'])) {
