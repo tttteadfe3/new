@@ -186,7 +186,7 @@ class LitteringAdminPage extends BasePage {
 
         document.getElementById('confirm-btn').classList.toggle('d-none', type !== '대기');
         document.getElementById('approve-btn').classList.toggle('d-none', type !== '처리완료');
-        document.getElementById('delete-btn').classList.toggle('d-none', type !== '대기');
+        document.getElementById('delete-btn').classList.toggle('d-none', type !== '대기' && type !== '처리완료');
 
         // 개선여부 드롭다운 표시 로직
         const improvementWrapper = document.getElementById('improvement-status-wrapper');

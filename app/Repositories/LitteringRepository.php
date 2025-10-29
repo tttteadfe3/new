@@ -124,8 +124,15 @@ class LitteringRepository {
      * @return bool
      */
     public function softDelete(int $caseId, int $employeeId): bool {
-        $query = "UPDATE illegal_disposal_cases2 SET status = '삭제', deleted_by = ?, deleted_at = NOW() WHERE id = ?";
-        return $this->db->execute($query, [$employeeId, $caseId]) > 0;
+        $case = $this->findById($caseId);
+        if (!$case) {
+            return false;
+        }
+
+        $newStatus = ($case['status'] === '처리완료') ? '처리삭제' : '대기삭제';
+
+        $query = "UPDATE illegal_disposal_cases2 SET status = ?, deleted_by = ?, deleted_at = NOW() WHERE id = ?";
+        return $this->db->execute($query, [$newStatus, $employeeId, $caseId]) > 0;
     }
 
     /**
@@ -160,9 +167,10 @@ class LitteringRepository {
     }
 
     /**
+     * @param string $status
      * @return array
      */
-    public function findAllDeleted(): array {
+    public function findAllDeleted(string $status): array {
         $query = "
             SELECT 
                 idc.*, 
@@ -171,10 +179,10 @@ class LitteringRepository {
             FROM `illegal_disposal_cases2` idc
             LEFT JOIN `hr_employees` e ON idc.created_by = e.id
             LEFT JOIN `hr_employees` e2 ON idc.deleted_by = e2.id
-            WHERE idc.status = '삭제'
+            WHERE idc.status = ?
             ORDER BY idc.deleted_at DESC
         ";
-        return $this->db->fetchAll($query);
+        return $this->db->fetchAll($query, [$status]);
     }
 
     /**
@@ -191,8 +199,15 @@ class LitteringRepository {
      * @return bool
      */
     public function restore(int $caseId): bool {
-        $query = "UPDATE illegal_disposal_cases2 SET status = '대기', deleted_by = NULL, deleted_at = NULL WHERE id = ?";
-        return $this->db->execute($query, [$caseId]) > 0;
+        $case = $this->findById($caseId);
+        if (!$case) {
+            return false;
+        }
+
+        $restoredStatus = ($case['status'] === '처리삭제') ? '처리완료' : '대기';
+
+        $query = "UPDATE illegal_disposal_cases2 SET status = ?, deleted_by = NULL, deleted_at = NULL WHERE id = ?";
+        return $this->db->execute($query, [$restoredStatus, $caseId]) > 0;
     }
 
     /**

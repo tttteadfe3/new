@@ -3,6 +3,41 @@
 이 문서는 프로젝트의 주요 변경 사항, 특히 기존 코드베이스에 영향을 줄 수 있는 중요한 수정 내역을 기록합니다. 모든 개발 에이전트는 코드 변경 시 이 문서를 참조하고, 자신의 변경 사항을 아래 형식에 맞게 기록해야 합니다.
 
 ---
+## [1.4.7 - 2025-10-28]
+
+### ✨ 새로운 기능 (Features)
+- **무단투기 관리(`littering/manage`) 삭제 기능 확장**:
+  - **설명**: '승인 대기(처리완료)' 상태의 항목 상세 보기에도 '삭제' 버튼을 추가하여, 모든 관리 단계에서 항목을 삭제(소프트 삭제)할 수 있도록 워크플로우를 개선했습니다.
+  - **영향 범위**: `public/assets/js/pages/littering-manage.js`
+- **삭제된 무단투기(`littering/deleted`) 페이지 기능 및 UI 전면 개편**:
+  - **설명**: `littering/manage` 페이지와 동일한 사용자 경험을 제공하기 위해 UI를 분할 화면(지도+목록) 레이아웃으로 변경하고, 모든 데이터 로딩을 AJAX 비동기 방식으로 구현했습니다.
+  - **변경 내용**:
+    - 왼쪽 사이드바에 '확인 전 삭제'와 '처리 후 삭제' 목록을 분리하여 표시합니다.
+    - 목록의 항목 클릭 시, 오른쪽에 상세 정보가 표시되고 지도에 해당 위치의 마커가 나타나도록 하는 전체 인터랙티브 기능을 구현했습니다.
+    - 상세 정보 보기에서, 항목이 삭제되기 전의 상태('대기삭제' 또는 '처리삭제')에 따라 표시되는 사진의 개수(각각 2개, 3개)를 동적으로 조절합니다.
+  - **영향 범위**: `app/Controllers/Web/LitteringController.php`, `app/Views/pages/littering/deleted.php`, `public/assets/js/pages/littering-deleted-admin.js`, `app/Controllers/Api/LitteringAdminApiController.php`
+
+### ♻️ 리팩토링 (Refactoring)
+- **무단투기 삭제 상태(status) 값 세분화**:
+  - **변경 이유**: 사용자가 삭제된 항목이 어떤 관리 단계에서 삭제되었는지 명확하게 구분할 수 있도록 데이터 구조를 개선했습니다.
+  - **변경 내용**: `illegal_disposal_cases2` 테이블의 `status` 값을 기존의 '삭제' 대신, 삭제 시점의 상태를 기록하는 '대기삭제'와 '처리삭제'로 세분화했습니다. 이를 위해 모든 관련 백엔드 로직(Repository, Service, API Controller)을 수정했으며, 기존 '삭제' 데이터를 '대기삭제'로 전환하는 마이그레이션 스크립트를 추가했습니다.
+  - **영향 범위**: `app/Repositories/LitteringRepository.php`, `app/Services/LitteringService.php`, `app/Controllers/Api/LitteringAdminApiController.php`, `database/migrations/20251028_update_deleted_status.sql` (신규)
+- **사진 보기 기능 `glightbox`로 통일**:
+  - **변경 이유**: 사이트 전체의 사진 보기 사용자 경험을 일관성 있게 통일하기 위함입니다.
+  - **변경 내용**: `littering/manage` 및 `littering/deleted` 페이지의 사진 보기 방식을 기존의 Bootstrap 모달에서 `littering/history` 페이지와 동일한 `glightbox` 라이브러리를 사용하도록 변경했습니다.
+  - **영향 범위**: `app/Controllers/Web/LitteringController.php`, `public/assets/js/pages/littering-manage.js`, `public/assets/js/pages/littering-deleted-admin.js`, `app/Views/pages/littering/manage.php`, `app/Views/pages/littering/deleted.php`
+
+### 🐛 버그 수정 (Bug Fixes)
+- **무단투기 항목 복원 로직 오류 수정**:
+  - **문제**: `littering/deleted` 페이지에서 '처리삭제' 상태의 항목을 복원할 때, '처리완료'가 아닌 '대기' 상태로 잘못 돌아가는 버그.
+  - **원인**: `LitteringRepository`의 `restore` 메소드가 복원 시 상태를 무조건 '대기'로 하드코딩하고 있었음.
+  - **수정**: `restore` 메소드가 복원하려는 항목의 현재 상태('대기삭제' 또는 '처리삭제')를 확인하고, 그에 맞는 원래 상태('대기' 또는 '처리완료')로 올바르게 복원하도록 로직을 수정했습니다.
+  - **영향 범위**: `app/Repositories/LitteringRepository.php`
+- **복원 확인 창 메시지 오류 수정**:
+  - **문제**: `littering/deleted` 페이지에서 항목 복원 시, 확인 창에 실제 복원될 상태와 관계없이 항상 '(상태: '대기')'라고 부정확한 메시지가 표시되는 문제.
+  - **수정**: `littering-deleted-admin.js`의 `restoreReport` 함수를 수정하여, 복원될 항목의 실제 최종 상태('대기' 또는 '처리완료')를 확인하고 이를 확인 창 메시지에 동적으로 반영하도록 변경했습니다.
+  - **영향 범위**: `public/assets/js/pages/littering-deleted-admin.js`
+
 ## [1.4.6 - 2025-10-28]
 
 ### 📝 문서 (Documentation)

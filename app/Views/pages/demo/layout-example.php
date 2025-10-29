@@ -24,7 +24,7 @@ use App\Core\View;
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         console.log('레이아웃 예제 페이지가 동적 JS와 함께 로드되었습니다!');
-        
+
         // 페이지별 기능 예제
         const demoButton = document.getElementById('demo-button');
         if (demoButton) {

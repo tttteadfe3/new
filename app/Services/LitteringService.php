@@ -56,11 +56,12 @@ class LitteringService
     }
 
     /**
+     * @param string $status
      * @return array
      */
-    public function getDeletedLittering(): array
+    public function getDeletedLittering(string $status): array
     {
-        return $this->litteringRepository->findAllDeleted();
+        return $this->litteringRepository->findAllDeleted($status);
     }
 
     /**
@@ -225,6 +226,30 @@ class LitteringService
         $caseId = intval($postData['id'] ?? 0);
         if (!$caseId) {
             throw new Exception("잘못된 보고서 ID입니다.", 400);
+        }
+
+        $case = $this->litteringRepository->findById($caseId);
+        if ($case) {
+            $photoPaths = array_filter([
+                $case['reg_photo_path'] ?? null,
+                $case['reg_photo_path2'] ?? null,
+                $case['proc_photo_path'] ?? null
+            ]);
+
+            $deletedDir = UPLOAD_DIR . '/littering/deleted';
+            if (!is_dir($deletedDir)) {
+                mkdir($deletedDir, 0755, true);
+            }
+
+            foreach ($photoPaths as $photoPath) {
+                $fileName = basename($photoPath);
+                $sourcePath = UPLOAD_DIR . '/littering/' . $fileName;
+                $destinationPath = $deletedDir . '/' . $fileName;
+
+                if (file_exists($sourcePath)) {
+                    rename($sourcePath, $destinationPath);
+                }
+            }
         }
 
         if (!$this->litteringRepository->deletePermanently($caseId)) {
