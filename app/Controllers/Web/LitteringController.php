@@ -96,6 +96,11 @@ class LitteringController extends BaseController
      */
     public function deleted(): void
     {
+        $deletedItems = $this->litteringService->getDeletedLittering();
+
+        View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/split-layout.css");
+        View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering-common.css");
+
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 
         // 리팩토링된 스크립트
@@ -105,7 +110,7 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-deleted-admin.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/deleted', [], 'layouts/app');
+        echo $this->render('pages/littering/deleted', ['deletedItems' => $deletedItems], 'layouts/app');
     }
 
     /**
