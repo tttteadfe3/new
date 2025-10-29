@@ -17,12 +17,17 @@
 **구현 방법:** 모든 라우트(Route)에는 반드시 `PermissionMiddleware`를 통해 필요한 권한을 명시해야 합니다. `AuthService::check($permission)`를 통해 권한을 검사하며, 권한이 없으면 403 Forbidden 페이지로 리다이렉트됩니다.
 
 **적용 예시:**
+
+새로운 관리자 페이지를 추가할 경우, `routes/web.php`에 다음과 같이 메소드 체이닝(Method Chaining) 방식으로 미들웨어를 설정해야 합니다.
+
 ```php
-// 'user.manage' 권한이 있는 사용자만 '/admin/users' 경로에 접근할 수 있습니다.
-$router->add('GET', '/admin/users',
-    ['App\Controllers\Web\AdminController', 'usersPage'],
-    ['middleware' => ['auth', 'permission:user.manage']] // <--- 여기!
-);
+// routes/web.php
+
+// 'user.view' 권한이 있는 사용자만 접근할 수 있도록 미들웨어를 추가합니다.
+$router->get('/admin/users', [AdminController::class, 'users'])
+       ->name('admin.users')
+       ->middleware('auth')
+       ->middleware('permission', 'user.view'); // <--- 여기!
 ```
 **⚠️ 위험성:** 권한 체크를 누락하면 일반 사용자가 URL 직접 입력을 통해 관리자 페이지에 접근하는 심각한 보안 사고로 이어질 수 있습니다.
 
