@@ -227,32 +227,26 @@ class LitteringService
             throw new Exception("잘못된 보고서 ID입니다.", 400);
         }
 
-        // 1. 데이터베이스에서 파일 경로 조회
         $case = $this->litteringRepository->findById($caseId);
-        if (!$case) {
-            throw new Exception("삭제할 보고서 데이터를 찾을 수 없습니다.", 404);
-        }
+        if ($case) {
+            $photoPaths = array_filter([
+                $case['reg_photo_path'] ?? null,
+                $case['reg_photo_path2'] ?? null,
+                $case['proc_photo_path'] ?? null
+            ]);
 
-        $photoPaths = array_filter([
-            $case['reg_photo_path'] ?? null,
-            $case['reg_photo_path2'] ?? null,
-            $case['proc_photo_path'] ?? null
-        ]);
+            $deletedDir = UPLOAD_DIR . '/littering/deleted';
+            if (!is_dir($deletedDir)) {
+                mkdir($deletedDir, 0755, true);
+            }
 
-        $deletedDir = UPLOAD_DIR . '/littering/deleted';
-        if (!is_dir($deletedDir)) {
-            mkdir($deletedDir, 0755, true);
-        }
+            foreach ($photoPaths as $photoPath) {
+                $fileName = basename($photoPath);
+                $sourcePath = UPLOAD_DIR . '/littering/' . $fileName;
+                $destinationPath = $deletedDir . '/' . $fileName;
 
-        foreach ($photoPaths as $photoPath) {
-            $fileName = basename($photoPath);
-            $sourcePath = UPLOAD_DIR . '/littering/' . $fileName;
-            $destinationPath = $deletedDir . '/' . $fileName;
-
-            if (file_exists($sourcePath)) {
-                if (!rename($sourcePath, $destinationPath)) {
-                    // Consider logging this failure but not throwing an exception
-                    // to allow DB deletion to proceed. Or handle more robustly.
+                if (file_exists($sourcePath)) {
+                    rename($sourcePath, $destinationPath);
                 }
             }
         }

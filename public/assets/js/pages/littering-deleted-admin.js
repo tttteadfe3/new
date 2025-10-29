@@ -20,7 +20,8 @@ class LitteringDeletedPage extends BasePage {
 
         this.state = {
             ...this.state,
-            deletedReports: [],
+            pendingDeletedReports: [],
+            processedDeletedReports: [],
             selectedReport: null,
             currentMarker: null
         };
@@ -40,28 +41,51 @@ class LitteringDeletedPage extends BasePage {
 
     async loadInitialData() {
         try {
-            const response = await this.apiCall(`${this.config.API_URL}?status=삭제`);
-            this.state.deletedReports = response.data || [];
-            this.renderDeletedList();
+            const [pendingResponse, processedResponse] = await Promise.all([
+                this.apiCall(`${this.config.API_URL}?status=대기삭제`),
+                this.apiCall(`${this.config.API_URL}?status=처리삭제`)
+            ]);
+            this.state.pendingDeletedReports = pendingResponse.data || [];
+            this.state.processedDeletedReports = processedResponse.data || [];
+            this.renderPendingDeletedList();
+            this.renderProcessedDeletedList();
         } catch (error) {
             console.error('데이터 로드 실패:', error);
             Toast.error('삭제된 목록을 불러오는 중 오류가 발생했습니다.');
         }
     }
 
-    renderDeletedList() {
-        const listContainer = document.getElementById('deleted-list');
+    renderPendingDeletedList() {
+        this.renderList(
+            'pending-deleted-list',
+            this.state.pendingDeletedReports,
+            '확인 전 삭제된 자료가 없습니다.',
+            '대기삭제'
+        );
+    }
+
+    renderProcessedDeletedList() {
+        this.renderList(
+            'processed-deleted-list',
+            this.state.processedDeletedReports,
+            '처리 후 삭제된 자료가 없습니다.',
+            '처리삭제'
+        );
+    }
+
+    renderList(containerId, items, emptyMessage, type) {
+        const listContainer = document.getElementById(containerId);
         listContainer.innerHTML = '';
 
-        if (this.state.deletedReports.length === 0) {
-            listContainer.innerHTML = `<div class="list-group-item text-center text-muted">삭제된 항목이 없습니다.</div>`;
+        if (items.length === 0) {
+            listContainer.innerHTML = `<div class="list-group-item text-center text-muted">${emptyMessage}</div>`;
             return;
         }
 
-        this.state.deletedReports.forEach(item => {
+        items.forEach(item => {
             const personInfo = `등록: ${item.created_by_name} / 삭제: ${item.deleted_by_name}`;
             const itemHtml = `
-                <a href="#" class="list-group-item list-group-item-action" data-id="${item.id}">
+                <a href="#" class="list-group-item list-group-item-action" data-id="${item.id}" data-type="${type}">
                     <div class="d-flex w-100 justify-content-between">
                         <h6 class="mb-1 list-title">${item.waste_type}</h6>
                         <small>${new Date(item.deleted_at).toLocaleDateString()}</small>
@@ -73,7 +97,7 @@ class LitteringDeletedPage extends BasePage {
             const itemNode = document.createRange().createContextualFragment(itemHtml).firstElementChild;
             itemNode.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.selectReport(parseInt(item.id));
+                this.selectReport(parseInt(item.id), type);
                 document.querySelectorAll('.list-group-item.active').forEach(active => active.classList.remove('active'));
                 itemNode.classList.add('active');
             });
@@ -81,11 +105,12 @@ class LitteringDeletedPage extends BasePage {
         });
     }
 
-    selectReport(reportId) {
-        const selected = this.state.deletedReports.find(item => item.id === reportId);
+    selectReport(reportId, type) {
+        const sourceList = type === '대기삭제' ? this.state.pendingDeletedReports : this.state.processedDeletedReports;
+        const selected = sourceList.find(item => item.id === reportId);
         if (!selected) return;
 
-        this.state.selectedReport = selected;
+        this.state.selectedReport = { ...selected, type: type };
 
         document.getElementById('case-id').value = selected.id;
         document.getElementById('address').textContent = selected.road_address || selected.jibun_address || '';
@@ -95,13 +120,12 @@ class LitteringDeletedPage extends BasePage {
         const personInfo = `등록: ${selected.created_by_name} / 삭제: ${selected.deleted_by_name} (${new Date(selected.deleted_at).toLocaleString()})`;
         document.getElementById('registrant-info').textContent = personInfo;
 
-        this.renderExistingPhotos(selected);
+        this.renderExistingPhotos(selected, type);
 
         const position = { lat: selected.latitude, lng: selected.longitude };
         this.state.mapService.mapManager.setCenter(position);
 
         if (this.state.currentMarker) this.state.mapService.mapManager.removeMarker(this.state.currentMarker);
-
         this.state.currentMarker = this.state.mapService.mapManager.addMarker({ position });
 
         document.getElementById('detail-view').classList.remove('d-none');
@@ -110,60 +134,68 @@ class LitteringDeletedPage extends BasePage {
         }
     }
 
-    renderExistingPhotos(reportData) {
+    renderExistingPhotos(reportData, type) {
         const container = document.getElementById('photo-container');
         container.innerHTML = '';
-        const photoPaths = [
-            { title: '작업전', src: reportData.reg_photo_path },
-            { title: '작업후', src: reportData.reg_photo_path2 },
-            { title: '처리완료', src: reportData.proc_photo_path }
-        ].filter(p => p.src);
 
-        if (photoPaths.length === 0) {
-            container.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
-            return;
+        let photoSlots = [
+            { title: '작업전', src: reportData.reg_photo_path },
+            { title: '작업후', src: reportData.reg_photo_path2 }
+        ];
+
+        if (type === '처리삭제') {
+            photoSlots.push({ title: '처리완료', src: reportData.proc_photo_path });
         }
 
         const grid = document.createElement('div');
         grid.className = 'photo-grid';
+        let hasPhotos = false;
 
-        photoPaths.forEach(photo => {
+        photoSlots.forEach(slot => {
             const item = document.createElement('div');
             item.className = 'photo-item';
 
             const container169 = document.createElement('div');
             container169.className = 'image-container-16-9';
 
-            const anchor = document.createElement('a');
-            anchor.href = photo.src;
-            anchor.className = 'glightbox';
-            anchor.dataset.gallery = `gallery-${reportData.id}`;
-            anchor.dataset.title = photo.title;
+            if (slot.src) {
+                hasPhotos = true;
+                const anchor = document.createElement('a');
+                anchor.href = slot.src;
+                anchor.className = 'glightbox';
+                anchor.dataset.gallery = `gallery-${reportData.id}`;
+                anchor.dataset.title = slot.title;
 
-            const img = document.createElement('img');
-            img.src = photo.src;
-            img.alt = photo.title;
+                const img = document.createElement('img');
+                img.src = slot.src;
+                img.alt = slot.title;
 
-            anchor.appendChild(img);
-            container169.appendChild(anchor);
+                anchor.appendChild(img);
+                container169.appendChild(anchor);
+            } else {
+                 const placeholder = document.createElement('div');
+                placeholder.className = 'no-image-placeholder';
+                placeholder.innerHTML = `<div>${slot.title}</div><small>(이미지 없음)</small>`;
+                container169.appendChild(placeholder);
+            }
             item.appendChild(container169);
             grid.appendChild(item);
         });
 
-        container.appendChild(grid);
-        if (this.lightbox) {
-            this.lightbox.destroy();
+        if (!hasPhotos) {
+             container.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
+        } else {
+            container.appendChild(grid);
+            if (this.lightbox) this.lightbox.destroy();
+            this.lightbox = GLightbox({ selector: `[data-gallery="gallery-${reportData.id}"]` });
         }
-        this.lightbox = GLightbox({
-            selector: `[data-gallery="gallery-${reportData.id}"]`
-        });
     }
 
     async restoreReport() {
         if (!this.state.selectedReport) return;
 
         const caseId = this.state.selectedReport.id;
-        const result = await Confirm.fire('복원 확인', `ID ${caseId} 항목을 복원하시겠습니까?`);
+        const result = await Confirm.fire('복원 확인', `ID ${caseId} 항목을 복원하시겠습니까? (상태: '대기')`);
         if (result.isConfirmed) {
             this.setButtonLoading('#restore-btn', '복원 중...');
             try {
@@ -198,8 +230,14 @@ class LitteringDeletedPage extends BasePage {
     }
 
     removeReportFromList(reportId) {
-        this.state.deletedReports = this.state.deletedReports.filter(item => item.id !== parseInt(reportId));
-        this.renderDeletedList();
+        const type = this.state.selectedReport.type;
+        if (type === '대기삭제') {
+             this.state.pendingDeletedReports = this.state.pendingDeletedReports.filter(item => item.id !== parseInt(reportId));
+             this.renderPendingDeletedList();
+        } else if (type === '처리삭제') {
+            this.state.processedDeletedReports = this.state.processedDeletedReports.filter(item => item.id !== parseInt(reportId));
+            this.renderProcessedDeletedList();
+        }
 
         document.getElementById('detail-view').classList.add('d-none');
         document.getElementById('action-form').reset();

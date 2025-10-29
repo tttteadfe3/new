@@ -30,11 +30,9 @@ class LitteringController extends BaseController
      */
     public function manage(): void
     {
-        View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/libs/glightbox/css/glightbox.min.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/split-layout.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering-common.css");
         
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/libs/glightbox/js/glightbox.min.js");
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 
         // 리팩토링된 스크립트

@@ -12,12 +12,23 @@
         <div class="chat-room-list pt-3" data-simplebar>
             <div class="d-flex align-items-center px-4 mb-2">
                 <div class="flex-grow-1">
-                    <h6 class="mb-0 text-muted">삭제된 목록</h6>
+                    <h6 class="mb-0 text-muted">확인 전 삭제</h6>
                 </div>
             </div>
             <div class="chat-message-list">
-                <div class="list-group list-group-flush" id="deleted-list">
-                    <!-- Deleted items will be dynamically inserted here via AJAX -->
+                <div class="list-group list-group-flush" id="pending-deleted-list">
+                    <!-- Pending deleted items will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center px-4 my-2">
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 text-muted">처리 후 삭제</h6>
+                </div>
+            </div>
+            <div class="chat-message-list">
+                <div class="list-group list-group-flush" id="processed-deleted-list">
+                    <!-- Processed deleted items will be dynamically inserted here -->
                 </div>
             </div>
         </div>
@@ -65,7 +76,7 @@
                                                 <p id="waste_type2" class="form-control-plaintext"></p>
                                             </div>
                                         </div>
-                                         <div class="d-flex justify-content-end gap-2">
+                                        <div class="d-flex justify-content-end gap-2">
                                             <button type="button" class="btn btn-success btn-sm" id="restore-btn">
                                                 <i class="ri-arrow-go-back-line me-1"></i>복원
                                             </button>
@@ -83,5 +94,4 @@
         </div>
     </div>
 </div>
-
 <?php \App\Core\View::getInstance()->endSection(); ?>
