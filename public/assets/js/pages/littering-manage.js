@@ -40,6 +40,7 @@ class LitteringAdminPage extends BasePage {
         this.state.mapService = new MapService(mapOptions);
         this.setupEventListeners();
         this.loadInitialData();
+        this.setupLightbox();
     }
 
     setupEventListeners() {
@@ -235,13 +236,19 @@ class LitteringAdminPage extends BasePage {
 
             if (slot.src) {
                 hasPhotos = true;
-                container169.style.cursor = 'pointer';
-                container169.addEventListener('click', () => this.openPhotoModal(slot.src, slot.title));
+                const link = document.createElement('a');
+                link.href = slot.src;
+                link.className = 'gallery-lightbox';
+                link.dataset.gallery = `littering-manage-${reportData.id}`;
+                link.title = slot.title;
+                link.style.cursor = 'pointer';
 
                 const img = document.createElement('img');
                 img.src = slot.src;
                 img.alt = slot.title;
-                container169.appendChild(img);
+
+                link.appendChild(img);
+                container169.appendChild(link);
             } else {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'no-image-placeholder';
@@ -257,13 +264,16 @@ class LitteringAdminPage extends BasePage {
         } else {
             container.appendChild(grid);
         }
+
+        if (this.lightbox) {
+            this.lightbox.reload();
+        }
     }
 
-    openPhotoModal(imageSrc, title) {
-        document.getElementById('photoViewModalLabel').textContent = title;
-        document.getElementById('photoViewModalImage').src = imageSrc;
-        const modal = new bootstrap.Modal(document.getElementById('photoViewModal'));
-        modal.show();
+    setupLightbox() {
+        this.lightbox = GLightbox({
+            selector: '.gallery-lightbox'
+        });
     }
 
     async confirmReport() {
