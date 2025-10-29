@@ -264,7 +264,7 @@ class LitteringAdminPage extends BasePage {
         } else {
             container.appendChild(grid);
         }
-
+        
         if (this.lightbox) {
             this.lightbox.reload();
         }
@@ -340,7 +340,7 @@ class LitteringAdminPage extends BasePage {
             try {
                 await this.apiCall(`${this.config.API_URL}/${reportId}`, { method: 'DELETE' });
                 Toast.success('성공적으로 삭제되었습니다.');
-                this.removeReportFromList(reportId, '대기');
+                this.removeReportFromList(reportId, this.state.selectedReport.status);
             } catch (error) {
                 Toast.error('삭제에 실패했습니다: ' + error.message);
             } finally {
