@@ -1,4 +1,4 @@
-class LitteringDeletedAdminPage extends BasePage {
+class LitteringDeletedPage extends BasePage {
     constructor() {
         const currentScript = document.currentScript;
         let scriptConfig = {};
@@ -8,123 +8,200 @@ class LitteringDeletedAdminPage extends BasePage {
                 try {
                     scriptConfig = JSON.parse(options);
                 } catch (e) {
-                    console.error('Failed to parse script options for LitteringDeletedAdminPage:', e);
+                    console.error('Failed to parse script options for LitteringDeletedPage:', e);
                 }
             }
         }
+
         super({
             ...scriptConfig,
             API_URL: '/littering_admin/reports'
         });
+
         this.state = {
             ...this.state,
-            deletedList: []
+            deletedReports: [],
+            selectedReport: null,
+            currentMarker: null
         };
     }
 
     initializeApp() {
+        const mapOptions = { ...this.config, enableTempMarker: false };
+        this.state.mapService = new MapService(mapOptions);
+        this.setupEventListeners();
         this.loadInitialData();
+    }
+
+    setupEventListeners() {
+        document.getElementById('restore-btn').addEventListener('click', () => this.restoreReport());
+        document.getElementById('permanent-delete-btn').addEventListener('click', () => this.permanentlyDeleteReport());
     }
 
     async loadInitialData() {
         try {
             const response = await this.apiCall(`${this.config.API_URL}?status=삭제`);
-            this.state.deletedList = response.data || [];
+            this.state.deletedReports = response.data || [];
             this.renderDeletedList();
         } catch (error) {
-            console.error('삭제 목록 로드 실패:', error);
-            const listContainer = document.getElementById('deleted-items-list');
-            if (listContainer) {
-                listContainer.innerHTML = `<tr><td colspan="6" class="text-center text-danger">목록을 불러오는데 실패했습니다: ${error.message}</td></tr>`;
-            }
+            console.error('데이터 로드 실패:', error);
+            Toast.error('삭제된 목록을 불러오는 중 오류가 발생했습니다.');
         }
     }
 
     renderDeletedList() {
-        const listContainer = document.getElementById('deleted-items-list');
-        
-        // 컨테이너가 존재하는지 확인
-        if (!listContainer) {
-            console.error('deleted-items-list 요소를 찾을 수 없습니다.');
-            return;
-        }
-
+        const listContainer = document.getElementById('deleted-list');
         listContainer.innerHTML = '';
 
-        if (this.state.deletedList.length === 0) {
-            listContainer.innerHTML = '<tr><td colspan="6" class="text-center text-muted">삭제된 항목이 없습니다.</td></tr>';
+        if (this.state.deletedReports.length === 0) {
+            listContainer.innerHTML = `<div class="list-group-item text-center text-muted">삭제된 항목이 없습니다.</div>`;
             return;
         }
 
-        this.state.deletedList.forEach(item => {
-            const registrantName = item.employee_name || item.user_name || '알 수 없음';
-            const itemHtml = `<tr data-id="${item.id}">
-                    <td>${item.id}</td>
-                    <td>${item.jibun_address || item.road_address || '주소 없음'}</td>
-                    <td>${item.waste_type}</td>
-                    <td>${registrantName}</td>
-                    <td>${new Date(item.deleted_at).toLocaleString()}</td>
-                    <td>
-                        <button class="btn btn-sm btn-warning restore-btn">복원</button>
-                        <button class="btn btn-sm btn-danger permanent-delete-btn">영구 삭제</button>
-                    </td>
-                </tr>`;
-            
-            // table에 직접 innerHTML 할당 (div가 아닌 table에!)
-            const tempTable = document.createElement('table');
-            tempTable.innerHTML = itemHtml;
-            const itemNode = tempTable.querySelector('tr');
-            
-            if (!itemNode) {
-                console.error('tr 요소를 찾을 수 없습니다!');
-                return;
-            }
-            
-            // 버튼 요소 존재 확인 후 이벤트 리스너 추가
-            const restoreBtn = itemNode.querySelector('.restore-btn');
-            const deleteBtn = itemNode.querySelector('.permanent-delete-btn');
-            
-            if (restoreBtn) {
-                restoreBtn.addEventListener('click', () => this.restoreReport(item.id));
-            } else {
-                console.warn(`복원 버튼을 찾을 수 없습니다 (ID: ${item.id})`);
-            }
-            
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', () => this.permanentlyDeleteReport(item.id));
-            } else {
-                console.warn(`삭제 버튼을 찾을 수 없습니다 (ID: ${item.id})`);
-            }
-            
+        this.state.deletedReports.forEach(item => {
+            const personInfo = `등록: ${item.created_by_name} / 삭제: ${item.deleted_by_name}`;
+            const itemHtml = `
+                <a href="#" class="list-group-item list-group-item-action" data-id="${item.id}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1 list-title">${item.waste_type}</h6>
+                        <small>${new Date(item.deleted_at).toLocaleDateString()}</small>
+                    </div>
+                    <p class="mb-1 small text-muted">${item.road_address || item.jibun_address || '주소 없음'}</p>
+                    <small class="text-muted">${personInfo}</small>
+                </a>
+            `;
+            const itemNode = document.createRange().createContextualFragment(itemHtml).firstElementChild;
+            itemNode.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.selectReport(parseInt(item.id));
+                document.querySelectorAll('.list-group-item.active').forEach(active => active.classList.remove('active'));
+                itemNode.classList.add('active');
+            });
             listContainer.appendChild(itemNode);
         });
     }
 
-    async restoreReport(caseId) {
+    selectReport(reportId) {
+        const selected = this.state.deletedReports.find(item => item.id === reportId);
+        if (!selected) return;
+
+        this.state.selectedReport = selected;
+
+        document.getElementById('case-id').value = selected.id;
+        document.getElementById('address').textContent = selected.road_address || selected.jibun_address || '';
+        document.getElementById('waste_type').textContent = selected.waste_type;
+        document.getElementById('waste_type2').textContent = selected.waste_type2 || '없음';
+
+        const personInfo = `등록: ${selected.created_by_name} / 삭제: ${selected.deleted_by_name} (${new Date(selected.deleted_at).toLocaleString()})`;
+        document.getElementById('registrant-info').textContent = personInfo;
+
+        this.renderExistingPhotos(selected);
+
+        const position = { lat: selected.latitude, lng: selected.longitude };
+        this.state.mapService.mapManager.setCenter(position);
+
+        if (this.state.currentMarker) this.state.mapService.mapManager.removeMarker(this.state.currentMarker);
+
+        this.state.currentMarker = this.state.mapService.mapManager.addMarker({ position });
+
+        document.getElementById('detail-view').classList.remove('d-none');
+        if (window.SplitLayout) {
+            SplitLayout.show();
+        }
+    }
+
+    renderExistingPhotos(reportData) {
+        const container = document.getElementById('photo-container');
+        container.innerHTML = '';
+        const photoPaths = [
+            { title: '작업전', src: reportData.reg_photo_path },
+            { title: '작업후', src: reportData.reg_photo_path2 },
+            { title: '처리완료', src: reportData.proc_photo_path }
+        ].filter(p => p.src);
+
+        if (photoPaths.length === 0) {
+            container.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
+            return;
+        }
+
+        photoPaths.forEach(photo => {
+            const imgHtml = `
+                <div class="photo-item" style="cursor: pointer;">
+                    <img src="${photo.src}" alt="${photo.title}" class="img-fluid rounded">
+                    <p class="text-center small mt-1">${photo.title}</p>
+                </div>`;
+            const photoNode = document.createRange().createContextualFragment(imgHtml).firstElementChild;
+            photoNode.addEventListener('click', () => this.openPhotoModal(photo.src, photo.title));
+            container.appendChild(photoNode);
+        });
+    }
+
+    openPhotoModal(imageSrc, title) {
+        document.getElementById('photoViewModalLabel').textContent = title;
+        document.getElementById('photoViewModalImage').src = imageSrc;
+        const modal = new bootstrap.Modal(document.getElementById('photoViewModal'));
+        modal.show();
+    }
+
+    async restoreReport() {
+        if (!this.state.selectedReport) return;
+
+        const caseId = this.state.selectedReport.id;
         const result = await Confirm.fire('복원 확인', `ID ${caseId} 항목을 복원하시겠습니까?`);
         if (result.isConfirmed) {
+            this.setButtonLoading('#restore-btn', '복원 중...');
             try {
                 await this.apiCall(`${this.config.API_URL}/${caseId}/restore`, { method: 'POST' });
                 Toast.success('항목이 성공적으로 복원되었습니다.');
-                this.loadInitialData();
+                this.removeReportFromList(caseId);
             } catch (error) {
                 Toast.error('복원에 실패했습니다: ' + error.message);
+            } finally {
+                this.resetButtonLoading('#restore-btn', '<i class="ri-arrow-go-back-line me-1"></i>복원');
             }
         }
     }
 
-    async permanentlyDeleteReport(caseId) {
+    async permanentlyDeleteReport() {
+        if (!this.state.selectedReport) return;
+
+        const caseId = this.state.selectedReport.id;
         const result = await Confirm.fire('영구 삭제 확인', `ID ${caseId} 항목을 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`);
         if (result.isConfirmed) {
+            this.setButtonLoading('#permanent-delete-btn', '삭제 중...');
             try {
-                await this.apiCall(`${this.config.API_URL}/${caseId}/permanent`, { method: 'DELETE' });
+                await this.apiCall(`${this.config.API_URL}/${caseId}`, { method: 'DELETE' });
                 Toast.success('항목이 성공적으로 영구 삭제되었습니다.');
-                this.loadInitialData();
+                this.removeReportFromList(caseId);
             } catch (error) {
                 Toast.error('영구 삭제에 실패했습니다: ' + error.message);
+            } finally {
+                this.resetButtonLoading('#permanent-delete-btn', '<i class="ri-delete-bin-2-line me-1"></i>영구 삭제');
             }
+        }
+    }
+
+    removeReportFromList(reportId) {
+        this.state.deletedReports = this.state.deletedReports.filter(item => item.id !== parseInt(reportId));
+        this.renderDeletedList();
+
+        document.getElementById('detail-view').classList.add('d-none');
+        document.getElementById('action-form').reset();
+        this.state.selectedReport = null;
+        if (this.state.currentMarker) {
+            this.state.mapService.mapManager.removeMarker(this.state.currentMarker);
+            this.state.currentMarker = null;
+        }
+        const activeItem = document.querySelector('.list-group-item.active');
+        if (activeItem) activeItem.classList.remove('active');
+    }
+
+    cleanup() {
+        super.cleanup();
+        if (this.state.mapService) {
+            this.state.mapService.destroy();
         }
     }
 }
 
-new LitteringDeletedAdminPage();
+new LitteringDeletedPage();

@@ -96,8 +96,6 @@ class LitteringController extends BaseController
      */
     public function deleted(): void
     {
-        $deletedItems = $this->litteringService->getDeletedLittering();
-
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/split-layout.css");
         View::getInstance()->addCss(BASE_ASSETS_URL . "/assets/css/pages/littering-common.css");
 
@@ -110,7 +108,7 @@ class LitteringController extends BaseController
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/services/map-service.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/pages/littering-deleted-admin.js", ['allowedRegions' => ALLOWED_REGIONS]);
 
-        echo $this->render('pages/littering/deleted', ['deletedItems' => $deletedItems], 'layouts/app');
+        echo $this->render('pages/littering/deleted', [], 'layouts/app');
     }
 
     /**
