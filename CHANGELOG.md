@@ -33,6 +33,10 @@
   - **원인**: `LitteringRepository`의 `restore` 메소드가 복원 시 상태를 무조건 '대기'로 하드코딩하고 있었음.
   - **수정**: `restore` 메소드가 복원하려는 항목의 현재 상태('대기삭제' 또는 '처리삭제')를 확인하고, 그에 맞는 원래 상태('대기' 또는 '처리완료')로 올바르게 복원하도록 로직을 수정했습니다.
   - **영향 범위**: `app/Repositories/LitteringRepository.php`
+- **복원 확인 창 메시지 오류 수정**:
+  - **문제**: `littering/deleted` 페이지에서 항목 복원 시, 확인 창에 실제 복원될 상태와 관계없이 항상 '(상태: '대기')'라고 부정확한 메시지가 표시되는 문제.
+  - **수정**: `littering-deleted-admin.js`의 `restoreReport` 함수를 수정하여, 복원될 항목의 실제 최종 상태('대기' 또는 '처리완료')를 확인하고 이를 확인 창 메시지에 동적으로 반영하도록 변경했습니다.
+  - **영향 범위**: `public/assets/js/pages/littering-deleted-admin.js`
 
 ## [1.4.6 - 2025-10-28]
 

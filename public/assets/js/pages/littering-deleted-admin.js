@@ -194,8 +194,10 @@ class LitteringDeletedPage extends BasePage {
     async restoreReport() {
         if (!this.state.selectedReport) return;
 
-        const caseId = this.state.selectedReport.id;
-        const result = await Confirm.fire('복원 확인', `ID ${caseId} 항목을 복원하시겠습니까? (상태: '대기')`);
+        const { id: caseId, type } = this.state.selectedReport;
+        const restoredStatus = type === '처리삭제' ? '처리완료' : '대기';
+
+        const result = await Confirm.fire('복원 확인', `ID ${caseId} 항목을 복원하시겠습니까? (복원 후 상태: '${restoredStatus}')`);
         if (result.isConfirmed) {
             this.setButtonLoading('#restore-btn', '복원 중...');
             try {
