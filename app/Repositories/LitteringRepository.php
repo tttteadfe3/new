@@ -199,8 +199,15 @@ class LitteringRepository {
      * @return bool
      */
     public function restore(int $caseId): bool {
-        $query = "UPDATE illegal_disposal_cases2 SET status = '대기', deleted_by = NULL, deleted_at = NULL WHERE id = ?";
-        return $this->db->execute($query, [$caseId]) > 0;
+        $case = $this->findById($caseId);
+        if (!$case) {
+            return false;
+        }
+
+        $restoredStatus = ($case['status'] === '처리삭제') ? '처리완료' : '대기';
+
+        $query = "UPDATE illegal_disposal_cases2 SET status = ?, deleted_by = NULL, deleted_at = NULL WHERE id = ?";
+        return $this->db->execute($query, [$restoredStatus, $caseId]) > 0;
     }
 
     /**
