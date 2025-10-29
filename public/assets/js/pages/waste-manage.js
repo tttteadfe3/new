@@ -44,7 +44,7 @@ class WasteAdminPage extends BasePage {
     generateTableRow(item) {
         const items = (typeof item.items === 'string' ? JSON.parse(item.items) : item.items) || [];
         const itemRowsHtml = items.map(d => this.generateItemRow(d)).join('');
-        const processButtonHtml = item.status !== 'processed'
+        const processButtonHtml = item.status !== '처리완료'
             ? `<button type="button" class="btn btn-sm btn-success btn-process" data-id="${item.id}">처리</button>`
             : `<button type="button" class="btn btn-sm btn-secondary" disabled>완료</button>`;
         const itemsManagementHtml = `
@@ -52,20 +52,20 @@ class WasteAdminPage extends BasePage {
             <div class="mt-2 d-flex justify-content-between">
                 <div>
                     <button type="button" class="btn btn-sm btn-outline-success btn-add-item" data-id="${item.id}">품목 추가</button>
-                    ${processButtonHtml}
+                    <button type="button" class="btn btn-sm btn-primary btn-save-items" data-id="${item.id}">품목 저장</button>
                 </div>
-                <button type="button" class="btn btn-sm btn-primary btn-save-items" data-id="${item.id}">품목 저장</button>
+                ${processButtonHtml}
             </div>`;
 
         return `<tr>
-            <td>${item.discharge_number || '-'}</td>
+            <td><a href="https://www.siheung.go.kr/sys/wasteMng/apply/print.do?idx=${item.discharge_number}" target="_blank">${item.discharge_number || '-'}</a></td>
             <td>${item.submitter_name || '-'}</td>
             <td>${item.submitter_phone || '-'}</td>
             <td class="text-start">${item.address} ${item.geocoding_status === 'failure' ? '<i class="ri-error-warning-fill text-danger ms-1" title="주소 변환 실패"></i>' : ''}</td>
             <td>${item.item_count}</td>
             <td>${(item.fee || 0).toLocaleString()}원</td>
             <td>${item.issue_date}</td>
-            <td><span class="badge bg-${item.status === 'processed' ? 'secondary' : 'warning'}">${item.status === 'processed' ? '처리완료' : '미처리'}</span></td>
+            <td><span class="badge bg-${item.status === '처리완료' ? 'secondary' : 'warning'}">${item.status === '처리완료' ? '처리완료' : '미처리'}</span></td>
             <td style="min-width: 450px;">${itemsManagementHtml}</td>
         </tr>`;
     }
