@@ -124,23 +124,39 @@ class LitteringDeletedPage extends BasePage {
             return;
         }
 
-        photoPaths.forEach(photo => {
-            const imgHtml = `
-                <div class="photo-item" style="cursor: pointer;">
-                    <img src="${photo.src}" alt="${photo.title}" class="img-fluid rounded">
-                    <p class="text-center small mt-1">${photo.title}</p>
-                </div>`;
-            const photoNode = document.createRange().createContextualFragment(imgHtml).firstElementChild;
-            photoNode.addEventListener('click', () => this.openPhotoModal(photo.src, photo.title));
-            container.appendChild(photoNode);
-        });
-    }
+        const grid = document.createElement('div');
+        grid.className = 'photo-grid';
 
-    openPhotoModal(imageSrc, title) {
-        document.getElementById('photoViewModalLabel').textContent = title;
-        document.getElementById('photoViewModalImage').src = imageSrc;
-        const modal = new bootstrap.Modal(document.getElementById('photoViewModal'));
-        modal.show();
+        photoPaths.forEach(photo => {
+            const item = document.createElement('div');
+            item.className = 'photo-item';
+
+            const container169 = document.createElement('div');
+            container169.className = 'image-container-16-9';
+
+            const anchor = document.createElement('a');
+            anchor.href = photo.src;
+            anchor.className = 'glightbox';
+            anchor.dataset.gallery = `gallery-${reportData.id}`;
+            anchor.dataset.title = photo.title;
+
+            const img = document.createElement('img');
+            img.src = photo.src;
+            img.alt = photo.title;
+
+            anchor.appendChild(img);
+            container169.appendChild(anchor);
+            item.appendChild(container169);
+            grid.appendChild(item);
+        });
+
+        container.appendChild(grid);
+        if (this.lightbox) {
+            this.lightbox.destroy();
+        }
+        this.lightbox = GLightbox({
+            selector: `[data-gallery="gallery-${reportData.id}"]`
+        });
     }
 
     async restoreReport() {

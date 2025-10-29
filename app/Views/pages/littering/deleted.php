@@ -84,18 +84,4 @@
     </div>
 </div>
 
-<!-- Photo Modal -->
-<div class="modal fade" id="photoViewModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="photoViewModalLabel">사진 보기</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-                <img src="" id="photoViewModalImage" class="img-fluid rounded">
-            </div>
-        </div>
-    </div>
-</div>
 <?php \App\Core\View::getInstance()->endSection(); ?>

@@ -235,13 +235,19 @@ class LitteringAdminPage extends BasePage {
 
             if (slot.src) {
                 hasPhotos = true;
-                container169.style.cursor = 'pointer';
-                container169.addEventListener('click', () => this.openPhotoModal(slot.src, slot.title));
+                const anchor = document.createElement('a');
+                anchor.href = slot.src;
+                anchor.className = 'glightbox';
+                anchor.dataset.gallery = `gallery-${reportData.id}`;
+                anchor.dataset.title = slot.title;
 
                 const img = document.createElement('img');
                 img.src = slot.src;
                 img.alt = slot.title;
-                container169.appendChild(img);
+
+                anchor.appendChild(img);
+                container169.appendChild(anchor);
+
             } else {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'no-image-placeholder';
@@ -256,14 +262,14 @@ class LitteringAdminPage extends BasePage {
              container.innerHTML = '<div class="text-center p-5 text-muted">등록된 사진이 없습니다.</div>';
         } else {
             container.appendChild(grid);
+            // Initialize GLightbox
+            if (this.lightbox) {
+                this.lightbox.destroy();
+            }
+            this.lightbox = GLightbox({
+                selector: `[data-gallery="gallery-${reportData.id}"]`
+            });
         }
-    }
-
-    openPhotoModal(imageSrc, title) {
-        document.getElementById('photoViewModalLabel').textContent = title;
-        document.getElementById('photoViewModalImage').src = imageSrc;
-        const modal = new bootstrap.Modal(document.getElementById('photoViewModal'));
-        modal.show();
     }
 
     async confirmReport() {
