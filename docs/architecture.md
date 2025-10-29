@@ -16,21 +16,45 @@
 -   **요청 흐름**: `Route` → `Controller` → `Service` → `Repository` → `Database`
 -   **Thin Controller 원칙**: 컨트롤러는 HTTP 요청/응답 처리 및 데이터 유효성 검증에 집중하며, 모든 비즈니스 로직은 서비스 계층에 위임합니다. 컨트롤러 내에서 직접 권한을 확인하거나 복잡한 데이터 처리 로직을 포함하지 않습니다.
 
+#### 요청 처리 흐름 (Request Processing Flow)
+
+모든 웹 요청은 `public/index.php`를 통해 시작되며, 다음 순서로 처리됩니다.
+
+1.  **`public/index.php`**:
+    -   Composer `autoload.php` 로드.
+    -   DI 컨테이너(`App\Core\Container`) 초기화 및 서비스, 리포지토리, 컨트롤러 등록.
+    -   라우터(`App\Core\Router`) 초기화.
+    -   미들웨어(`AuthMiddleware`, `PermissionMiddleware`) 등록.
+    -   `routes/web.php`, `routes/api.php` 파일 로드.
+2.  **Router**:
+    -   현재 요청 URL과 일치하는 라우트를 찾아 해당 컨트롤러의 메서드를 호출합니다.
+3.  **Middleware**:
+    -   컨트롤러 실행 전, 인증 및 권한 검사를 수행합니다.
+4.  **Controller (`app/Controllers`)**:
+    -   HTTP 요청을 받아 입력 데이터 유효성 검사.
+    -   비즈니스 로직 처리를 서비스(Service)에 위임.
+    -   서비스로부터 받은 결과를 `View` 또는 `JsonResponse`를 통해 응답.
+5.  **Service (`app/Services`)**:
+    -   애플리케이션의 핵심 비즈니스 로직을 담당.
+    -   여러 리포지토리(Repository)를 조합하여 데이터를 처리.
+6.  **Repository (`app/Repositories`)**:
+    -   데이터베이스와의 상호작용을 담당.
+    -   SQL 쿼리를 실행하고 결과를 서비스에 반환.
+
 ### 2.2. 디렉토리 구조
 
--   **컨트롤러**:
-    -   페이지 렌더링: `app/Controllers/Web/`
-    -   데이터 API: `app/Controllers/Api/`
--   **뷰**:
-    -   페이지: `app/Views/pages/` (예: `pages.admin.roles` → `app/Views/pages/admin/roles.php`)
-    -   오류 페이지: `app/Views/errors/`
-    -   레이아웃 및 공용 컴포넌트: `app/Views/layouts/`
--   **프론트엔드 에셋**:
-    -   JavaScript: `public/assets/js/` (하위에 `pages`, `components`, `services` 등으로 구조화)
-    -   CSS: `public/assets/css/` (하위에 `pages` 등으로 구조화)
--   **라우팅**:
-    -   웹: `routes/web.php`
-    -   API: `routes/api.php`
+-   **`app/`**: 애플리케이션의 핵심 코드.
+    -   `Controllers/`: 요청 처리 및 응답 반환.
+    -   `Services/`: 비즈니스 로직.
+    -   `Repositories/`: 데이터베이스 상호작용.
+    -   `Views/`: 프레젠테이션 로직 (HTML).
+    -   `Core/`: DI 컨테이너, 라우터 등 핵심 클래스.
+    -   `Middleware/`: 요청 중간 처리 (인증, 권한).
+-   **`routes/`**: URL 라우팅 정의.
+    -   `web.php`: 웹 페이지 라우트.
+    -   `api.php`: API 라우트.
+-   **`config/`**: 애플리케이션 설정.
+-   **`public/`**: 웹 서버의 Document Root.
 
 ### 2.3. 의존성 주입 (Dependency Injection)
 
