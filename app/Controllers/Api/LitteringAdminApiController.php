@@ -52,8 +52,9 @@ class LitteringAdminApiController extends BaseApiController
                 case '처리완료':
                     $data = $this->litteringService->getProcessedLitteringForApproval();
                     break;
-                case '삭제':
-                    $data = $this->litteringService->getDeletedLittering();
+                case '대기삭제':
+                case '처리삭제':
+                    $data = $this->litteringService->getDeletedLittering($status);
                     break;
                 default:
                     $this->apiError('잘못된 상태 값입니다.', 'INVALID_INPUT', 400);

@@ -167,9 +167,10 @@ class LitteringRepository {
     }
 
     /**
+     * @param string $status
      * @return array
      */
-    public function findAllDeleted(): array {
+    public function findAllDeleted(string $status): array {
         $query = "
             SELECT 
                 idc.*, 
@@ -178,10 +179,10 @@ class LitteringRepository {
             FROM `illegal_disposal_cases2` idc
             LEFT JOIN `hr_employees` e ON idc.created_by = e.id
             LEFT JOIN `hr_employees` e2 ON idc.deleted_by = e2.id
-            WHERE idc.status IN ('대기삭제', '처리삭제')
+            WHERE idc.status = ?
             ORDER BY idc.deleted_at DESC
         ";
-        return $this->db->fetchAll($query);
+        return $this->db->fetchAll($query, [$status]);
     }
 
     /**

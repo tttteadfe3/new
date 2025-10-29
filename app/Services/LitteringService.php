@@ -56,11 +56,12 @@ class LitteringService
     }
 
     /**
+     * @param string $status
      * @return array
      */
-    public function getDeletedLittering(): array
+    public function getDeletedLittering(string $status): array
     {
-        return $this->litteringRepository->findAllDeleted();
+        return $this->litteringRepository->findAllDeleted($status);
     }
 
     /**
