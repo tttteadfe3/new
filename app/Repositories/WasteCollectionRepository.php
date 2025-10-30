@@ -140,8 +140,8 @@ class WasteCollectionRepository {
                     WHERE wci.collection_id = wc.id
                 ), '[]') AS items
             FROM `waste_collections` wc
-            LEFT JOIN `employees` creator ON wc.created_by = creator.id
-            LEFT JOIN `employees` completer ON wc.completed_by = completer.id
+            LEFT JOIN `hr_employees` creator ON wc.created_by = creator.id
+            LEFT JOIN `hr_employees` completer ON wc.completed_by = completer.id
         ";
         $whereClauses = ["wc.type = 'field'"];
         $params = [];
