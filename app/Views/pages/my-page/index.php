@@ -1,16 +1,9 @@
 <?php \App\Core\View::getInstance()->startSection('content'); ?>
-<div class="row mt-2">
-    <div class="card">
-        <div class="card-body">
-            <div id="profile-container">
-                <div class="text-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">로딩...</span>
-                    </div>
-                    <p class="mt-2">프로필 정보를 불러오는 중...</p>
-                </div>
-            </div>
-        </div>
+<div id="profile-container" class="mt-2">
+    <!-- my-page.js will render the full dashboard here -->
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">로딩...</span></div>
+        <p class="mt-2">사용자 정보를 불러오는 중...</p>
     </div>
 </div>
 
@@ -25,13 +18,11 @@
             <div class="modal-body">
                 <form id="leave-request-form">
                     <div class="mb-3">
-                        <label for="leave_type" class="form-label">휴가 종류</label>
-                        <select class="form-select" id="leave_type" name="leave_type">
-                            <option value="annual">연차 (하루)</option>
-                            <option value="half_day">연차 (반차)</option>
-                            <option value="sick">병가</option>
-                            <option value="special">특별휴가</option>
-                            <option value="other">기타</option>
+                        <label for="leave_subtype" class="form-label">휴가 종류</label>
+                        <select class="form-select" id="leave_subtype" name="leave_subtype">
+                            <option value="full_day">연차 (하루)</option>
+                            <option value="half_day_am">오전 반차</option>
+                            <option value="half_day_pm">오후 반차</option>
                         </select>
                     </div>
                     <div class="row">
@@ -47,11 +38,11 @@
                     <div class="mb-3">
                         <label for="days_count" class="form-label">사용 일수</label>
                         <input type="number" step="0.5" class="form-control" id="days_count" name="days_count" readonly required>
-                        <div id="leave-date-feedback" class="form-text">시작일과 종료일을 선택하면 사용일수가 자동으로 계산됩니다.</div>
+                        <div id="leave-date-feedback" class="form-text"></div>
                     </div>
                     <div class="mb-3">
-                        <label for="reason" class="form-label">사유</label>
-                        <textarea class="form-control" id="reason" name="reason" rows="3"></textarea>
+                        <label for="reason" class="form-label">사유 (필수)</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
                     </div>
                 </form>
             </div>

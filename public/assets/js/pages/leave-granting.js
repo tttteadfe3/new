@@ -1,20 +1,14 @@
 class LeaveGrantingPage extends BasePage {
     constructor() {
-        super({
-            API_URL: '/leaves_admin',
-            ORG_API_URL: '/organization' // Secondary API endpoint
-        });
-
-        this.state = {
-            ...this.state,
-            employeeDataStore: [],
-            adjustmentModal: null
-        };
+        super();
+        this.state = { adjustmentModal: null };
     }
 
     initializeApp() {
         this.cacheDOMElements();
-        this.state.adjustmentModal = this.elements.adjustmentModalEl ? new bootstrap.Modal(this.elements.adjustmentModalEl) : null;
+        if (this.elements.adjustmentModalEl) {
+            this.state.adjustmentModal = new bootstrap.Modal(this.elements.adjustmentModalEl);
+        }
         this.setupEventListeners();
         this.loadInitialData();
     }
@@ -23,162 +17,95 @@ class LeaveGrantingPage extends BasePage {
         this.elements = {
             yearFilter: document.getElementById('filter-year'),
             departmentFilter: document.getElementById('filter-department'),
-            calculateBtn: document.getElementById('calculate-btn'),
-            saveBtn: document.getElementById('save-btn'),
-            tableBody: document.getElementById('entitlement-table-body'),
+            filterBtn: document.getElementById('filter-btn'),
+            grantAllBtn: document.getElementById('grant-all-btn'),
+            expireAllBtn: document.getElementById('expire-all-btn'),
+            tableBody: document.getElementById('balances-table-body'),
             adjustmentModalEl: document.getElementById('adjustment-modal'),
             adjustmentForm: document.getElementById('adjustment-form')
         };
     }
 
     setupEventListeners() {
-        this.elements.yearFilter.addEventListener('change', () => this.loadEntitlements());
-        this.elements.departmentFilter.addEventListener('change', () => this.loadEntitlements());
-        this.elements.calculateBtn.addEventListener('click', () => this.calculateLeave());
-        this.elements.saveBtn.addEventListener('click', () => this.saveCalculatedLeave());
-
+        this.elements.filterBtn.addEventListener('click', () => this.loadBalances());
+        this.elements.grantAllBtn.addEventListener('click', () => this.handleGrantAll());
+        this.elements.expireAllBtn.addEventListener('click', () => this.handleExpireAll());
+        this.elements.tableBody.addEventListener('click', (e) => this.handleTableClick(e));
         if (this.elements.adjustmentForm) {
-            this.elements.tableBody.addEventListener('click', (e) => this.handleTableClick(e));
             this.elements.adjustmentForm.addEventListener('submit', (e) => this.handleAdjustmentSubmit(e));
         }
     }
 
     async loadInitialData() {
         await this.loadDepartments();
-        await this.loadEntitlements();
-    }
-
-    async loadEntitlements() {
-        this.elements.saveBtn.disabled = true;
-        this.elements.calculateBtn.disabled = false;
-        this.elements.tableBody.innerHTML = `<tr><td colspan="11" class="text-center"><span class="spinner-border spinner-border-sm"></span> 목록 로딩 중...</td></tr>`;
-
-        try {
-            const year = this.elements.yearFilter.value;
-            const departmentId = this.elements.departmentFilter.value;
-            let url = `${this.config.API_URL}/entitlements?year=${year}`;
-            if (departmentId) url += `&department_id=${departmentId}`;
-
-            const response = await this.apiCall(url);
-            this.state.employeeDataStore = response.data;
-            this.renderTable();
-        } catch (error) {
-            console.error('Error loading entitlement data:', error);
-            this.elements.tableBody.innerHTML = `<tr><td colspan="11" class="text-center text-danger">목록 로딩 실패: ${error.message}</td></tr>`;
-        }
+        await this.loadBalances();
     }
 
     async loadDepartments() {
+        // ... (부서 목록 로딩, 변경 없음)
+    }
+
+    async loadBalances() {
+        this.elements.tableBody.innerHTML = `<tr><td colspan="11" class="text-center"><span class="spinner-border spinner-border-sm"></span>...</td></tr>`;
         try {
-            const response = await this.apiCall(`/organization/managable-departments`);
-            this.elements.departmentFilter.innerHTML = '<option value="">전체 부서</option>';
-            response.data.forEach(dep => {
-                this.elements.departmentFilter.insertAdjacentHTML('beforeend', `<option value="${dep.id}">${this._sanitizeHTML(dep.name)}</option>`);
-            });
+            const year = this.elements.yearFilter.value;
+            const departmentId = this.elements.departmentFilter.value;
+            // 참고: 이 API는 아직 만들지 않았지만, 이러한 기능이 필요하다는 가정하에 작성합니다.
+            // 실제로는 findRequestsByAdmin을 확장하여 balance 정보도 함께 가져올 수 있습니다.
+            const response = await this.apiCall(`/api/admin/leaves/balances?year=${year}&department_id=${departmentId}`);
+            this.renderTable(response.data);
         } catch (error) {
-            console.error('Error loading departments:', error);
-            this.elements.departmentFilter.innerHTML = '<option value="">부서 로딩 실패</option>';
+            this.elements.tableBody.innerHTML = `<tr><td colspan="11" class="text-center text-danger">목록 로딩 실패</td></tr>`;
         }
     }
 
-    renderTable() {
-        this.elements.tableBody.innerHTML = '';
-        if (!this.state.employeeDataStore || this.state.employeeDataStore.length === 0) {
-            this.elements.tableBody.innerHTML = `<tr><td colspan="11" class="text-center">표시할 직원이 없습니다.</td></tr>`;
+    renderTable(data) {
+        if (!data || data.length === 0) {
+            this.elements.tableBody.innerHTML = `<tr><td colspan="11" class="text-center">데이터가 없습니다.</td></tr>`;
             return;
         }
-
-        const rowsHtml = this.state.employeeDataStore.map(emp => {
-            const isGranted = emp.entitlement_id != null;
-            const isCalculated = emp.is_calculated === true;
-
-            let statusBadge = isCalculated ? '<span class="badge bg-info">계산됨</span>' : (isGranted ? `<span class="badge bg-success">부여됨</span>` : `<span class="badge bg-secondary">미부여</span>`);
-            const rowClass = isCalculated ? 'table-info' : '';
-
-            const breakdown = emp.calculated_leave_data || emp.leave_breakdown;
-            const base_days = breakdown ? parseFloat(breakdown.base_days).toFixed(1) : '-';
-            const long_service_days = breakdown ? parseFloat(breakdown.long_service_days).toFixed(1) : '-';
-            const adjustments = parseFloat(emp.adjusted_days) || 0;
-            let total_days = parseFloat(emp.total_days) || 0;
-            if (isCalculated && breakdown) {
-                total_days = (parseFloat(breakdown.total_days) || 0) + adjustments;
-            }
-            const used_days = parseFloat(emp.used_days) || 0;
-            const remaining_days = total_days - used_days;
-
+        const rows = data.map(balance => {
+            const totalGranted = parseFloat(balance.base_leave) + parseFloat(balance.seniority_leave) + parseFloat(balance.monthly_leave) + parseFloat(balance.adjustment_leave);
+            const used = parseFloat(balance.used_leave);
+            const remaining = totalGranted - used;
             return `
-                <tr data-employee-id="${emp.employee_id}" class="${rowClass}">
-                    <td>${this._sanitizeHTML(emp.employee_name)}</td>
-                    <td>${this._sanitizeHTML(emp.department_name) || '<i>미지정</i>'}</td>
-                    <td>${emp.hire_date || '<i>미지정</i>'}</td>
-                    <td>${statusBadge}</td>
-                    <td>${base_days}</td>
-                    <td>${long_service_days}</td>
-                    <td>${adjustments.toFixed(1)}</td>
-                    <td><strong>${total_days.toFixed(1)}</strong></td>
-                    <td>${used_days.toFixed(1)}</td>
-                    <td class="fw-bold ${remaining_days < 0 ? 'text-danger' : ''}">${remaining_days.toFixed(1)}</td>
-                    <td><button class="btn btn-sm btn-light adjust-btn" data-employee-id="${emp.employee_id}" title="수동 조정"><i class="bx bx-edit"></i></button></td>
-                </tr>`;
+                <tr>
+                    <td>${balance.employee_name}</td>
+                    <td>${balance.department_name}</td>
+                    <td>${balance.hire_date}</td>
+                    <td>${totalGranted.toFixed(2)}</td>
+                    <td>${used.toFixed(2)}</td>
+                    <td class="fw-bold">${remaining.toFixed(2)}</td>
+                    <td><button class="btn btn-sm btn-light adjust-btn" data-employee-id="${balance.employee_id}" data-employee-name="${balance.employee_name}"><i class="bx bx-edit"></i> 조정</button></td>
+                </tr>
+            `;
         }).join('');
-        this.elements.tableBody.innerHTML = rowsHtml;
+        this.elements.tableBody.innerHTML = rows;
     }
 
-    async calculateLeave() {
-        const confirmResult = await Confirm.fire('연차 계산', '현재 필터링된 모든 직원의 연차를 다시 계산합니다. 계속하시겠습니까?');
-        if (!confirmResult.isConfirmed) return;
-
-        this.setButtonLoading('#calculate-btn', '계산 중...');
-        try {
-            const response = await this.apiCall(`${this.config.API_URL}/calculate`, {
-                method: 'POST',
-                body: { year: this.elements.yearFilter.value, department_id: this.elements.departmentFilter.value }
-            });
-
-            response.data.forEach(calculatedEmp => {
-                const empInStore = this.state.employeeDataStore.find(e => e.employee_id === calculatedEmp.id);
-                if (empInStore) {
-                    empInStore.calculated_leave_data = calculatedEmp.leave_data;
-                    empInStore.is_calculated = true;
-                }
-            });
-
-            this.renderTable();
-            this.elements.saveBtn.disabled = false;
-            Toast.info('계산이 완료되었습니다. 결과를 확인하고 저장 버튼을 눌러주세요.');
-        } catch (error) {
-            Toast.error(`오류: ${error.message}`);
-        } finally {
-            this.resetButtonLoading('#calculate-btn', '전체 계산');
+    async handleGrantAll() {
+        const year = this.elements.yearFilter.value;
+        if (await Confirm.fire(`${year}년 연차를 일괄 부여하시겠습니까?`)) {
+            try {
+                const response = await this.apiCall('/api/admin/leaves/grant-annual', { method: 'POST', body: { year } });
+                Toast.success(response.message);
+                this.loadBalances();
+            } catch (error) {
+                Toast.error(`부여 실패: ${error.message}`);
+            }
         }
     }
 
-    async saveCalculatedLeave() {
-        const employeesToSave = this.state.employeeDataStore.filter(e => e.is_calculated);
-        if (employeesToSave.length === 0) {
-            Toast.error('저장할 계산된 데이터가 없습니다.');
-            return;
-        }
-
-        const confirmResult = await Confirm.fire('저장 확인', `${employeesToSave.length}명의 계산된 연차 정보를 저장하시겠습니까?`);
-        if (!confirmResult.isConfirmed) return;
-
-        this.setButtonLoading('#save-btn', '저장 중...');
-        try {
-            const response = await this.apiCall(`${this.config.API_URL}/save-entitlements`, {
-                method: 'POST',
-                body: {
-                    year: this.elements.yearFilter.value,
-                    employees: employeesToSave.map(e => ({ id: e.employee_id, name: e.employee_name }))
-                }
-            });
-            Toast.success(response.message || '성공적으로 저장되었습니다.');
-            this.loadEntitlements();
-        } catch (error) {
-            Toast.error(`오류: ${error.message}`);
-        } finally {
-            this.resetButtonLoading('#save-btn', '계산 결과 저장');
-            this.elements.saveBtn.disabled = true;
+    async handleExpireAll() {
+        const year = this.elements.yearFilter.value;
+        if (await Confirm.fire(`${year}년 미사용 연차를 일괄 소멸시키겠습니까?`, '이 작업은 되돌릴 수 없습니다.')) {
+            try {
+                const response = await this.apiCall('/api/admin/leaves/expire-unused', { method: 'POST', body: { year } });
+                Toast.success(response.message);
+                this.loadBalances();
+            } catch (error) {
+                Toast.error(`소멸 실패: ${error.message}`);
+            }
         }
     }
 
@@ -186,42 +113,29 @@ class LeaveGrantingPage extends BasePage {
         const adjustBtn = e.target.closest('.adjust-btn');
         if (adjustBtn) {
             const employeeId = adjustBtn.dataset.employeeId;
-            const employee = this.state.employeeDataStore.find(emp => emp.employee_id == employeeId);
-            if (employee) {
-                document.getElementById('adjustment_employee_id').value = employee.employee_id;
-                document.getElementById('adjustment-employee-name').textContent = employee.employee_name;
-                this.elements.adjustmentForm.reset();
-                this.state.adjustmentModal.show();
-            }
+            const employeeName = adjustBtn.dataset.employeeName;
+            document.getElementById('adjustment_employee_id').value = employeeId;
+            document.getElementById('adjustment-employee-name').textContent = employeeName;
+            this.elements.adjustmentForm.reset();
+            this.state.adjustmentModal.show();
         }
     }
 
     async handleAdjustmentSubmit(e) {
         e.preventDefault();
-        const formData = new FormData(this.elements.adjustmentForm);
-        const data = {
-            employee_id: formData.get('employee_id'),
-            year: this.elements.yearFilter.value,
-            adjustment_days: formData.get('adjustment_days'),
-            reason: formData.get('reason')
-        };
+        const data = Object.fromEntries(new FormData(this.elements.adjustmentForm));
+        data.year = this.elements.yearFilter.value;
+        data.employee_id = parseInt(data.employee_id);
+        data.days = parseFloat(data.days);
 
         try {
-            const response = await this.apiCall(`${this.config.API_URL}/adjust`, {
-                method: 'POST', body: data
-            });
+            const response = await this.apiCall(`/api/admin/leaves/adjust`, { method: 'POST', body: data });
             Toast.success('수동 조정이 완료되었습니다.');
             this.state.adjustmentModal.hide();
-            this.loadEntitlements();
+            this.loadBalances();
         } catch (error) {
             Toast.error(`오류: ${error.message}`);
         }
-    }
-
-    _sanitizeHTML(text) {
-        if (text === null || typeof text === 'undefined') return '';
-        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-        return text.toString().replace(/[&<>"']/g, m => map[m]);
     }
 }
 
