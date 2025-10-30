@@ -50,20 +50,6 @@ class WasteCollectionApiController extends BaseApiController
     }
 
     /**
-     * 필터링된 현장 등록 목록을 가져옵니다.
-     * GET /api/waste-collections/field에 해당합니다.
-     */
-    public function getFieldCollections(): void
-    {
-        try {
-            $collections = $this->wasteCollectionService->getFieldCollections($this->request->all());
-            $this->apiSuccess($collections);
-        } catch (Exception $e) {
-            $this->apiError($e->getMessage(), 'SERVER_ERROR', 500);
-        }
-    }
-
-    /**
      * 새 폐기물 수거 요청을 등록합니다.
      * POST /api/waste-collections에 해당합니다.
      */

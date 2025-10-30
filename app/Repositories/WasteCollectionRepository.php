@@ -125,66 +125,6 @@ class WasteCollectionRepository {
     }
 
     /**
-     * @param array $filters
-     * @return array
-     */
-    public function findAllForField(array $filters): array {
-        $page = isset($filters['page']) ? (int)$filters['page'] : 1;
-        $limit = 10;
-        $offset = ($page - 1) * $limit;
-
-        $baseQuery = "
-            FROM `waste_collections` wc
-            LEFT JOIN `hr_employees` creator ON wc.created_by = creator.id
-            LEFT JOIN `hr_employees` completer ON wc.completed_by = completer.id
-        ";
-
-        $whereClauses = ["wc.type = 'field'"];
-        $params = [];
-
-        if (!empty($filters['searchFieldAddress'])) {
-            $whereClauses[] = "wc.address LIKE ?";
-            $params[] = '%' . $filters['searchFieldAddress'] . '%';
-        }
-        if (!empty($filters['searchFieldStatus'])) {
-            $whereClauses[] = "wc.status = ?";
-            $params[] = $filters['searchFieldStatus'];
-        }
-
-        $whereQuery = "";
-        if (count($whereClauses) > 0) {
-            $whereQuery = " WHERE " . implode(' AND ', $whereClauses);
-        }
-
-        // 전체 카운트 쿼리
-        $totalQuery = "SELECT COUNT(wc.id)" . $baseQuery . $whereQuery;
-        $total = $this->db->fetchOne($totalQuery, $params)['COUNT(wc.id)'];
-
-        // 데이터 쿼리
-        $dataQuery = "
-            SELECT
-                wc.*,
-                creator.name as creator_name,
-                completer.name as completer_name,
-                IFNULL((
-                    SELECT CONCAT('[', GROUP_CONCAT(JSON_OBJECT('name', wci.item_name, 'quantity', wci.quantity)), ']')
-                    FROM waste_collection_items wci
-                    WHERE wci.collection_id = wc.id
-                ), '[]') AS items
-        " . $baseQuery . $whereQuery . " ORDER BY wc.created_at DESC LIMIT ? OFFSET ?";
-
-        $dataParams = array_merge($params, [$limit, $offset]);
-        $data = $this->db->fetchAll($dataQuery, $dataParams);
-
-        return [
-            'data' => $data,
-            'total' => $total,
-            'page' => $page,
-            'limit' => $limit
-        ];
-    }
-
-    /**
      * @param int $id
      * @return array|null
      */
@@ -250,41 +190,5 @@ class WasteCollectionRepository {
         $query = "SELECT * FROM `waste_collections` WHERE `discharge_number` = ? LIMIT 1";
         $result = $this->db->fetchOne($query, [$dischargeNumber]);
         return $result === false ? null : $result;
-    }
-
-    /**
-     * 모든 온라인 제출을 '처리완료'로 업데이트합니다.
-     * @param int $employeeId
-     * @return bool
-     */
-    public function updateAllOnlineToProcessed(int $employeeId): bool
-    {
-        $query = "UPDATE `waste_collections` SET `status` = '처리완료', `completed_at` = NOW(), `completed_by` = ? WHERE `type` = 'online' AND `status` = '미처리'";
-        return $this->db->execute($query, [$employeeId]) !== false;
-    }
-
-    /**
-     * 접수 번호로 수거 내역의 상태를 업데이트합니다.
-     * @param string $dischargeNumber
-     * @param string $status
-     * @param int $employeeId
-     * @return bool
-     */
-    public function updateStatusByDischargeNumber(string $dischargeNumber, string $status, int $employeeId): bool
-    {
-        $completedAt = ($status === '처리완료') ? 'NOW()' : 'NULL';
-        $completedBy = ($status === '처리완료') ? $employeeId : 'NULL';
-
-        $query = "UPDATE `waste_collections` SET `status` = ?, `completed_at` = {$completedAt}, `completed_by` = ? WHERE `discharge_number` = ?";
-
-        $params = [$status];
-        if ($status === '처리완료') {
-            $params[] = $completedBy;
-        } else {
-            $params[] = null;
-        }
-        $params[] = $dischargeNumber;
-
-        return $this->db->execute($query, $params) !== false;
     }
 }

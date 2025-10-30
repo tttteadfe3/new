@@ -9,24 +9,19 @@ class WasteAdminPage extends BasePage {
     }
 
     initializeApp() {
+        // BaseApp.initializeApp() is not called because it has its own logic that we are overriding.
         this.state.fileParseResultModal = new bootstrap.Modal(document.getElementById('fileParseResultModal'));
         this.setupEventListeners();
         this.loadInitialData();
-        this.loadFieldData();
     }
 
     setupEventListeners() {
-        // Online registrations listeners
-        document.getElementById('searchBtn').addEventListener('click', (e) => { e.preventDefault(); this.loadInitialData(); });
+        document.getElementById('listForm').addEventListener('submit', (e) => { e.preventDefault(); this.loadInitialData(); });
         document.getElementById('resetBtn').addEventListener('click', () => { document.getElementById('listForm').reset(); this.loadInitialData(); });
         document.getElementById('htmlUpload').addEventListener('change', (e) => this.handleFileUpload(e));
         document.getElementById('data-table-body').addEventListener('click', (e) => this.handleTableEvents(e));
         document.getElementById('batchRegisterBtn')?.addEventListener('click', () => this.handleBatchRegistration());
         document.getElementById('clearInternetBtn')?.addEventListener('click', () => this.clearInternetSubmissions());
-
-        // Field registrations listeners
-        document.getElementById('searchFieldBtn').addEventListener('click', (e) => { e.preventDefault(); this.loadFieldData(); });
-        document.getElementById('resetFieldBtn').addEventListener('click', () => { document.getElementById('fieldListForm').reset(); this.loadFieldData(); });
     }
 
     async loadInitialData() {
@@ -39,60 +34,6 @@ class WasteAdminPage extends BasePage {
         } catch (e) {
             Toast.error(`데이터 로드 실패: ${e.message}`);
         }
-    }
-
-    async loadFieldData() {
-        const form = document.getElementById('fieldListForm');
-        const params = new URLSearchParams(new FormData(form)).toString();
-        try {
-            const response = await this.apiCall(`/waste-collections/field?${params}`);
-            this.renderFieldTable(response.data.data);
-            document.getElementById('field-total-count').textContent = response.data.total;
-            this.renderFieldPagination(response.data);
-        } catch (e) {
-            Toast.error(`현장 등록 데이터 로드 실패: ${e.message}`);
-        }
-    }
-
-    renderFieldTable(collections) {
-        const tbody = document.getElementById('field-data-table-body');
-        tbody.innerHTML = collections.length === 0 ? '<tr><td colspan="6">데이터가 없습니다.</td></tr>' : collections.map(item => this.generateFieldTableRow(item)).join('');
-    }
-
-    renderFieldPagination({ total, limit, page }) {
-        const paginationContainer = document.getElementById('field-pagination-container');
-        const totalPages = Math.ceil(total / limit);
-        let paginationHtml = '';
-
-        if (totalPages > 1) {
-            paginationHtml += `<ul class="pagination">`;
-            for (let i = 1; i <= totalPages; i++) {
-                paginationHtml += `<li class="page-item ${i === page ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-            }
-            paginationHtml += `</ul>`;
-        }
-        paginationContainer.innerHTML = paginationHtml;
-
-        paginationContainer.querySelectorAll('.page-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                document.getElementById('fieldPage').value = e.target.dataset.page;
-                this.loadFieldData();
-            });
-        });
-    }
-
-    generateFieldTableRow(item) {
-        const items = (typeof item.items === 'string' ? JSON.parse(item.items) : item.items) || [];
-        const itemsHtml = items.map(d => `${d.name}(${d.quantity})`).join(', ');
-        return `<tr>
-            <td>${item.created_at}</td>
-            <td>${item.creator_name || '-'}</td>
-            <td class="text-start">${item.address}</td>
-            <td>${item.completed_at || '-'}</td>
-            <td>${item.completer_name || '-'}</td>
-            <td>${itemsHtml}</td>
-        </tr>`;
     }
 
     renderTable(collections) {
