@@ -33,7 +33,7 @@ class LeaveRepository
     {
         // First, check if a balance record for that year exists.
         $sql = "SELECT id FROM hr_leave_balances WHERE employee_id = :employee_id AND year = :year";
-        $exists = $this->db->fetch($sql, [':employee_id' => $employeeId, ':year' => $year]);
+        $exists = $this->db->fetchOne($sql, [':employee_id' => $employeeId, ':year' => $year]);
 
         if ($exists) {
             // If it exists, update it.
@@ -69,7 +69,7 @@ class LeaveRepository
     public function findBalanceByEmployeeAndYear(int $employeeId, int $year): ?array
     {
         $sql = "SELECT * FROM hr_leave_balances WHERE employee_id = :employee_id AND year = :year";
-        return $this->db->fetch($sql, [':employee_id' => $employeeId, ':year' => $year]) ?: null;
+        return $this->db->fetchOne($sql, [':employee_id' => $employeeId, ':year' => $year]) ?: null;
     }
 
     public function findRequestsByEmployee(int $employeeId, array $filters): array
@@ -114,7 +114,7 @@ class LeaveRepository
     public function findRequestById(int $id): ?array
     {
         $sql = "SELECT * FROM hr_leave_requests WHERE id = :id";
-        return $this->db->fetch($sql, [':id' => $id]) ?: null;
+        return $this->db->fetchOne($sql, [':id' => $id]) ?: null;
     }
 
     public function updateRequestStatus(int $id, string $status, array $extraData = []): bool

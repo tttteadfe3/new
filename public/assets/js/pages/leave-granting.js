@@ -85,9 +85,9 @@ class LeaveGrantingPage extends BasePage {
         }
 
         this.elements.tableBody.innerHTML = data.map(emp => {
-            const balance = emp.leave_balance || {}; // Assuming leave_balance is nested
-            const total = (balance.base_leave || 0) + (balance.seniority_leave || 0) + (balance.monthly_leave || 0) + (balance.adjustment_leave || 0);
-            const used = balance.used_leave || 0;
+            // Correctly access leave data directly from the employee object
+            const total = (parseFloat(emp.base_leave) || 0) + (parseFloat(emp.seniority_leave) || 0) + (parseFloat(emp.monthly_leave) || 0) + (parseFloat(emp.adjustment_leave) || 0);
+            const used = parseFloat(emp.used_leave) || 0;
             const remaining = total - used;
             return `
                 <tr>
@@ -96,9 +96,9 @@ class LeaveGrantingPage extends BasePage {
                     <td>${total.toFixed(1)}</td>
                     <td>${used.toFixed(1)}</td>
                     <td>${remaining.toFixed(1)}</td>
-                    <td>${(balance.base_leave || 0)}</td>
-                    <td>${(balance.seniority_leave || 0)}</td>
-                    <td>${(balance.monthly_leave || 0)}</td>
+                    <td>${(parseFloat(emp.base_leave) || 0)}</td>
+                    <td>${(parseFloat(emp.seniority_leave) || 0)}</td>
+                    <td>${(parseFloat(emp.monthly_leave) || 0)}</td>
                     <td>
                         <button class="btn btn-sm btn-primary adjust-btn" data-employee-id="${emp.id}" data-employee-name="${emp.employee_name}">조정</button>
                     </td>
