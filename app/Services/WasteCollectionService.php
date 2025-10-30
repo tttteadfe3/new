@@ -185,6 +185,21 @@ class WasteCollectionService
     }
 
     /**
+     * 필터링된 현장 등록 목록을 가져옵니다.
+     * @param array $filters
+     * @return array
+     */
+    public function getFieldCollections(array $filters): array
+    {
+        $sanitizedFilters = [];
+        foreach ($filters as $key => $value) {
+            $sanitizedFilters[$key] = Validator::sanitizeString($value);
+        }
+
+        return $this->wasteCollectionRepository->findAllForField($sanitizedFilters);
+    }
+
+    /**
      * 일괄 등록을 위해 HTML 파일을 구문 분석합니다.
      * @param array $file
      * @return array

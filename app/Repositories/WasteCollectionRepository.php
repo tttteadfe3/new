@@ -125,6 +125,46 @@ class WasteCollectionRepository {
     }
 
     /**
+     * @param array $filters
+     * @return array
+     */
+    public function findAllForField(array $filters): array {
+        $baseQuery = "
+            SELECT
+                wc.*,
+                creator.name as creator_name,
+                completer.name as completer_name,
+                IFNULL((
+                    SELECT CONCAT('[', GROUP_CONCAT(JSON_OBJECT('name', wci.item_name, 'quantity', wci.quantity)), ']')
+                    FROM waste_collection_items wci
+                    WHERE wci.collection_id = wc.id
+                ), '[]') AS items
+            FROM `waste_collections` wc
+            LEFT JOIN `employees` creator ON wc.created_by = creator.id
+            LEFT JOIN `employees` completer ON wc.completed_by = completer.id
+        ";
+        $whereClauses = ["wc.type = 'field'"];
+        $params = [];
+
+        if (!empty($filters['searchFieldAddress'])) {
+            $whereClauses[] = "wc.address LIKE ?";
+            $params[] = '%' . $filters['searchFieldAddress'] . '%';
+        }
+        if (!empty($filters['searchFieldStatus'])) {
+            $whereClauses[] = "wc.status = ?";
+            $params[] = $filters['searchFieldStatus'];
+        }
+
+        if (count($whereClauses) > 0) {
+            $baseQuery .= " WHERE " . implode(' AND ', $whereClauses);
+        }
+
+        $baseQuery .= " ORDER BY wc.created_at DESC";
+
+        return $this->db->fetchAll($baseQuery, $params);
+    }
+
+    /**
      * @param int $id
      * @return array|null
      */
