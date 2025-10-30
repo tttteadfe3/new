@@ -58,11 +58,22 @@ class LeaveAdminApiController extends BaseApiController
     {
         $filters = $this->request->all();
         try {
-            $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
+            // 연차 관리 권한이 있는지 확인
+            if (!$this->authService->check('leave.manage_entitlement')) {
+                // 권한이 없다면, 데이터 스코프 서비스를 통해 볼 수 있는 부서만 필터링
+                $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
 
-            if ($visibleDeptIds !== null) {
-                $filters['department_ids'] = $visibleDeptIds;
+                // 볼 수 있는 부서가 전혀 없으면 빈 결과를 반환
+                if (is_array($visibleDeptIds) && empty($visibleDeptIds)) {
+                    $this->jsonResponse->success([]);
+                    return;
+                }
+
+                if ($visibleDeptIds !== null) {
+                    $filters['department_ids'] = $visibleDeptIds;
+                }
             }
+            // 연차 관리 권한이 있다면 department_ids 필터를 적용하지 않아 모든 직원을 조회
 
             $balances = $this->leaveRepository->getBalancesByAdmin($filters);
             $this->jsonResponse->success($balances);
