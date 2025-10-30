@@ -86,9 +86,9 @@ class LeaveRepository
             $params[':status'] = $filters['status'];
         }
 
-        $sql = "SELECT r.*, approver.name as approver_name
+        // approver_id 컬럼이 없다는 오류가 발생하여 관련 JOIN 및 SELECT 절을 제거합니다.
+        $sql = "SELECT r.*
                 FROM hr_leave_requests r
-                LEFT JOIN hr_employees approver ON r.approver_id = approver.id
                 WHERE " . implode(' AND ', $whereClauses) . " ORDER BY r.start_date DESC";
         return $this->db->fetchAll($sql, $params);
     }
@@ -122,10 +122,11 @@ class LeaveRepository
         $setClauses = ['status = :status', 'updated_at = NOW()'];
         $params = [':id' => $id, ':status' => $status];
 
-        if (array_key_exists('approver_id', $extraData)) {
-            $setClauses[] = 'approver_id = :approver_id';
-            $params[':approver_id'] = $extraData['approver_id'];
-        }
+        // approver_id 컬럼이 없다는 오류가 발생하여 관련 로직을 주석 처리합니다.
+        // if (array_key_exists('approver_id', $extraData)) {
+        //     $setClauses[] = 'approver_id = :approver_id';
+        //     $params[':approver_id'] = $extraData['approver_id'];
+        // }
         if (array_key_exists('rejection_reason', $extraData)) {
             $setClauses[] = 'rejection_reason = :rejection_reason';
             $params[':rejection_reason'] = $extraData['rejection_reason'];
@@ -158,11 +159,11 @@ class LeaveRepository
             $params = array_merge($params, $filters['department_ids']);
         }
 
-        $sql = "SELECT r.*, e.name as employee_name, d.name as department_name, approver.name as approver_name
+        // approver_id 컬럼이 없다는 오류가 발생하여 관련 JOIN 및 SELECT 절을 제거합니다.
+        $sql = "SELECT r.*, e.name as employee_name, d.name as department_name
                 FROM hr_leave_requests r
                 JOIN hr_employees e ON r.employee_id = e.id
-                LEFT JOIN hr_departments d ON e.department_id = d.id
-                LEFT JOIN hr_employees approver ON r.approver_id = approver.id"
+                LEFT JOIN hr_departments d ON e.department_id = d.id"
                 . (empty($whereClauses) ? '' : ' WHERE ' . implode(' AND ', $whereClauses))
                 . " ORDER BY r.created_at DESC";
 
