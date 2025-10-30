@@ -62,7 +62,7 @@ class LeaveRepository
 
     public function getAllActiveEmployees(): array
     {
-        $sql = "SELECT id, hire_date FROM hr_employees WHERE status = 'active'";
+        $sql = "SELECT id, hire_date FROM hr_employees WHERE termination_date IS NULL";
         return $this->db->fetchAll($sql);
     }
 
@@ -71,7 +71,7 @@ class LeaveRepository
         $sql = "SELECT e.id, e.name, e.hire_date, d.name as department_name
                 FROM hr_employees e
                 LEFT JOIN hr_departments d ON e.department_id = d.id
-                WHERE e.status = 'active'";
+                WHERE e.termination_date IS NULL";
         return $this->db->fetchAll($sql);
     }
 
