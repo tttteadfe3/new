@@ -17,24 +17,19 @@ class LeaveManagementService
         $this->leaveCalculationService = $leaveCalculationService;
     }
 
-    /**
-     * 연차 부여/차감/조정의 핵심 트랜잭션 메소드
-     */
     private function executeLeaveTransaction(int $employeeId, int $year, float $days, string $column, string $logType, string $reason, ?int $processorId, ?int $requestId = null): bool
     {
         if ($days == 0) return true;
 
         $this->leaveRepository->beginTransaction();
         try {
-            // 1. Balance 테이블 업데이트
             $this->leaveRepository->updateLeaveBalance($employeeId, $year, $days, $column);
-            // 2. Log 테이블 기록
             $this->leaveRepository->createLeaveLog($employeeId, $logType, $days, $reason, $processorId, $requestId);
             $this->leaveRepository->commit();
             return true;
         } catch (Exception $e) {
             $this->leaveRepository->rollBack();
-            throw $e; // 에러를 상위로 전파하여 컨트롤러에서 처리
+            throw $e;
         }
     }
 
@@ -45,15 +40,18 @@ class LeaveManagementService
 
         foreach ($employees as $employee) {
             try {
-                $baseLeave = 15;
-                $this->executeLeaveTransaction($employee['id'], $year, $baseLeave, 'base_leave', 'grant_base', "{$year}년 정기 연차 부여", $processorId);
+                $entitlement = $this->leaveCalculationService->calculateLeaveEntitlementForYear($employee['hire_date'], $year);
+                $baseLeave = $entitlement['base'];
+                $seniorityLeave = $entitlement['seniority'];
 
-                $seniorityLeave = $this->leaveCalculationService->calculateSeniorityLeave($employee['hire_date'], $year);
+                if ($baseLeave > 0) {
+                    $this->executeLeaveTransaction($employee['id'], $year, $baseLeave, 'base_leave', 'grant_base', "{$year}년 연차 부여", $processorId);
+                }
                 if ($seniorityLeave > 0) {
                     $this->executeLeaveTransaction($employee['id'], $year, $seniorityLeave, 'seniority_leave', 'grant_seniority', "{$year}년 근속 가산 연차 부여", $processorId);
                 }
             } catch (Exception $e) {
-                $failedEmployees[] = $employee['id'];
+                $failedEmployees[] = ['id' => $employee['id'], 'error' => $e->getMessage()];
             }
         }
         return ['failed_ids' => $failedEmployees];
@@ -65,9 +63,11 @@ class LeaveManagementService
         $previewData = [];
 
         foreach ($employees as $employee) {
-            $baseLeave = 15; // Assuming a flat rate for preview
-            $seniorityLeave = $this->leaveCalculationService->calculateSeniorityLeave($employee['hire_date'], $year);
+            $entitlement = $this->leaveCalculationService->calculateLeaveEntitlementForYear($employee['hire_date'], $year);
+            $baseLeave = $entitlement['base'];
+            $seniorityLeave = $entitlement['seniority'];
 
+            // 미리보기에서는 부여될 연차가 0인 경우도 포함하여 모두 보여줌
             $previewData[] = [
                 'employee_id' => $employee['id'],
                 'employee_name' => $employee['name'],
@@ -81,6 +81,8 @@ class LeaveManagementService
         return $previewData;
     }
 
+    // ... (approve, reject, etc. methods are unchanged)
+
     public function approveLeaveRequest(int $requestId, int $adminId): bool
     {
         $request = $this->leaveRepository->findRequestById($requestId);
@@ -91,16 +93,11 @@ class LeaveManagementService
         $year = (int)date('Y', strtotime($request['start_date']));
         $daysToUse = (float)$request['days_count'];
 
-        // 트랜잭션 시작
         $this->leaveRepository->beginTransaction();
         try {
-            // 연차 사용 기록 (used_leave 증가)
             $this->leaveRepository->updateLeaveBalance($request['employee_id'], $year, $daysToUse, 'used_leave');
-            // 로그 기록
             $this->leaveRepository->createLeaveLog($request['employee_id'], 'use', -$daysToUse, "연차 사용 승인", $adminId, $requestId);
-            // 신청 상태 변경
-            $this->leaveRepository->updateRequestStatus($requestId, 'approved', ['approver_id' => $adminId]);
-
+            $this->leaveRepository->updateRequestStatus($requestId, 'approved');
             $this->leaveRepository->commit();
             return true;
         } catch (Exception $e) {
@@ -115,7 +112,7 @@ class LeaveManagementService
         if (!$request || $request['status'] !== 'pending') {
              throw new Exception('이미 처리되었거나 유효하지 않은 신청입니다.');
         }
-        return $this->leaveRepository->updateRequestStatus($requestId, 'rejected', ['approver_id' => $adminId, 'rejection_reason' => $reason]);
+        return $this->leaveRepository->updateRequestStatus($requestId, 'rejected', ['rejection_reason' => $reason]);
     }
 
     public function approveCancellationRequest(int $requestId, int $adminId): bool
@@ -130,13 +127,9 @@ class LeaveManagementService
 
         $this->leaveRepository->beginTransaction();
         try {
-            // 연차 복구 (used_leave 감소)
             $this->leaveRepository->updateLeaveBalance($request['employee_id'], $year, -$daysToRestore, 'used_leave');
-            // 로그 기록
             $this->leaveRepository->createLeaveLog($request['employee_id'], 'cancel_use', $daysToRestore, "연차 사용 취소 승인", $adminId, $requestId);
-            // 신청 상태 변경
-            $this->leaveRepository->updateRequestStatus($requestId, 'cancelled', ['approver_id' => $adminId]);
-
+            $this->leaveRepository->updateRequestStatus($requestId, 'cancelled');
             $this->leaveRepository->commit();
             return true;
         } catch (Exception $e) {
@@ -151,8 +144,7 @@ class LeaveManagementService
         if (!$request || $request['status'] !== 'cancellation_requested') {
             throw new Exception('이미 처리되었거나 유효하지 않은 취소 요청입니다.');
         }
-        // 취소 요청을 반려하면 다시 'approved' 상태로 되돌림
-        return $this->leaveRepository->updateRequestStatus($requestId, 'approved', ['approver_id' => $adminId]);
+        return $this->leaveRepository->updateRequestStatus($requestId, 'approved');
     }
 
     public function expireUnusedLeaveForAll(int $year, int $adminId): array
@@ -166,7 +158,6 @@ class LeaveManagementService
                 $remaining = $totalLeave - $balance['used_leave'];
 
                 if ($remaining > 0) {
-                    // 미사용 연차만큼 used_leave를 증가시켜 잔여 연차를 0으로 만듦
                     $this->executeLeaveTransaction($balance['employee_id'], $year, $remaining, 'used_leave', 'expire', "{$year}년 미사용 연차 소멸", $adminId);
                 }
             } catch (Exception $e) {
@@ -191,7 +182,7 @@ class LeaveManagementService
         $balance = $this->leaveRepository->findBalanceByEmployeeAndYear($employeeId, $year);
 
         if (!$balance) {
-            return false; // 해당 연도의 연차 정보가 없으면 신청 불가
+            return false;
         }
 
         $totalGranted = ($balance['base_leave'] ?? 0) +
