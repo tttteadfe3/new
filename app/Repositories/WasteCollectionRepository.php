@@ -129,20 +129,16 @@ class WasteCollectionRepository {
      * @return array
      */
     public function findAllForField(array $filters): array {
+        $page = isset($filters['page']) ? (int)$filters['page'] : 1;
+        $limit = 10;
+        $offset = ($page - 1) * $limit;
+
         $baseQuery = "
-            SELECT
-                wc.*,
-                creator.name as creator_name,
-                completer.name as completer_name,
-                IFNULL((
-                    SELECT CONCAT('[', GROUP_CONCAT(JSON_OBJECT('name', wci.item_name, 'quantity', wci.quantity)), ']')
-                    FROM waste_collection_items wci
-                    WHERE wci.collection_id = wc.id
-                ), '[]') AS items
             FROM `waste_collections` wc
             LEFT JOIN `hr_employees` creator ON wc.created_by = creator.id
             LEFT JOIN `hr_employees` completer ON wc.completed_by = completer.id
         ";
+
         $whereClauses = ["wc.type = 'field'"];
         $params = [];
 
@@ -155,13 +151,37 @@ class WasteCollectionRepository {
             $params[] = $filters['searchFieldStatus'];
         }
 
+        $whereQuery = "";
         if (count($whereClauses) > 0) {
-            $baseQuery .= " WHERE " . implode(' AND ', $whereClauses);
+            $whereQuery = " WHERE " . implode(' AND ', $whereClauses);
         }
 
-        $baseQuery .= " ORDER BY wc.created_at DESC";
+        // 전체 카운트 쿼리
+        $totalQuery = "SELECT COUNT(wc.id)" . $baseQuery . $whereQuery;
+        $total = $this->db->fetchOne($totalQuery, $params)['COUNT(wc.id)'];
 
-        return $this->db->fetchAll($baseQuery, $params);
+        // 데이터 쿼리
+        $dataQuery = "
+            SELECT
+                wc.*,
+                creator.name as creator_name,
+                completer.name as completer_name,
+                IFNULL((
+                    SELECT CONCAT('[', GROUP_CONCAT(JSON_OBJECT('name', wci.item_name, 'quantity', wci.quantity)), ']')
+                    FROM waste_collection_items wci
+                    WHERE wci.collection_id = wc.id
+                ), '[]') AS items
+        " . $baseQuery . $whereQuery . " ORDER BY wc.created_at DESC LIMIT ? OFFSET ?";
+
+        $dataParams = array_merge($params, [$limit, $offset]);
+        $data = $this->db->fetchAll($dataQuery, $dataParams);
+
+        return [
+            'data' => $data,
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit
+        ];
     }
 
     /**

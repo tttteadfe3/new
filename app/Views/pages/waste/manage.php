@@ -4,6 +4,7 @@
     <div class="col-lg-6">
         <h2>현장 등록</h2>
         <form id="fieldListForm" name="fieldListForm">
+            <input type="hidden" name="page" id="fieldPage" value="1">
             <div class="search_box card">
                 <div class="card-body">
                     <div class="row">

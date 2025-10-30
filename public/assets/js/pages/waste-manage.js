@@ -46,8 +46,9 @@ class WasteAdminPage extends BasePage {
         const params = new URLSearchParams(new FormData(form)).toString();
         try {
             const response = await this.apiCall(`/waste-collections/field?${params}`);
-            this.renderFieldTable(response.data);
-            document.getElementById('field-total-count').textContent = response.data.length;
+            this.renderFieldTable(response.data.data);
+            document.getElementById('field-total-count').textContent = response.data.total;
+            this.renderFieldPagination(response.data);
         } catch (e) {
             Toast.error(`현장 등록 데이터 로드 실패: ${e.message}`);
         }
@@ -56,6 +57,29 @@ class WasteAdminPage extends BasePage {
     renderFieldTable(collections) {
         const tbody = document.getElementById('field-data-table-body');
         tbody.innerHTML = collections.length === 0 ? '<tr><td colspan="6">데이터가 없습니다.</td></tr>' : collections.map(item => this.generateFieldTableRow(item)).join('');
+    }
+
+    renderFieldPagination({ total, limit, page }) {
+        const paginationContainer = document.getElementById('field-pagination-container');
+        const totalPages = Math.ceil(total / limit);
+        let paginationHtml = '';
+
+        if (totalPages > 1) {
+            paginationHtml += `<ul class="pagination">`;
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHtml += `<li class="page-item ${i === page ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+            }
+            paginationHtml += `</ul>`;
+        }
+        paginationContainer.innerHTML = paginationHtml;
+
+        paginationContainer.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('fieldPage').value = e.target.dataset.page;
+                this.loadFieldData();
+            });
+        });
     }
 
     generateFieldTableRow(item) {
