@@ -59,6 +59,28 @@ class LeaveManagementService
         return ['failed_ids' => $failedEmployees];
     }
 
+    public function previewAnnualLeaveGrant(int $year): array
+    {
+        $employees = $this->leaveRepository->getAllActiveEmployeesWithDetails();
+        $previewData = [];
+
+        foreach ($employees as $employee) {
+            $baseLeave = 15; // Assuming a flat rate for preview
+            $seniorityLeave = $this->leaveCalculationService->calculateSeniorityLeave($employee['hire_date'], $year);
+
+            $previewData[] = [
+                'employee_id' => $employee['id'],
+                'employee_name' => $employee['name'],
+                'department_name' => $employee['department_name'],
+                'hire_date' => $employee['hire_date'],
+                'base_leave_to_grant' => $baseLeave,
+                'seniority_leave_to_grant' => $seniorityLeave,
+                'total_to_grant' => $baseLeave + $seniorityLeave
+            ];
+        }
+        return $previewData;
+    }
+
     public function approveLeaveRequest(int $requestId, int $adminId): bool
     {
         $request = $this->leaveRepository->findRequestById($requestId);

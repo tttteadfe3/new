@@ -66,6 +66,15 @@ class LeaveRepository
         return $this->db->fetchAll($sql);
     }
 
+    public function getAllActiveEmployeesWithDetails(): array
+    {
+        $sql = "SELECT e.id, e.name, e.hire_date, d.name as department_name
+                FROM hr_employees e
+                LEFT JOIN hr_departments d ON e.department_id = d.id
+                WHERE e.status = 'active'";
+        return $this->db->fetchAll($sql);
+    }
+
     public function findBalanceByEmployeeAndYear(int $employeeId, int $year): ?array
     {
         $sql = "SELECT * FROM hr_leave_balances WHERE employee_id = :employee_id AND year = :year";

@@ -56,6 +56,7 @@ $router->group('/api', function($router) {
     $router->post('/admin/leaves/requests/{id}/reject-cancellation', [LeaveAdminApiController::class, 'rejectCancellation'])->name('api.admin.leaves.reject-cancellation')->middleware('auth')->middleware('permission', 'leave.approve');
 
     // Manual Leave Management
+    $router->get('/admin/leaves/preview-grant-annual', [LeaveAdminApiController::class, 'previewGrantAnnualLeave'])->name('api.admin.leaves.preview-grant-annual')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
     $router->post('/admin/leaves/grant-annual', [LeaveAdminApiController::class, 'grantAnnualLeaveForAll'])->name('api.admin.leaves.grant-annual')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
     $router->post('/admin/leaves/expire-unused', [LeaveAdminApiController::class, 'expireUnusedLeaveForAll'])->name('api.admin.leaves.expire-unused')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
     $router->post('/admin/leaves/adjust', [LeaveAdminApiController::class, 'manualAdjustment'])->name('api.admin.leaves.adjust')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');

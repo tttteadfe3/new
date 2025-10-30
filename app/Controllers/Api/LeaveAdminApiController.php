@@ -82,6 +82,17 @@ class LeaveAdminApiController extends BaseApiController
         }
     }
 
+    public function previewGrantAnnualLeave(): void
+    {
+        $year = (int)$this->request->input('year', date('Y'));
+        try {
+            $previewData = $this->leaveManagementService->previewAnnualLeaveGrant($year);
+            $this->jsonResponse->success($previewData);
+        } catch (Exception $e) {
+            $this->jsonResponse->error('연차 부여 미리보기 계산 중 오류 발생: ' . $e->getMessage(), null, 500);
+        }
+    }
+
     public function approveRequest(int $id): void
     {
         try {
