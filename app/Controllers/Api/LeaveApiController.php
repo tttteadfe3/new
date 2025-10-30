@@ -33,7 +33,7 @@ class LeaveApiController extends BaseApiController
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->leaveRepository = $leaveRepository;
-        $this.leaveManagementService = $leaveManagementService;
+        $this->leaveManagementService = $leaveManagementService;
         $this->holidayService = $holidayService;
     }
 
