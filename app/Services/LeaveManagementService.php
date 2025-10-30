@@ -59,9 +59,9 @@ class LeaveManagementService
         return ['failed_ids' => $failedEmployees];
     }
 
-    public function previewAnnualLeaveGrant(int $year): array
+    public function previewAnnualLeaveGrant(int $year, ?int $departmentId = null): array
     {
-        $employees = $this->leaveRepository->getAllActiveEmployeesWithDetails();
+        $employees = $this->leaveRepository->getAllActiveEmployeesWithDetails($departmentId);
         $previewData = [];
 
         foreach ($employees as $employee) {

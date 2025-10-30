@@ -85,8 +85,31 @@ class LeaveAdminApiController extends BaseApiController
     public function previewGrantAnnualLeave(): void
     {
         $year = (int)$this->request->input('year', date('Y'));
+        $departmentId = $this->request->input('department_id') ? (int)$this->request->input('department_id') : null;
+
         try {
-            $previewData = $this->leaveManagementService->previewAnnualLeaveGrant($year);
+            // 전체 부여 권한이 있는지 확인
+            if (!$this->authService->check('leave.manage_entitlement')) {
+                // 권한이 없다면, 현재 사용자가 볼 수 있는 부서 목록을 가져옴
+                $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
+
+                // departmentId가 지정되었지만 볼 수 없는 부서인 경우, 권한 없음 오류
+                if ($departmentId && is_array($visibleDeptIds) && !in_array($departmentId, $visibleDeptIds)) {
+                    $this->jsonResponse->forbidden('해당 부서에 대한 조회 권한이 없습니다.');
+                    return;
+                }
+
+                // departmentId가 지정되지 않은 경우, 담당하는 첫 번째 부서로 자동 설정 (또는 오류 처리)
+                if (!$departmentId && is_array($visibleDeptIds) && !empty($visibleDeptIds)) {
+                    $departmentId = $visibleDeptIds[0];
+                } else if (!$departmentId) {
+                     $this->jsonResponse->badRequest('조회할 부서를 선택해야 합니다.');
+                     return;
+                }
+            }
+            // 전체 부여 권한이 있다면 departmentId 필터는 사용자의 선택을 그대로 따름 (null일 경우 전체)
+
+            $previewData = $this->leaveManagementService->previewAnnualLeaveGrant($year, $departmentId);
             $this->jsonResponse->success($previewData);
         } catch (Exception $e) {
             $this->jsonResponse->error('연차 부여 미리보기 계산 중 오류 발생: ' . $e->getMessage(), null, 500);

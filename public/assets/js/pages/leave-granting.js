@@ -105,8 +105,15 @@ class LeaveGrantingPage extends BasePage {
 
     async handlePreviewGrant() {
         const year = this.elements.yearFilter.value;
+        const departmentId = this.elements.departmentFilter.value;
+
+        const params = new URLSearchParams({ year });
+        if (departmentId) {
+            params.append('department_id', departmentId);
+        }
+
         try {
-            const response = await this.apiCall(`/admin/leaves/preview-grant-annual?year=${year}`);
+            const response = await this.apiCall(`/admin/leaves/preview-grant-annual?${params.toString()}`);
             const data = response.data;
 
             this.elements.grantPreviewYear.textContent = year;
