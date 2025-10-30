@@ -11,11 +11,14 @@ use App\Validators\LeaveRequestValidator;
 use App\Services\ViewDataService;
 use App\Services\ActivityLogger;
 use App\Repositories\EmployeeRepository;
+use App\Services\DataScopeService;
+use Exception;
 
 class LeaveAdminApiController extends BaseApiController
 {
     private LeaveManagementService $leaveManagementService;
     private LeaveRepository $leaveRepository;
+    private DataScopeService $dataScopeService;
 
     public function __construct(
         Request $request,
@@ -25,124 +28,151 @@ class LeaveAdminApiController extends BaseApiController
         EmployeeRepository $employeeRepository,
         JsonResponse $jsonResponse,
         LeaveManagementService $leaveManagementService,
-        LeaveRepository $leaveRepository
+        LeaveRepository $leaveRepository,
+        DataScopeService $dataScopeService
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->leaveManagementService = $leaveManagementService;
         $this->leaveRepository = $leaveRepository;
+        $this->dataScopeService = $dataScopeService;
     }
 
     public function getLeaveRequests(): void
     {
         $filters = $this->request->all();
         try {
-            $visibleDeptIds = $this->authService->getVisibleDepartmentIdsForCurrentUser();
-            $filters['department_ids'] = $visibleDeptIds;
+            $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
+
+            if ($visibleDeptIds !== null) {
+                $filters['department_ids'] = $visibleDeptIds;
+            }
+
             $requests = $this->leaveRepository->findRequestsByAdmin($filters);
             $this->jsonResponse->send(['success' => true, 'data' => $requests]);
-        } catch (\Exception $e) {
-            $this->jsonResponse->send(['success' => false, 'message' => '신청 목록 조회 중 오류 발생'], 500);
+        } catch (Exception $e) {
+            $this->jsonResponse->send(['success' => false, 'message' => '신청 목록 조회 중 오류 발생: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function getLeaveBalances(): void
+    {
+        $filters = $this->request->all();
+        try {
+            $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
+
+            if ($visibleDeptIds !== null) {
+                $filters['department_ids'] = $visibleDeptIds;
+            }
+
+            $balances = $this->leaveRepository->getBalancesByAdmin($filters);
+            $this->jsonResponse->send(['success' => true, 'data' => $balances]);
+        } catch (Exception $e) {
+            $this->jsonResponse->send(['success' => false, 'message' => '연차 현황 조회 중 오류 발생: ' . $e->getMessage()], 500);
         }
     }
 
     public function approveRequest(int $id): void
     {
-        $adminEmployeeId = $this->authService->getCurrentEmployeeId();
         try {
-            $this->leaveManagementService->approveLeaveRequest($id, $adminEmployeeId);
-            $this->jsonResponse->send(['success' => true, 'message' => '연차 신청을 승인했습니다.']);
-        } catch (\Exception $e) {
-            $this->jsonResponse->send(['success' => false, 'message' => $e->getMessage()], 500);
+            $this->leaveManagementService->approveLeaveRequest($id, $this->authService->getCurrentUserId());
+            $this->activityLogger->log('leave_request_approved', "Leave request ID: {$id} approved.", $this->authService->getCurrentUserId());
+            $this->jsonResponse->send(['success' => true, 'message' => '연차 신청이 승인되었습니다.']);
+        } catch (Exception $e) {
+            $this->jsonResponse->send(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 
     public function rejectRequest(int $id): void
     {
-        $adminEmployeeId = $this->authService->getCurrentEmployeeId();
-        $data = $this->request->getJsonRawBody();
-        $reason = $data['reason'] ?? '';
-        if (empty($reason)) {
-            $this->jsonResponse->send(['success' => false, 'message' => '반려 사유는 필수입니다.'], 422);
-            return;
-        }
+        $data = $this->request->all();
+        $reason = $data['reason'] ?? '사유 없음';
+
         try {
-            $this->leaveManagementService->rejectLeaveRequest($id, $adminEmployeeId, $reason);
-            $this->jsonResponse->send(['success' => true, 'message' => '연차 신청을 반려했습니다.']);
-        } catch (\Exception $e) {
-            $this->jsonResponse->send(['success' => false, 'message' => $e->getMessage()], 500);
+            $this->leaveManagementService->rejectLeaveRequest($id, $this->authService->getCurrentUserId(), $reason);
+            $this->activityLogger->log('leave_request_rejected', "Leave request ID: {$id} rejected.", $this->authService->getCurrentUserId());
+            $this->jsonResponse->send(['success' => true, 'message' => '연차 신청이 반려되었습니다.']);
+        } catch (Exception $e) {
+            $this->jsonResponse->send(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 
     public function approveCancellation(int $id): void
     {
-        $adminEmployeeId = $this->authService->getCurrentEmployeeId();
         try {
-            $this->leaveManagementService->approveCancellationRequest($id, $adminEmployeeId);
-            $this->jsonResponse->send(['success' => true, 'message' => '연차 취소 요청을 승인했습니다.']);
-        } catch (\Exception $e) {
-            $this->jsonResponse->send(['success' => false, 'message' => $e->getMessage()], 500);
+            $this->leaveManagementService->approveCancellationRequest($id, $this->authService->getCurrentUserId());
+            $this->activityLogger->log('leave_cancellation_approved', "Leave cancellation for request ID: {$id} approved.", $this->authService->getCurrentUserId());
+            $this->jsonResponse->send(['success' => true, 'message' => '연차 취소 요청이 승인되었습니다.']);
+        } catch (Exception $e) {
+            $this->jsonResponse->send(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 
     public function rejectCancellation(int $id): void
     {
-        $adminEmployeeId = $this->authService->getCurrentEmployeeId();
         try {
-            $this->leaveManagementService->rejectCancellationRequest($id, $adminEmployeeId);
-            $this->jsonResponse->send(['success' => true, 'message' => '연차 취소 요청을 반려했습니다.']);
-        } catch (\Exception $e) {
-            $this->jsonResponse->send(['success' => false, 'message' => $e->getMessage()], 500);
+            $this->leaveManagementService->rejectCancellationRequest($id, $this->authService->getCurrentUserId());
+            $this->activityLogger->log('leave_cancellation_rejected', "Leave cancellation for request ID: {$id} rejected.", $this->authService->getCurrentUserId());
+            $this->jsonResponse->send(['success' => true, 'message' => '연차 취소 요청이 반려되었습니다.']);
+        } catch (Exception $e) {
+            $this->jsonResponse->send(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 
     public function grantAnnualLeaveForAll(): void
     {
-        $adminEmployeeId = $this->authService->getCurrentEmployeeId();
-        $data = $this->request->getJsonRawBody();
-        $year = $data['year'] ?? (int)date('Y');
+        $data = $this->request->all();
+        $year = (int)($data['year'] ?? date('Y'));
+
         try {
-            $result = $this->leaveManagementService->grantAnnualLeaveToAllEmployees($year, $adminEmployeeId);
-            if (empty($result['failed_ids'])) {
-                $this->jsonResponse->send(['success' => true, 'message' => "{$year}년 연차 일괄 부여가 완료되었습니다."]);
+            $result = $this->leaveManagementService->grantAnnualLeaveToAllEmployees($year, $this->authService->getCurrentUserId());
+            $this->activityLogger->log('annual_leave_granted', "Annual leave granted for year {$year}.", $this->authService->getCurrentUserId());
+            if (!empty($result['failed_ids'])) {
+                $this->jsonResponse->send(['success' => true, 'message' => "{$year}년 연차 부여가 완료되었습니다. (일부 실패)", 'failed_employee_ids' => $result['failed_ids']]);
             } else {
-                $this->jsonResponse->send(['success' => false, 'message' => '일부 직원 연차 부여에 실패했습니다.', 'failed_ids' => $result['failed_ids']], 400);
+                $this->jsonResponse->send(['success' => true, 'message' => "{$year}년 연차 부여가 성공적으로 완료되었습니다."]);
             }
-        } catch (\Exception $e) {
-            $this->jsonResponse->send(['success' => false, 'message' => '일괄 부여 처리 중 오류 발생: ' . $e->getMessage()], 500);
+        } catch (Exception $e) {
+            $this->jsonResponse->send(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     public function expireUnusedLeaveForAll(): void
     {
-        $adminEmployeeId = $this->authService->getCurrentEmployeeId();
-        $data = $this->request->getJsonRawBody();
-        $year = $data['year'] ?? (int)date('Y') - 1;
+        $data = $this->request->all();
+        $year = (int)($data['year'] ?? date('Y') - 1);
+
         try {
-            $result = $this->leaveManagementService->expireUnusedLeaveForAll($year, $adminEmployeeId);
-             if (empty($result['failed_ids'])) {
-                $this->jsonResponse->send(['success' => true, 'message' => "{$year}년 미사용 연차 소멸 처리가 완료되었습니다."]);
+            $result = $this->leaveManagementService->expireUnusedLeaveForAll($year, $this->authService->getCurrentUserId());
+            $this->activityLogger->log('unused_leave_expired', "Unused leave expired for year {$year}.", $this->authService->getCurrentUserId());
+            if (!empty($result['failed_ids'])) {
+                $this->jsonResponse->send(['success' => true, 'message' => "{$year}년 미사용 연차 소멸 처리가 완료되었습니다. (일부 실패)", 'failed_employee_ids' => $result['failed_ids']]);
             } else {
-                $this->jsonResponse->send(['success' => false, 'message' => '일부 직원 연차 소멸에 실패했습니다.', 'failed_ids' => $result['failed_ids']], 400);
+                $this->jsonResponse->send(['success' => true, 'message' => "{$year}년 미사용 연차 소멸 처리가 성공적으로 완료되었습니다."]);
             }
-        } catch (\Exception $e) {
-            $this->jsonResponse->send(['success' => false, 'message' => '일괄 소멸 처리 중 오류 발생: ' . $e->getMessage()], 500);
+        } catch (Exception $e) {
+            $this->jsonResponse->send(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     public function manualAdjustment(): void
     {
-        $adminEmployeeId = $this->authService->getCurrentEmployeeId();
-        $data = $this->request->getJsonRawBody();
-        $errors = LeaveRequestValidator::validateAdjustment($data);
-        if (!empty($errors)) {
-            $this->jsonResponse->send(['success' => false, 'message' => '입력값이 유효하지 않습니다.', 'errors' => $errors], 422);
+        $data = $this->request->all();
+        $employeeId = (int)$data['employee_id'];
+        $year = (int)($data['year'] ?? date('Y'));
+        $days = (float)$data['days'];
+        $reason = $data['reason'];
+
+        if (empty($employeeId) || empty($days) || empty($reason)) {
+            $this->jsonResponse->send(['success' => false, 'message' => '필수 입력 항목이 누락되었습니다.'], 400);
             return;
         }
+
         try {
-            $this->leaveManagementService->manualAdjustment((int)$data['employee_id'], (int)$data['year'], (float)$data['days'], $data['reason'], $adminEmployeeId);
-            $this->jsonResponse->send(['success' => true, 'message' => '연차 조정이 완료되었습니다.']);
-        } catch (\Exception $e) {
-            $this->jsonResponse->send(['success' => false, 'message' => '조정 처리 중 오류 발생: ' . $e->getMessage()], 500);
+            $this->leaveManagementService->manualAdjustment($employeeId, $year, $days, $reason, $this->authService->getCurrentUserId());
+            $this->activityLogger->log('manual_leave_adjustment', "Manual leave adjustment for employee ID: {$employeeId}, Days: {$days}, Reason: {$reason}", $this->authService->getCurrentUserId());
+            $this->jsonResponse->send(['success' => true, 'message' => '연차 조정이 성공적으로 완료되었습니다.']);
+        } catch (Exception $e) {
+            $this->jsonResponse->send(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

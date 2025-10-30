@@ -2,6 +2,7 @@ class LeaveApprovalPage extends BasePage {
     constructor() {
         super();
         this.elements = {};
+        this.currentYear = new Date().getFullYear();
     }
 
     initializeApp() {
@@ -19,15 +20,16 @@ class LeaveApprovalPage extends BasePage {
             'cancellation_requested': document.getElementById('cancellation_requested-requests-body'),
             'approved': document.getElementById('approved-requests-body'),
             'rejected': document.getElementById('rejected-requests-body'),
+            'cancelled': document.getElementById('cancelled-requests-body'),
         };
     }
 
     setupEventListeners() {
         this.elements.tabs.forEach(tab => {
-            tab.addEventListener('shown.bs.tab', (event) => this.handleFilterChange(event));
+            tab.addEventListener('shown.bs.tab', () => this.handleFilterChange());
         });
         [this.elements.yearFilter, this.elements.departmentFilter].forEach(filter => {
-            filter.addEventListener('change', (event) => this.handleFilterChange(event));
+            filter.addEventListener('change', () => this.handleFilterChange());
         });
         Object.values(this.elements.bodies).forEach(body => {
             if(body) body.addEventListener('click', (e) => this.handleTableClick(e));
@@ -35,13 +37,22 @@ class LeaveApprovalPage extends BasePage {
     }
 
     async loadInitialData() {
+        this.populateYearFilter();
         await this.loadFilterOptions();
         this.loadAllTabs();
+    }
+
+    populateYearFilter() {
+        for (let i = 0; i < 5; i++) {
+            const year = this.currentYear - i;
+            this.elements.yearFilter.add(new Option(year, year));
+        }
     }
 
     loadAllTabs() {
         Object.keys(this.elements.bodies).forEach(status => this.loadRequestsByStatus(status));
     }
+
 
     async loadFilterOptions() {
         try {
@@ -54,22 +65,29 @@ class LeaveApprovalPage extends BasePage {
     }
 
     handleFilterChange() {
-        const activeTab = document.querySelector('.nav-link.active');
-        if (activeTab) {
-            const status = this.getStatusFromTab(activeTab);
-            this.loadRequestsByStatus(status);
-        }
+        this.loadAllTabs();
     }
 
     async loadRequestsByStatus(status) {
-        // ... (API 호출 로직, 이전과 동일)
+        const year = this.elements.yearFilter.value;
+        const departmentId = this.elements.departmentFilter.value;
+        const params = new URLSearchParams({ status, year, department_id: departmentId });
+
+        try {
+            const response = await this.apiCall(`/admin/leaves/requests?${params}`);
+            this.renderTable(status, response.data);
+        } catch (error) {
+            Toast.error(`${status} 목록 로딩 실패`);
+            this.renderTable(status, []);
+        }
     }
 
     renderTable(status, data) {
         const tableBody = this.elements.bodies[status];
         if (!tableBody) return;
         if (data.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="7" class="text-center">내역 없음</td></tr>`;
+            const colspan = status === 'pending' || status === 'cancellation_requested' ? 8 : 7;
+            tableBody.innerHTML = `<tr><td colspan="${colspan}" class="text-center">내역 없음</td></tr>`;
             return;
         }
         tableBody.innerHTML = data.map(item => this.getTableRowHTML(status, item)).join('');
@@ -105,22 +123,81 @@ class LeaveApprovalPage extends BasePage {
             case 'rejected':
                 cols += `<td>${item.rejection_reason || ''}</td><td>${approver}</td>`;
                 break;
+            case 'cancelled':
+                cols += `<td>${new Date(item.updated_at).toLocaleDateString()}</td><td>${approver}</td>`;
+                break;
         }
 
         return `<tr>${cols}${actions ? `<td>${actions}</td>` : ''}</tr>`;
     }
 
     async handleTableClick(e) {
-        // ... (이전과 동일)
+        const target = e.target;
+        const id = target.dataset.id;
+        if (!id) return;
+
+        if (target.classList.contains('approve-btn')) {
+            this.handleAction('approve', id);
+        } else if (target.classList.contains('reject-btn')) {
+            this.handleAction('reject', id);
+        } else if (target.classList.contains('approve-cancel-btn')) {
+            this.handleAction('approve-cancel', id);
+        } else if (target.classList.contains('reject-cancel-btn')) {
+            this.handleAction('reject-cancel', id);
+        }
     }
 
-    async handleAction(action, id, body = null) {
-        // ... (이전과 동일)
-    }
+    async handleAction(action, id) {
+        let confirmText, url, body = null, successMsg;
 
-    getStatusFromTab(tabElement) {
-        return tabElement.getAttribute('href').replace('#', '').replace('-tab-pane', '');
+        switch(action) {
+            case 'approve':
+                confirmText = '연차 신청을 승인하시겠습니까?';
+                url = `/admin/leaves/requests/${id}/approve`;
+                successMsg = '승인 처리되었습니다.';
+                break;
+            case 'reject':
+                const { value: reason } = await Swal.fire({
+                    title: '연차 신청 반려',
+                    input: 'text',
+                    inputLabel: '반려 사유를 입력하세요',
+                    inputPlaceholder: '반려 사유...',
+                    showCancelButton: true,
+                    confirmButtonText: '반려',
+                    cancelButtonText: '취소'
+                });
+                if (!reason) return;
+                confirmText = '연차 신청을 반려하시겠습니까?';
+                url = `/admin/leaves/requests/${id}/reject`;
+                body = { reason };
+                successMsg = '반려 처리되었습니다.';
+                break;
+            case 'approve-cancel':
+                confirmText = '연차 취소 요청을 승인하시겠습니까?';
+                url = `/admin/leaves/requests/${id}/approve-cancellation`;
+                successMsg = '취소 승인 처리되었습니다.';
+                break;
+            case 'reject-cancel':
+                confirmText = '연차 취소 요청을 반려하시겠습니까?';
+                url = `/admin/leaves/requests/${id}/reject-cancellation`;
+                successMsg = '취소 반려 처리되었습니다.';
+                break;
+            default:
+                return;
+        }
+
+        if (!await confirm(confirmText)) return;
+
+        try {
+            await this.apiCall(url, 'POST', body);
+            Toast.success(successMsg);
+            this.loadAllTabs();
+        } catch (error) {
+            Toast.error(error.message || '작업 실패');
+        }
     }
 }
 
-new LeaveApprovalPage();
+document.addEventListener('DOMContentLoaded', () => {
+    new LeaveApprovalPage().initializeApp();
+});

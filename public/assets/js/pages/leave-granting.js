@@ -1,7 +1,10 @@
 class LeaveGrantingPage extends BasePage {
     constructor() {
         super();
-        this.state = { adjustmentModal: null };
+        this.state = {
+            adjustmentModal: null,
+            currentEmployee: null
+        };
     }
 
     initializeApp() {
@@ -22,7 +25,8 @@ class LeaveGrantingPage extends BasePage {
             expireAllBtn: document.getElementById('expire-all-btn'),
             tableBody: document.getElementById('balances-table-body'),
             adjustmentModalEl: document.getElementById('adjustment-modal'),
-            adjustmentForm: document.getElementById('adjustment-form')
+            adjustmentForm: document.getElementById('adjustment-form'),
+            adjustmentTitle: document.getElementById('adjustment-modal-title')
         };
     }
 
@@ -37,8 +41,17 @@ class LeaveGrantingPage extends BasePage {
     }
 
     async loadInitialData() {
+        this.populateYearFilter();
         await this.loadDepartments();
         await this.loadBalances();
+    }
+
+    populateYearFilter() {
+        const currentYear = new Date().getFullYear();
+        for (let i = -1; i < 5; i++) { // Allow selecting next year for pre-granting
+            const year = currentYear - i;
+            this.elements.yearFilter.add(new Option(year, year));
+        }
     }
 
     async loadDepartments() {
@@ -52,28 +65,112 @@ class LeaveGrantingPage extends BasePage {
     }
 
     async loadBalances() {
-        // ... (API 호출 로직, 이전과 동일)
+        const year = this.elements.yearFilter.value;
+        const departmentId = this.elements.departmentFilter.value;
+        const params = new URLSearchParams({ year, department_id: departmentId });
+
+        try {
+            const response = await this.apiCall(`/admin/leaves/balances?${params}`);
+            this.renderTable(response.data);
+        } catch (error) {
+            Toast.error('연차 현황 로딩 실패: ' + error.message);
+            this.elements.tableBody.innerHTML = '<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>';
+        }
     }
 
     renderTable(data) {
-        // ... (테이블 렌더링 로직, 이전과 동일)
+        if (data.length === 0) {
+            this.elements.tableBody.innerHTML = `<tr><td colspan="9" class="text-center">해당 직원이 없습니다.</td></tr>`;
+            return;
+        }
+
+        this.elements.tableBody.innerHTML = data.map(emp => {
+            const balance = emp.leave_balance || {}; // Assuming leave_balance is nested
+            const total = (balance.base_leave || 0) + (balance.seniority_leave || 0) + (balance.monthly_leave || 0) + (balance.adjustment_leave || 0);
+            const used = balance.used_leave || 0;
+            const remaining = total - used;
+            return `
+                <tr>
+                    <td>${emp.employee_name}</td>
+                    <td>${emp.department_name}</td>
+                    <td>${total.toFixed(1)}</td>
+                    <td>${used.toFixed(1)}</td>
+                    <td>${remaining.toFixed(1)}</td>
+                    <td>${(balance.base_leave || 0)}</td>
+                    <td>${(balance.seniority_leave || 0)}</td>
+                    <td>${(balance.monthly_leave || 0)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary adjust-btn" data-employee-id="${emp.id}" data-employee-name="${emp.employee_name}">조정</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     async handleGrantAll() {
-        // ... (일괄 부여 로직, 이전과 동일)
+        const year = this.elements.yearFilter.value;
+        if (!await confirm(`${year}년 연차를 모든 활성 직원에게 부여하시겠습니까?`)) return;
+
+        try {
+            const response = await this.apiCall('/admin/leaves/grant-annual', 'POST', { year });
+            Toast.success(response.message);
+            this.loadBalances();
+        } catch (error) {
+            Toast.error('일괄 부여 실패: ' + error.message);
+        }
     }
 
     async handleExpireAll() {
-        // ... (일괄 소멸 로직, 이전과 동일)
+        const year = this.elements.yearFilter.value;
+        if (!await confirm(`${year}년 미사용 연차를 모두 소멸 처리하시겠습니까?`)) return;
+
+        try {
+            const response = await this.apiCall('/admin/leaves/expire-unused', 'POST', { year });
+            Toast.success(response.message);
+            this.loadBalances();
+        } catch (error) {
+            Toast.error('일괄 소멸 실패: ' + error.message);
+        }
     }
 
     handleTableClick(e) {
-        // ... (테이블 클릭 이벤트 로직, 이전과 동일)
+        if (e.target.classList.contains('adjust-btn')) {
+            this.state.currentEmployee = {
+                id: e.target.dataset.employeeId,
+                name: e.target.dataset.employeeName
+            };
+            this.elements.adjustmentTitle.textContent = `${this.state.currentEmployee.name} 연차 조정`;
+            this.elements.adjustmentForm.reset();
+            this.state.adjustmentModal.show();
+        }
     }
 
     async handleAdjustmentSubmit(e) {
-        // ... (수동 조정 제출 로직, 이전과 동일)
+        e.preventDefault();
+        const formData = new FormData(this.elements.adjustmentForm);
+        const data = {
+            employee_id: this.state.currentEmployee.id,
+            year: formData.get('year'),
+            days: formData.get('days'),
+            reason: formData.get('reason')
+        };
+
+        if (!data.days || !data.reason) {
+            Toast.error('일수와 사유를 모두 입력하세요.');
+            return;
+        }
+
+        try {
+            const response = await this.apiCall('/admin/leaves/adjust', 'POST', data);
+            Toast.success(response.message);
+            this.state.adjustmentModal.hide();
+            this.loadBalances();
+        } catch (error) {
+            Toast.error('조정 실패: ' + error.message);
+        }
     }
 }
 
-new LeaveGrantingPage();
+document.addEventListener('DOMContentLoaded', () => {
+    new LeaveGrantingPage().initializeApp();
+});

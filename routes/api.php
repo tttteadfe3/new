@@ -45,8 +45,10 @@ $router->group('/api', function($router) {
     $router->get('/leaves', [LeaveApiController::class, 'index'])->name('api.leaves.index')->middleware('auth');
     $router->post('/leaves', [LeaveApiController::class, 'store'])->name('api.leaves.store')->middleware('auth');
     $router->post('/leaves/{id}/cancel', [LeaveApiController::class, 'requestCancellation'])->name('api.leaves.cancel')->middleware('auth');
+    $router->post('/leaves/calculate-days', [LeaveApiController::class, 'calculateDays'])->name('api.leaves.calculate-days')->middleware('auth');
 
     // (New) Leave Admin API Routes
+    $router->get('/admin/leaves/balances', [LeaveAdminApiController::class, 'getLeaveBalances'])->name('api.admin.leaves.balances')->middleware('auth')->middleware('permission', 'leave.manage');
     $router->get('/admin/leaves/requests', [LeaveAdminApiController::class, 'getLeaveRequests'])->name('api.admin.leaves.requests')->middleware('auth')->middleware('permission', 'leave.approve');
     $router->post('/admin/leaves/requests/{id}/approve', [LeaveAdminApiController::class, 'approveRequest'])->name('api.admin.leaves.approve')->middleware('auth')->middleware('permission', 'leave.approve');
     $router->post('/admin/leaves/requests/{id}/reject', [LeaveAdminApiController::class, 'rejectRequest'])->name('api.admin.leaves.reject')->middleware('auth')->middleware('permission', 'leave.approve');

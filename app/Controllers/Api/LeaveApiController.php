@@ -11,10 +11,12 @@ use App\Validators\LeaveRequestValidator;
 use App\Services\ViewDataService;
 use App\Services\ActivityLogger;
 use App\Repositories\EmployeeRepository;
+use App\Services\HolidayService;
 
 class LeaveApiController extends BaseApiController
 {
     private LeaveRepository $leaveRepository;
+    private HolidayService $holidayService;
     private LeaveManagementService $leaveManagementService;
 
     public function __construct(
@@ -25,11 +27,33 @@ class LeaveApiController extends BaseApiController
         EmployeeRepository $employeeRepository,
         JsonResponse $jsonResponse,
         LeaveRepository $leaveRepository,
-        LeaveManagementService $leaveManagementService
+        LeaveManagementService $leaveManagementService,
+        HolidayService $holidayService
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->leaveRepository = $leaveRepository;
         $this->leaveManagementService = $leaveManagementService;
+        $this->holidayService = $holidayService;
+    }
+
+    public function calculateDays(): void
+    {
+        $data = $this->request->getJsonRawBody();
+        $startDate = $data['start_date'] ?? null;
+        $endDate = $data['end_date'] ?? null;
+
+        if (!$startDate || !$endDate) {
+            $this->jsonResponse->send(['success' => false, 'message' => '시작일과 종료일이 필요합니다.'], 400);
+            return;
+        }
+
+        try {
+            $days = $this->holidayService->calculateWorkingDays($startDate, $endDate);
+            $totalDays = (new \DateTime($startDate))->diff(new \DateTime($endDate))->days + 1;
+            $this->jsonResponse->send(['success' => true, 'data' => ['days' => $days, 'total_days' => $totalDays]]);
+        } catch (\Exception $e) {
+            $this->jsonResponse->send(['success' => false, 'message' => '일수 계산 중 오류 발생'], 500);
+        }
     }
 
     public function getMyBalance(): void

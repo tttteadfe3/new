@@ -5,8 +5,11 @@ class MyPage extends BasePage {
         this.state = {
             profileData: null,
             leaveBalance: null,
-            leaveRequests: []
+            leaveRequests: [],
+            requestModal: null,
+            isEditMode: false
         };
+        this.debouncedCalculateDays = debounce(() => this.calculateDays(), 300);
     }
 
     initializeApp() {
@@ -42,32 +45,61 @@ class MyPage extends BasePage {
 
         if (this.elements.requestForm) {
             this.elements.leaveSubtypeSelect.addEventListener('change', () => this.handleSubtypeChange());
-            this.elements.startDateInput.addEventListener('change', () => this.handleDateChange());
-            this.elements.endDateInput.addEventListener('change', () => this.handleDateChange());
+            this.elements.startDateInput.addEventListener('change', () => this.debouncedCalculateDays());
+            this.elements.endDateInput.addEventListener('change', () => this.debouncedCalculateDays());
             this.elements.requestForm.addEventListener('submit', (e) => this.handleRequestSubmit(e));
         }
     }
 
     async loadInitialData() {
-        // ... 데이터 로딩 로직 (이전과 동일)
-    }
-
-    renderDashboard(isEditMode = false) {
-        // ... 프로필 렌더링 로직 (이전과 동일)
-
-        // 연차 카드 렌더링
-        const leaveCard = this.renderLeaveCard();
-        this.elements.container.innerHTML = `... ${leaveCard} ...`; // Simplified for brevity
-
-        this.renderLeaveData();
-    }
-
-    renderLeaveCard() {
-        // ... 연차 카드 HTML 구조 (이전과 동일)
+        try {
+            const [balanceRes, requestsRes] = await Promise.all([
+                this.apiCall('/leaves/my-balance'),
+                this.apiCall('/leaves')
+            ]);
+            this.state.leaveBalance = balanceRes.data;
+            this.state.leaveRequests = requestsRes.data;
+            this.renderLeaveData();
+        } catch (error) {
+            Toast.error('연차 정보를 불러오는데 실패했습니다.');
+        }
     }
 
     renderLeaveData() {
-        // ... 연차 데이터 렌더링 로직 (이전과 동일)
+        const balance = this.state.leaveBalance;
+        if (!balance) return;
+
+        const totalGranted = (balance.base_leave + balance.seniority_leave + balance.monthly_leave + balance.adjustment_leave).toFixed(1);
+        const used = parseFloat(balance.used_leave).toFixed(1);
+        const remaining = (totalGranted - used).toFixed(1);
+
+        document.getElementById('leave-total').textContent = totalGranted;
+        document.getElementById('leave-used').textContent = used;
+        document.getElementById('leave-remaining').textContent = remaining;
+
+        const historyBody = document.getElementById('leave-history-body');
+        if (this.state.leaveRequests.length === 0) {
+            historyBody.innerHTML = '<tr><td colspan="6" class="text-center">연차 사용 내역이 없습니다.</td></tr>';
+            return;
+        }
+
+        historyBody.innerHTML = this.state.leaveRequests.map(req => `
+            <tr>
+                <td>${{full_day:'연차', half_day_am:'오전반차', half_day_pm:'오후반차'}[req.leave_subtype]}</td>
+                <td>${req.start_date} ~ ${req.end_date}</td>
+                <td>${req.days_count}</td>
+                <td><span class="badge bg-${this.getStatusColor(req.status)}">${this.translateStatus(req.status)}</span></td>
+                <td>${req.approver_name || '-'}</td>
+                <td>${this.renderActionButtons(req)}</td>
+            </tr>
+        `).join('');
+    }
+
+    renderActionButtons(request) {
+        if (request.status === 'pending' || request.status === 'approved') {
+            return `<button class="btn btn-sm btn-warning cancel-leave-btn" data-id="${request.id}" data-status="${request.status}">취소</button>`;
+        }
+        return '';
     }
 
     handleSubtypeChange() {
@@ -78,29 +110,40 @@ class MyPage extends BasePage {
         if (isHalfDay) {
             if (this.elements.startDateInput.value) this.elements.endDateInput.value = this.elements.startDateInput.value;
             this.elements.daysCountInput.value = 0.5;
+            this.elements.feedbackDiv.textContent = '';
         } else {
-            this.calculateDays();
+            this.debouncedCalculateDays();
         }
     }
 
-    handleDateChange() {
-        if (this.elements.leaveSubtypeSelect.value.startsWith('half_day')) {
-            this.elements.endDateInput.value = this.elements.startDateInput.value;
-        }
-        this.calculateDays();
-    }
+    async calculateDays() {
+        const startDate = this.elements.startDateInput.value;
+        const endDate = this.elements.endDateInput.value;
+        const subtype = this.elements.leaveSubtypeSelect.value;
 
-    calculateDays() {
-        // 클라이언트 사이드에서 간단히 일수 계산 (주말 제외 등 복잡한 로직은 서버에서)
-        const startDate = new Date(this.elements.startDateInput.value);
-        const endDate = new Date(this.elements.endDateInput.value);
-        if (startDate > endDate) {
-            this.elements.daysCountInput.value = 0;
+        if (subtype.startsWith('half_day')) {
+            this.elements.daysCountInput.value = 0.5;
+            this.elements.endDateInput.value = startDate;
+            this.elements.feedbackDiv.textContent = '';
             return;
         }
-        const diffTime = Math.abs(endDate - startDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-        this.elements.daysCountInput.value = diffDays;
+
+        if (!startDate || !endDate || new Date(startDate) > new Date(endDate)) {
+            this.elements.daysCountInput.value = '';
+            this.elements.feedbackDiv.textContent = '';
+            return;
+        }
+
+        try {
+            const response = await this.apiCall('/leaves/calculate-days', 'POST', { start_date: startDate, end_date: endDate });
+            this.elements.daysCountInput.value = response.data.days;
+            this.elements.feedbackDiv.textContent = `(주말/공휴일 제외, ${response.data.total_days}일)`;
+            this.elements.feedbackDiv.classList.remove('text-danger');
+        } catch (error) {
+            this.elements.daysCountInput.value = '';
+            this.elements.feedbackDiv.textContent = error.message || '일수 계산 실패';
+            this.elements.feedbackDiv.classList.add('text-danger');
+        }
     }
 
     openRequestModal() {
@@ -110,7 +153,19 @@ class MyPage extends BasePage {
     }
 
     async handleRequestSubmit(e) {
-        // ... (API 호출 로직, 이전과 동일)
+        e.preventDefault();
+        const formData = new FormData(this.elements.requestForm);
+        const data = Object.fromEntries(formData.entries());
+        data.days_count = parseFloat(this.elements.daysCountInput.value);
+
+        try {
+            await this.apiCall('/leaves', 'POST', data);
+            Toast.success('연차 신청이 완료되었습니다.');
+            this.state.requestModal.hide();
+            this.loadInitialData();
+        } catch(error) {
+            Toast.error(error.message || '신청 실패');
+        }
     }
 
     async handleCancelClick(e) {
@@ -119,18 +174,62 @@ class MyPage extends BasePage {
         const status = button.dataset.status;
 
         if (status === 'approved') {
-            const { value: reason } = await Swal.fire({ title: '승인된 연차 취소 요청', input: 'textarea', inputLabel: '취소 사유', showCancelButton: true });
+            const { value: reason } = await Swal.fire({
+                title: '승인된 연차 취소 요청',
+                input: 'textarea',
+                inputLabel: '취소 사유를 입력해주세요. (관리자 승인 필요)',
+                showCancelButton: true,
+                confirmButtonText: '요청',
+                cancelButtonText: '닫기'
+            });
             if (reason) {
-                await this.apiCall(`/leaves/${leaveId}/cancel`, { method: 'POST', body: { reason } });
-                this.loadInitialData();
+                try {
+                    await this.apiCall(`/leaves/${leaveId}/cancel`, 'POST', { reason });
+                    Toast.success('취소 요청이 완료되었습니다.');
+                    this.loadInitialData();
+                } catch(error) {
+                    Toast.error(error.message || '요청 실패');
+                }
             }
         } else if (status === 'pending') {
-            if (await Confirm.fire('이 신청을 취소하시겠습니까?')) {
-                await this.apiCall(`/leaves/${leaveId}/cancel`, { method: 'POST' });
-                this.loadInitialData();
+            if (await confirm('이 신청을 취소하시겠습니까?')) {
+                try {
+                    await this.apiCall(`/leaves/${leaveId}/cancel`, 'POST');
+                    Toast.success('신청이 취소되었습니다.');
+                    this.loadInitialData();
+                } catch(error) {
+                    Toast.error(error.message || '취소 실패');
+                }
             }
         }
     }
+
+    getStatusColor(status) {
+        const map = {
+            'pending': 'secondary', 'approved': 'success', 'rejected': 'danger',
+            'cancelled': 'warning', 'cancellation_requested': 'info'
+        };
+        return map[status] || 'dark';
+    }
+
+    translateStatus(status) {
+        const map = {
+            'pending': '대기', 'approved': '승인', 'rejected': '반려',
+            'cancelled': '취소됨', 'cancellation_requested': '취소요청'
+        };
+        return map[status] || status;
+    }
 }
 
-new MyPage();
+// Helper debounce function
+function debounce(fn, delay) {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+    };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    new MyPage().initializeApp();
+});
