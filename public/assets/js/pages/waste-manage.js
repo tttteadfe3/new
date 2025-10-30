@@ -16,7 +16,7 @@ class WasteAdminPage extends BasePage {
     }
 
     setupEventListeners() {
-        document.getElementById('listForm').addEventListener('submit', (e) => { e.preventDefault(); this.loadInitialData(); });
+        document.getElementById('searchBtn').addEventListener('click', (e) => { e.preventDefault(); this.loadInitialData(); });
         document.getElementById('resetBtn').addEventListener('click', () => { document.getElementById('listForm').reset(); this.loadInitialData(); });
         document.getElementById('htmlUpload').addEventListener('change', (e) => this.handleFileUpload(e));
         document.getElementById('data-table-body').addEventListener('click', (e) => this.handleTableEvents(e));

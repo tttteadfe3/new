@@ -251,9 +251,13 @@ class WasteCollectionService
         $this->db->beginTransaction();
         
         try {
+            // 1. 모든 기존 온라인 데이터를 '처리완료'로 업데이트
+            $this->wasteCollectionRepository->updateAllOnlineToProcessed($adminUserId);
+
             $newIds = [];
             $failedCount = 0;
             $duplicateCount = 0;
+            $unprocessedCount = 0;
 
             foreach ($collections as $collectionData) {
                 // 3주 기간 제한 확인
@@ -264,10 +268,15 @@ class WasteCollectionService
                 }
 
                 // 중복 확인
-                if (!empty($collectionData['receiptNumber']) &&
-                    $this->wasteCollectionRepository->findByDischargeNumber($collectionData['receiptNumber'])) {
-                    $duplicateCount++;
-                    continue;
+                if (!empty($collectionData['receiptNumber'])) {
+                    $existingCollection = $this->wasteCollectionRepository->findByDischargeNumber($collectionData['receiptNumber']);
+                    if ($existingCollection) {
+                        // 중복이면 '미처리'로 상태 업데이트
+                        $this->wasteCollectionRepository->updateStatusByDischargeNumber($collectionData['receiptNumber'], '미처리', $adminUserId);
+                        $duplicateCount++;
+                        $unprocessedCount++;
+                        continue;
+                    }
                 }
 
                 // 카카오 API에서 주소 정보 가져오기
@@ -302,7 +311,8 @@ class WasteCollectionService
             return [
                 'count' => count($newIds), 
                 'failures' => $failedCount, 
-                'duplicates' => $duplicateCount
+                'duplicates' => $duplicateCount,
+                'unprocessed' => $unprocessedCount
             ];
             
         } catch (Exception $e) {
