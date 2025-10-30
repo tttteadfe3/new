@@ -219,82 +219,84 @@ CREATE TABLE `sys_activity_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 활동 감사 로그';
 
 -- ========================================
--- 6단계: 연차 관련 테이블 생성
+-- 6단계: 연차 관련 신규 테이블 생성
 -- ========================================
 
 --
--- 테이블 구조 `hr_leave_entitlements`
+-- 테이블 구조 `hr_leave_balances`
 --
-
-CREATE TABLE `hr_leave_entitlements` (
+CREATE TABLE `hr_leave_balances` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
   `employee_id` int(11) NOT NULL COMMENT '직원 ID',
-  `year` int(4) NOT NULL COMMENT '연차 해당 연도',
-  `total_days` decimal(4,1) NOT NULL DEFAULT 0.0 COMMENT '부여된 총 연차',
-  `used_days` decimal(4,1) NOT NULL DEFAULT 0.0 COMMENT '사용한 연차',
-  `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '생성일시',
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  `year` int(4) NOT NULL COMMENT '해당 연도',
+  `base_leave` decimal(4,2) NOT NULL DEFAULT 0.00 COMMENT '기본 연차 (근로기준법 기준)',
+  `seniority_leave` decimal(4,2) NOT NULL DEFAULT 0.00 COMMENT '근속 가산 연차',
+  `monthly_leave` decimal(4,2) NOT NULL DEFAULT 0.00 COMMENT '1년 미만 월차',
+  `adjustment_leave` decimal(4,2) NOT NULL DEFAULT 0.00 COMMENT '조정 연차 (포상/징계 등)',
+  `used_leave` decimal(4,2) NOT NULL DEFAULT 0.00 COMMENT '사용한 총 연차',
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '최종 수정일시',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_employee_year` (`employee_id`,`year`),
-  KEY `idx_employee_id` (`employee_id`),
-  CONSTRAINT `fk_entitlements_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원별 연차 부여 내역';
+  UNIQUE KEY `uk_employee_year` (`employee_id`, `year`),
+  CONSTRAINT `fk_balances_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원별 연차 현황 집계';
 
 -- --------------------------------------------------------
 
 --
--- 테이블 구조 `hr_leave_adjustments_log`
+-- 테이블 구조 `hr_leave_logs`
 --
-
-CREATE TABLE `hr_leave_adjustments_log` (
-  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+CREATE TABLE `hr_leave_logs` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
   `employee_id` int(11) NOT NULL COMMENT '대상 직원 ID',
-  `year` int(4) NOT NULL COMMENT '조정 대상 연도',
-  `adjusted_days` decimal(4,1) NOT NULL COMMENT '조정된 연차 (예: +1.0, -0.5)',
-  `reason` varchar(255) NOT NULL COMMENT '조정 사유',
-  `admin_employee_id` int(11) NOT NULL COMMENT '처리한 관리자 employee_id',
-  `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '기록 생성일시',
+  `leave_request_id` int(11) DEFAULT NULL COMMENT '관련 연차 신청 ID',
+  `change_type` enum('grant_base','grant_seniority','grant_monthly','use','cancel_use','adjust_reward','adjust_disciplinary','expire','adjust_etc') NOT NULL COMMENT '변경 유형',
+  `leave_type` enum('base','seniority','monthly','mixed') DEFAULT NULL COMMENT '차감 대상 연차 종류',
+  `change_days` decimal(4,2) NOT NULL COMMENT '변경 수량 (증가: 양수, 감소: 음수)',
+  `reason` text DEFAULT NULL COMMENT '사유/메모',
+  `processor_id` int(11) DEFAULT NULL COMMENT '처리자 직원 ID (시스템 처리는 NULL)',
+  `processed_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '변경 발생일시',
   PRIMARY KEY (`id`),
-  KEY `fk_leave_adj_employee_id` (`employee_id`),
-  KEY `fk_leave_adj_admin_employee_id` (`admin_employee_id`),
-  CONSTRAINT `fk_leave_adj_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_leave_adj_admin_employee_id` FOREIGN KEY (`admin_employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='(관리자용) 연차 수동 조정 기록';
+  KEY `idx_employee_id` (`employee_id`),
+  KEY `idx_change_type` (`change_type`),
+  KEY `fk_logs_leave_request_id` (`leave_request_id`),
+  KEY `fk_logs_processor_id` (`processor_id`),
+  CONSTRAINT `fk_logs_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_logs_processor_id` FOREIGN KEY (`processor_id`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='전체 연차 변경 이력 로그';
 
 -- --------------------------------------------------------
 
 --
--- 테이블 구조 `hr_leaves`
+-- 테이블 구조 `hr_leave_requests`
 --
-
-CREATE TABLE `hr_leaves` (
+CREATE TABLE `hr_leave_requests` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
   `employee_id` int(11) NOT NULL COMMENT '신청 직원 ID',
-
-  -- 휴가 정보
-  `leave_type` enum('annual','sick','special','other','half_day') NOT NULL DEFAULT 'annual' COMMENT '휴가 종류',
   `start_date` date NOT NULL COMMENT '휴가 시작일',
   `end_date` date NOT NULL COMMENT '휴가 종료일',
-  `days_count` decimal(4,1) NOT NULL COMMENT '휴가 일수 (0.5는 반차)',
+  `days_count` decimal(4,2) NOT NULL COMMENT '신청 일수',
+  `leave_subtype` enum('full_day','half_day_am','half_day_pm') NOT NULL DEFAULT 'full_day' COMMENT '휴가 상세 종류 (전일/오전반차/오후반차)',
   `reason` text DEFAULT NULL COMMENT '휴가 신청 사유',
-
-  -- 처리 정보
   `status` enum('pending','approved','rejected','cancelled','cancellation_requested') NOT NULL DEFAULT 'pending' COMMENT '신청 상태',
-  `approver_employee_id` int(11) DEFAULT NULL COMMENT '처리한 관리자 employee_id',
+  `approver_id` int(11) DEFAULT NULL COMMENT '처리한 관리자 직원 ID',
   `rejection_reason` text DEFAULT NULL COMMENT '반려 사유',
   `cancellation_reason` text DEFAULT NULL COMMENT '취소 사유 (직원이 취소 요청 시)',
-
-  -- 타임스탬프
   `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT '신청일시',
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
   PRIMARY KEY (`id`),
   KEY `idx_employee_id` (`employee_id`),
   KEY `idx_status` (`status`),
   KEY `idx_start_date` (`start_date`),
-  KEY `fk_leaves_approver_employee_id` (`approver_employee_id`),
-  CONSTRAINT `fk_leaves_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_leaves_approver_employee_id` FOREIGN KEY (`approver_employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원 휴가 신청 내역';
+  KEY `fk_requests_approver_id` (`approver_id`),
+  CONSTRAINT `fk_requests_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_requests_approver_id` FOREIGN KEY (`approver_id`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='직원 연차 신청 내역';
+
+--
+-- `hr_leave_logs` 테이블에 `hr_leave_requests` 외래 키 제약 조건 추가
+--
+ALTER TABLE `hr_leave_logs`
+  ADD CONSTRAINT `fk_logs_leave_request_id` FOREIGN KEY (`leave_request_id`) REFERENCES `hr_leave_requests` (`id`) ON DELETE SET NULL;
 
 -- ========================================
 -- 7단계: 휴일 관련 테이블 생성
