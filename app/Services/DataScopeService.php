@@ -39,7 +39,11 @@ class DataScopeService
     public function getVisibleDepartmentIdsForCurrentUser(): ?array
     {
         // 1. 전체 조회 권한 확인
-        if ($this->authService->check('employee.manage')) {
+        if (
+            $this->authService->check('employee.manage') ||
+            $this->authService->check('leave.view_all') ||
+            $this->authService->check('leave.manage_entitlement')
+        ) {
             return null; // null은 '전체 조회'를 의미
         }
 
