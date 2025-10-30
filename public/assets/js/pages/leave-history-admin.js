@@ -26,6 +26,7 @@ class LeaveHistoryAdminPage extends BasePage {
 
     async loadDepartments() {
         try {
+            // '/api' 제거
             const response = await this.apiCall('/organization/managable-departments');
             response.data.forEach(dept => {
                 const option = new Option(dept.name, dept.id);
@@ -44,8 +45,8 @@ class LeaveHistoryAdminPage extends BasePage {
         this.elements.leaveHistoryBody.innerHTML = `<tr><td colspan="7" class="text-center"><span class="spinner-border spinner-border-sm"></span> 목록을 불러오는 중...</td></tr>`;
 
         try {
-            // 새로운 API 엔드포인트와 파라미터를 사용합니다.
-            const response = await this.apiCall(`/api/admin/leaves/requests?year=${year}&department_id=${departmentId}&status=${status}`);
+            // '/api' 제거
+            const response = await this.apiCall(`/admin/leaves/requests?year=${year}&department_id=${departmentId}&status=${status}`);
             this.renderHistory(response.data);
         } catch (error) {
             this.elements.leaveHistoryBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">내역 로딩 실패: ${error.message}</td></tr>`;
