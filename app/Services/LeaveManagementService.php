@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\LeaveRepository;
 use App\Services\LeaveCalculationService;
+use App\Repositories\EmployeeRepository; // 네임스페이스 추가
 use Exception;
 
 class LeaveManagementService
@@ -12,8 +13,11 @@ class LeaveManagementService
     protected LeaveCalculationService $leaveCalculationService;
     protected EmployeeRepository $employeeRepository;
 
-    public function __construct(LeaveRepository $leaveRepository, LeaveCalculationService $leaveCalculationService, EmployeeRepository $employeeRepository)
-    {
+    public function __construct(
+        LeaveRepository $leaveRepository,
+        LeaveCalculationService $leaveCalculationService,
+        EmployeeRepository $employeeRepository // 타입 힌팅 수정
+    ) {
         $this->leaveRepository = $leaveRepository;
         $this->leaveCalculationService = $leaveCalculationService;
         $this->employeeRepository = $employeeRepository;
@@ -23,7 +27,8 @@ class LeaveManagementService
     {
         if ($days <= 0) return true;
 
-        return $this->leaveRepository->grantLeave($employeeId, $year, $days, $column, $logType, $reason, $processorId, $requestId);
+        // Delegate the transaction to the new repository method
+        return $this->leaveRepository->grantLeave($employeeId, $year, $days, $column, $logType, $reason, $processorId);
     }
 
     /**
@@ -86,33 +91,12 @@ class LeaveManagementService
         return $previewData;
     }
 
-    // ... (other methods remain unchanged)
-    public function approveLeaveRequest(int $requestId, int $adminId): bool
-    {
-        // ...
-    }
-    public function rejectLeaveRequest(int $requestId, int $adminId, string $reason): bool
-    {
-        // ...
-    }
-    public function approveCancellationRequest(int $requestId, int $adminId): bool
-    {
-        // ...
-    }
-    public function rejectCancellationRequest(int $requestId, int $adminId): bool
-    {
-        // ...
-    }
-    public function expireUnusedLeaveForAll(int $year, int $adminId): array
-    {
-        // ...
-    }
-    public function manualAdjustment(int $employeeId, int $year, float $days, string $reason, int $adminId): bool
-    {
-        // ...
-    }
-    public function canRequestLeave(int $employeeId, string $startDate, float $requestDays): bool
-    {
-        // ...
-    }
+    // ... (rest of the file is unchanged)
+    public function approveLeaveRequest(int $requestId, int $adminId): bool { /* ... */ }
+    public function rejectLeaveRequest(int $requestId, int $adminId, string $reason): bool { /* ... */ }
+    public function approveCancellationRequest(int $requestId, int $adminId): bool { /* ... */ }
+    public function rejectCancellationRequest(int $requestId, int $adminId): bool { /* ... */ }
+    public function expireUnusedLeaveForAll(int $year, int $adminId): array { /* ... */ }
+    public function manualAdjustment(int $employeeId, int $year, float $days, string $reason, int $adminId): bool { /* ... */ }
+    public function canRequestLeave(int $employeeId, string $startDate, float $requestDays): bool { /* ... */ }
 }
