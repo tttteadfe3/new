@@ -91,14 +91,44 @@ class LitteringHistoryPage extends BasePage {
     }
 
     groupReportsByAddress() {
-        this.state.groupedData = this.state.processedReports.reduce((acc, item) => {
-            const address = item.jibun_address || item.road_address || '주소 없음';
-            if (!acc[address]) {
-                acc[address] = [];
+        const MAX_DISTANCE = 5; // 5 meters
+        const reportGroups = []; // Array of { center: {lat, lng}, items: [...] }
+
+        this.state.processedReports.forEach(report => {
+            const reportLocation = { lat: report.latitude, lng: report.longitude };
+            const reportAddress = report.jibun_address || report.road_address || '주소 없음';
+
+            let foundGroup = false;
+            for (const group of reportGroups) {
+                const groupAddress = group.items[0].jibun_address || group.items[0].road_address || '주소 없음';
+
+                if (reportAddress === groupAddress) {
+                    const distance = LocationUtils.calculateDistance(group.center, reportLocation);
+                    if (distance < MAX_DISTANCE) {
+                        group.items.push(report);
+                        foundGroup = true;
+                        break;
+                    }
+                }
             }
-            acc[address].push(item);
-            return acc;
-        }, {});
+
+            if (!foundGroup) {
+                reportGroups.push({
+                    center: reportLocation,
+                    items: [report],
+                });
+            }
+        });
+
+        const groupedData = {};
+        reportGroups.forEach((group, index) => {
+            const firstItem = group.items[0];
+            const address = firstItem.jibun_address || firstItem.road_address || '주소 없음';
+            const uniqueKey = `${address}_${index}`;
+            groupedData[uniqueKey] = group.items;
+        });
+
+        this.state.groupedData = groupedData;
     }
 
     displayReportsOnMap() {
