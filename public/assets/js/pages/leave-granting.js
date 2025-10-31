@@ -67,7 +67,7 @@ class LeaveGrantingPage extends BasePage {
         const params = new URLSearchParams({ year, department_id: departmentId });
 
         try {
-            const response = await this.apiCall(`/admin/leaves/balances?${params}`);
+            const response = await this.apiCall(`/admin/leaves/balances?${params.toString()}`);
             this.renderTable(response.data);
         } catch (error) {
             Toast.error('연차 현황 로딩 실패: ' + error.message);
@@ -129,10 +129,10 @@ class LeaveGrantingPage extends BasePage {
                         <td>${item.employee_name}</td>
                         <td>${item.department_name || ''}</td>
                         <td>${item.hire_date}</td>
-                        <td>${item.base_leave_to_grant}</td>
-                        <td>${item.monthly_leave_to_grant}</td>
-                        <td>${item.seniority_leave_to_grant}</td>
-                        <td><strong>${item.total_to_grant}</strong></td>
+                        <td>${(item.base_leave_to_grant || 0).toFixed(1)}</td>
+                        <td>${(item.monthly_leave_to_grant || 0).toFixed(1)}</td>
+                        <td>${(item.seniority_leave_to_grant || 0).toFixed(1)}</td>
+                        <td><strong>${(item.total_to_grant || 0).toFixed(1)}</strong></td>
                     </tr>
                 `).join('');
             }
@@ -147,7 +147,7 @@ class LeaveGrantingPage extends BasePage {
         if (!await confirm(`${year}년 연차를 화면에 표시된 직원들에게 부여하시겠습니까?`)) return;
 
         try {
-            const response = await this.apiCall('/admin/leaves/grant-annual', 'POST', { year });
+            const response = await this.apiCall('/admin/leaves/grant-annual', { method: 'POST', body: { year } });
             Toast.success(response.message || '일괄 부여가 완료되었습니다.');
             this.state.grantPreviewModal.hide();
             await this.loadBalances();
@@ -161,7 +161,7 @@ class LeaveGrantingPage extends BasePage {
         if (!await confirm(`${year}년 미사용 연차를 모두 소멸 처리하시겠습니까?`)) return;
 
         try {
-            const response = await this.apiCall('/admin/leaves/expire-unused', 'POST', { year });
+            const response = await this.apiCall('/admin/leaves/expire-unused', { method: 'POST', body: { year } });
             Toast.success(response.message);
             await this.loadBalances();
         } catch (error) {
@@ -194,7 +194,7 @@ class LeaveGrantingPage extends BasePage {
         }
 
         try {
-            const response = await this.apiCall('/admin/leaves/adjust', 'POST', data);
+            const response = await this.apiCall('/admin/leaves/adjust', { method: 'POST', body: data });
             Toast.success(response.message);
             this.state.adjustmentModal.hide();
             await this.loadBalances();

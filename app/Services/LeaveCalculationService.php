@@ -62,8 +62,8 @@ class LeaveCalculationService
 
         $proratedLeave = (15 / $totalDaysInYear) * $daysWorkedInHireYear;
 
-        // 최종 결과는 소수점 둘째 자리까지 반올림 (예: 14.1일, 5.2일)
-        return round($proratedLeave, 2);
+        // 최종 결과는 소수점 첫째 자리까지 반올림 (예: 14.1일, 5.2일)
+        return round($proratedLeave, 1);
     }
 
     /**

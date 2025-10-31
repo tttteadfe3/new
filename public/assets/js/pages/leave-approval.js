@@ -12,15 +12,17 @@ class LeaveApprovalPage extends BasePage {
     }
 
     cacheDOMElements() {
-        this.elements.tabs = document.querySelectorAll('a[data-bs-toggle="tab"]');
-        this.elements.yearFilter = document.getElementById('year-filter');
-        this.elements.departmentFilter = document.getElementById('department-filter');
-        this.elements.bodies = {
-            'pending': document.getElementById('pending-requests-body'),
-            'cancellation_requested': document.getElementById('cancellation_requested-requests-body'),
-            'approved': document.getElementById('approved-requests-body'),
-            'rejected': document.getElementById('rejected-requests-body'),
-            'cancelled': document.getElementById('cancelled-requests-body'),
+        this.elements = {
+            tabs: document.querySelectorAll('a[data-bs-toggle="tab"]'),
+            yearFilter: document.getElementById('year-filter'),
+            departmentFilter: document.getElementById('department-filter'),
+            bodies: {
+                'pending': document.getElementById('pending-requests-body'),
+                'cancellation_requested': document.getElementById('cancellation_requested-requests-body'),
+                'approved': document.getElementById('approved-requests-body'),
+                'rejected': document.getElementById('rejected-requests-body'),
+                'cancelled': document.getElementById('cancelled-requests-body'),
+            },
         };
     }
 
@@ -74,7 +76,7 @@ class LeaveApprovalPage extends BasePage {
         const params = new URLSearchParams({ status, year, department_id: departmentId });
 
         try {
-            const response = await this.apiCall(`/admin/leaves/requests?${params}`);
+            const response = await this.apiCall(`/admin/leaves/requests?${params.toString()}`);
             this.renderTable(status, response.data);
         } catch (error) {
             Toast.error(`${status} 목록 로딩 실패`);
@@ -148,7 +150,7 @@ class LeaveApprovalPage extends BasePage {
     }
 
     async handleAction(action, id) {
-        let confirmText, url, body = null, successMsg;
+        let confirmText, url, method = 'POST', body = null, successMsg;
 
         switch(action) {
             case 'approve':
@@ -186,10 +188,10 @@ class LeaveApprovalPage extends BasePage {
                 return;
         }
 
-        if (!await confirm(confirmText)) return;
+        if (confirmText && !await confirm(confirmText)) return;
 
         try {
-            await this.apiCall(url, 'POST', body);
+            await this.apiCall(url, { method, body });
             Toast.success(successMsg);
             this.loadAllTabs();
         } catch (error) {
