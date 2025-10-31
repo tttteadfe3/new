@@ -37,9 +37,10 @@
                                 <th>등록일자</th>
                                 <th>등록자</th>
                                 <th>주소</th>
+                                <th>품목</th>
+                                <th>상태</th>
                                 <th>처리일자</th>
                                 <th>처리자</th>
-                                <th>품목</th>
                             </tr>
                         </thead>
                         <tbody id="field-data-table-body">
