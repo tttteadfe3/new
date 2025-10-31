@@ -191,4 +191,40 @@ class WasteCollectionRepository {
         $result = $this->db->fetchOne($query, [$dischargeNumber]);
         return $result === false ? null : $result;
     }
+
+    /**
+     * 모든 온라인 제출을 '처리완료'로 업데이트합니다.
+     * @param int $employeeId
+     * @return bool
+     */
+    public function updateAllOnlineToProcessed(int $employeeId): bool
+    {
+        $query = "UPDATE `waste_collections` SET `status` = '처리완료', `completed_at` = NOW(), `completed_by` = ? WHERE `type` = 'online' AND `status` = '미처리'";
+        return $this->db->execute($query, [$employeeId]) !== false;
+    }
+
+    /**
+     * 접수 번호로 수거 내역의 상태를 업데이트합니다.
+     * @param string $dischargeNumber
+     * @param string $status
+     * @param int $employeeId
+     * @return bool
+     */
+    public function updateStatusByDischargeNumber(string $dischargeNumber, string $status, int $employeeId): bool
+    {
+        $completedAt = ($status === '처리완료') ? 'NOW()' : 'NULL';
+        $completedBy = ($status === '처리완료') ? $employeeId : 'NULL';
+
+        $query = "UPDATE `waste_collections` SET `status` = ?, `completed_at` = {$completedAt}, `completed_by` = ? WHERE `discharge_number` = ?";
+
+        $params = [$status];
+        if ($status === '처리완료') {
+            $params[] = $completedBy;
+        } else {
+            $params[] = null;
+        }
+        $params[] = $dischargeNumber;
+
+        return $this->db->execute($query, $params) !== false;
+    }
 }
