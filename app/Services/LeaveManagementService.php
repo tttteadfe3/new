@@ -108,13 +108,16 @@ class LeaveManagementService
         if (!$request || $request['status'] !== 'pending') {
             return false;
         }
-        return $this->leaveRepository->updateRequestStatus($requestId, 'rejected', $adminId, $reason);
+        return $this->leaveRepository->updateRequestStatus($requestId, 'rejected', [
+            'approver_id' => $adminId,
+            'rejection_reason' => $reason
+        ]);
     }
 
     public function approveCancellationRequest(int $requestId, int $adminId): bool
     {
         $request = $this->leaveRepository->findRequestById($requestId);
-        if (!$request || $request['status'] !== 'cancellation_pending') {
+        if (!$request || $request['status'] !== 'cancellation_requested') {
             return false;
         }
         // Use a dedicated repository method to handle the transaction
@@ -124,11 +127,11 @@ class LeaveManagementService
     public function rejectCancellationRequest(int $requestId, int $adminId): bool
     {
         $request = $this->leaveRepository->findRequestById($requestId);
-        if (!$request || $request['status'] !== 'cancellation_pending') {
+        if (!$request || $request['status'] !== 'cancellation_requested') {
             return false;
         }
         // Revert status to 'approved'
-        return $this->leaveRepository->updateRequestStatus($requestId, 'approved', $adminId);
+        return $this->leaveRepository->updateRequestStatus($requestId, 'approved', ['approver_id' => $adminId]);
     }
 
     public function expireUnusedLeaveForAll(int $year, int $adminId): array

@@ -54,14 +54,14 @@ class LeaveRepository
 
     public function createLeaveLog(int $employeeId, string $changeType, float $changeDays, string $reason, ?int $processorId = null, ?int $requestId = null): bool
     {
-        $sql = "INSERT INTO hr_leave_logs (employee_id, change_type, change_days, reason, processor_id, leave_request_id, processed_at) VALUES (:employee_id, :change_type, :change_days, :reason, :processor_id, :request_id, NOW())";
+        $sql = "INSERT INTO hr_leave_logs (employee_id, change_type, change_days, reason, processor_id, leave_request_id, processed_at) VALUES (:employee_id, :change_type, :change_days, :reason, :processor_id, :leave_request_id, NOW())";
         $params = [
             ':employee_id' => $employeeId,
             ':change_type' => $changeType,
             ':change_days' => $changeDays,
             ':reason' => $reason,
             ':processor_id' => $processorId,
-            ':request_id' => $requestId
+            ':leave_request_id' => $requestId
         ];
         return $this->db->execute($sql, $params);
     }
