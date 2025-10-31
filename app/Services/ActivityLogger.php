@@ -23,6 +23,16 @@ class ActivityLogger
     }
 
     /**
+     * 범용 활동을 기록합니다.
+     * @param string $action
+     * @param string $details
+     */
+    public function logAction(string $action, string $details): void
+    {
+        $this->_log($action, $details);
+    }
+
+    /**
      * 공통 로그 기록 메서드
      * @param string $action
      * @param string $details

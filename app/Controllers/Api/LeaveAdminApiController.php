@@ -120,7 +120,7 @@ class LeaveAdminApiController extends BaseApiController
     {
         try {
             $this->leaveManagementService->approveLeaveRequest($id, $this->authService->user()['id']);
-            $this->activityLogger->log('leave_request_approved', "Leave request ID: {$id} approved.", $this->authService->user()['id']);
+            $this->activityLogger->logAction('leave_request_approved', "Leave request ID: {$id} approved.");
             $this->jsonResponse->success(null, '연차 신청이 승인되었습니다.');
         } catch (Exception $e) {
             $this->jsonResponse->badRequest($e->getMessage());
@@ -134,7 +134,7 @@ class LeaveAdminApiController extends BaseApiController
 
         try {
             $this->leaveManagementService->rejectLeaveRequest($id, $this->authService->user()['id'], $reason);
-            $this->activityLogger->log('leave_request_rejected', "Leave request ID: {$id} rejected.", $this->authService->user()['id']);
+            $this->activityLogger->logAction('leave_request_rejected', "Leave request ID: {$id} rejected.");
             $this->jsonResponse->success(null, '연차 신청이 반려되었습니다.');
         } catch (Exception $e) {
             $this->jsonResponse->badRequest($e->getMessage());
@@ -145,7 +145,7 @@ class LeaveAdminApiController extends BaseApiController
     {
         try {
             $this->leaveManagementService->approveCancellationRequest($id, $this->authService->user()['id']);
-            $this->activityLogger->log('leave_cancellation_approved', "Leave cancellation for request ID: {$id} approved.", $this->authService->user()['id']);
+            $this->activityLogger->logAction('leave_cancellation_approved', "Leave cancellation for request ID: {$id} approved.");
             $this->jsonResponse->success(null, '연차 취소 요청이 승인되었습니다.');
         } catch (Exception $e) {
             $this->jsonResponse->badRequest($e->getMessage());
@@ -156,7 +156,7 @@ class LeaveAdminApiController extends BaseApiController
     {
         try {
             $this->leaveManagementService->rejectCancellationRequest($id, $this->authService->user()['id']);
-            $this->activityLogger->log('leave_cancellation_rejected', "Leave cancellation for request ID: {$id} rejected.", $this->authService->user()['id']);
+            $this->activityLogger->logAction('leave_cancellation_rejected', "Leave cancellation for request ID: {$id} rejected.");
             $this->jsonResponse->success(null, '연차 취소 요청이 반려되었습니다.');
         } catch (Exception $e) {
             $this->jsonResponse->badRequest($e->getMessage());
@@ -170,7 +170,7 @@ class LeaveAdminApiController extends BaseApiController
 
         try {
             $result = $this->leaveManagementService->grantAnnualLeaveToAllEmployees($year, $this->authService->user()['id']);
-            $this->activityLogger->log('annual_leave_granted', "Annual leave granted for year {$year}.", $this->authService->user()['id']);
+            $this->activityLogger->logAction('annual_leave_granted', "Annual leave granted for year {$year}.");
             $message = !empty($result['failed_ids'])
                 ? "{$year}년 연차 부여가 완료되었습니다. (일부 실패)"
                 : "{$year}년 연차 부여가 성공적으로 완료되었습니다.";
@@ -187,7 +187,7 @@ class LeaveAdminApiController extends BaseApiController
 
         try {
             $result = $this->leaveManagementService->expireUnusedLeaveForAll($year, $this->authService->user()['id']);
-            $this->activityLogger->log('unused_leave_expired', "Unused leave expired for year {$year}.", $this->authService->user()['id']);
+            $this->activityLogger->logAction('unused_leave_expired', "Unused leave expired for year {$year}.");
             $message = !empty($result['failed_ids'])
                 ? "{$year}년 미사용 연차 소멸 처리가 완료되었습니다. (일부 실패)"
                 : "{$year}년 미사용 연차 소멸 처리가 성공적으로 완료되었습니다.";
@@ -212,7 +212,7 @@ class LeaveAdminApiController extends BaseApiController
 
         try {
             $this->leaveManagementService->manualAdjustment($employeeId, $year, $days, $reason, $this->authService->user()['id']);
-            $this->activityLogger->log('manual_leave_adjustment', "Manual leave adjustment for employee ID: {$employeeId}, Days: {$days}, Reason: {$reason}", $this->authService->user()['id']);
+            $this->activityLogger->logAction('manual_leave_adjustment', "Manual leave adjustment for employee ID: {$employeeId}, Days: {$days}, Reason: {$reason}");
             $this->jsonResponse->success(null, '연차 조정이 성공적으로 완료되었습니다.');
         } catch (Exception $e) {
             $this->jsonResponse->error($e->getMessage(), null, 500);
