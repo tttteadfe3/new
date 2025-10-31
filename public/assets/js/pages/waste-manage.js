@@ -1,47 +1,88 @@
 class WasteAdminPage extends BasePage {
     constructor() {
         super();
-
         this.state = {
             ...this.state,
-            fileParseResultModal: null
+            fileParseResultModal: null,
+            collections: {
+                field: [],
+                online: []
+            }
         };
     }
 
     initializeApp() {
-        // BaseApp.initializeApp() is not called because it has its own logic that we are overriding.
         this.state.fileParseResultModal = new bootstrap.Modal(document.getElementById('fileParseResultModal'));
         this.setupEventListeners();
         this.loadInitialData();
     }
 
     setupEventListeners() {
-        document.getElementById('searchBtn').addEventListener('click', (e) => { e.preventDefault(); this.loadInitialData(); });
-        document.getElementById('resetBtn').addEventListener('click', () => { document.getElementById('listForm').reset(); this.loadInitialData(); });
+        document.querySelectorAll('.search-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.loadData(e.target.dataset.type);
+            });
+        });
+
+        document.querySelectorAll('.reset-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const type = e.target.dataset.type;
+                document.getElementById(`${type}ListForm`).reset();
+                this.loadData(type);
+            });
+        });
+
         document.getElementById('htmlUpload').addEventListener('change', (e) => this.handleFileUpload(e));
-        document.getElementById('data-table-body').addEventListener('click', (e) => this.handleTableEvents(e));
         document.getElementById('batchRegisterBtn')?.addEventListener('click', () => this.handleBatchRegistration());
         document.getElementById('clearInternetBtn')?.addEventListener('click', () => this.clearInternetSubmissions());
+
+        // 이벤트 위임을 사용하여 각 테이블 본문에 대한 이벤트 리스너 설정
+        document.getElementById('field-data-table-body').addEventListener('click', (e) => this.handleTableEvents(e, 'field'));
+        document.getElementById('online-data-table-body').addEventListener('click', (e) => this.handleTableEvents(e, 'online'));
     }
 
-    async loadInitialData() {
-        const form = document.getElementById('listForm');
+    loadInitialData() {
+        this.loadData('field');
+        this.loadData('online');
+    }
+
+    async loadData(type) {
+        const form = document.getElementById(`${type}ListForm`);
         const params = new URLSearchParams(new FormData(form)).toString();
         try {
             const response = await this.apiCall(`/waste-collections/admin?${params}`);
-            this.renderTable(response.data);
-            document.getElementById('total-count').textContent = response.data.length;
+            this.state.collections[type] = response.data;
+            this.renderTable(type);
+            document.getElementById(`${type}-total-count`).textContent = response.data.length;
         } catch (e) {
-            Toast.error(`데이터 로드 실패: ${e.message}`);
+            Toast.error(`${type} 데이터 로드 실패: ${e.message}`);
         }
     }
 
-    renderTable(collections) {
-        const tbody = document.getElementById('data-table-body');
-        tbody.innerHTML = collections.length === 0 ? '<tr><td colspan="9">데이터가 없습니다.</td></tr>' : collections.map(item => this.generateTableRow(item)).join('');
+    renderTable(type) {
+        const collections = this.state.collections[type];
+        const tbody = document.getElementById(`${type}-data-table-body`);
+        const colSpan = type === 'field' ? 6 : 9;
+        tbody.innerHTML = collections.length === 0
+            ? `<tr><td colspan="${colSpan}">데이터가 없습니다.</td></tr>`
+            : collections.map(item => type === 'field' ? this.generateFieldTableRow(item) : this.generateOnlineTableRow(item)).join('');
     }
 
-    generateTableRow(item) {
+    generateFieldTableRow(item) {
+        const items = (typeof item.items === 'string' ? JSON.parse(item.items) : item.items) || [];
+        const itemsHtml = items.map(i => `${i.name}(${i.quantity})`).join(', ');
+        return `<tr>
+            <td>${item.issue_date || '-'}</td>
+            <td>${item.creator_name || '-'}</td>
+            <td class="text-start">${item.address}</td>
+            <td>${item.processed_at || '-'}</td>
+            <td>${item.processor_name || '-'}</td>
+            <td>${itemsHtml}</td>
+        </tr>`;
+    }
+
+    generateOnlineTableRow(item) {
         const items = (typeof item.items === 'string' ? JSON.parse(item.items) : item.items) || [];
         const itemRowsHtml = items.map(d => this.generateItemRow(d)).join('');
         const processButtonHtml = item.status !== '처리완료'
@@ -65,29 +106,29 @@ class WasteAdminPage extends BasePage {
             <td>${item.item_count}</td>
             <td>${(item.fee || 0).toLocaleString()}원</td>
             <td>${item.issue_date}</td>
-            <td><span class="badge bg-${item.status === '처리완료' ? 'secondary' : 'warning'}">${item.status === '처리완료' ? '처리완료' : '미처리'}</span></td>
+            <td><span class="badge bg-${item.status === '처리완료' ? 'secondary' : 'warning'}">${item.status}</span></td>
             <td style="min-width: 450px;">${itemsManagementHtml}</td>
         </tr>`;
     }
 
-    handleTableEvents(e) {
+    handleTableEvents(e, type) {
         const target = e.target;
         const id = target.dataset.id;
         if (!id) return;
 
         if (target.classList.contains('btn-save-items')) {
-            const itemsContainer = document.querySelector(`.items-container[data-id="${id}"]`);
+            const itemsContainer = document.querySelector(`#${type}-data-table-body .items-container[data-id="${id}"]`);
             const items = Array.from(itemsContainer.querySelectorAll('.item-row')).map(row => ({
                 name: row.querySelector('.item-name').value.trim(),
                 quantity: parseInt(row.querySelector('.item-quantity').value, 10)
             })).filter(item => item.name && item.quantity > 0);
-            this.saveItems(id, JSON.stringify(items));
+            this.saveItems(id, JSON.stringify(items), type);
         } else if (target.classList.contains('btn-add-item')) {
-            document.querySelector(`.items-container[data-id="${id}"]`).insertAdjacentHTML('beforeend', this.generateItemRow());
+            document.querySelector(`#${type}-data-table-body .items-container[data-id="${id}"]`).insertAdjacentHTML('beforeend', this.generateItemRow());
         } else if (target.classList.contains('btn-remove-item')) {
             target.closest('.item-row').remove();
         } else if (target.classList.contains('btn-process')) {
-            this.processCollection(id);
+            this.processCollection(id, type);
         }
     }
 
@@ -128,10 +169,10 @@ class WasteAdminPage extends BasePage {
 
         try {
             const response = await this.apiCall('/waste-collections/admin/batch-register', { method: 'POST', body: { collections } });
-            const { count, failures, duplicates } = response.data;
-            Toast.success(`${count}건 성공, ${failures}건 실패, ${duplicates}건 중복 처리되었습니다.`);
+            const { count, failures, duplicates, unprocessed } = response.data;
+            Toast.success(`${count}건 등록, ${failures}건 실패, ${duplicates}건 중복, ${unprocessed}건 미처리로 변경되었습니다.`);
             this.state.fileParseResultModal.hide();
-            this.loadInitialData();
+            this.loadData('online');
         } catch (e) {
             Toast.error(`일괄 등록 실패: ${e.message}`);
         }
@@ -141,23 +182,23 @@ class WasteAdminPage extends BasePage {
         return `<div class="row gx-2 mb-2 item-row"><div class="col"><input type="text" class="form-control form-control-sm item-name" placeholder="품목명" value="${item.name || ''}"></div><div class="col-auto"><input type="number" class="form-control form-control-sm item-quantity" placeholder="수량" min="1" value="${item.quantity || 1}" style="width: 80px;"></div><div class="col-auto"><button type="button" class="btn btn-sm btn-outline-danger btn-remove-item">삭제</button></div></div>`;
     }
 
-    async saveItems(id, itemsJson) {
+    async saveItems(id, itemsJson, type) {
         try {
             await this.apiCall(`/waste-collections/admin/${id}/items`, { method: 'PUT', body: { items: itemsJson } });
             Toast.success('품목이 저장되었습니다.');
-            this.loadInitialData();
+            this.loadData(type);
         } catch (e) {
             Toast.error(`품목 저장 실패: ${e.message}`);
         }
     }
 
-    async processCollection(id) {
+    async processCollection(id, type) {
         const result = await Confirm.fire('이 항목을 처리완료로 변경하시겠습니까?');
         if (result.isConfirmed) {
             try {
                 await this.apiCall(`/waste-collections/admin/${id}/process`, { method: 'POST' });
                 Toast.success('항목이 처리되었습니다.');
-                this.loadInitialData();
+                this.loadData(type);
             } catch(e) {
                 Toast.error(`처리 실패: ${e.message}`);
             }
@@ -170,7 +211,7 @@ class WasteAdminPage extends BasePage {
             try {
                 await this.apiCall('/waste-collections/admin/online-submissions', { method: 'DELETE' });
                 Toast.success('모든 인터넷 배출 데이터가 삭제되었습니다.');
-                this.loadInitialData();
+                this.loadData('online');
             } catch(e) {
                 Toast.error(`삭제 실패: ${e.message}`);
             }
