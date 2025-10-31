@@ -74,15 +74,10 @@ class LeaveCalculationService
     {
         $hire = new DateTime($hireDate);
         $hireMonth = (int)$hire->format('m');
-        $hireDay = (int)$hire->format('d');
 
-        // 남은 월수 (12 - 현재월)
-        $remainingMonths = 12 - $hireMonth;
-
-        // 현재 월 만근 여부 (입사일이 1일이면 만근으로 간주)
-        $currentMonthFullWork = ($hireDay === 1);
-
-        return $remainingMonths + ($currentMonthFullWork ? 1 : 0);
+        // 입사 연도의 월차는 입사한 달을 포함하여 연말까지의 개월 수.
+        // 예: 9월 27일 입사 -> 9, 10, 11, 12월 -> 4일
+        return 12 - $hireMonth + 1;
     }
 
     /**

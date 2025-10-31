@@ -91,12 +91,79 @@ class LeaveManagementService
         return $previewData;
     }
 
-    // ... (rest of the file is unchanged)
-    public function approveLeaveRequest(int $requestId, int $adminId): bool { /* ... */ }
-    public function rejectLeaveRequest(int $requestId, int $adminId, string $reason): bool { /* ... */ }
-    public function approveCancellationRequest(int $requestId, int $adminId): bool { /* ... */ }
-    public function rejectCancellationRequest(int $requestId, int $adminId): bool { /* ... */ }
-    public function expireUnusedLeaveForAll(int $year, int $adminId): array { /* ... */ }
-    public function manualAdjustment(int $employeeId, int $year, float $days, string $reason, int $adminId): bool { /* ... */ }
-    public function canRequestLeave(int $employeeId, string $startDate, float $requestDays): bool { /* ... */ }
+    public function approveLeaveRequest(int $requestId, int $adminId): bool
+    {
+        $request = $this->leaveRepository->findRequestById($requestId);
+        if (!$request || $request['status'] !== 'pending') {
+            return false;
+        }
+
+        // Use a dedicated repository method to handle the transaction
+        return $this->leaveRepository->processLeaveUsage($requestId, $adminId);
+    }
+
+    public function rejectLeaveRequest(int $requestId, int $adminId, string $reason): bool
+    {
+        $request = $this->leaveRepository->findRequestById($requestId);
+        if (!$request || $request['status'] !== 'pending') {
+            return false;
+        }
+        return $this->leaveRepository->updateRequestStatus($requestId, 'rejected', $adminId, $reason);
+    }
+
+    public function approveCancellationRequest(int $requestId, int $adminId): bool
+    {
+        $request = $this->leaveRepository->findRequestById($requestId);
+        if (!$request || $request['status'] !== 'cancellation_pending') {
+            return false;
+        }
+        // Use a dedicated repository method to handle the transaction
+        return $this->leaveRepository->processLeaveCancellation($requestId, $adminId);
+    }
+
+    public function rejectCancellationRequest(int $requestId, int $adminId): bool
+    {
+        $request = $this->leaveRepository->findRequestById($requestId);
+        if (!$request || $request['status'] !== 'cancellation_pending') {
+            return false;
+        }
+        // Revert status to 'approved'
+        return $this->leaveRepository->updateRequestStatus($requestId, 'approved', $adminId);
+    }
+
+    public function expireUnusedLeaveForAll(int $year, int $adminId): array
+    {
+        $failedEmployees = [];
+        $balances = $this->leaveRepository->getRemainingBalancesForYear($year);
+
+        foreach ($balances as $balance) {
+            if ($balance['remaining_leave'] > 0) {
+                try {
+                    $this->leaveRepository->expireLeave($balance['employee_id'], $year, $balance['remaining_leave'], $adminId);
+                } catch (Exception $e) {
+                    $failedEmployees[] = ['id' => $balance['employee_id'], 'error' => $e->getMessage()];
+                }
+            }
+        }
+        return ['failed_ids' => $failedEmployees];
+    }
+
+    public function manualAdjustment(int $employeeId, int $year, float $days, string $reason, int $adminId): bool
+    {
+        if ($days == 0) return false;
+
+        $logType = $days > 0 ? 'adjust_add' : 'adjust_deduct';
+        // Adjustments are assumed to modify the 'base' leave bucket
+        return $this->leaveRepository->applyAdjustment($employeeId, $year, $days, 'base_leave', $logType, $reason, $adminId);
+    }
+
+    public function canRequestLeave(int $employeeId, string $startDate, float $requestDays): bool
+    {
+        if ($requestDays <= 0) return true;
+
+        $year = (int)date('Y', strtotime($startDate));
+        $balance = $this->leaveRepository->findBalanceForEmployee($employeeId, $year);
+
+        return $balance && $balance['remaining_leave'] >= $requestDays;
+    }
 }
