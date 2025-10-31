@@ -29,6 +29,20 @@ class LeaveRepository
         $this->db->rollBack();
     }
 
+    public function grantLeave(int $employeeId, int $year, float $days, string $column, string $logType, string $reason, ?int $processorId): bool
+    {
+        $this->beginTransaction();
+        try {
+            $this->updateLeaveBalance($employeeId, $year, $days, $column);
+            $this->createLeaveLog($employeeId, $logType, $days, $reason, $processorId);
+            $this->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->rollBack();
+            throw $e;
+        }
+    }
+
     public function updateLeaveBalance(int $employeeId, int $year, float $days, string $columnToUpdate): bool
     {
         // First, check if a balance record for that year exists.

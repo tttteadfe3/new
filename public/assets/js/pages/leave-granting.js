@@ -71,18 +71,18 @@ class LeaveGrantingPage extends BasePage {
             this.renderTable(response.data);
         } catch (error) {
             Toast.error('연차 현황 로딩 실패: ' + error.message);
-            this.elements.tableBody.innerHTML = '<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>';
+            this.elements.tableBody.innerHTML = '<tr><td colspan="10" class="text-center">데이터 로딩 실패</td></tr>';
         }
     }
 
     renderTable(data) {
         if (!data || data.length === 0) {
-            this.elements.tableBody.innerHTML = `<tr><td colspan="9" class="text-center">해당 직원이 없습니다.</td></tr>`;
+            this.elements.tableBody.innerHTML = `<tr><td colspan="10" class="text-center">해당 직원이 없습니다.</td></tr>`;
             return;
         }
 
         this.elements.tableBody.innerHTML = data.map(emp => {
-            const total = (parseFloat(emp.base_leave) || 0) + (parseFloat(emp.seniority_leave) || 0) + (parseFloat(emp.monthly_leave) || 0) + (parseFloat(emp.adjustment_leave) || 0);
+            const total = (parseFloat(emp.base_leave) || 0) + (parseFloat(emp.monthly_leave) || 0) + (parseFloat(emp.seniority_leave) || 0) + (parseFloat(emp.adjustment_leave) || 0);
             const used = parseFloat(emp.used_leave) || 0;
             const remaining = total - used;
             return `
@@ -93,6 +93,7 @@ class LeaveGrantingPage extends BasePage {
                     <td>${used.toFixed(1)}</td>
                     <td>${remaining.toFixed(1)}</td>
                     <td>${(parseFloat(emp.base_leave) || 0).toFixed(1)}</td>
+                    <td>${(parseFloat(emp.monthly_leave) || 0).toFixed(1)}</td>
                     <td>${(parseFloat(emp.seniority_leave) || 0).toFixed(1)}</td>
                     <td>${(parseFloat(emp.adjustment_leave) || 0).toFixed(1)}</td>
                     <td>
@@ -120,7 +121,7 @@ class LeaveGrantingPage extends BasePage {
             this.elements.grantPreviewEmployeeCount.textContent = data.length;
 
             if (data.length === 0) {
-                this.elements.grantPreviewTableBody.innerHTML = '<tr><td colspan="7" class="text-center">연차 부여 대상 직원이 없습니다.</td></tr>';
+                this.elements.grantPreviewTableBody.innerHTML = '<tr><td colspan="8" class="text-center">연차 부여 대상 직원이 없습니다.</td></tr>';
             } else {
                 this.elements.grantPreviewTableBody.innerHTML = data.map(item => `
                     <tr>
@@ -129,6 +130,7 @@ class LeaveGrantingPage extends BasePage {
                         <td>${item.department_name || ''}</td>
                         <td>${item.hire_date}</td>
                         <td>${item.base_leave_to_grant}</td>
+                        <td>${item.monthly_leave_to_grant}</td>
                         <td>${item.seniority_leave_to_grant}</td>
                         <td><strong>${item.total_to_grant}</strong></td>
                     </tr>
