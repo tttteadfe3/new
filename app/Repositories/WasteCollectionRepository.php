@@ -95,9 +95,12 @@ class WasteCollectionRepository {
                 ), '[]') AS items
             FROM `waste_collections` wc
         ";
-        $whereClauses = ["wc.type = 'online'"];
-        $params = [];
 
+        $params = [];
+        if (!empty($filters['type'])) {
+            $whereClauses[] = "wc.type = ?";
+            $params[] = $filters['type'];
+        }
         if (!empty($filters['searchDischargeNumber'])) {
             $whereClauses[] = "wc.discharge_number LIKE ?";
             $params[] = '%' . $filters['searchDischargeNumber'] . '%';
