@@ -37,7 +37,7 @@ class WasteCollectionController extends BaseController
         View::getInstance()->addJs("//dapi.kakao.com/v2/maps/sdk.js?appkey=" . KAKAO_MAP_API_KEY . "&libraries=services");
 
         // 리팩토링된 스크립트
-        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/location-utils.js");
+        View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/LocationUtils.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/touch-manager.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/utils/marker-factory.js");
         View::getInstance()->addJs(BASE_ASSETS_URL . "/assets/js/components/interactive-map.js");
