@@ -18,6 +18,10 @@ class WasteAdminPage extends BasePage {
     }
 
     setupEventListeners() {
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', e => e.preventDefault());
+        });
+
         document.querySelectorAll('.search-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -48,6 +52,7 @@ class WasteAdminPage extends BasePage {
     }
 
     async loadData(type) {
+
         const form = document.getElementById(`${type}ListForm`);
         const params = new URLSearchParams(new FormData(form)).toString();
         try {
@@ -76,9 +81,10 @@ class WasteAdminPage extends BasePage {
             <td>${item.issue_date || '-'}</td>
             <td>${item.creator_name || '-'}</td>
             <td class="text-start">${item.address}</td>
+            <td>${itemsHtml}</td>
+            <td>${item.status}</td>
             <td>${item.processed_at || '-'}</td>
             <td>${item.processor_name || '-'}</td>
-            <td>${itemsHtml}</td>
         </tr>`;
     }
 
