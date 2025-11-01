@@ -2,7 +2,6 @@
 
 namespace App\Controllers\Web;
 
-use App\Services\LeaveService;
 use App\Services\EmployeeService;
 use Exception;
 use App\Core\Request;
@@ -13,7 +12,6 @@ use App\Core\View;
 
 class LeaveController extends BaseController
 {
-    private LeaveService $leaveService;
     private EmployeeService $employeeService;
 
     public function __construct(
@@ -21,11 +19,9 @@ class LeaveController extends BaseController
         AuthService $authService,
         ViewDataService $viewDataService,
         ActivityLogger $activityLogger,
-        LeaveService $leaveService,
         EmployeeService $employeeService
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger);
-        $this->leaveService = $leaveService;
         $this->employeeService = $employeeService;
     }
 
