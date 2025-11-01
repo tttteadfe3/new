@@ -4,7 +4,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Services\NewLeaveService;
 use App\Repositories\EmployeeRepository;
-class LeaveRequestController
+class LeaveRequestApiController
 {
     private $leaveService;
     private $employeeRepository;
