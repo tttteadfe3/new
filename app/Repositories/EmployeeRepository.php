@@ -3,12 +3,15 @@
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\DataScopeService;
 
 class EmployeeRepository {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db) {
+    public function __construct(Database $db, DataScopeService $dataScopeService) {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
@@ -99,53 +102,47 @@ class EmployeeRepository {
     /**
      * 모든 직원 목록을 조회합니다. 연결된 사용자 닉네임도 함께 가져옵니다.
      * @param array $filters 필터 조건
-     * @param array|null $visibleDepartmentIds 조회 가능한 부서 ID 목록
      * @return array
      */
-    public function getAll(array $filters = [], ?array $visibleDepartmentIds = null): array {
-        $sql = "SELECT e.*, u.nickname, d.name as department_name, p.name as position_name
-                FROM hr_employees e
-                LEFT JOIN sys_users u ON e.id = u.employee_id
-                LEFT JOIN hr_departments d ON e.department_id = d.id
-                LEFT JOIN hr_positions p ON e.position_id = p.id";
+    public function getAll(array $filters = []): array {
+        $queryParts = [
+            'sql' => "SELECT e.*, u.nickname, d.name as department_name, p.name as position_name
+                      FROM hr_employees e
+                      LEFT JOIN sys_users u ON e.id = u.employee_id
+                      LEFT JOIN hr_departments d ON e.department_id = d.id
+                      LEFT JOIN hr_positions p ON e.position_id = p.id",
+            'params' => [],
+            'where' => []
+        ];
 
-        $whereClauses = [];
-        $params = [];
-
-        if ($visibleDepartmentIds !== null) {
-            if (empty($visibleDepartmentIds)) {
-                $whereClauses[] = "1=0"; // 보이는 부서가 없으면 결과 없음
-            } else {
-                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
-                $whereClauses[] = "e.department_id IN ($inClause)";
-            }
-        }
+        // 데이터 스코프 적용
+        $queryParts = $this->dataScopeService->applyDepartmentScope($queryParts, 'e');
 
         if (!empty($filters['department_id'])) {
-            $whereClauses[] = "e.department_id = :department_id";
-            $params[':department_id'] = $filters['department_id'];
+            $queryParts['where'][] = "e.department_id = :department_id";
+            $queryParts['params'][':department_id'] = $filters['department_id'];
         }
 
         if (!empty($filters['position_id'])) {
-            $whereClauses[] = "e.position_id = :position_id";
-            $params[':position_id'] = $filters['position_id'];
+            $queryParts['where'][] = "e.position_id = :position_id";
+            $queryParts['params'][':position_id'] = $filters['position_id'];
         }
 
         if (isset($filters['status']) && $filters['status']) {
             if ($filters['status'] === '재직중') {
-                $whereClauses[] = "e.termination_date IS NULL";
+                $queryParts['where'][] = "e.termination_date IS NULL";
             } elseif ($filters['status'] === '퇴사') {
-                $whereClauses[] = "e.termination_date IS NOT NULL";
+                $queryParts['where'][] = "e.termination_date IS NOT NULL";
             }
         }
 
-        if (!empty($whereClauses)) {
-            $sql .= " WHERE " . implode(" AND ", $whereClauses);
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
         }
 
-        $sql .= " ORDER BY p.level ASC, e.hire_date ASC";
+        $queryParts['sql'] .= " ORDER BY p.level ASC, e.hire_date ASC";
 
-        return $this->db->query($sql, $params);
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**

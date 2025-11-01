@@ -72,39 +72,101 @@ class DataScopeService
     }
 
     /**
-     * [참고] 이 메소드는 리팩토링 과정에서 다른 서비스로 이전되거나 제거될 수 있습니다.
-     * 주어진 SQL 쿼리에 부서 ID 기반의 데이터 스코프 WHERE 절을 추가합니다.
-     *
-     * @param string $sql 원본 SQL 쿼리
-     * @param array $params 원본 쿼리의 파라미터 배열
-     * @param string $employeeTableAlias 직원이 포함된 테이블의 SQL 별칭 (기본값 'e')
-     * @return array [수정된 SQL, 수정된 파라미터]
+     * 직원 테이블에 대한 데이터 스코프를 적용합니다.
+     * @param array $queryParts
+     * @param string $employeeTableAlias
+     * @return array
      */
-    public function applyDepartmentScope(string $sql, array $params, string $employeeTableAlias = 'e'): array
+    public function applyEmployeeScope(array $queryParts, string $employeeTableAlias = 'e'): array
     {
         $visibleDepartmentIds = $this->getVisibleDepartmentIdsForCurrentUser();
 
         if ($visibleDepartmentIds === null) {
-            // 전체 조회 권한이 있으므로 쿼리 변경 없음
-            return [$sql, $params];
+            return $queryParts;
         }
 
         if (empty($visibleDepartmentIds)) {
-            // 조회 권한이 있는 부서가 없으므로 결과를 반환하지 않도록 조건 추가
-            $whereClause = "1=0";
+            $queryParts['where'][] = "1=0";
         } else {
             $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
-            $whereClause = "{$employeeTableAlias}.department_id IN ($inClause)";
+            $queryParts['where'][] = "{$employeeTableAlias}.department_id IN ($inClause)";
         }
 
-        // 기존 쿼리에 WHERE 절이 있는지 확인
-        if (preg_match('/\sWHERE\s/i', $sql)) {
-            $sql .= " AND " . $whereClause;
+        return $queryParts;
+    }
+
+    /**
+     * 부서 테이블 자체에 대한 데이터 스코프를 적용합니다.
+     * @param array $queryParts
+     * @param string $departmentTableAlias
+     * @return array
+     */
+    public function applyDepartmentScope(array $queryParts, string $departmentTableAlias = 'd'): array
+    {
+        $visibleDepartmentIds = $this->getVisibleDepartmentIdsForCurrentUser();
+
+        if ($visibleDepartmentIds === null) {
+            return $queryParts;
+        }
+
+        if (empty($visibleDepartmentIds)) {
+            $queryParts['where'][] = "1=0";
         } else {
-            $sql .= " WHERE " . $whereClause;
+            $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+            $queryParts['where'][] = "{$departmentTableAlias}.id IN ($inClause)";
         }
 
-        return [$sql, $params];
+        return $queryParts;
+    }
+
+    /**
+     * 휴일 테이블에 대한 데이터 스코프를 적용합니다. (전체 휴일 포함)
+     * @param array $queryParts
+     * @param string $holidayTableAlias
+     * @return array
+     */
+    public function applyHolidayScope(array $queryParts, string $holidayTableAlias = 'h'): array
+    {
+        $visibleDepartmentIds = $this->getVisibleDepartmentIdsForCurrentUser();
+
+        if ($visibleDepartmentIds === null) {
+            return $queryParts;
+        }
+
+        if (empty($visibleDepartmentIds)) {
+            // 조회 가능한 부서가 없으면 전체 휴일만 조회
+            $queryParts['where'][] = "{$holidayTableAlias}.department_id IS NULL";
+        } else {
+            $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+            $queryParts['where'][] = "({$holidayTableAlias}.department_id IS NULL OR {$holidayTableAlias}.department_id IN ($inClause))";
+        }
+
+        return $queryParts;
+    }
+
+    /**
+     * 사용자 테이블 조회 시 데이터 스코프를 적용합니다. (직원 정보가 없는 사용자 포함)
+     * @param array $queryParts
+     * @param string $userTableAlias
+     * @param string $employeeTableAlias
+     * @return array
+     */
+    public function applyUserScope(array $queryParts, string $userTableAlias = 'u', string $employeeTableAlias = 'e'): array
+    {
+        $visibleDepartmentIds = $this->getVisibleDepartmentIdsForCurrentUser();
+
+        if ($visibleDepartmentIds === null) {
+            return $queryParts;
+        }
+
+        if (empty($visibleDepartmentIds)) {
+            $queryParts['where'][] = "{$userTableAlias}.employee_id IS NULL";
+        } else {
+            $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+            $queryParts['where'][] = "({$employeeTableAlias}.department_id IN ($inClause) OR {$userTableAlias}.employee_id IS NULL)";
+        }
+
+        return $queryParts;
     }
 
     /**
@@ -136,6 +198,10 @@ class DataScopeService
 
         // 4. 현재 사용자가 볼 수 있는 부서 목록 가져오기
         $visibleDeptIds = $this->getVisibleDepartmentIdsForCurrentUser();
+
+        if ($visibleDeptIds === null) {
+            return true; // 전체 조회 권한이 있으면 관리 가능
+        }
 
         // 5. 대상 직원의 부서가 보이는 부서 목록에 포함되는지 확인
         return in_array($targetEmployee['department_id'], $visibleDeptIds);

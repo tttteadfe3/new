@@ -11,13 +11,15 @@ use App\Services\ViewDataService;
 use App\Services\ActivityLogger;
 use App\Repositories\EmployeeRepository;
 use App\Core\JsonResponse;
+use App\Services\DataScopeService;
+use App\Repositories\DepartmentRepository;
 
 class OrganizationApiController extends BaseApiController
 {
     private OrganizationService $organizationService;
     private PositionRepository $positionRepository;
-    private \App\Services\DataScopeService $dataScopeService;
-    private \App\Repositories\DepartmentRepository $departmentRepository;
+    private DataScopeService $dataScopeService;
+    private DepartmentRepository $departmentRepository;
 
     public function __construct(
         Request $request,
@@ -28,8 +30,8 @@ class OrganizationApiController extends BaseApiController
         JsonResponse $jsonResponse,
         OrganizationService $organizationService,
         PositionRepository $positionRepository,
-        \App\Services\DataScopeService $dataScopeService,
-        \App\Repositories\DepartmentRepository $departmentRepository
+        DataScopeService $dataScopeService,
+        DepartmentRepository $departmentRepository
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->organizationService = $organizationService;
@@ -75,19 +77,7 @@ class OrganizationApiController extends BaseApiController
     public function getManagableDepartments(): void
     {
         try {
-            $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
-
-            if ($visibleDeptIds === null) {
-                // 전체 조회 권한
-                $departments = $this->departmentRepository->getAll();
-            } elseif (empty($visibleDeptIds)) {
-                // 조회 권한 부서 없음
-                $departments = [];
-            } else {
-                // ID 목록으로 부서 정보 조회 (이 메소드는 DepartmentRepository에 추가 필요)
-                $departments = $this->departmentRepository->findByIds($visibleDeptIds);
-            }
-
+            $departments = $this->departmentRepository->getAll();
             $this->apiSuccess($departments);
         } catch (Exception $e) {
             $this->handleException($e);

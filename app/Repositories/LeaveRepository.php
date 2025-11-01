@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\DataScopeService;
 
 /**
  * 'hr_leave_entitlements', 'hr_leaves', 'hr_leave_adjustments_log' 테이블에 대한 데이터베이스 작업을 관리합니다.
@@ -10,9 +11,11 @@ use App\Core\Database;
  */
 class LeaveRepository {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db) {
+    public function __construct(Database $db, DataScopeService $dataScopeService) {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     // =================================================================
@@ -61,44 +64,40 @@ class LeaveRepository {
      * 연차 부여 내역이 없는 직원도 목록에 포함됩니다.
      *
      * @param array $filters 필터 조건. e.g., ['year' => 2024]
-     * @param array|null $visibleDepartmentIds 조회 가능한 부서 ID 목록
      * @return array 직원별 연차 부여 현황 목록
      */
-    public function getAllEntitlements(array $filters = [], ?array $visibleDepartmentIds = null): array {
+    public function getAllEntitlements(array $filters = []): array {
         $year = $filters['year'] ?? date('Y');
 
-        $sql = "SELECT
-                    e.id as employee_id,
-                    e.name as employee_name,
-                    e.hire_date,
-                    d.name as department_name,
-                    le.id as entitlement_id,
-                    le.total_days,
-                    le.used_days,
-                    (SELECT SUM(lal.adjusted_days) FROM hr_leave_adjustments_log lal WHERE lal.employee_id = e.id AND lal.year = :year1) as adjusted_days
-                FROM
-                    hr_employees e
-                LEFT JOIN
-                    hr_departments d ON e.department_id = d.id
-                LEFT JOIN
-                    hr_leave_entitlements le ON e.id = le.employee_id AND le.year = :year2
-                WHERE
-                    e.termination_date IS NULL";
+        $queryParts = [
+            'sql' => "SELECT
+                        e.id as employee_id,
+                        e.name as employee_name,
+                        e.hire_date,
+                        d.name as department_name,
+                        le.id as entitlement_id,
+                        le.total_days,
+                        le.used_days,
+                        (SELECT SUM(lal.adjusted_days) FROM hr_leave_adjustments_log lal WHERE lal.employee_id = e.id AND lal.year = :year1) as adjusted_days
+                    FROM
+                        hr_employees e
+                    LEFT JOIN
+                        hr_departments d ON e.department_id = d.id
+                    LEFT JOIN
+                        hr_leave_entitlements le ON e.id = le.employee_id AND le.year = :year2",
+            'params' => [':year1' => $year, ':year2' => $year],
+            'where' => ["e.termination_date IS NULL"]
+        ];
 
-        $params = [':year1' => $year, ':year2' => $year];
+        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
 
-        if ($visibleDepartmentIds !== null) {
-            if (empty($visibleDepartmentIds)) {
-                $sql .= " AND 1=0"; // 결과 없음
-            } else {
-                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
-                $sql .= " AND e.department_id IN ($inClause)";
-            }
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
         }
 
-        $sql .= " ORDER BY e.name ASC";
+        $queryParts['sql'] .= " ORDER BY e.name ASC";
 
-        return $this->db->query($sql, $params);
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**
@@ -310,46 +309,40 @@ class LeaveRepository {
      * 모든 연차 신청 목록을 조건에 따라 조회합니다. (관리자용)
      *
      * @param array $filters 필터 조건. e.g., ['status' => 'pending', 'start_date' => '2024-01-01']
-     * @param array|null $visibleDepartmentIds 조회 가능한 부서 ID 목록
      * @return array 필터링된 연차 신청 목록
      */
-    public function findAll(array $filters = [], ?array $visibleDepartmentIds = null): array {
-        $sql = "SELECT l.*, e.name as employee_name, d.name as department_name, p.name as position_name
-                FROM hr_leaves l
-                JOIN hr_employees e ON l.employee_id = e.id
-                LEFT JOIN hr_departments d ON e.department_id = d.id
-                LEFT JOIN hr_positions p ON e.position_id = p.id";
+    public function findAll(array $filters = []): array {
+        $queryParts = [
+            'sql' => "SELECT l.*, e.name as employee_name, d.name as department_name, p.name as position_name
+                      FROM hr_leaves l
+                      JOIN hr_employees e ON l.employee_id = e.id
+                      LEFT JOIN hr_departments d ON e.department_id = d.id
+                      LEFT JOIN hr_positions p ON e.position_id = p.id",
+            'params' => [],
+            'where' => []
+        ];
 
-        $whereClauses = [];
-        $params = [];
+        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($filters['status'])) {
-            $whereClauses[] = "l.status = :status";
-            $params[':status'] = $filters['status'];
+            $queryParts['where'][] = "l.status = :status";
+            $queryParts['params'][':status'] = $filters['status'];
         }
         if (!empty($filters['start_date'])) {
-            $whereClauses[] = "l.start_date >= :start_date";
-            $params[':start_date'] = $filters['start_date'];
+            $queryParts['where'][] = "l.start_date >= :start_date";
+            $queryParts['params'][':start_date'] = $filters['start_date'];
         }
         if (!empty($filters['end_date'])) {
-            $whereClauses[] = "l.end_date <= :end_date";
-            $params[':end_date'] = $filters['end_date'];
-        }
-        if ($visibleDepartmentIds !== null) {
-            if (empty($visibleDepartmentIds)) {
-                $whereClauses[] = "1=0";
-            } else {
-                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
-                $whereClauses[] = "e.department_id IN ($inClause)";
-            }
+            $queryParts['where'][] = "l.end_date <= :end_date";
+            $queryParts['params'][':end_date'] = $filters['end_date'];
         }
 
-        if (!empty($whereClauses)) {
-            $sql .= " WHERE " . implode(" AND ", $whereClauses);
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
         }
-        $sql .= " ORDER BY l.created_at DESC";
+        $queryParts['sql'] .= " ORDER BY l.created_at DESC";
 
-        return $this->db->query($sql, $params);
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**

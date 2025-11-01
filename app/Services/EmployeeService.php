@@ -54,8 +54,7 @@ class EmployeeService
      */
     public function getAllEmployees(array $filters = []): array
     {
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
-        return $this->employeeRepository->getAll($filters, $visibleDeptIds);
+        return $this->employeeRepository->getAll($filters);
     }
 
     /**
