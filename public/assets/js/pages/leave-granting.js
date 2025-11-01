@@ -1,7 +1,7 @@
 class LeaveGrantingPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/api/admin/leaves',
+            API_URL: '/admin/leaves',
             ORG_API_URL: '/organization' // Secondary API endpoint
         });
 

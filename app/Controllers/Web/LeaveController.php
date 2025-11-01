@@ -76,6 +76,6 @@ class LeaveController extends BaseController
     {
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/my-leaves.js');
 
-        echo $this->render('leave/my-leaves', [], 'layouts/app');
+        echo $this->render('pages/leaves/my-leaves', [], 'layouts/app');
     }
 }

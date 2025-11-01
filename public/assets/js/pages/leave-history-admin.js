@@ -1,7 +1,7 @@
 class LeaveHistoryAdminPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/api/admin/leaves/logs'
+            API_URL: '/admin/leaves/logs'
         });
         this.elements = {};
     }
