@@ -24,14 +24,16 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="filter-status" class="form-label">상태</label>
+                        <label for="filter-status" class="form-label">유형</label>
                         <select class="form-select" id="filter-status">
-                            <option value="">전체 상태</option>
-                            <option value="approved">승인</option>
-                            <option value="pending">대기중</option>
-                            <option value="rejected">반려</option>
-                            <option value="cancelled">취소</option>
-                            <option value="cancellation_requested">취소 요청</option>
+                            <option value="">전체 유형</option>
+                            <option value="부여">부여</option>
+                            <option value="사용">사용</option>
+                            <option value="사용취소">사용취소</option>
+                            <option value="소멸">소멸</option>
+                            <option value="포상">포상</option>
+                            <option value="징계">징계</option>
+                            <option value="기타조정">기타조정</option>
                         </select>
                     </div>
                      <div class="col-md-3">
@@ -44,13 +46,12 @@
                     <table class="table align-middle table-nowrap table-striped mb-0">
                         <thead class="table-light">
                         <tr>
-                            <th>직원</th>
-                            <th>부서</th>
-                            <th>휴가 종류</th>
-                            <th>기간</th>
+                            <th>직원명</th>
+                            <th>유형</th>
                             <th>일수</th>
-                            <th>상태</th>
-                            <th>신청일</th>
+                            <th>사유</th>
+                            <th>처리자</th>
+                            <th>처리일시</th>
                         </tr>
                         </thead>
                         <tbody id="leave-history-body">

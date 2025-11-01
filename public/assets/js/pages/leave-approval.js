@@ -1,7 +1,7 @@
 class LeaveApprovalPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/leaves_admin'
+            API_URL: '/api/admin/leaves'
         });
         this.elements = {};
     }
@@ -158,7 +158,7 @@ class LeaveApprovalPage extends BasePage {
         } else if (button.classList.contains('approve-cancel-btn')) {
             const result = await Confirm.fire('연차 취소 승인', '이 연차 취소 요청을 승인하시겠습니까?');
             if (result.isConfirmed) {
-                this.handleAction(`${this.config.API_URL}/cancellations/${leaveId}/approve`);
+                this.handleAction(`${this.config.API_URL}/requests/${leaveId}/approve-cancellation`);
             }
         } else if (button.classList.contains('reject-cancel-btn')) {
              const { value: reason } = await Swal.fire({
@@ -168,7 +168,7 @@ class LeaveApprovalPage extends BasePage {
                 inputValidator: (value) => !value && '반려 사유는 필수입니다.'
             });
             if (reason) {
-                this.handleAction(`${this.config.API_URL}/cancellations/${leaveId}/reject`, { reason });
+                this.handleAction(`${this.config.API_URL}/requests/${leaveId}/reject-cancellation`, { reason });
             }
         }
     }

@@ -1,7 +1,7 @@
 class LeaveGrantingPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/leaves_admin',
+            API_URL: '/api/admin/leaves',
             ORG_API_URL: '/organization' // Secondary API endpoint
         });
 
@@ -130,9 +130,9 @@ class LeaveGrantingPage extends BasePage {
 
         this.setButtonLoading('#calculate-btn', '계산 중...');
         try {
-            const response = await this.apiCall(`${this.config.API_URL}/calculate`, {
+            const response = await this.apiCall(`${this.config.API_URL}/calculate-all`, {
                 method: 'POST',
-                body: { year: this.elements.yearFilter.value, department_id: this.elements.departmentFilter.value }
+                body: { year: this.elements.yearFilter.value }
             });
 
             response.data.forEach(calculatedEmp => {
@@ -165,7 +165,7 @@ class LeaveGrantingPage extends BasePage {
 
         this.setButtonLoading('#save-btn', '저장 중...');
         try {
-            const response = await this.apiCall(`${this.config.API_URL}/save-entitlements`, {
+            const response = await this.apiCall(`${this.config.API_URL}/grant`, {
                 method: 'POST',
                 body: {
                     year: this.elements.yearFilter.value,

@@ -1,7 +1,7 @@
 class LeaveHistoryAdminPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/leaves_admin/history'
+            API_URL: '/api/admin/leaves/logs'
         });
         this.elements = {};
     }
@@ -63,21 +63,23 @@ class LeaveHistoryAdminPage extends BasePage {
 
     renderHistory(data) {
         if (!data || data.length === 0) {
-            this.elements.leaveHistoryBody.innerHTML = `<tr><td colspan="7" class="text-center">조회된 내역이 없습니다.</td></tr>`;
+            this.elements.leaveHistoryBody.innerHTML = `<tr><td colspan="6" class="text-center">조회된 로그가 없습니다.</td></tr>`;
             return;
         }
 
-        const statusBadges = { '대기': 'bg-warning', '승인': 'bg-success', '반려': 'bg-danger', '취소': 'bg-secondary', '취소요청': 'bg-info' };
+        const typeBadges = {
+            '부여': 'bg-success', '사용': 'bg-primary', '사용취소': 'bg-info',
+            '소멸': 'bg-secondary', '포상': 'bg-success', '징계': 'bg-danger', '기타조정': 'bg-warning'
+        };
 
-        const rowsHtml = data.map(leave => `
+        const rowsHtml = data.map(log => `
             <tr>
-                <td>${leave.employee_name || ''}</td>
-                <td>${leave.department_name || ''}</td>
-                <td>${leave.leave_type}</td>
-                <td>${leave.start_date} ~ ${leave.end_date}</td>
-                <td>${leave.days_count}</td>
-                <td><span class="badge ${statusBadges[leave.status] || 'bg-light text-dark'}">${leave.status}</span></td>
-                <td>${new Date(leave.created_at).toLocaleDateString()}</td>
+                <td>${log.employee_name || 'N/A'}</td>
+                <td><span class="badge ${typeBadges[log.type] || 'bg-light text-dark'}">${log.type}</span></td>
+                <td>${log.days}</td>
+                <td>${log.reason || ''}</td>
+                <td>${log.actor_name || '시스템'}</td>
+                <td>${new Date(log.created_at).toLocaleString()}</td>
             </tr>
         `).join('');
         this.elements.leaveHistoryBody.innerHTML = rowsHtml;

@@ -42,14 +42,113 @@ class NewLeaveService
         return true;
     }
 
-    public function grantAnnualLeaveForYear(int $year, int $actorEmployeeId): void
+    public function getEntitlements(int $year, ?int $departmentId): array
     {
-        $activeEmployees = $this->employeeRepository->findAllActive();
-        foreach ($activeEmployees as $employee) {
-            $grantAmount = $this->calculateAnnualLeaveForEmployee($employee, $year);
-            if ($grantAmount > 0) {
-                $this->leaveRepository->createLog(['employee_id' => $employee['id'], 'leave_type' => 'annual', 'transaction_type' => 'grant_annual', 'amount' => $grantAmount, 'reason' => $year . '년 정기 연차 부여', 'actor_employee_id' => $actorEmployeeId]);
+        $allEmployees = $this->employeeRepository->findAllActive();
+
+        $employees = array_filter($allEmployees, function($employee) use ($departmentId) {
+            if ($departmentId) {
+                return isset($employee['department_id']) && $employee['department_id'] == $departmentId;
             }
+            return true;
+        });
+
+        $results = [];
+        foreach ($employees as $employee) {
+            $logs = $this->leaveRepository->getLogsByEmployeeId($employee['id']);
+
+            $grantLog = null;
+            $adjustments = 0.0;
+            $used = 0.0;
+
+            foreach($logs as $log) {
+                if ($log['transaction_type'] === 'grant_annual' && str_starts_with($log['reason'], (string)$year)) {
+                    $grantLog = $log;
+                }
+                if (str_starts_with($log['transaction_type'], 'adjust')) {
+                    $adjustments += (float)$log['amount'];
+                }
+                if ($log['transaction_type'] === 'use') {
+                    $used += abs((float)$log['amount']);
+                }
+            }
+
+            $grantedDays = $grantLog ? (float)$grantLog['amount'] : 0.0;
+            $totalDays = $grantedDays + $adjustments;
+
+            $breakdown = $grantLog ? $this->calculateAnnualLeaveForEmployee($employee, $year) : null;
+
+            $results[] = [
+                'employee_id' => $employee['id'],
+                'employee_name' => $employee['name'],
+                'department_name' => $employee['department_name'] ?? 'N/A',
+                'hire_date' => $employee['hire_date'],
+                'entitlement_id' => $grantLog ? $grantLog['id'] : null,
+                'total_days' => $totalDays,
+                'used_days' => $used,
+                'adjusted_days' => $adjustments,
+                'leave_breakdown' => $breakdown
+            ];
+        }
+        return $results;
+    }
+
+    public function calculateAnnualLeaveForAll(int $year): array
+    {
+        $employees = $this->employeeRepository->findAllActive();
+        $results = [];
+        foreach ($employees as $employee) {
+            $leaveData = $this->calculateAnnualLeaveForEmployee($employee, $year);
+            if ($leaveData['total_days'] > 0) {
+                 $results[] = [
+                    'id' => $employee['id'],
+                    'name' => $employee['name'],
+                    'leave_data' => $leaveData
+                ];
+            }
+        }
+        return $results;
+    }
+
+    public function grantAnnualLeaveForYear(int $year, array $employees, int $actorEmployeeId): void
+    {
+        $this->leaveRepository->beginTransaction();
+        try {
+            foreach ($employees as $empData) {
+                $employee = $this->employeeRepository->findById($empData['id']);
+                if (!$employee) continue;
+
+                $grantData = $this->calculateAnnualLeaveForEmployee($employee, $year);
+                $grantAmount = $grantData['total_days'];
+
+                if ($grantAmount > 0) {
+                    $reason = $year . '년 정기 연차 부여';
+
+                    $logs = $this->leaveRepository->getLogsByEmployeeId($employee['id']);
+                    $alreadyGranted = false;
+                    foreach ($logs as $log) {
+                        if ($log['transaction_type'] === 'grant_annual' && $log['reason'] === $reason) {
+                            $alreadyGranted = true;
+                            break;
+                        }
+                    }
+
+                    if (!$alreadyGranted) {
+                        $this->leaveRepository->createLog([
+                            'employee_id' => $employee['id'],
+                            'leave_type' => 'annual',
+                            'transaction_type' => 'grant_annual',
+                            'amount' => $grantAmount,
+                            'reason' => $reason,
+                            'actor_employee_id' => $actorEmployeeId
+                        ]);
+                    }
+                }
+            }
+            $this->leaveRepository->commit();
+        } catch (\Exception $e) {
+            $this->leaveRepository->rollBack();
+            throw $e;
         }
     }
 
@@ -149,17 +248,41 @@ class NewLeaveService
         return $this->leaveRepository->findRequestsByFilters($filters);
     }
 
-    private function calculateAnnualLeaveForEmployee(array $employee, int $year): float
+    private function calculateAnnualLeaveForEmployee(array $employee, int $year): array
     {
         $hireDate = new DateTime($employee['hire_date']);
-        if ((int)$hireDate->format('Y') >= $year) return 0.0;
-        if ((int)$hireDate->format('Y') === $year - 1) {
-            $daysWorked = 365 - $hireDate->format('z');
-            return round(($daysWorked / 366) * 15, 1);
+        $grantDate = new DateTime($year . "-01-01");
+        $baseDays = 0.0;
+        $longServiceDays = 0.0;
+
+        if ($hireDate >= $grantDate) {
+             return ['base_days' => 0, 'long_service_days' => 0, 'total_days' => 0];
         }
-        $serviceYears = $this->calculateServiceYears($hireDate, new DateTime($year . "-01-01"));
-        $longServiceLeave = ($serviceYears >= 3) ? (int)(($serviceYears - 1) / 2) : 0;
-        return 15.0 + $longServiceLeave;
+
+        // 입사 첫 해 (중도입사자)
+        if ($hireDate->format('Y') == $year - 1) {
+            $monthsWorked = 12 - (int)$hireDate->format('m');
+            if ($hireDate->format('d') > 1) {
+                $monthsWorked--;
+            }
+             $baseDays = round((15 / 12) * $monthsWorked, 2);
+
+        } else { // 1년 이상 근무
+            $baseDays = 15.0;
+            $serviceYears = $this->calculateServiceYears($hireDate, $grantDate);
+            if ($serviceYears >= 3) {
+                $longServiceDays = floor(($serviceYears - 1) / 2);
+            }
+        }
+
+        $totalDays = $baseDays + $longServiceDays;
+        $totalDays = min($totalDays, 25);
+
+        return [
+            'base_days' => $baseDays,
+            'long_service_days' => $longServiceDays,
+            'total_days' => $totalDays,
+        ];
     }
 
     private function calculateServiceYears(DateTime $hireDate, DateTime $grantDate): int

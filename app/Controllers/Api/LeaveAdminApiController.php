@@ -64,14 +64,37 @@ class LeaveAdminApiController
         }
         return Response::json(['status' => 'error', 'message' => $result['message']], 400);
     }
+    public function getEntitlements(Request $request): Response
+    {
+        $year = $request->getQueryParams()['year'] ?? date('Y');
+        $departmentId = $request->getQueryParams()['department_id'] ?? null;
+        $entitlements = $this->leaveService->getEntitlements((int)$year, $departmentId ? (int)$departmentId : null);
+        return Response::json(['status' => 'success', 'data' => $entitlements]);
+    }
+
+    public function calculateAnnualLeaveForAll(Request $request): Response
+    {
+        $year = $request->getBody()['year'] ?? date('Y');
+        $calculatedData = $this->leaveService->calculateAnnualLeaveForAll((int)$year);
+        return Response::json(['status' => 'success', 'data' => $calculatedData]);
+    }
+
     public function grantAnnualLeave(Request $request): Response
     {
         $actorEmployeeId = $this->getActorEmployeeId($request);
         if (!$actorEmployeeId) {
             return Response::json(['status' => 'error', 'message' => 'Admin user not found'], 403);
         }
-        $year = $request->getBody()['year'] ?? date('Y');
-        $this->leaveService->grantAnnualLeaveForYear((int)$year, $actorEmployeeId);
+
+        $body = $request->getBody();
+        $year = $body['year'] ?? date('Y');
+        $employees = $body['employees'] ?? [];
+
+        if (empty($employees)) {
+            return Response::json(['status' => 'error', 'message' => 'No employees selected for granting leave.'], 400);
+        }
+
+        $this->leaveService->grantAnnualLeaveForYear((int)$year, $employees, $actorEmployeeId);
         return Response::json(['status' => 'success', 'message' => $year . ' annual leave granted successfully.']);
     }
     public function expireLeave(Request $request): Response
