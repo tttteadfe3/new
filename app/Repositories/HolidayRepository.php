@@ -3,34 +3,38 @@
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\DataScopeService;
 
 class HolidayRepository {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db) {
+    public function __construct(Database $db, DataScopeService $dataScopeService) {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
-     * @param array|null $visibleDepartmentIds
      * @return array
      */
-    public function getAll(?array $visibleDepartmentIds = null) {
-        $sql = "SELECT h.*, d.name as department_name
-                FROM hr_holidays h
-                LEFT JOIN hr_departments d ON h.department_id = d.id";
+    public function getAll(): array {
+        $queryParts = [
+            'sql' => "SELECT h.*, d.name as department_name
+                      FROM hr_holidays h
+                      LEFT JOIN hr_departments d ON h.department_id = d.id",
+            'params' => [],
+            'where' => []
+        ];
 
-        if ($visibleDepartmentIds !== null) {
-            if (empty($visibleDepartmentIds)) {
-                $sql .= " WHERE 1=0"; // 결과 없음
-            } else {
-                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
-                $sql .= " WHERE h.department_id IS NULL OR h.department_id IN ($inClause)";
-            }
+        $queryParts = $this->dataScopeService->applyHolidayScope($queryParts, 'h');
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
         }
 
-        $sql .= " ORDER BY h.date DESC";
-        return $this->db->query($sql);
+        $queryParts['sql'] .= " ORDER BY h.date DESC";
+
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**

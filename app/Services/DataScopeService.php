@@ -2,7 +2,8 @@
 // app/Services/DataScopeService.php
 namespace App\Services;
 
-use App\Repositories\DepartmentRepository;
+use App\Core\SessionManager;
+use App\Core\Database;
 
 /**
  * 데이터 조회 범위를 결정하는 중앙 집중형 서비스입니다.
@@ -11,42 +12,32 @@ use App\Repositories\DepartmentRepository;
  */
 class DataScopeService
 {
-    private AuthService $authService;
-    private DepartmentRepository $departmentRepo;
-    private \App\Repositories\EmployeeRepository $employeeRepo;
+    private SessionManager $sessionManager;
+    private Database $db;
 
-    public function __construct(
-        AuthService $authService,
-        DepartmentRepository $departmentRepo,
-        \App\Repositories\EmployeeRepository $employeeRepo
-    ) {
-        $this->authService = $authService;
-        $this->departmentRepo = $departmentRepo;
-        $this->employeeRepo = $employeeRepo;
+    public function __construct(SessionManager $sessionManager, Database $db)
+    {
+        $this->sessionManager = $sessionManager;
+        $this->db = $db;
     }
 
     /**
      * 현재 로그인한 사용자가 조회할 수 있는 모든 부서 ID의 배열을 반환합니다.
-     *
-     * - 'employee.manage'와 같은 전체 조회 권한이 있는 경우 모든 부서를 조회할 수 있도록 null을 반환합니다.
-     * - 그렇지 않은 경우, 다음을 기반으로 권한이 부여된 부서 목록을 계산합니다:
-     *   1. hr_department_managers: 직접 관리하도록 지정된 부서.
-     *   2. hr_department_view_permissions: 소속 부서가 조회 권한을 가진 다른 부서.
-     *   3. 각 권한에 대해 하위 부서를 포함하여 모든 ID를 재귀적으로 조회합니다.
-     *
+     * 이 메서드는 다른 리포지토리에 의존하지 않고 직접 DB를 조회하여 순환 의존성을 방지합니다.
      * @return int[]|null 조회 가능한 부서 ID 배열, 또는 전체 조회가 가능한 경우 null.
      */
     public function getVisibleDepartmentIdsForCurrentUser(): ?array
     {
-        // 1. 전체 조회 권한 확인
-        if ($this->authService->check('employee.manage')) {
-            return null; // null은 '전체 조회'를 의미
-        }
-
-        $user = $this->authService->user();
+        $user = $this->sessionManager->get('user');
         if (!$user) {
             return []; // 로그인하지 않은 경우 빈 배열 반환
         }
+
+        $permissions = $user['permissions'] ?? [];
+        if (in_array('employee.manage', $permissions)) {
+            return null; // null은 '전체 조회'를 의미
+        }
+
         $employee = $user['employee'] ?? null;
         if (!$employee) {
             return []; // 직원 정보가 없는 경우 빈 배열 반환
@@ -55,89 +46,191 @@ class DataScopeService
         $permittedDeptIds = [];
 
         // 2. 개별 직원에게 할당된 부서 조회 권한 (hr_department_managers)
-        $managedDeptIds = $this->departmentRepo->findDepartmentIdsWithEmployeeViewPermission($employee['id']);
+        $managedDeptIds = $this->findDepartmentIdsWithEmployeeViewPermission($employee['id']);
         foreach ($managedDeptIds as $deptId) {
-            $permittedDeptIds = array_merge($permittedDeptIds, $this->departmentRepo->findSubtreeIds($deptId));
+            $permittedDeptIds = array_merge($permittedDeptIds, $this->findSubtreeIds($deptId));
         }
 
         // 3. 사용자의 소속 부서에 부여된 부서 간 조회 권한 (hr_department_view_permissions)
         if (!empty($employee['department_id'])) {
-            $viewableDeptIds = $this->departmentRepo->findDepartmentViewPermissionIds($employee['department_id']);
+            $viewableDeptIds = $this->findDepartmentViewPermissionIds($employee['department_id']);
             foreach ($viewableDeptIds as $deptId) {
-                $permittedDeptIds = array_merge($permittedDeptIds, $this->departmentRepo->findSubtreeIds($deptId));
+                $permittedDeptIds = array_merge($permittedDeptIds, $this->findSubtreeIds($deptId));
             }
         }
 
         return array_values(array_unique($permittedDeptIds));
     }
 
+    // ... (apply...Scope methods remain the same) ...
+
     /**
-     * [참고] 이 메소드는 리팩토링 과정에서 다른 서비스로 이전되거나 제거될 수 있습니다.
-     * 주어진 SQL 쿼리에 부서 ID 기반의 데이터 스코프 WHERE 절을 추가합니다.
-     *
-     * @param string $sql 원본 SQL 쿼리
-     * @param array $params 원본 쿼리의 파라미터 배열
-     * @param string $employeeTableAlias 직원이 포함된 테이블의 SQL 별칭 (기본값 'e')
-     * @return array [수정된 SQL, 수정된 파라미터]
+     * 직원 테이블에 대한 데이터 스코프를 적용합니다.
+     * @param array $queryParts
+     * @param string $employeeTableAlias
+     * @return array
      */
-    public function applyDepartmentScope(string $sql, array $params, string $employeeTableAlias = 'e'): array
+    public function applyEmployeeScope(array $queryParts, string $employeeTableAlias = 'e'): array
     {
         $visibleDepartmentIds = $this->getVisibleDepartmentIdsForCurrentUser();
 
         if ($visibleDepartmentIds === null) {
-            // 전체 조회 권한이 있으므로 쿼리 변경 없음
-            return [$sql, $params];
+            return $queryParts;
         }
 
         if (empty($visibleDepartmentIds)) {
-            // 조회 권한이 있는 부서가 없으므로 결과를 반환하지 않도록 조건 추가
-            $whereClause = "1=0";
+            $queryParts['where'][] = "1=0";
         } else {
             $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
-            $whereClause = "{$employeeTableAlias}.department_id IN ($inClause)";
+            $queryParts['where'][] = "{$employeeTableAlias}.department_id IN ($inClause)";
         }
 
-        // 기존 쿼리에 WHERE 절이 있는지 확인
-        if (preg_match('/\sWHERE\s/i', $sql)) {
-            $sql .= " AND " . $whereClause;
-        } else {
-            $sql .= " WHERE " . $whereClause;
-        }
-
-        return [$sql, $params];
+        return $queryParts;
     }
 
     /**
+     * 부서 테이블 자체에 대한 데이터 스코프를 적용합니다.
+     * @param array $queryParts
+     * @param string $departmentTableAlias
+     * @return array
+     */
+    public function applyDepartmentScope(array $queryParts, string $departmentTableAlias = 'd'): array
+    {
+        $visibleDepartmentIds = $this->getVisibleDepartmentIdsForCurrentUser();
+
+        if ($visibleDepartmentIds === null) {
+            return $queryParts;
+        }
+
+        if (empty($visibleDepartmentIds)) {
+            $queryParts['where'][] = "1=0";
+        } else {
+            $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+            $queryParts['where'][] = "{$departmentTableAlias}.id IN ($inClause)";
+        }
+
+        return $queryParts;
+    }
+
+    /**
+     * 휴일 테이블에 대한 데이터 스코프를 적용합니다. (전체 휴일 포함)
+     * @param array $queryParts
+     * @param string $holidayTableAlias
+     * @return array
+     */
+    public function applyHolidayScope(array $queryParts, string $holidayTableAlias = 'h'): array
+    {
+        $visibleDepartmentIds = $this->getVisibleDepartmentIdsForCurrentUser();
+
+        if ($visibleDepartmentIds === null) {
+            return $queryParts;
+        }
+
+        if (empty($visibleDepartmentIds)) {
+            // 조회 가능한 부서가 없으면 전체 휴일만 조회
+            $queryParts['where'][] = "{$holidayTableAlias}.department_id IS NULL";
+        } else {
+            $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+            $queryParts['where'][] = "({$holidayTableAlias}.department_id IS NULL OR {$holidayTableAlias}.department_id IN ($inClause))";
+        }
+
+        return $queryParts;
+    }
+
+    /**
+     * 사용자 테이블 조회 시 데이터 스코프를 적용합니다. (직원 정보가 없는 사용자 포함)
+     * @param array $queryParts
+     * @param string $userTableAlias
+     * @param string $employeeTableAlias
+     * @return array
+     */
+    public function applyUserScope(array $queryParts, string $userTableAlias = 'u', string $employeeTableAlias = 'e'): array
+    {
+        $visibleDepartmentIds = $this->getVisibleDepartmentIdsForCurrentUser();
+
+        if ($visibleDepartmentIds === null) {
+            return $queryParts;
+        }
+
+        if (empty($visibleDepartmentIds)) {
+            $queryParts['where'][] = "{$userTableAlias}.employee_id IS NULL";
+        } else {
+            $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+            $queryParts['where'][] = "({$employeeTableAlias}.department_id IN ($inClause) OR {$userTableAlias}.employee_id IS NULL)";
+        }
+
+        return $queryParts;
+    }
+
+
+    /**
      * 현재 사용자가 대상 직원을 관리할 수 있는지 확인합니다.
-     *
      * @param int $targetEmployeeId 대상 직원의 ID
      * @return bool 관리할 수 있으면 true, 그렇지 않으면 false
      */
     public function canManageEmployee(int $targetEmployeeId): bool
     {
-        // 1. 전체 관리 권한 확인
-        if ($this->authService->check('employee.manage')) {
+        $user = $this->sessionManager->get('user');
+        if (!$user) return false;
+
+        $permissions = $user['permissions'] ?? [];
+        if (in_array('employee.manage', $permissions)) {
             return true;
         }
 
-        $currentUser = $this->authService->user();
-        $currentEmployeeId = $currentUser['employee_id'] ?? null;
-
-        // 2. 자기 자신은 항상 관리 가능
+        $currentEmployeeId = $user['employee_id'] ?? null;
         if ($currentEmployeeId === $targetEmployeeId) {
             return true;
         }
 
-        // 3. 대상 직원의 정보 조회
-        $targetEmployee = $this->employeeRepo->findById($targetEmployeeId);
+        $targetEmployee = $this->findEmployeeById($targetEmployeeId);
         if (!$targetEmployee || empty($targetEmployee['department_id'])) {
-            return false; // 대상 직원이 없거나 부서에 소속되지 않은 경우
+            return false;
         }
 
-        // 4. 현재 사용자가 볼 수 있는 부서 목록 가져오기
         $visibleDeptIds = $this->getVisibleDepartmentIdsForCurrentUser();
+        if ($visibleDeptIds === null) {
+            return true;
+        }
 
-        // 5. 대상 직원의 부서가 보이는 부서 목록에 포함되는지 확인
         return in_array($targetEmployee['department_id'], $visibleDeptIds);
+    }
+
+    // =================================================================
+    // Private helper methods to query DB directly, avoiding circular deps
+    // =================================================================
+
+    private function findEmployeeById(int $id) {
+        $sql = "SELECT e.* FROM hr_employees e WHERE e.id = :id";
+        return $this->db->fetchOne($sql, [':id' => $id]);
+    }
+
+    private function findDepartmentIdsWithEmployeeViewPermission(int $employeeId): array
+    {
+        $sql = "SELECT department_id FROM hr_department_managers WHERE employee_id = :employee_id";
+        $results = $this->db->query($sql, [':employee_id' => $employeeId]);
+        return array_column($results, 'department_id');
+    }
+
+    private function findDepartmentViewPermissionIds(int $departmentId): array
+    {
+        $sql = "SELECT permitted_department_id FROM hr_department_view_permissions WHERE department_id = :department_id";
+        $results = $this->db->query($sql, [':department_id' => $departmentId]);
+        return array_column($results, 'permitted_department_id');
+    }
+
+    private function findSubtreeIds(int $departmentId): array
+    {
+        $sql = "
+            WITH RECURSIVE DepartmentHierarchy AS (
+                SELECT id FROM hr_departments WHERE id = :department_id
+                UNION ALL
+                SELECT d.id FROM hr_departments d
+                INNER JOIN DepartmentHierarchy dh ON d.parent_id = dh.id
+            )
+            SELECT id FROM DepartmentHierarchy
+        ";
+        $results = $this->db->query($sql, [':department_id' => $departmentId]);
+        return array_column($results, 'id');
     }
 }

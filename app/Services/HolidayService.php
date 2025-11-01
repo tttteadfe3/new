@@ -29,8 +29,7 @@ class HolidayService
      */
     public function getAllHolidays(): array
     {
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
-        return $this->holidayRepository->getAll($visibleDeptIds);
+        return $this->holidayRepository->getAll();
     }
 
     /**

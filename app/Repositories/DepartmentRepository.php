@@ -3,24 +3,36 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\Department;
+use App\Services\DataScopeService;
 
 class DepartmentRepository {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db) {
+    public function __construct(Database $db, DataScopeService $dataScopeService) {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
      * @return Department[]
      */
     public function getAll(): array {
-        $sql = "
-            SELECT d.*
-            FROM hr_departments d
-            ORDER BY d.name
-        ";
-        return $this->db->fetchAllAs(Department::class, $sql);
+        $queryParts = [
+            'sql' => "SELECT d.* FROM hr_departments d",
+            'params' => [],
+            'where' => []
+        ];
+
+        $queryParts = $this->dataScopeService->applyDepartmentScope($queryParts, 'd');
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
+
+        $queryParts['sql'] .= " ORDER BY d.name";
+
+        return $this->db->fetchAllAs(Department::class, $queryParts['sql'], $queryParts['params']);
     }
 
     /**
@@ -136,24 +148,34 @@ class DepartmentRepository {
      * @return array
      */
     public function findAllWithEmployees(): array {
-        $sql = "
-            SELECT
-                d.id, d.name, d.parent_id,
-                e.id as employee_id,
-                e.name as employee_name,
-                p.name as position_name,
-                (SELECT GROUP_CONCAT(m.name SEPARATOR ', ') FROM hr_department_managers dm JOIN hr_employees m ON dm.employee_id = m.id WHERE dm.department_id = d.id) as viewer_employee_names,
-                (SELECT GROUP_CONCAT(dm.employee_id SEPARATOR ',') FROM hr_department_managers dm WHERE dm.department_id = d.id) as viewer_employee_ids
-            FROM
-                hr_departments d
-            LEFT JOIN
-                hr_employees e ON d.id = e.department_id AND e.termination_date IS NULL
-            LEFT JOIN
-                hr_positions p ON e.position_id = p.id
-            ORDER BY
-                d.parent_id ASC, d.name ASC, e.name ASC
-        ";
-        return $this->db->query($sql);
+        $queryParts = [
+            'sql' => "
+                SELECT
+                    d.id, d.name, d.parent_id,
+                    e.id as employee_id,
+                    e.name as employee_name,
+                    p.name as position_name,
+                    (SELECT GROUP_CONCAT(m.name SEPARATOR ', ') FROM hr_department_managers dm JOIN hr_employees m ON dm.employee_id = m.id WHERE dm.department_id = d.id) as viewer_employee_names,
+                    (SELECT GROUP_CONCAT(dm.employee_id SEPARATOR ',') FROM hr_department_managers dm WHERE dm.department_id = d.id) as viewer_employee_ids
+                FROM
+                    hr_departments d
+                LEFT JOIN
+                    hr_employees e ON d.id = e.department_id AND e.termination_date IS NULL
+                LEFT JOIN
+                    hr_positions p ON e.position_id = p.id",
+            'params' => [],
+            'where' => []
+        ];
+
+        $queryParts = $this->dataScopeService->applyDepartmentScope($queryParts, 'd');
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
+
+        $queryParts['sql'] .= " ORDER BY d.parent_id ASC, d.name ASC, e.name ASC";
+
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**

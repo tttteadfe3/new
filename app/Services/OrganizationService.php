@@ -31,16 +31,6 @@ class OrganizationService
             return [];
         }
 
-        // 중앙 집중식 데이터 스코프 서비스를 사용하여 현재 사용자가 볼 수 있는 부서 ID 목록을 가져옵니다.
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
-
-        // visibleDeptIds가 null이 아니면(즉, 전체 보기 권한이 없는 경우) 데이터를 필터링합니다.
-        if ($visibleDeptIds !== null) {
-            $flatData = array_filter($flatData, function ($row) use ($visibleDeptIds) {
-                return in_array($row['id'], $visibleDeptIds);
-            });
-        }
-
         $departments = [];
         foreach ($flatData as $row) {
             $deptId = $row['id'];

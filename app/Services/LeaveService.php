@@ -550,8 +550,7 @@ class LeaveService {
      */
     public function getLeaveHistory(array $filters = []): array
     {
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
-        return $this->leaveRepository->findAll($filters, $visibleDeptIds);
+        return $this->leaveRepository->findAll($filters);
     }
 
     /**
@@ -560,8 +559,7 @@ class LeaveService {
      */
     public function getPendingLeaveRequests(): array
     {
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
-        return $this->leaveRepository->findByStatus('대기', [], $visibleDeptIds);
+        return $this->leaveRepository->findByStatus('대기');
     }
 
     /**
@@ -571,8 +569,7 @@ class LeaveService {
      */
     public function getAllEntitlements(array $filters = []): array
     {
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
-        return $this->leaveRepository->getAllEntitlements($filters, $visibleDeptIds);
+        return $this->leaveRepository->getAllEntitlements($filters);
     }
 
     /**

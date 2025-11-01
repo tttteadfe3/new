@@ -32,8 +32,7 @@ class UserService
      */
     public function getAllUsers(array $filters = []): array
     {
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
-        return $this->userRepository->getAllWithRoles($filters, $visibleDeptIds);
+        return $this->userRepository->getAllWithRoles($filters);
     }
 
     /**
@@ -142,8 +141,7 @@ class UserService
      */
     public function getUnlinkedEmployees(): array
     {
-        $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
-        return $this->userRepository->getUnlinkedEmployees($visibleDeptIds);
+        return $this->userRepository->getUnlinkedEmployees();
     }
 
     /**

@@ -3,12 +3,15 @@
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\DataScopeService;
 
 class UserRepository {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db) {
+    public function __construct(Database $db, DataScopeService $dataScopeService) {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
@@ -100,62 +103,54 @@ class UserRepository {
     
     /**
      * @param array $filters
-     * @param array|null $visibleDepartmentIds
      * @return array
      */
-    public function getAllWithRoles(array $filters = [], ?array $visibleDepartmentIds = null): array {
-        $baseSql = "SELECT 
-                    u.id, u.nickname, u.email, u.status, u.employee_id,
-                    GROUP_CONCAT(DISTINCT r.name SEPARATOR ', ') as roles,
-                    e.name as employee_name
-                FROM sys_users u
-                LEFT JOIN sys_user_roles ur ON u.id = ur.user_id
-                LEFT JOIN sys_roles r ON ur.role_id = r.id
-                LEFT JOIN hr_employees e ON u.employee_id = e.id";
+    public function getAllWithRoles(array $filters = []): array {
+        $queryParts = [
+            'sql' => "SELECT
+                        u.id, u.nickname, u.email, u.status, u.employee_id,
+                        GROUP_CONCAT(DISTINCT r.name SEPARATOR ', ') as roles,
+                        e.name as employee_name
+                    FROM sys_users u
+                    LEFT JOIN sys_user_roles ur ON u.id = ur.user_id
+                    LEFT JOIN sys_roles r ON ur.role_id = r.id
+                    LEFT JOIN hr_employees e ON u.employee_id = e.id",
+            'params' => [],
+            'where' => []
+        ];
 
-        $whereClauses = [];
-        $params = [];
+        $queryParts = $this->dataScopeService->applyUserScope($queryParts, 'u', 'e');
 
         if (!empty($filters['status'])) {
-            $whereClauses[] = "u.status = :status";
-            $params[':status'] = $filters['status'];
+            $queryParts['where'][] = "u.status = :status";
+            $queryParts['params'][':status'] = $filters['status'];
         }
 
         if (!empty($filters['nickname'])) {
-            $whereClauses[] = "u.nickname LIKE :nickname";
-            $params[':nickname'] = '%' . $filters['nickname'] . '%';
+            $queryParts['where'][] = "u.nickname LIKE :nickname";
+            $queryParts['params'][':nickname'] = '%' . $filters['nickname'] . '%';
         }
 
         if (!empty($filters['staff'])) {
             if ($filters['staff'] === 'linked') {
-                $whereClauses[] = "u.employee_id IS NOT NULL";
+                $queryParts['where'][] = "u.employee_id IS NOT NULL";
             } elseif ($filters['staff'] === 'unlinked') {
-                $whereClauses[] = "u.employee_id IS NULL";
+                $queryParts['where'][] = "u.employee_id IS NULL";
             }
         }
 
         if (!empty($filters['role_id'])) {
-            $whereClauses[] = "u.id IN (SELECT user_id FROM sys_user_roles WHERE role_id = :role_id)";
-            $params[':role_id'] = $filters['role_id'];
+            $queryParts['where'][] = "u.id IN (SELECT user_id FROM sys_user_roles WHERE role_id = :role_id)";
+            $queryParts['params'][':role_id'] = $filters['role_id'];
         }
 
-        if ($visibleDepartmentIds !== null) {
-            if (empty($visibleDepartmentIds)) {
-                $whereClauses[] = "u.employee_id IS NULL"; // 링크되지 않은 사용자만 표시
-            } else {
-                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
-                $whereClauses[] = "(e.department_id IN ($inClause) OR u.employee_id IS NULL)";
-            }
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
         }
 
-        $sql = $baseSql;
-        if (!empty($whereClauses)) {
-            $sql .= " WHERE " . implode(" AND ", $whereClauses);
-        }
+        $queryParts['sql'] .= " GROUP BY u.id, e.name ORDER BY u.created_at DESC";
 
-        $sql .= " GROUP BY u.id, e.name ORDER BY u.created_at DESC";
-
-        return $this->db->query($sql, $params);
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**
@@ -214,27 +209,26 @@ class UserRepository {
 
     /**
      * 사용자 계정과 아직 연결되지 않은 직원 목록을 가져옵니다.
-     * @param array|null $visibleDepartmentIds 조회 가능한 부서 ID 목록
      * @return array
      */
-    public function getUnlinkedEmployees(?array $visibleDepartmentIds = null): array {
-        $params = [];
-        // employees.id가 users.employee_id에 존재하지 않고, 퇴사일이 없는 직원만 선택
-        $sql = "SELECT e.id, e.name, e.employee_number FROM hr_employees e
-                WHERE NOT EXISTS (SELECT 1 FROM sys_users u WHERE u.employee_id = e.id)
-                AND e.termination_date IS NULL";
-        
-        if ($visibleDepartmentIds !== null) {
-            if (empty($visibleDepartmentIds)) {
-                $sql .= " AND 1=0";
-            } else {
-                $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
-                $sql .= " AND e.department_id IN ($inClause)";
-            }
+    public function getUnlinkedEmployees(): array {
+        $queryParts = [
+            'sql' => "SELECT e.id, e.name, e.employee_number FROM hr_employees e
+                      WHERE NOT EXISTS (SELECT 1 FROM sys_users u WHERE u.employee_id = e.id)
+                      AND e.termination_date IS NULL",
+            'params' => [],
+            'where' => []
+        ];
+
+        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+
+        if (!empty($queryParts['where'])) {
+            // 이미 WHERE 절이 있으므로 AND로 연결
+            $queryParts['sql'] .= " AND " . implode(" AND ", $queryParts['where']);
         }
         
-        $sql .= " ORDER BY e.name";
-        return $this->db->query($sql, $params);
+        $queryParts['sql'] .= " ORDER BY e.name";
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**
