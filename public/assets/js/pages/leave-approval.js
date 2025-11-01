@@ -1,7 +1,7 @@
 class LeaveApprovalPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/api/admin/leaves'
+            API_URL: '/leaves_admin'
         });
         this.elements = {};
     }
