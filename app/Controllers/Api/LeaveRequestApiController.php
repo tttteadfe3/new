@@ -8,45 +8,59 @@ class LeaveRequestApiController
 {
     private $leaveService;
     private $employeeRepository;
-    public function __construct(NewLeaveService $leaveService, EmployeeRepository $employeeRepository)
+    private $request;
+
+    public function __construct(NewLeaveService $leaveService, EmployeeRepository $employeeRepository, Request $request)
     {
         $this->leaveService = $leaveService;
         $this->employeeRepository = $employeeRepository;
+        $this->request = $request;
     }
-    public function getBalance(Request $request): Response
+
+    private function getCurrentEmployee(): ?array
     {
-        $employee = $this->employeeRepository->findByUserId($request->user()['id']);
+        $user = $this->request->user();
+        if (!$user || !isset($user['id'])) return null;
+        return $this->employeeRepository->findByUserId($user['id']);
+    }
+
+    public function getBalance(): Response
+    {
+        $employee = $this->getCurrentEmployee();
         if (!$employee) {
             return Response::json(['status' => 'error', 'message' => 'Employee not found'], 404);
         }
         $balance = $this->leaveService->getLeaveBalance($employee['id']);
         return Response::json(['status' => 'success', 'data' => $balance]);
     }
-    public function index(Request $request): Response
+
+    public function index(): Response
     {
-        $employee = $this->employeeRepository->findByUserId($request->user()['id']);
+        $employee = $this->getCurrentEmployee();
         if (!$employee) {
             return Response::json(['status' => 'error', 'message' => 'Employee not found'], 404);
         }
         $requests = $this->leaveService->getRequestsByEmployeeId($employee['id']);
         return Response::json(['status' => 'success', 'data' => $requests]);
     }
-    public function store(Request $request): Response
+
+    public function store(): Response
     {
-        $employee = $this->employeeRepository->findByUserId($request->user()['id']);
+        $employee = $this->getCurrentEmployee();
         if (!$employee) {
             return Response::json(['status' => 'error', 'message' => 'Employee not found'], 404);
         }
-        $data = $request->getBody();
+        $data = $this->request->all();
         $result = $this->leaveService->createLeaveRequest($employee['id'], $data);
         if ($result['success']) {
             return Response::json(['status' => 'success', 'message' => $result['message']]);
         }
         return Response::json(['status' => 'error', 'message' => $result['message']], 400);
     }
-    public function cancel(Request $request, $id): Response
+
+    public function cancel($id): Response
     {
-        $employee = $this->employeeRepository->findByUserId($request->user()['id']);
+        $employee = $this->getCurrentEmployee();
         if (!$employee) {
             return Response::json(['status' => 'error', 'message' => 'Employee not found'], 404);
         }

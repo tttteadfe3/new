@@ -29,7 +29,7 @@ class LeaveAdminApiController
 
     public function getRequests(): Response
     {
-        $filters = $this->request->getQueryParams();
+        $filters = $this->request->all();
         $requests = $this->leaveService->getRequestsForAdmin($filters);
         return Response::json(['status' => 'success', 'data' => $requests]);
     }
@@ -47,7 +47,7 @@ class LeaveAdminApiController
     public function rejectRequest($id): Response
     {
         $actorEmployeeId = $this->getActorEmployeeId();
-        $reason = $this->request->getBody()['reason'] ?? '';
+        $reason = $this->request->input('reason', '');
         $result = $this->leaveService->rejectRequest((int)$id, $actorEmployeeId, $reason);
         if ($result['success']) {
             return Response::json(['status' => 'success', 'message' => $result['message']]);
@@ -68,7 +68,7 @@ class LeaveAdminApiController
     public function rejectCancellation($id): Response
     {
         $actorEmployeeId = $this->getActorEmployeeId();
-        $reason = $this->request->getBody()['reason'] ?? '';
+        $reason = $this->request->input('reason', '');
         $result = $this->leaveService->rejectCancellation((int)$id, $actorEmployeeId, $reason);
          if ($result['success']) {
             return Response::json(['status' => 'success', 'message' => $result['message']]);
@@ -79,7 +79,7 @@ class LeaveAdminApiController
     public function adjustLeave(): Response
     {
         $actorEmployeeId = $this->getActorEmployeeId();
-        $data = $this->request->getBody();
+        $data = $this->request->all();
         $result = $this->leaveService->adjustLeave($data, $actorEmployeeId);
         if ($result['success']) {
             return Response::json(['status' => 'success', 'message' => $result['message']]);
@@ -89,15 +89,15 @@ class LeaveAdminApiController
 
     public function getEntitlements(): Response
     {
-        $year = $this->request->getQueryParams()['year'] ?? date('Y');
-        $departmentId = $this->request->getQueryParams()['department_id'] ?? null;
+        $year = $this->request->input('year', date('Y'));
+        $departmentId = $this->request->input('department_id', null);
         $entitlements = $this->leaveService->getEntitlements((int)$year, $departmentId ? (int)$departmentId : null);
         return Response::json(['status' => 'success', 'data' => $entitlements]);
     }
 
     public function calculateAnnualLeaveForAll(): Response
     {
-        $year = $this->request->getBody()['year'] ?? date('Y');
+        $year = $this->request->input('year', date('Y'));
         $calculatedData = $this->leaveService->calculateAnnualLeaveForAll((int)$year);
         return Response::json(['status' => 'success', 'data' => $calculatedData]);
     }
@@ -109,7 +109,7 @@ class LeaveAdminApiController
             return Response::json(['status' => 'error', 'message' => 'Admin user not found'], 403);
         }
 
-        $body = $this->request->getBody();
+        $body = $this->request->all();
         $year = $body['year'] ?? date('Y');
         $employees = $body['employees'] ?? [];
 
@@ -127,14 +127,14 @@ class LeaveAdminApiController
         if (!$actorEmployeeId) {
             return Response::json(['status' => 'error', 'message' => 'Admin user not found'], 403);
         }
-        $year = $this->request->getBody()['year'] ?? date('Y');
+        $year = $this->request->input('year', date('Y'));
         $this->leaveService->expireLeaveForYear((int)$year, $actorEmployeeId);
         return Response::json(['status' => 'success', 'message' => $year . ' year-end leave expiration processed successfully.']);
     }
 
     public function getLogs(): Response
     {
-        $filters = $this->request->getQueryParams();
+        $filters = $this->request->all();
         $logs = $this->leaveService->getLogsForAdmin($filters);
         return Response::json(['status' => 'success', 'data' => $logs]);
     }
