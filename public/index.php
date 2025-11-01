@@ -25,22 +25,33 @@ $container->singleton(Database::class, fn() => new Database());
 $container->singleton(Request::class, fn() => new Request());
 $container->singleton(JsonResponse::class, fn() => new JsonResponse());
 
-// Register all repositories first, as services depend on them
-$container->register(\App\Repositories\DepartmentRepository::class, fn($c) => new \App\Repositories\DepartmentRepository($c->resolve(Database::class)));
+// The order of registration is critical to avoid circular dependencies.
+
+// 1. Core services with no repository dependencies, or only DB/Session.
+$container->register(\App\Services\DataScopeService::class, fn($c) => new \App\Services\DataScopeService(
+    $c->resolve(SessionManager::class),
+    $c->resolve(Database::class)
+));
+$container->register(\App\Services\KakaoAuthService::class, fn($c) => new \App\Services\KakaoAuthService($c->resolve(SessionManager::class)));
+
+// 2. Repositories - some now depend on DataScopeService.
+$container->register(\App\Repositories\DepartmentRepository::class, fn($c) => new \App\Repositories\DepartmentRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\EmployeeRepository::class, fn($c) => new \App\Repositories\EmployeeRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\HolidayRepository::class, fn($c) => new \App\Repositories\HolidayRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\LeaveRepository::class, fn($c) => new \App\Repositories\LeaveRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\UserRepository::class, fn($c) => new \App\Repositories\UserRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+
+// Repositories with no DataScopeService dependency
 $container->register(\App\Repositories\EmployeeChangeLogRepository::class, fn($c) => new \App\Repositories\EmployeeChangeLogRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\EmployeeRepository::class, fn($c) => new \App\Repositories\EmployeeRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\HolidayRepository::class, fn($c) => new \App\Repositories\HolidayRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\LeaveRepository::class, fn($c) => new \App\Repositories\LeaveRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\LitteringRepository::class, fn($c) => new \App\Repositories\LitteringRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\LogRepository::class, fn($c) => new \App\Repositories\LogRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\MenuRepository::class, fn($c) => new \App\Repositories\MenuRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\PositionRepository::class, fn($c) => new \App\Repositories\PositionRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\RoleRepository::class, fn($c) => new \App\Repositories\RoleRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\UserRepository::class, fn($c) => new \App\Repositories\UserRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\WasteCollectionRepository::class, fn($c) => new \App\Repositories\WasteCollectionRepository($c->resolve(Database::class)));
 
-// Register all services with their correct dependencies
-$container->register(\App\Services\ActivityLogger::class, fn($c) => new \App\Services\ActivityLogger($c->resolve(SessionManager::class), $c->resolve(\App\Repositories\LogRepository::class), $c->resolve(\App\Repositories\UserRepository::class)));
+
+// 3. Application services that depend on repositories and other services.
 $container->register(\App\Services\AuthService::class, fn($c) => new \App\Services\AuthService(
     $c->resolve(SessionManager::class),
     $c->resolve(\App\Repositories\UserRepository::class),
@@ -48,11 +59,7 @@ $container->register(\App\Services\AuthService::class, fn($c) => new \App\Servic
     $c->resolve(\App\Repositories\LogRepository::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class)
 ));
-$container->register(\App\Services\DataScopeService::class, fn($c) => new \App\Services\DataScopeService(
-    $c->resolve(\App\Services\AuthService::class),
-    $c->resolve(\App\Repositories\DepartmentRepository::class),
-    $c->resolve(\App\Repositories\EmployeeRepository::class)
-));
+$container->register(\App\Services\ActivityLogger::class, fn($c) => new \App\Services\ActivityLogger($c->resolve(SessionManager::class), $c->resolve(\App\Repositories\LogRepository::class), $c->resolve(\App\Repositories\UserRepository::class)));
 $container->register(\App\Services\EmployeeService::class, fn($c) => new \App\Services\EmployeeService(
     $c->resolve(\App\Repositories\EmployeeRepository::class),
     $c->resolve(\App\Repositories\EmployeeChangeLogRepository::class),
@@ -67,7 +74,6 @@ $container->register(\App\Services\HolidayService::class, fn($c) => new \App\Ser
     $c->resolve(\App\Repositories\DepartmentRepository::class),
     $c->resolve(\App\Services\DataScopeService::class)
 ));
-$container->register(\App\Services\KakaoAuthService::class, fn($c) => new \App\Services\KakaoAuthService($c->resolve(SessionManager::class)));
 $container->register(\App\Services\LeaveService::class, fn($c) => new \App\Services\LeaveService(
     $c->resolve(\App\Repositories\LeaveRepository::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class),
@@ -101,7 +107,7 @@ $container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Se
 ));
 $container->register(\App\Services\WasteCollectionService::class, fn($c) => new \App\Services\WasteCollectionService($c->resolve(\App\Repositories\WasteCollectionRepository::class), $c->resolve(Database::class)));
 
-// Register Web Controllers that have dependencies
+// 4. Controllers (Web and API)
 $container->register(\App\Controllers\Web\LeaveController::class, fn($c) => new \App\Controllers\Web\LeaveController(
     $c->resolve(Request::class),
     $c->resolve(\App\Services\AuthService::class),
@@ -121,8 +127,6 @@ $container->register(\App\Controllers\Web\AdminController::class, fn($c) => new 
     $c->resolve(\App\Services\MenuManagementService::class),
     $c->resolve(\App\Services\PositionService::class)
 ));
-
-// Register API Controllers
 $container->register(\App\Controllers\Api\OrganizationApiController::class, fn($c) => new \App\Controllers\Api\OrganizationApiController(
     $c->resolve(Request::class),
     $c->resolve(\App\Services\AuthService::class),

@@ -116,7 +116,7 @@ class EmployeeRepository {
         ];
 
         // 데이터 스코프 적용
-        $queryParts = $this->dataScopeService->applyDepartmentScope($queryParts, 'e');
+        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($filters['department_id'])) {
             $queryParts['where'][] = "e.department_id = :department_id";
