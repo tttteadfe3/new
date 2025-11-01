@@ -3,8 +3,8 @@
 use App\Controllers\Api\EmployeeApiController;
 use App\Controllers\Api\HolidayApiController;
 use App\Controllers\Api\HumanResourceApiController;
-use App\Controllers\Api\LeaveApiController;
-use App\Controllers\Api\LeaveAdminApiController;
+// use App\Controllers\Api\LeaveApiController; // Deactivated
+// use App\Controllers\Api\LeaveAdminApiController; // Deactivated
 use App\Controllers\Api\LitteringApiController;
 use App\Controllers\Api\LitteringAdminApiController;
 use App\Controllers\Api\OrganizationApiController;
@@ -40,25 +40,25 @@ $router->group('/api', function($router) {
     $router->put('/holidays/{id}', [HolidayApiController::class, 'update'])->name('api.holidays.update')->middleware('auth')->middleware('permission', 'holiday.manage');
     $router->delete('/holidays/{id}', [HolidayApiController::class, 'destroy'])->name('api.holidays.destroy')->middleware('auth')->middleware('permission', 'holiday.manage');
 
-    // Leave API routes (User)
-    $router->get('/leaves', [LeaveApiController::class, 'index'])->name('api.leaves.index')->middleware('auth')->middleware('permission', 'leave.view_own');
-    $router->post('/leaves', [LeaveApiController::class, 'store'])->name('api.leaves.store')->middleware('auth')->middleware('permission', 'leave.request');
-    $router->post('/leaves/{id}/cancel', [LeaveApiController::class, 'cancel'])->name('api.leaves.cancel')->middleware('auth')->middleware('permission', 'leave.request');
-    $router->post('/leaves/calculate-days', [LeaveApiController::class, 'calculateDays'])->name('api.leaves.calculate-days')->middleware('auth')->middleware('permission', 'leave.request');
+    // Legacy Leave API routes (deactivated)
+    // $router->get('/leaves', [LeaveApiController::class, 'index'])->name('api.leaves.index')->middleware('auth')->middleware('permission', 'leave.view_own');
+    // $router->post('/leaves', [LeaveApiController::class, 'store'])->name('api.leaves.store')->middleware('auth')->middleware('permission', 'leave.request');
+    // $router->post('/leaves/{id}/cancel', [LeaveApiController::class, 'cancel'])->name('api.leaves.cancel')->middleware('auth')->middleware('permission', 'leave.request');
+    // $router->post('/leaves/calculate-days', [LeaveApiController::class, 'calculateDays'])->name('api.leaves.calculate-days')->middleware('auth')->middleware('permission', 'leave.request');
 
-    // Leave Admin API routes
-    $router->get('/leaves_admin/requests', [LeaveAdminApiController::class, 'listRequests'])->name('api.leaves_admin.requests')->middleware('auth')->middleware('permission', 'leave.view_all');
-    $router->post('/leaves_admin/requests/{id}/approve', [LeaveAdminApiController::class, 'approveRequest'])->name('api.leaves_admin.approve')->middleware('auth')->middleware('permission', 'leave.approve');
-    $router->post('/leaves_admin/requests/{id}/reject', [LeaveAdminApiController::class, 'rejectRequest'])->name('api.leaves_admin.reject')->middleware('auth')->middleware('permission', 'leave.approve');
-    $router->post('/leaves_admin/cancellations/{id}/approve', [LeaveAdminApiController::class, 'approveCancellation'])->name('api.leaves_admin.cancellations.approve')->middleware('auth')->middleware('permission', 'leave.approve');
-    $router->post('/leaves_admin/cancellations/{id}/reject', [LeaveAdminApiController::class, 'rejectCancellation'])->name('api.leaves_admin.cancellations.reject')->middleware('auth')->middleware('permission', 'leave.approve');
-    $router->get('/leaves_admin/entitlements', [LeaveAdminApiController::class, 'listEntitlements'])->name('api.leaves_admin.entitlements')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
-    $router->post('/leaves_admin/grant-all', [LeaveAdminApiController::class, 'grantForAll'])->name('api.leaves_admin.grant-all')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
-    $router->get('/leaves_admin/history', [LeaveAdminApiController::class, 'history'])->name('api.leaves_admin.history')->middleware('auth')->middleware('permission', 'leave.view_all');
-    $router->get('/leaves_admin/history/{employeeId}', [LeaveAdminApiController::class, 'getHistoryForEmployee'])->name('api.leaves_admin.history.employee')->middleware('auth')->middleware('permission', 'leave.view_all');
-    $router->post('/leaves_admin/adjust', [LeaveAdminApiController::class, 'manualAdjustment'])->name('api.leaves_admin.adjust')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
-    $router->post('/leaves_admin/calculate', [LeaveAdminApiController::class, 'calculateLeaves'])->name('api.leaves_admin.calculate')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
-    $router->post('/leaves_admin/save-entitlements', [LeaveAdminApiController::class, 'saveEntitlements'])->name('api.leaves_admin.save-entitlements')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+    // Legacy Leave Admin API routes (deactivated)
+    // $router->get('/leaves_admin/requests', [LeaveAdminApiController::class, 'listRequests'])->name('api.leaves_admin.requests')->middleware('auth')->middleware('permission', 'leave.view_all');
+    // $router->post('/leaves_admin/requests/{id}/approve', [LeaveAdminApiController::class, 'approveRequest'])->name('api.leaves_admin.approve')->middleware('auth')->middleware('permission', 'leave.approve');
+    // $router->post('/leaves_admin/requests/{id}/reject', [LeaveAdminApiController::class, 'rejectRequest'])->name('api.leaves_admin.reject')->middleware('auth')->middleware('permission', 'leave.approve');
+    // $router->post('/leaves_admin/cancellations/{id}/approve', [LeaveAdminApiController::class, 'approveCancellation'])->name('api.leaves_admin.cancellations.approve')->middleware('auth')->middleware('permission', 'leave.approve');
+    // $router->post('/leaves_admin/cancellations/{id}/reject', [LeaveAdminApiController::class, 'rejectCancellation'])->name('api.leaves_admin.cancellations.reject')->middleware('auth')->middleware('permission', 'leave.approve');
+    // $router->get('/leaves_admin/entitlements', [LeaveAdminApiController::class, 'listEntitlements'])->name('api.leaves_admin.entitlements')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+    // $router->post('/leaves_admin/grant-all', [LeaveAdminApiController::class, 'grantForAll'])->name('api.leaves_admin.grant-all')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+    // $router->get('/leaves_admin/history', [LeaveAdminApiController::class, 'history'])->name('api.leaves_admin.history')->middleware('auth')->middleware('permission', 'leave.view_all');
+    // $router->get('/leaves_admin/history/{employeeId}', [LeaveAdminApiController::class, 'getHistoryForEmployee'])->name('api.leaves_admin.history.employee')->middleware('auth')->middleware('permission', 'leave.view_all');
+    // $router->post('/leaves_admin/adjust', [LeaveAdminApiController::class, 'manualAdjustment'])->name('api.leaves_admin.adjust')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+    // $router->post('/leaves_admin/calculate', [LeaveAdminApiController::class, 'calculateLeaves'])->name('api.leaves_admin.calculate')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+    // $router->post('/leaves_admin/save-entitlements', [LeaveAdminApiController::class, 'saveEntitlements'])->name('api.leaves_admin.save-entitlements')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
 
     // Littering API routes
     $router->get('/littering', [LitteringApiController::class, 'index'])->name('api.littering.index')->middleware('auth')->middleware('permission', 'littering.view');
@@ -68,7 +68,7 @@ $router->group('/api', function($router) {
     // Littering Admin API routes
     $router->get('/littering_admin/reports', [LitteringAdminApiController::class, 'listReports'])->name('api.littering_admin.reports')->middleware('auth')->middleware('permission', 'littering.view');
     $router->post('/littering_admin/reports/{id}/confirm', [LitteringAdminApiController::class, 'confirm'])->name('api.littering_admin.confirm')->middleware('auth')->middleware('permission', 'littering.confirm');
-$router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiController::class, 'approve'])->name('api.littering_admin.approve')->middleware('auth')->middleware('permission', 'littering.approve');
+    $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiController::class, 'approve'])->name('api.littering_admin.approve')->middleware('auth')->middleware('permission', 'littering.approve');
     $router->delete('/littering_admin/reports/{id}', [LitteringAdminApiController::class, 'destroy'])->name('api.littering_admin.destroy')->middleware('auth')->middleware('permission', 'littering.delete');
     $router->post('/littering_admin/reports/{id}/restore', [LitteringAdminApiController::class, 'restore'])->name('api.littering_admin.restore')->middleware('auth')->middleware('permission', 'littering.restore');
     $router->delete('/littering_admin/reports/{id}/permanent', [LitteringAdminApiController::class, 'permanentlyDelete'])->name('api.littering_admin.permanent')->middleware('auth')->middleware('permission', 'littering.force_delete');
@@ -130,19 +130,18 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->post('/waste-collections/admin/batch-register', [WasteCollectionApiController::class, 'batchRegister'])->name('api.waste-collections.batch-register')->middleware('auth')->middleware('permission', 'waste.manage');
     $router->delete('/waste-collections/admin/online-submissions', [WasteCollectionApiController::class, 'clearOnlineSubmissions'])->name('api.waste-collections.clear-online')->middleware('auth')->middleware('permission', 'waste.manage');
 
-    // (New) Leave Request API routes
-    $router->get('/leave/balance', [LeaveRequestController::class, 'getBalance'])->name('api.leave.balance')->middleware('auth')->middleware('permission', 'leave.request');
-    $router->get('/leave-requests', [LeaveRequestController::class, 'index'])->name('api.leave-requests.index')->middleware('auth')->middleware('permission', 'leave.request');
-    $router->post('/leave-requests', [LeaveRequestController::class, 'store'])->name('api.leave-requests.store')->middleware('auth')->middleware('permission', 'leave.request');
-    $router->post('/leave-requests/{id}/cancel', [LeaveRequestController::class, 'cancel'])->name('api.leave-requests.cancel')->middleware('auth')->middleware('permission', 'leave.request');
-
-    // (New) Admin Leave Management API routes
+    // --- (New) Leave Management System Routes ---
+    $router->get('/leave/balance', [\App\Controllers\Api\LeaveRequestController::class, 'getBalance'])->name('api.leave.balance')->middleware('auth')->middleware('permission', 'leave.request');
+    $router->get('/leave-requests', [\App\Controllers\Api\LeaveRequestController::class, 'index'])->name('api.leave-requests.index')->middleware('auth')->middleware('permission', 'leave.request');
+    $router->post('/leave-requests', [\App\Controllers\Api\LeaveRequestController::class, 'store'])->name('api.leave-requests.store')->middleware('auth')->middleware('permission', 'leave.request');
+    $router->post('/leave-requests/{id}/cancel', [\App\Controllers\Api\LeaveRequestController::class, 'cancel'])->name('api.leave-requests.cancel')->middleware('auth')->middleware('permission', 'leave.request');
     $router->group('/admin/leave', function($router) {
-        $router->get('/requests', [LeaveAdminController::class, 'getRequests'])->name('api.admin.leave.requests')->middleware('auth')->middleware('permission', 'leave.approve');
-        $router->post('/requests/{id}/approve', [LeaveAdminController::class, 'approveRequest'])->name('api.admin.leave.approve')->middleware('auth')->middleware('permission', 'leave.approve');
-        $router->post('/requests/{id}/reject', [LeaveAdminController::class, 'rejectRequest'])->name('api.admin.leave.reject')->middleware('auth')->middleware('permission', 'leave.approve');
-        $router->post('/cancellations/{id}/approve', [LeaveAdminController::class, 'approveCancellation'])->name('api.admin.leave.cancel.approve')->middleware('auth')->middleware('permission', 'leave.approve');
-        $router->post('/adjust', [LeaveAdminController::class, 'adjustLeave'])->name('api.admin.leave.adjust')->middleware('auth')->middleware('permission', 'leave.manage');
-        $router->post('/grant-all', [LeaveAdminController::class, 'grantAnnualLeave'])->name('api.admin.leave.grant-all')->middleware('auth')->middleware('permission', 'leave.manage');
+        $router->get('/requests', [\App\Controllers\Api\LeaveAdminController::class, 'getRequests'])->name('api.admin.leave.requests')->middleware('auth')->middleware('permission', 'leave.approve');
+        $router->post('/requests/{id}/approve', [\App\Controllers\Api\LeaveAdminController::class, 'approveRequest'])->name('api.admin.leave.approve')->middleware('auth')->middleware('permission', 'leave.approve');
+        $router->post('/requests/{id}/reject', [\App\Controllers\Api\LeaveAdminController::class, 'rejectRequest'])->name('api.admin.leave.reject')->middleware('auth')->middleware('permission', 'leave.approve');
+        $router->post('/cancellations/{id}/approve', [\App\Controllers\Api\LeaveAdminController::class, 'approveCancellation'])->name('api.admin.leave.cancel.approve')->middleware('auth')->middleware('permission', 'leave.approve');
+        $router->post('/adjust', [\App\Controllers\Api\LeaveAdminController::class, 'adjustLeave'])->name('api.admin.leave.adjust')->middleware('auth')->middleware('permission', 'leave.manage');
+        $router->post('/grant-all', [\App\Controllers\Api\LeaveAdminController::class, 'grantAnnualLeave'])->name('api.admin.leave.grant-all')->middleware('auth')->middleware('permission', 'leave.manage');
+        $router->post('/expire', [\App\Controllers\Api\LeaveAdminController::class, 'expireLeave'])->name('api.admin.leave.expire')->middleware('auth')->middleware('permission', 'leave.manage');
     });
 });

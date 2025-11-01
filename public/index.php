@@ -38,7 +38,6 @@ $container->register(\App\Services\KakaoAuthService::class, fn($c) => new \App\S
 $container->register(\App\Repositories\DepartmentRepository::class, fn($c) => new \App\Repositories\DepartmentRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 $container->register(\App\Repositories\EmployeeRepository::class, fn($c) => new \App\Repositories\EmployeeRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 $container->register(\App\Repositories\HolidayRepository::class, fn($c) => new \App\Repositories\HolidayRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\LeaveRepository::class, fn($c) => new \App\Repositories\LeaveRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 $container->register(\App\Repositories\UserRepository::class, fn($c) => new \App\Repositories\UserRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 
 // Repositories with no DataScopeService dependency
@@ -49,6 +48,9 @@ $container->register(\App\Repositories\MenuRepository::class, fn($c) => new \App
 $container->register(\App\Repositories\PositionRepository::class, fn($c) => new \App\Repositories\PositionRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\RoleRepository::class, fn($c) => new \App\Repositories\RoleRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\WasteCollectionRepository::class, fn($c) => new \App\Repositories\WasteCollectionRepository($c->resolve(Database::class)));
+
+// (New) Repository for the new leave system
+$container->register(\App\Repositories\LeaveRepository::class, fn($c) => new \App\Repositories\LeaveRepository($c->resolve(Database::class)));
 
 
 // 3. Application services that depend on repositories and other services.
@@ -67,18 +69,20 @@ $container->register(\App\Services\EmployeeService::class, fn($c) => new \App\Se
     $c->resolve(\App\Repositories\PositionRepository::class),
     $c->resolve(\App\Repositories\LogRepository::class),
     $c->resolve(SessionManager::class),
-    $c->resolve(\App\Services\DataScopeService::class),
-    $c->resolve(\App\Services\LeaveService::class) // LeaveService 주입 추가
+    $c->resolve(\App\Services\DataScopeService::class)
 ));
 $container->register(\App\Services\HolidayService::class, fn($c) => new \App\Services\HolidayService(
     $c->resolve(\App\Repositories\HolidayRepository::class),
     $c->resolve(\App\Repositories\DepartmentRepository::class),
     $c->resolve(\App\Services\DataScopeService::class)
 ));
-// (신) LeaveService 의존성 재정의
 $container->register(\App\Services\LeaveService::class, fn($c) => new \App\Services\LeaveService(
     $c->resolve(\App\Repositories\LeaveRepository::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(\App\Services\HolidayService::class),
+    $c->resolve(\App\Repositories\LogRepository::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
     $c->resolve(\App\Services\DataScopeService::class)
 ));
 $container->register(\App\Services\LitteringService::class, fn($c) => new \App\Services\LitteringService($c->resolve(\App\Repositories\LitteringRepository::class), $c->resolve(Database::class)));
@@ -105,7 +109,26 @@ $container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Se
 ));
 $container->register(\App\Services\WasteCollectionService::class, fn($c) => new \App\Services\WasteCollectionService($c->resolve(\App\Repositories\WasteCollectionRepository::class), $c->resolve(Database::class)));
 
+// (New) Service for the new leave system
+$container->register(\App\Services\NewLeaveService::class, fn($c) => new \App\Services\NewLeaveService(
+    $c->resolve(\App\Repositories\LeaveRepository::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(\App\Services\DataScopeService::class)
+));
+
+
 // 4. Controllers (Web and API)
+
+// (New) Controllers for the new leave system
+$container->register(\App\Controllers\Api\LeaveRequestController::class, fn($c) => new \App\Controllers\Api\LeaveRequestController(
+    $c->resolve(\App\Services\NewLeaveService::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class)
+));
+$container->register(\App\Controllers\Api\LeaveAdminController::class, fn($c) => new \App\Controllers\Api\LeaveAdminController(
+    $c->resolve(\App\Services\NewLeaveService::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class)
+));
+
 $container->register(\App\Controllers\Web\LeaveController::class, fn($c) => new \App\Controllers\Web\LeaveController(
     $c->resolve(Request::class),
     $c->resolve(\App\Services\AuthService::class),

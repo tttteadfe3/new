@@ -19,7 +19,6 @@ class EmployeeService
     private LogRepository $logRepository;
     private SessionManager $sessionManager;
     private DataScopeService $dataScopeService;
-    private LeaveService $leaveService;
 
     public function __construct(
         EmployeeRepository $employeeRepository,
@@ -28,8 +27,7 @@ class EmployeeService
         PositionRepository $positionRepository,
         LogRepository $logRepository,
         SessionManager $sessionManager,
-        DataScopeService $dataScopeService,
-        LeaveService $leaveService
+        DataScopeService $dataScopeService
     ) {
         $this->employeeRepository = $employeeRepository;
         $this->employeeChangeLogRepository = $employeeChangeLogRepository;
@@ -38,7 +36,6 @@ class EmployeeService
         $this->logRepository = $logRepository;
         $this->sessionManager = $sessionManager;
         $this->dataScopeService = $dataScopeService;
-        $this->leaveService = $leaveService;
     }
 
     /**
@@ -93,14 +90,7 @@ class EmployeeService
             throw new \InvalidArgumentException('잘못된 직원 데이터');
         }
 
-        $newEmployeeId = $this->employeeRepository->save($data);
-
-        if ($newEmployeeId) {
-            // 직원 생성 성공 시, 초기 월차 부여 로직 호출
-            $this->leaveService->grantInitialMonthlyLeave((int)$newEmployeeId);
-        }
-
-        return $newEmployeeId;
+        return $this->employeeRepository->save($data);
     }
 
     /**
