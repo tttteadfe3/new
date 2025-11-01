@@ -43,8 +43,8 @@ $container->register(\App\Services\UserService::class, fn($c) => new \App\Servic
 $container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Services\ViewDataService($c->resolve(\App\Services\AuthService::class), $c->resolve(SessionManager::class), $c->resolve(\App\Repositories\MenuRepository::class), $c->resolve(\App\Services\ActivityLogger::class)));
 $container->register(\App\Services\WasteCollectionService::class, fn($c) => new \App\Services\WasteCollectionService($c->resolve(\App\Repositories\WasteCollectionRepository::class), $c->resolve(Database::class)));
 $container->register(\App\Services\NewLeaveService::class, fn($c) => new \App\Services\NewLeaveService($c->resolve(\App\Repositories\LeaveRepository::class), $c->resolve(\App\Repositories\EmployeeRepository::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Controllers\Api\LeaveRequestApiController::class, fn($c) => new \App\Controllers\Api\LeaveRequestApiController($c->resolve(\App\Services\NewLeaveService::class), $c->resolve(\App\Repositories\EmployeeRepository::class)));
-$container->register(\App\Controllers\Api\LeaveAdminApiController::class, fn($c) => new \App\Controllers\Api\LeaveAdminApiController($c->resolve(\App\Services\NewLeaveService::class), $c->resolve(\App\Repositories\EmployeeRepository::class)));
+$container->register(\App\Controllers\Api\LeaveRequestApiController::class, fn($c) => new \App\Controllers\Api\LeaveRequestApiController($c->resolve(\App\Services\NewLeaveService::class), $c->resolve(\App\Repositories\EmployeeRepository::class), $c->resolve(Request::class)));
+$container->register(\App\Controllers\Api\LeaveAdminApiController::class, fn($c) => new \App\Controllers\Api\LeaveAdminApiController($c->resolve(\App\Services\NewLeaveService::class), $c->resolve(\App\Repositories\EmployeeRepository::class), $c->resolve(Request::class)));
 // ... Web controllers registrations
 $sessionManager = $container->resolve(SessionManager::class);
 $sessionManager->start();
