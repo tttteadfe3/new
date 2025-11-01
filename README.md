@@ -20,6 +20,13 @@
 
 ### **[➡️ 신규 개발자 필독 가이드 (Developer Guide) 바로가기](./docs/DEVELOPER_GUIDE.md)**
 
+이 외에도 특정 주제에 대한 심층 문서는 아래에서 확인할 수 있습니다.
+
+-   **[📄 권한 및 데이터 접근 제어 명세서](./docs/PermissionAndDataAuthorization.md)**: 사용자의 기능 접근(Permission)과 데이터 조회 범위(Data Scope)가 어떻게 관리되는지에 대한 상세 기술 문서입니다.
+
+-   **[📝 주요 변경 사항 요약 (2025-10-31)](./docs/CHANGES_SUMMARY.md)**: 데이터 권한 로직 리팩토링 및 DI 오류 수정과 관련된 변경 파일 전체 요약입니다.
+
+
 이 가이드에는 다음 내용이 포함되어 있습니다:
 -   핵심 권한 및 데이터 접근 정책
 -   컴포넌트별 "Do & Don't" 규칙
