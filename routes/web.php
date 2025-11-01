@@ -44,6 +44,7 @@ $router->get('/holidays', [HolidayController::class, 'index'])->name('holidays.i
 
 // --- 휴가 관리 ---
 $router->get('/leaves', [LeaveController::class, 'index'])->name('leaves.index')->middleware('auth')->middleware('permission', 'leave.view_all');
+$router->get('/leaves/my', [LeaveController::class, 'myLeaves'])->name('leaves.my')->middleware('auth');
 $router->get('/leaves/approval', [LeaveController::class, 'approval'])->name('leaves.approval')->middleware('auth')->middleware('permission', 'leave.approve');
 $router->get('/leaves/granting', [LeaveController::class, 'granting'])->name('leaves.granting')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
 $router->get('/leaves/history', [LeaveController::class, 'history'])->name('leaves.history')->middleware('auth')->middleware('permission', 'leave.view_all');

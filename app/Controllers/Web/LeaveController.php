@@ -73,4 +73,13 @@ class LeaveController extends BaseController
         echo $this->render('pages/leaves/history', compact('employees'), 'layouts/app');
     }
 
+    /**
+     * 직원을 위한 '내 휴가' 페이지를 표시합니다.
+     */
+    public function myLeaves(): void
+    {
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/my-leaves.js');
+
+        echo $this->render('leave/my-leaves', [], 'layouts/app');
+    }
 }
