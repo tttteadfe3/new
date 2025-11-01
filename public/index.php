@@ -67,20 +67,18 @@ $container->register(\App\Services\EmployeeService::class, fn($c) => new \App\Se
     $c->resolve(\App\Repositories\PositionRepository::class),
     $c->resolve(\App\Repositories\LogRepository::class),
     $c->resolve(SessionManager::class),
-    $c->resolve(\App\Services\DataScopeService::class)
+    $c->resolve(\App\Services\DataScopeService::class),
+    $c->resolve(\App\Services\LeaveService::class) // LeaveService 주입 추가
 ));
 $container->register(\App\Services\HolidayService::class, fn($c) => new \App\Services\HolidayService(
     $c->resolve(\App\Repositories\HolidayRepository::class),
     $c->resolve(\App\Repositories\DepartmentRepository::class),
     $c->resolve(\App\Services\DataScopeService::class)
 ));
+// (신) LeaveService 의존성 재정의
 $container->register(\App\Services\LeaveService::class, fn($c) => new \App\Services\LeaveService(
     $c->resolve(\App\Repositories\LeaveRepository::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class),
-    $c->resolve(\App\Services\HolidayService::class),
-    $c->resolve(\App\Repositories\LogRepository::class),
-    $c->resolve(\App\Services\AuthService::class),
-    $c->resolve(\App\Repositories\DepartmentRepository::class),
     $c->resolve(\App\Services\DataScopeService::class)
 ));
 $container->register(\App\Services\LitteringService::class, fn($c) => new \App\Services\LitteringService($c->resolve(\App\Repositories\LitteringRepository::class), $c->resolve(Database::class)));

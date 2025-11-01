@@ -138,11 +138,11 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
 
     // (New) Admin Leave Management API routes
     $router->group('/admin/leave', function($router) {
-        $router->get('/requests', [LeaveAdminController::class, 'getRequests'])->name('api.admin.leave.requests')->middleware('permission', 'leave.approve');
-        $router->post('/requests/{id}/approve', [LeaveAdminController::class, 'approveRequest'])->name('api.admin.leave.approve')->middleware('permission', 'leave.approve');
-        $router->post('/requests/{id}/reject', [LeaveAdminController::class, 'rejectRequest'])->name('api.admin.leave.reject')->middleware('permission', 'leave.approve');
-        $router->post('/cancellations/{id}/approve', [LeaveAdminController::class, 'approveCancellation'])->name('api.admin.leave.cancel.approve')->middleware('permission', 'leave.approve');
-        $router->post('/adjust', [LeaveAdminController::class, 'adjustLeave'])->name('api.admin.leave.adjust')->middleware('permission', 'leave.manage');
-        $router->post('/grant-all', [LeaveAdminController::class, 'grantAnnualLeave'])->name('api.admin.leave.grant-all')->middleware('permission', 'leave.manage');
-    })->middleware('auth');
+        $router->get('/requests', [LeaveAdminController::class, 'getRequests'])->name('api.admin.leave.requests')->middleware('auth')->middleware('permission', 'leave.approve');
+        $router->post('/requests/{id}/approve', [LeaveAdminController::class, 'approveRequest'])->name('api.admin.leave.approve')->middleware('auth')->middleware('permission', 'leave.approve');
+        $router->post('/requests/{id}/reject', [LeaveAdminController::class, 'rejectRequest'])->name('api.admin.leave.reject')->middleware('auth')->middleware('permission', 'leave.approve');
+        $router->post('/cancellations/{id}/approve', [LeaveAdminController::class, 'approveCancellation'])->name('api.admin.leave.cancel.approve')->middleware('auth')->middleware('permission', 'leave.approve');
+        $router->post('/adjust', [LeaveAdminController::class, 'adjustLeave'])->name('api.admin.leave.adjust')->middleware('auth')->middleware('permission', 'leave.manage');
+        $router->post('/grant-all', [LeaveAdminController::class, 'grantAnnualLeave'])->name('api.admin.leave.grant-all')->middleware('auth')->middleware('permission', 'leave.manage');
+    });
 });
