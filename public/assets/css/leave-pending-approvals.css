@@ -1,0 +1,441 @@
+/**
+ * 연차 승인 대기 목록 페이지 스타일시트
+ */
+
+/* 승인 대기 목록 컨테이너 */
+.pending-approvals-container {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* 신청자 정보 스타일 */
+.applicant-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.applicant-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.applicant-details .name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.2rem;
+}
+
+.applicant-details .position {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* 휴가 기간 스타일 */
+.leave-period {
+    text-align: center;
+}
+
+.leave-period .start-date,
+.leave-period .end-date {
+    font-weight: 500;
+    color: #333;
+}
+
+.leave-period .duration {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.2rem;
+}
+
+/* 잔여 연차 표시 스타일 */
+.balance-display {
+    text-align: center;
+}
+
+.balance-amount {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 0.2rem;
+}
+
+.balance-amount.sufficient {
+    color: #28a745;
+}
+
+.balance-amount.warning {
+    color: #ffc107;
+}
+
+.balance-amount.insufficient {
+    color: #dc3545;
+}
+
+.balance-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.balance-after {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.2rem;
+}
+
+/* 액션 버튼 스타일 */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.action-btn {
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 60px;
+}
+
+.action-btn.approve {
+    background: #28a745;
+    color: white;
+}
+
+.action-btn.approve:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.action-btn.reject {
+    background: #dc3545;
+    color: white;
+}
+
+.action-btn.reject:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+/* 긴급 요청 스타일 */
+.request-row.request-urgent {
+    background-color: #fff3cd !important;
+    border-left: 4px solid #ffc107;
+}
+
+.request-row.request-normal:hover {
+    background-color: #f8f9fa;
+}
+
+/* 모달 헤더 색상 스타일 */
+.modal-header.bg-success {
+    background-color: #28a745 !important;
+}
+
+.modal-header.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+/* 잔여량 확인 섹션 스타일 */
+.balance-check-section {
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.balance-check-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.balance-check-row:last-child {
+    margin-bottom: 0;
+    font-weight: bold;
+    border-top: 1px solid #90caf9;
+    padding-top: 0.5rem;
+}
+
+.balance-check-label {
+    color: #1565c0;
+    font-weight: 500;
+}
+
+.balance-check-value {
+    color: #0d47a1;
+    font-weight: 600;
+}
+
+/* 일괄 처리 버튼 스타일 */
+.bulk-action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.bulk-action-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+}
+
+.bulk-action-btn:not(:disabled) {
+    opacity: 1;
+}
+
+.bulk-action-btn.approve {
+    background: #28a745;
+    color: white;
+}
+
+.bulk-action-btn.approve:hover:not(:disabled) {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.bulk-action-btn.reject {
+    background: #dc3545;
+    color: white;
+}
+
+.bulk-action-btn.reject:hover:not(:disabled) {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+/* 처리 완료 상태 스타일 */
+.processed-status {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 500;
+}
+
+.processed-status.승인 {
+    color: #28a745;
+}
+
+.processed-status.반려 {
+    color: #dc3545;
+}
+
+/* 탭 스타일 개선 */
+.nav-tabs .nav-link {
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+}
+
+.nav-tabs .nav-link.active {
+    background: none;
+    border-bottom-color: #007bff;
+    color: #007bff;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    color: #007bff;
+}
+
+/* 필터 컨트롤 스타일 */
+.filter-controls {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.filter-row {
+    display: flex;
+    gap: 1rem;
+    align-items: end;
+}
+
+.filter-group {
+    flex: 1;
+}
+
+.filter-group label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.3rem;
+    display: block;
+}
+
+/* 테이블 개선 */
+.table th {
+    background: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    white-space: nowrap;
+}
+
+.table td {
+    vertical-align: middle;
+    border-color: #e9ecef;
+}
+
+/* 체크박스 스타일 */
+.form-check-input:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .applicant-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .applicant-avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+    
+    .action-btn {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
+    }
+    
+    .balance-display {
+        font-size: 0.9rem;
+    }
+    
+    .filter-row {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .bulk-action-buttons {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 576px) {
+    .pending-approvals-container {
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+    
+    .applicant-details .name {
+        font-size: 0.9rem;
+    }
+    
+    .applicant-details .position {
+        font-size: 0.75rem;
+    }
+    
+    .leave-period {
+        font-size: 0.85rem;
+    }
+    
+    .balance-amount {
+        font-size: 1rem;
+    }
+}
+
+/* 로딩 및 에러 상태 */
+.table-loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.table-error {
+    text-align: center;
+    padding: 2rem;
+    color: #dc3545;
+}
+
+/* 애니메이션 */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.request-row {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* 툴팁 스타일 */
+.tooltip-inner {
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+/* 뱃지 스타일 개선 */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+/* 모달 폼 스타일 */
+.modal-body .form-group {
+    margin-bottom: 1rem;
+}
+
+.modal-body .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.modal-body .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* 라디오 버튼 스타일 */
+.form-check-input[type="radio"]:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.form-check-label {
+    font-weight: 500;
+    color: #495057;
+}

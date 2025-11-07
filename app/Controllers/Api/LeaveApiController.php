@@ -11,6 +11,7 @@ use App\Services\ViewDataService;
 use App\Services\ActivityLogger;
 use App\Repositories\EmployeeRepository;
 use App\Core\JsonResponse;
+use DateTime;
 
 class LeaveApiController extends BaseApiController
 {
@@ -39,123 +40,255 @@ class LeaveApiController extends BaseApiController
         $this->leaveRepository = $leaveRepository;
     }
 
+    // ===================================================================
+    // 연차 신청 관련 API (Leave Application APIs)
+    // ===================================================================
+
     /**
-     * 특정 연도의 현재 사용자 휴가 상태를 가져옵니다.
-     * GET /api/leaves에 해당합니다.
+     * 연차 신청
+     * 요구사항: 3.1, 3.3 - 0.5일 단위 반차 신청 허용, 잔여량 검증
+     * POST /api/leaves/apply
      */
-    public function index(): void
+    public function applyLeave(): void
     {
-        
-        $employeeId = $this->user()['employee_id'] ?? null;
+        $employeeId = $this->getCurrentEmployeeId();
         if (!$employeeId) {
             $this->apiError('연결된 직원 정보가 없습니다.', 'NO_EMPLOYEE_LINK', 400);
             return;
         }
-        
-        $year = (int)$this->request->input('year', date('Y'));
-        
+
+        $data = $this->getJsonInput();
+        if (!$this->validateRequired($data, ['start_date', 'end_date', 'day_type'])) {
+            return;
+        }
+
         try {
-            $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
-            $leaves = $this->leaveRepository->findByEmployeeId($employeeId, ['year' => $year]);
+            $startDate = new DateTime($data['start_date']);
+            $endDate = new DateTime($data['end_date']);
+            $dayType = $data['day_type']; // 전일 or 반차
+            $reason = $data['reason'] ?? null;
+            
+            // 백엔드에서 일수 자동 계산
+            $isHalfDay = ($dayType === '반차');
+            $days = $this->leaveService->calculateLeaveDays(
+                $data['start_date'],
+                $data['end_date'],
+                $employeeId,
+                $isHalfDay
+            );
+
+            $applicationId = $this->leaveService->applyLeave(
+                $employeeId,
+                $startDate,
+                $endDate,
+                $days,
+                $dayType,
+                $reason
+            );
 
             $this->apiSuccess([
-                'entitlement' => $entitlement,
-                'leaves' => $leaves
+                'application_id' => $applicationId
+            ], '연차 신청이 완료되었습니다.');
+
+        } catch (Exception $e) {
+            $this->apiError($e->getMessage(), 'APPLICATION_FAILED', 400);
+        }
+    }
+
+
+
+
+
+    /**
+     * 연차 잔여량 조회
+     * 요구사항: 5.1 - 실시간 잔여 연차 표시
+     * GET /api/leaves/balance
+     */
+    public function getBalance(): void
+    {
+        $employeeId = $this->getCurrentEmployeeId();
+        if (!$employeeId) {
+            $this->apiError('연결된 직원 정보가 없습니다.', 'NO_EMPLOYEE_LINK', 400);
+            return;
+        }
+
+        try {
+            $year = (int)$this->request->input('year', date('Y'));
+            $balance = $this->leaveService->getCurrentBalance($employeeId);
+            $stats = $this->leaveService->getEmployeeLeaveStatistics($employeeId, $year);
+            
+            // 부여된 연차 계산 (현재 잔여량 + 사용한 연차)
+            $grantedLeave = $balance + $stats['used_days_this_year'];
+            
+            // 승인 대기 중인 일수 계산
+            $pendingDays = $this->leaveRepository->getPendingApplicationDays($employeeId);
+
+            $this->apiSuccess([
+                'balance' => $balance,
+                'granted' => $grantedLeave,
+                'used' => $stats['used_days_this_year'],
+                'pending' => $pendingDays,
+                'current_balance' => $balance,
+                'used_this_year' => $stats['used_days_this_year'],
+                'pending_applications' => $stats['pending_requests']
             ]);
+
         } catch (Exception $e) {
-            $this->apiError('연차 정보를 불러오는 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
+            $this->apiError('연차 잔여량을 불러오는 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 
+
+
     /**
-     * 새 휴가 요청을 제출합니다.
-     * POST /api/leaves에 해당합니다.
+     * 연차 사용 이력 조회
+     * 요구사항: 5.4 - 사용 이력 조회
+     * GET /api/leaves/history
      */
-    public function store(): void
+    public function getHistory(): void
     {
-        
-        $employeeId = $this->user()['employee_id'] ?? null;
+        $employeeId = $this->getCurrentEmployeeId();
         if (!$employeeId) {
             $this->apiError('연결된 직원 정보가 없습니다.', 'NO_EMPLOYEE_LINK', 400);
             return;
         }
-        
-        $data = $this->getJsonInput();
-        if (empty($data)) {
-            $this->apiError('연차 신청 정보가 필요합니다.', 'INVALID_INPUT', 422);
-            return;
-        }
-        
-        try {
-            [$success, $message] = $this->leaveService->requestLeave($data, $employeeId);
 
-            if ($success) {
-                $this->apiSuccess(null, $message);
-            } else {
-                $this->apiError($message, 'OPERATION_FAILED');
-            }
+        try {
+            $year = (int)$this->request->input('year', date('Y'));
+            $status = $this->request->input('status');
+            
+            $history = $this->leaveRepository->getLeaveHistory($employeeId, $year, $status);
+
+            $this->apiSuccess($history);
+
         } catch (Exception $e) {
-            $this->apiError('신청 처리 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
+            $this->apiError('연차 이력을 불러오는 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
         }
     }
 
     /**
-     * 휴가 요청을 취소합니다.
-     * POST /api/leaves/{id}/cancel에 해당합니다.
+     * 개별 신청 ID 기반 취소
+     * POST /api/leaves/applications/{id}/cancel
      */
-    public function cancel(int $id): void
+    public function cancelApplicationById(string $id): void
     {
-        
-        $employeeId = $this->user()['employee_id'] ?? null;
+        $employeeId = $this->getCurrentEmployeeId();
         if (!$employeeId) {
             $this->apiError('연결된 직원 정보가 없습니다.', 'NO_EMPLOYEE_LINK', 400);
             return;
         }
-        
-        $data = $this->getJsonInput();
-        $reason = $data['reason'] ?? '';
-        
-        try {
-            [$success, $message] = $this->leaveService->cancelRequest($id, $employeeId, $reason);
 
-            if ($success) {
-                $this->apiSuccess(null, $message);
-            } else {
-                $this->apiError($message, 'OPERATION_FAILED');
-            }
+        try {
+            $this->leaveService->cancelApplication((int)$id, $employeeId);
+            $this->apiSuccess(null, '연차 신청이 취소되었습니다.');
+
         } catch (Exception $e) {
-            $this->apiError('취소 처리 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
+            $this->apiError($e->getMessage(), 'CANCEL_FAILED', 400);
         }
     }
+
+    /**
+     * 개별 신청 ID 기반 취소 신청
+     * POST /api/leaves/applications/{id}/request-cancel
+     */
+    public function requestCancellationById(string $id): void
+    {
+        $employeeId = $this->getCurrentEmployeeId();
+        if (!$employeeId) {
+            $this->apiError('연결된 직원 정보가 없습니다.', 'NO_EMPLOYEE_LINK', 400);
+            return;
+        }
+
+        $data = $this->getJsonInput();
+        if (!$this->validateRequired($data, ['reason'])) {
+            return;
+        }
+
+        try {
+            $cancellationId = $this->leaveService->requestCancellation(
+                (int)$id,
+                $employeeId,
+                $data['reason']
+            );
+
+            $this->apiSuccess([
+                'cancellation_id' => $cancellationId
+            ], '연차 취소 신청이 완료되었습니다.');
+
+        } catch (Exception $e) {
+            $this->apiError($e->getMessage(), 'CANCELLATION_REQUEST_FAILED', 400);
+        }
+    }
+
+    // ===================================================================
+    // 승인 관련 API (Approval APIs)
+    // ===================================================================
+
+
+
+
+
+    // ===================================================================
+    // 조회 관련 API (Query APIs)
+    // ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+    // ===================================================================
+    // 관리자 API (Administrative APIs)
+    // ===================================================================
+
+
+
+
+
+
+
+    // ===================================================================
+    // 유틸리티 API (Utility APIs)
+    // ===================================================================
 
     /**
      * 주어진 기간 동안의 휴가 일수를 계산합니다.
-     * POST /api/leaves/calculate-days에 해당합니다.
+     * 요구사항: 9.1 - 잔여량 검증
+     * POST /api/leaves/calculate-days
      */
     public function calculateDays(): void
     {
-        
-        $employeeId = $this->user()['employee_id'] ?? null;
+        $employeeId = $this->getCurrentEmployeeId();
         if (!$employeeId) {
             $this->apiError('연결된 직원 정보가 없습니다.', 'NO_EMPLOYEE_LINK', 400);
             return;
         }
-        
+
         $data = $this->getJsonInput();
-        $startDate = $data['start_date'] ?? null;
-        $endDate = $data['end_date'] ?? null;
-        
-        if (empty($startDate) || empty($endDate)) {
-            $this->apiError('시작일과 종료일이 필요합니다.', 'VALIDATION_ERROR', 422);
+        if (!$this->validateRequired($data, ['start_date', 'end_date'])) {
             return;
         }
-        
+
         try {
-            // isHalfDay는 false로 고정 (반차는 0.5일로 클라이언트에서 계산)
-            $days = $this->leaveService->calculateLeaveDays($startDate, $endDate, $employeeId, false);
+            $isHalfDay = $data['is_half_day'] ?? false;
+            $days = $this->leaveService->calculateLeaveDays(
+                $data['start_date'],
+                $data['end_date'],
+                $employeeId,
+                $isHalfDay
+            );
+
             $this->apiSuccess(['days' => $days]);
+
         } catch (Exception $e) {
-            $this->apiError('일수 계산 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
+            $this->apiError($e->getMessage(), 'CALCULATION_FAILED', 400);
         }
     }
+
+
 }

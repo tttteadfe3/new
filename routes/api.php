@@ -40,25 +40,64 @@ $router->group('/api', function($router) {
     $router->put('/holidays/{id}', [HolidayApiController::class, 'update'])->name('api.holidays.update')->middleware('auth')->middleware('permission', 'holiday.manage');
     $router->delete('/holidays/{id}', [HolidayApiController::class, 'destroy'])->name('api.holidays.destroy')->middleware('auth')->middleware('permission', 'holiday.manage');
 
-    // Leave API routes (User)
-    $router->get('/leaves', [LeaveApiController::class, 'index'])->name('api.leaves.index')->middleware('auth')->middleware('permission', 'leave.view_own');
-    $router->post('/leaves', [LeaveApiController::class, 'store'])->name('api.leaves.store')->middleware('auth')->middleware('permission', 'leave.request');
-    $router->post('/leaves/{id}/cancel', [LeaveApiController::class, 'cancel'])->name('api.leaves.cancel')->middleware('auth')->middleware('permission', 'leave.request');
-    $router->post('/leaves/calculate-days', [LeaveApiController::class, 'calculateDays'])->name('api.leaves.calculate-days')->middleware('auth')->middleware('permission', 'leave.request');
+    // 연차 신청 관련 API (Leave Application APIs)
+    $router->post('/leaves/apply', [LeaveApiController::class, 'applyLeave'])->name('api.leaves.apply')->middleware('auth');
+    $router->post('/leaves/calculate-days', [LeaveApiController::class, 'calculateDays'])->name('api.leaves.calculate-days')->middleware('auth');
+    
+    // 연차 현황 및 잔여량 조회 API
+    $router->get('/leaves/balance', [LeaveApiController::class, 'getBalance'])->name('api.leaves.balance')->middleware('auth');
+
+    $router->get('/leaves/history', [LeaveApiController::class, 'getHistory'])->name('api.leaves.history')->middleware('auth');
+    
+    // 연차 신청 취소 관련 API (개별 신청 ID 기반)
+    $router->post('/leaves/applications/{id}/cancel', [LeaveApiController::class, 'cancelApplicationById'])->name('api.leaves.applications.cancel')->middleware('auth');
+    $router->post('/leaves/applications/{id}/request-cancel', [LeaveApiController::class, 'requestCancellationById'])->name('api.leaves.applications.request-cancel')->middleware('auth');
+
+
+
+
+
+
+
+
+
+    
+    // 휴일 정보 조회 API (Holiday API for calendar)
+    $router->get('/holidays', [HolidayApiController::class, 'getHolidays'])->name('api.holidays.get')->middleware('auth');
 
     // Leave Admin API routes
     $router->get('/leaves_admin/requests', [LeaveAdminApiController::class, 'listRequests'])->name('api.leaves_admin.requests')->middleware('auth')->middleware('permission', 'leave.view_all');
+    $router->get('/leaves_admin/requests/{id}', [LeaveAdminApiController::class, 'getRequest'])->name('api.leaves_admin.request')->middleware('auth')->middleware('permission', 'leave.view_all');
     $router->post('/leaves_admin/requests/{id}/approve', [LeaveAdminApiController::class, 'approveRequest'])->name('api.leaves_admin.approve')->middleware('auth')->middleware('permission', 'leave.approve');
     $router->post('/leaves_admin/requests/{id}/reject', [LeaveAdminApiController::class, 'rejectRequest'])->name('api.leaves_admin.reject')->middleware('auth')->middleware('permission', 'leave.approve');
+    $router->get('/leaves_admin/cancellations/{id}', [LeaveAdminApiController::class, 'getCancellation'])->name('api.leaves_admin.cancellation')->middleware('auth')->middleware('permission', 'leave.view_all');
     $router->post('/leaves_admin/cancellations/{id}/approve', [LeaveAdminApiController::class, 'approveCancellation'])->name('api.leaves_admin.cancellations.approve')->middleware('auth')->middleware('permission', 'leave.approve');
     $router->post('/leaves_admin/cancellations/{id}/reject', [LeaveAdminApiController::class, 'rejectCancellation'])->name('api.leaves_admin.cancellations.reject')->middleware('auth')->middleware('permission', 'leave.approve');
-    $router->get('/leaves_admin/entitlements', [LeaveAdminApiController::class, 'listEntitlements'])->name('api.leaves_admin.entitlements')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
-    $router->post('/leaves_admin/grant-all', [LeaveAdminApiController::class, 'grantForAll'])->name('api.leaves_admin.grant-all')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
-    $router->get('/leaves_admin/history', [LeaveAdminApiController::class, 'history'])->name('api.leaves_admin.history')->middleware('auth')->middleware('permission', 'leave.view_all');
-    $router->get('/leaves_admin/history/{employeeId}', [LeaveAdminApiController::class, 'getHistoryForEmployee'])->name('api.leaves_admin.history.employee')->middleware('auth')->middleware('permission', 'leave.view_all');
-    $router->post('/leaves_admin/adjust', [LeaveAdminApiController::class, 'manualAdjustment'])->name('api.leaves_admin.adjust')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
-    $router->post('/leaves_admin/calculate', [LeaveAdminApiController::class, 'calculateLeaves'])->name('api.leaves_admin.calculate')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
-    $router->post('/leaves_admin/save-entitlements', [LeaveAdminApiController::class, 'saveEntitlements'])->name('api.leaves_admin.save-entitlements')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+
+    
+    // 관리자 대시보드 API
+    $router->get('/leaves_admin/dashboard', [LeaveAdminApiController::class, 'getDashboardData'])->name('api.leaves_admin.dashboard')->middleware('auth')->middleware('permission', 'leave.view_all');
+    $router->get('/leaves_admin/pending-requests', [LeaveAdminApiController::class, 'getPendingRequests'])->name('api.leaves_admin.pending-requests')->middleware('auth')->middleware('permission', 'leave.approve');
+    $router->get('/leaves_admin/pending-cancellations', [LeaveAdminApiController::class, 'getPendingCancellations'])->name('api.leaves_admin.pending-cancellations')->middleware('auth')->middleware('permission', 'leave.approve');
+    
+    // 연차 부여/조정/소멸 API
+    $router->get('/leaves_admin/export', [LeaveAdminApiController::class, 'exportData'])->name('api.leaves_admin.export')->middleware('auth')->middleware('permission', 'leave.view_all');
+    $router->post('/leaves_admin/adjust-leave', [LeaveAdminApiController::class, 'adjustLeave'])->name('api.leaves_admin.adjust-leave')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+    $router->post('/leaves_admin/expire-leave', [LeaveAdminApiController::class, 'expireLeave'])->name('api.leaves_admin.expire-leave')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+    
+    // 추가 관리 API
+    $router->get('/leaves_admin/processed-requests', [LeaveAdminApiController::class, 'getProcessedRequests'])->name('api.leaves_admin.processed-requests')->middleware('auth')->middleware('permission', 'leave.view_all');
+    $router->get('/leaves_admin/team-calendar', [LeaveAdminApiController::class, 'getTeamCalendar'])->name('api.leaves_admin.team-calendar')->middleware('auth')->middleware('permission', 'leave.view_all');
+    $router->get('/leaves_admin/team-status', [LeaveAdminApiController::class, 'getTeamStatus'])->name('api.leaves_admin.team-status')->middleware('auth')->middleware('permission', 'leave.view_all');
+    $router->get('/leaves_admin/monthly-stats', [LeaveAdminApiController::class, 'getMonthlyStats'])->name('api.leaves_admin.monthly-stats')->middleware('auth')->middleware('permission', 'leave.view_all');
+    $router->get('/leaves_admin/day-detail', [LeaveAdminApiController::class, 'getDayDetail'])->name('api.leaves_admin.day-detail')->middleware('auth')->middleware('permission', 'leave.view_all');
+    $router->post('/leaves_admin/calculate-grant-targets', [LeaveAdminApiController::class, 'calculateGrantTargets'])->name('api.leaves_admin.calculate-grant-targets')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+    $router->post('/leaves_admin/execute-grant', [LeaveAdminApiController::class, 'executeGrant'])->name('api.leaves_admin.execute-grant')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+    $router->get('/leaves_admin/adjustment-history', [LeaveAdminApiController::class, 'getAdjustmentHistory'])->name('api.leaves_admin.adjustment-history')->middleware('auth')->middleware('permission', 'leave.view_all');
+    $router->post('/leaves_admin/search-expire-targets', [LeaveAdminApiController::class, 'searchExpireTargets'])->name('api.leaves_admin.search-expire-targets')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+    $router->post('/leaves_admin/execute-expire', [LeaveAdminApiController::class, 'executeExpire'])->name('api.leaves_admin.execute-expire')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+    $router->post('/leaves_admin/bulk-approve', [LeaveAdminApiController::class, 'bulkApprove'])->name('api.leaves_admin.bulk-approve')->middleware('auth')->middleware('permission', 'leave.approve');
+
 
     // Littering API routes
     $router->get('/littering', [LitteringApiController::class, 'index'])->name('api.littering.index')->middleware('auth')->middleware('permission', 'littering.view');

@@ -9,6 +9,9 @@ const Toast = {
             case 'error':
                 className = "bg-danger";
                 break;
+            case 'warning':
+                className = "bg-warning";
+                break;
             default:
                 className = "bg-info";
                 break;
@@ -29,6 +32,9 @@ const Toast = {
     },
     error: function(text) {
         this.show(text, 'error');
+    },
+    warning: function(text) {
+        this.show(text, 'warning');
     },
     info: function(text) {
         this.show(text, 'info');

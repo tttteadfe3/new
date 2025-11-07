@@ -5,24 +5,13 @@ namespace App\Core;
 class SessionManager {
     public function start() {
         if (session_status() === PHP_SESSION_NONE) {
-            ini_set('session.use_only_cookies', 1);
-            ini_set('session.cookie_httponly', 1);
-            ini_set('session.cookie_secure', isset($_SERVER['HTTPS']));
-            ini_set('session.cookie_samesite', 'Lax');
             session_start();
         }
     }
 
     public function regenerate() {
-        if (!$this->has('user')) {
-            return;
-        }
-
-        if (!$this->has('last_regen')) {
-            $this->set('last_regen', time());
-        } else if (time() - $this->get('last_regen') > 1800) {
+        if (session_status() === PHP_SESSION_ACTIVE) {
             session_regenerate_id(true);
-            $this->set('last_regen', time());
         }
     }
 
@@ -64,5 +53,9 @@ class SessionManager {
             $this->remove('flash_' . $key);
         }
         return $message;
+    }
+
+    public function save() {
+        // PHP가 자동으로 세션을 저장하므로 특별한 처리 불필요
     }
 }

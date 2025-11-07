@@ -36,6 +36,28 @@ class DepartmentRepository {
     }
 
     /**
+     * 배열 형태로 모든 부서를 조회합니다.
+     * @return array
+     */
+    public function getAllAsArray(): array {
+        $queryParts = [
+            'sql' => "SELECT d.id, d.name, d.parent_id FROM hr_departments d",
+            'params' => [],
+            'where' => []
+        ];
+
+        $queryParts = $this->dataScopeService->applyDepartmentScope($queryParts, 'd');
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
+
+        $queryParts['sql'] .= " ORDER BY d.name";
+
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
+    }
+
+    /**
      * @param int $id
      * @return Department|null
      */

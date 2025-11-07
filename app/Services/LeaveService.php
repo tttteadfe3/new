@@ -4,179 +4,455 @@ namespace App\Services;
 
 use App\Repositories\LeaveRepository;
 use App\Repositories\EmployeeRepository;
-use App\Repositories\HolidayRepository;
+use App\Repositories\DepartmentRepository;
 use App\Services\HolidayService;
-use App\Repositories\LogRepository;
+use App\Services\DataScopeService;
 use DateTime;
 use DatePeriod;
 use DateInterval;
 use Exception;
 
 /**
- * 연차 및 휴가 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
- * 연차 일수 계산, 부여, 신청, 승인/반려/취소 등의 작업을 담당합니다.
+ * 로그 기반 연차 관리 시스템의 일반 사용자 비즈니스 로직을 처리하는 서비스 클래스입니다.
  * 
- * 향상된 연차 관리 비즈니스 로직 포함:
- * - 고급 연차 계산 알고리즘
- * - 포괄적인 유효성 검사 규칙
- * - 승인을 위한 워크플로우 관리
- * - 직원 및 휴일 시스템과의 통합
+ * 주요 기능:
+ * - 연차 계산 엔진 (중도입사자 월차, 비례연차, 근속연차)
+ * - 로그 기반 연차 변동 관리 (부여, 사용, 조정, 소멸)
+ * - 잔여 연차 실시간 계산
+ * - 연차 신청 및 취소
+ * - 본인 연차 통계 조회
  */
 class LeaveService {
     private LeaveRepository $leaveRepository;
     private EmployeeRepository $employeeRepository;
+    private DepartmentRepository $departmentRepository;
     private HolidayService $holidayService;
-    private LogRepository $logRepository;
-    private AuthService $authService;
-    private \App\Repositories\DepartmentRepository $departmentRepository;
     private DataScopeService $dataScopeService;
 
     public function __construct(
         LeaveRepository $leaveRepository,
         EmployeeRepository $employeeRepository,
+        DepartmentRepository $departmentRepository,
         HolidayService $holidayService,
-        LogRepository $logRepository,
-        AuthService $authService,
-        \App\Repositories\DepartmentRepository $departmentRepository,
         DataScopeService $dataScopeService
     ) {
         $this->leaveRepository = $leaveRepository;
         $this->employeeRepository = $employeeRepository;
-        $this->holidayService = $holidayService;
-        $this->logRepository = $logRepository;
-        $this->authService = $authService;
         $this->departmentRepository = $departmentRepository;
+        $this->holidayService = $holidayService;
         $this->dataScopeService = $dataScopeService;
     }
 
+    // ===================================================================
+    // 연차 계산 엔진 (Calculation Engine)
+    // ===================================================================
+
     /**
-     * 직원의 근속 연수에 따라 연차를 계산하고 데이터베이스에 부여(저장)합니다.
-     *
-     * @param int $employeeId 연차를 부여할 직원의 ID
-     * @param int $year 부여 기준 연도
-     * @return bool 연차 부여 성공 여부
-     * @throws Exception 직원 정보가 없거나 입사일이 설정되지 않은 경우
+     * 입사 첫 해 월차 계산 (일괄 부여)
+     * 입사일 기준으로 그해 입사일 다음달부터 12월까지 월차 부여
+     * 예: 2024.08.27 입사 → 2024.9.27, 10.27, 11.27, 12.27 = 4개월
+     * 
+     * @param DateTime $hireDate 입사일
+     * @param int $year 계산 연도
+     * @return float 월차 일수
      */
-    public function grantCalculatedAnnualLeave(int $employeeId, int $year): bool {
-        $employee = $this->employeeRepository->findById($employeeId);
-        if (!$employee || !$employee['hire_date']) {
-            throw new Exception("직원 정보 또는 입사일이 존재하지 않습니다.");
+    public function calculateFirstYearMonthlyLeave(DateTime $hireDate, int $year): float {
+        $hireMonth = (int)$hireDate->format('m');
+        
+        // 입사월 다음달부터 12월까지 계산
+        $startMonth = $hireMonth + 1;
+        
+        if ($startMonth > 12) {
+            return 0; // 12월 입사는 그해 월차 없음
         }
-
-        $leaveData = $this->calculateAnnualLeaveDays($employee['hire_date'], $year);
-        $total_days = $leaveData['total_days'];
-
-        return $this->leaveRepository->createOrUpdateEntitlement([
-            'employee_id' => $employeeId,
-            'year' => $year,
-            'total_days' => $total_days
-        ]);
+        
+        // 다음달부터 12월까지의 개월 수
+        $monthlyDays = 12 - $startMonth + 1;
+        
+        return (float)max(0, $monthlyDays);
     }
 
     /**
-     * 직원의 입사일과 기준 연도를 바탕으로 발생 연차 일수를 계산하여 상세 내역을 반환합니다.
-     *
-     * @param string $hireDate 직원의 입사일 (Y-m-d 형식)
-     * @param int $calculationYear 계산 기준 연도
-     * @return array 계산된 연차 상세 정보 ('base_days', 'long_service_days', 'total_days')
+     * 비례 연차 계산 (2년차용)
+     * 공식: (입사년도 재직일수 ÷ 365일 또는 366일) × 15일
+     * 
+     * @param DateTime $hireDate 입사일
+     * @param int $targetYear 계산 대상 연도 (2년차)
+     * @return float 비례연차 일수
      */
-    public function calculateAnnualLeaveDays(string $hireDate, int $calculationYear): array {
-        $hire = new DateTime($hireDate);
-        $startOfYear = new DateTime("$calculationYear-01-01");
-        $endOfYear = new DateTime("$calculationYear-12-31");
-
-        $serviceYears = $startOfYear->diff($hire)->y;
-
-        $base_days = 0.0;
-        $long_service_days = 0.0;
-
-        // 1. 1년 미만 입사자 (입사 당해년도)
-        if ($hire >= $startOfYear && $hire <= $endOfYear) {
-            $startMonth = (int)$hire->format('m');
-            if ((int)$hire->format('d') > 1) {
-                $startMonth++;
-            }
-            $base_days = (float)max(0, 12 - $startMonth + 1);
+    public function calculateProportionalAnnualLeave(DateTime $hireDate, int $targetYear): float {
+        $hireYear = (int)$hireDate->format('Y');
+        $previousYear = $targetYear - 1;
+        
+        // 입사년도와 전년도가 다르면 0
+        if ($hireYear !== $previousYear) {
+            return 0.0;
         }
-        // 2. 1년차 (작년에 입사하여 올해 1년이 되는 경우 - 회계연도 기준)
-        else if ($serviceYears == 0) {
-            $endOfPreviousYear = new DateTime(($calculationYear - 1) . "-12-31");
-            $daysServedLastYear = $endOfPreviousYear->diff($hire)->days + 1;
-            $proRatedLeave = 15 * ($daysServedLastYear / 365);
-            $base_days = round($proRatedLeave, 1);
-        }
-        // 3. 2년차 이상
-        else {
-            $base_days = 15.0;
-            $calculated_long_service_days = floor(($serviceYears - 1) / 2);
-            $long_service_days = min($calculated_long_service_days, 10.0);
-        }
-
-        $total_days = $base_days + $long_service_days;
-
-        return [
-            'base_days' => $base_days,
-            'long_service_days' => $long_service_days,
-            'total_days' => $total_days
-        ];
+        
+        // 입사년도의 총 일수 (윤년 고려)
+        $totalDays = (date('L', mktime(0, 0, 0, 1, 1, $hireYear))) ? 366 : 365;
+        
+        // 입사일부터 연말까지의 일수 계산
+        $yearEnd = new DateTime("{$hireYear}-12-31");
+        $workDays = $yearEnd->diff($hireDate)->days + 1;
+        
+        // 비례 연차 계산
+        $proportionalDays = round(($workDays / $totalDays) * 15, 1);
+        
+        return $proportionalDays;
     }
 
     /**
-     * 직원이 휴가(연차, 반차 등) 사용을 신청합니다.
-     * 신청 기간의 유효성을 검사하고, 실제 사용 일수를 계산하며, 잔여 연차를 확인한 후 신청을 등록합니다.
-     *
-     * @param array $data 휴가 신청 데이터 ('start_date', 'end_date', 'leave_type' 등)
-     * @param int $employeeId 신청하는 직원의 ID
-     * @return array [성공 여부(bool), 메시지(string)]
+     * 2년차 월차 계산 (일괄 부여)
+     * 2년차에는 1월부터 입사월 전까지 월차 부여
+     * 예: 8월 27일 입사 → 2025.1.27 ~ 7.27 = 7개월 → 7일 일괄 부여
+     * 
+     * @param DateTime $hireDate 입사일
+     * @param int $targetYear 계산 대상 연도 (2년차)
+     * @return float 2년차 월차 일수
      */
-    public function requestLeave(array $data, int $employeeId): array {
-        try {
-            if (empty($data['start_date']) || empty($data['end_date'])) {
-                return [false, "휴가 기간을 올바르게 입력해주세요."];
-            }
-            $startDate = new DateTime($data['start_date']);
-            $endDate = new DateTime($data['end_date']);
-            if ($startDate > $endDate) {
-                return [false, "시작일이 종료일보다 늦을 수 없습니다."];
-            }
+    public function calculateSecondYearMonthlyLeave(DateTime $hireDate, int $targetYear): float {
+        $hireMonth = (int)$hireDate->format('m');
+        
+        // 1월부터 입사월 전까지의 개월 수
+        $monthsInYear = $hireMonth - 1;
+        
+        return (float)max(0, $monthsInYear);
+    }
 
-            // 중복 휴가 확인
-            if ($this->leaveRepository->findOverlappingLeaves($employeeId, $data['start_date'], $data['end_date'])) {
-                return [false, "신청하신 기간에 이미 다른 연차 신청 내역이 존재합니다."];
-            }
-
-            $isHalfDay = ($data['leave_type'] ?? '') === '반차';
-            $calculatedDays = $this->calculateLeaveDays($data['start_date'], $data['end_date'], $employeeId, $isHalfDay);
-
-            $daysToUse = $calculatedDays;
-            $data['leave_type'] = $isHalfDay ? '반차' : ($data['leave_type'] ?? '연차');
-
-            if ($daysToUse <= 0) {
-                 return [false, "신청하신 기간은 연차 사용일수에 포함되지 않습니다. (주말 또는 휴일)"];
-            }
-
-            if (in_array($data['leave_type'], ['연차', '반차'])) {
-                $year = (int)$startDate->format('Y');
-                $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
-                $remaining_days = ($entitlement['total_days'] ?? 0) - ($entitlement['used_days'] ?? 0);
-
-                if ($remaining_days < $daysToUse) {
-                    return [false, "잔여 연차가 부족합니다. (신청: {$daysToUse}일, 잔여: {$remaining_days}일)"];
+    /**
+     * 잔여 연차/월차 실시간 계산
+     * 로그 기반으로 현재 잔여량을 계산
+     * 
+     * @param int $employeeId 직원 ID
+     * @param string $leaveType 연차 구분 (annual: 연차, monthly: 월차, all: 전체)
+     * @return float 현재 잔여량
+     */
+    public function calculateCurrentBalance(int $employeeId, string $leaveType = 'all'): float {
+        $logs = $this->leaveRepository->getBalanceLogs($employeeId, $leaveType);
+        
+        $balance = 0.0;
+        foreach ($logs as $log) {
+            // transaction_type이 있으면 더 정확한 계산 가능 (한글 코드값)
+            if (!empty($log['transaction_type'])) {
+                switch ($log['transaction_type']) {
+                    case '초기부여':
+                    case '연차부여':
+                    case '근속연차부여':
+                    case '월차부여':
+                    case '연차추가':
+                    case '사용취소':
+                        $balance += $log['amount'];
+                        break;
+                    case '연차사용':
+                    case '연차소멸':
+                    case '연차차감':
+                        $balance -= abs($log['amount']);
+                        break;
+                    case '연차조정':
+                        // amount의 부호로 판단
+                        $balance += $log['amount'];
+                        break;
+                }
+            } else {
+                // 기존 log_type 기반 계산 (한글 코드값)
+                switch ($log['log_type']) {
+                    case '부여':
+                    case '취소':
+                        $balance += $log['amount'];
+                        break;
+                    case '조정':
+                        // amount의 부호로 판단
+                        $balance += $log['amount'];
+                        break;
+                    case '사용':
+                    case '소멸':
+                        $balance -= abs($log['amount']);
+                        break;
                 }
             }
+        }
+        
+        return round($balance, 2);
+    }
 
-            $data['employee_id'] = $employeeId;
-            $data['days_count'] = $daysToUse;
+    /**
+     * 연차 잔여량 계산
+     * 
+     * @param int $employeeId 직원 ID
+     * @return float 연차 잔여량
+     */
+    public function calculateAnnualBalance(int $employeeId): float {
+        return $this->calculateCurrentBalance($employeeId, 'annual');
+    }
 
-            $leaveId = $this->leaveRepository->create($data);
+    /**
+     * 월차 잔여량 계산
+     * 
+     * @param int $employeeId 직원 ID
+     * @return float 월차 잔여량
+     */
+    public function calculateMonthlyBalance(int $employeeId): float {
+        return $this->calculateCurrentBalance($employeeId, 'monthly');
+    }
 
-            return $leaveId ? [true, "연차 신청이 완료되었습니다."] : [false, "신청 처리 중 오류가 발생했습니다."];
+    // ===================================================================
+    // 로그 관리 기능 (Log Management)
+    // ===================================================================
 
-        } catch (Exception $e) {
-            error_log("Leave request error: " . $e->getMessage());
-            return [false, "서버 오류가 발생했습니다: " . $e->getMessage()];
+    /**
+     * 연차/월차 변동 로그 생성
+     * 모든 연차/월차 변동사항을 추적 가능한 로그로 기록
+     * 
+     * @param int $employeeId 직원 ID
+     * @param string $leaveType 연차 구분 (연차, 월차)
+     * @param string $transactionType 거래 유형 (초기부여, 연차부여, 연차사용, 사용취소, 연차추가, 연차차감, 연차소멸)
+     * @param float $amount 변동량 (양수/음수)
+     * @param string|null $reason 사유
+     * @param int|null $leaveRequestId 연차 신청 ID (신청 관련 시)
+     * @param int $actorEmployeeId 처리자 직원 ID
+     * @param int|null $grantYear 연차 부여연도 (부여 시 필수)
+     * @return void
+     * @throws Exception 로그 생성 실패 시
+     */
+    public function createLog(int $employeeId, string $leaveType, string $transactionType, float $amount, ?string $reason = null, ?int $leaveRequestId = null, int $actorEmployeeId = 1, ?int $grantYear = null): void {
+        // Calculate balance after this transaction
+        $currentBalance = $this->calculateCurrentBalance($employeeId, 'all');
+        $balanceAfter = $currentBalance;
+        
+        // Adjust balance based on transaction type
+        switch ($transactionType) {
+            case '초기부여':
+            case '연차부여':
+            case '근속연차부여':
+            case '월차부여':
+            case '연차추가':
+            case '사용취소':
+                $balanceAfter = $currentBalance + $amount;
+                break;
+            case '연차사용':
+            case '연차소멸':
+            case '연차차감':
+                $balanceAfter = $currentBalance - abs($amount);
+                break;
+        }
+        
+        $logData = [
+            'employee_id' => $employeeId,
+            'leave_type' => $leaveType,
+            'grant_year' => $grantYear,
+            'transaction_type' => $transactionType,
+            'amount' => $amount,
+            'balance_after' => $balanceAfter,
+            'reason' => $reason,
+            'reference_id' => $leaveRequestId,
+            'created_by' => $actorEmployeeId
+        ];
+
+        if (!$this->leaveRepository->createLog($logData)) {
+            throw new Exception("연차 로그 생성에 실패했습니다.");
         }
     }
+
+    // ===================================================================
+    // 연차 신청 관리 기능 (Application Management)
+    // ===================================================================
+
+    /**
+     * 연차 신청 (전일/반차)
+     * 
+     * @param int $employeeId 신청자 ID
+     * @param DateTime $startDate 시작일
+     * @param DateTime $endDate 종료일
+     * @param float $days 신청 일수
+     * @param string $type 신청 타입 (전일/반차)
+     * @param string|null $reason 신청 사유
+     * @return int 신청 ID
+     * @throws Exception 신청 실패 시
+     */
+    public function applyLeave(int $employeeId, DateTime $startDate, DateTime $endDate, float $days, string $type = '전일', ?string $reason = null): int {
+        // 잔여량 검증
+        if (!$this->validateLeaveBalance($employeeId, $days)) {
+            throw new Exception("잔여 연차가 부족합니다.");
+        }
+
+        // 중복 신청 방지
+        if ($this->leaveRepository->findOverlappingApplications($employeeId, $startDate->format('Y-m-d'), $endDate->format('Y-m-d'))) {
+            throw new Exception("신청하신 기간에 이미 다른 연차 신청 내역이 존재합니다.");
+        }
+
+        // 반차 검증
+        if ($type === '반차' && $startDate->format('Y-m-d') !== $endDate->format('Y-m-d')) {
+            throw new Exception("반차는 하루만 선택 가능합니다.");
+        }
+
+        $applicationData = [
+            'employee_id' => $employeeId,
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
+            'days' => $days,
+            'leave_type' => '연차',
+            'day_type' => $type,
+            'reason' => $reason,
+            'status' => '대기'
+        ];
+
+        return (int)$this->leaveRepository->saveApplication($applicationData);
+    }
+
+    /**
+     * 신청 승인/반려
+     * 
+     * @param int $applicationId 신청 ID
+     * @param bool $approved 승인 여부
+     * @param int $approverId 승인자 ID
+     * @param string|null $reason 승인/반려 사유
+     * @return void
+     * @throws Exception 처리 실패 시
+     */
+    public function approveApplication(int $applicationId, bool $approved, int $approverId, ?string $reason = null): void {
+        $application = $this->leaveRepository->getApplicationById($applicationId);
+        if (!$application || $application['status'] !== '대기') {
+            throw new Exception("승인할 수 없는 신청 건입니다.");
+        }
+
+        $status = $approved ? '승인' : '반려';
+        
+        // 신청 상태 업데이트
+        $this->leaveRepository->updateApplicationStatus($applicationId, $status, $approverId, $reason);
+
+        // 승인된 경우 사용 로그 생성
+        if ($approved) {
+            $this->createLog(
+                $application['employee_id'],
+                $application['leave_type'] === '연차' ? '연차' : '월차',
+                '연차사용',
+                $application['days'],
+                "연차 사용 승인 (신청 ID: {$applicationId})",
+                $applicationId,
+                $approverId
+            );
+        }
+    }
+
+    /**
+     * 신청 취소 (승인 전)
+     * 
+     * @param int $applicationId 신청 ID
+     * @param int $employeeId 신청자 ID
+     * @return void
+     * @throws Exception 취소 실패 시
+     */
+    public function cancelApplication(int $applicationId, int $employeeId): void {
+        $application = $this->leaveRepository->getApplicationById($applicationId);
+        if (!$application || $application['employee_id'] != $employeeId) {
+            throw new Exception("권한이 없습니다.");
+        }
+
+        if ($application['status'] !== '대기') {
+            throw new Exception("대기 중인 신청만 취소할 수 있습니다.");
+        }
+
+        $this->leaveRepository->updateApplicationStatus($applicationId, '취소', null, "신청자 취소");
+    }
+
+    /**
+     * 승인된 연차 취소 신청
+     * 
+     * @param int $applicationId 원본 신청 ID
+     * @param int $employeeId 신청자 ID
+     * @param string $reason 취소 사유
+     * @return int 취소 신청 ID
+     * @throws Exception 취소 신청 실패 시
+     */
+    public function requestCancellation(int $applicationId, int $employeeId, string $reason): int {
+        $application = $this->leaveRepository->getApplicationById($applicationId);
+        if (!$application || $application['employee_id'] != $employeeId) {
+            throw new Exception("권한이 없습니다.");
+        }
+
+        if ($application['status'] !== '승인') {
+            throw new Exception("승인된 연차만 취소 신청할 수 있습니다.");
+        }
+
+        if (empty($reason)) {
+            throw new Exception("취소 사유는 필수입니다.");
+        }
+
+        $cancellationData = [
+            'application_id' => $applicationId,
+            'employee_id' => $employeeId,
+            'reason' => $reason,
+            'status' => '대기'
+        ];
+
+        return (int)$this->leaveRepository->saveCancellationRequest($cancellationData);
+    }
+
+    /**
+     * 취소 신청 승인/반려
+     * 
+     * @param int $cancellationId 취소 신청 ID
+     * @param bool $approved 승인 여부
+     * @param int $approverId 승인자 ID
+     * @param string|null $reason 승인/반려 사유
+     * @return void
+     * @throws Exception 처리 실패 시
+     */
+    public function approveCancellation(int $cancellationId, bool $approved, int $approverId, ?string $reason = null): void {
+        $cancellation = $this->leaveRepository->getCancellationById($cancellationId);
+        if (!$cancellation || $cancellation['status'] !== '대기') {
+            throw new Exception("처리할 수 없는 취소 신청입니다.");
+        }
+
+        $application = $this->leaveRepository->getApplicationById($cancellation['application_id']);
+        if (!$application) {
+            throw new Exception("원본 신청을 찾을 수 없습니다.");
+        }
+
+        $status = $approved ? '승인' : '반려';
+        
+        // 취소 신청 상태 업데이트
+        $this->leaveRepository->updateCancellationStatus($cancellationId, $status, $approverId, $reason);
+
+        if ($approved) {
+            // 원본 신청을 취소 상태로 변경
+            $this->leaveRepository->updateApplicationStatus($cancellation['application_id'], '취소', $approverId, "취소 승인");
+            
+            // 사용 취소 로그 생성 (잔여량 복원)
+            $this->createLog(
+                $application['employee_id'],
+                $application['leave_type'] === '연차' ? '연차' : '월차',
+                '사용취소',
+                $application['days'],
+                "연차 사용 취소 승인 (취소 신청 ID: {$cancellationId})",
+                $cancellationId,
+                $approverId
+            );
+        }
+    }
+
+    /**
+     * 잔여량 검증
+     * 
+     * @param int $employeeId 직원 ID
+     * @param float $requestDays 신청 일수
+     * @return bool 신청 가능 여부
+     */
+    public function validateLeaveBalance(int $employeeId, float $requestDays): bool {
+        $currentBalance = $this->calculateCurrentBalance($employeeId, 'all');
+        
+        // 승인 대기 중인 신청 일수도 고려
+        $pendingDays = $this->leaveRepository->getPendingApplicationDays($employeeId);
+        
+        $availableBalance = $currentBalance - $pendingDays;
+        
+        return $availableBalance >= $requestDays;
+    }
+
+    // ===================================================================
+    // 유틸리티 메서드 (Utility Methods)
+    // ===================================================================
 
     /**
      * 특정 기간 동안의 실제 휴가 사용 일수를 계산합니다.
@@ -232,369 +508,67 @@ class LeaveService {
         return (float)$leaveDaysCount;
     }
 
-    /**
-     * 관리자가 직원의 휴가 신청을 승인합니다.
-     * 신청 상태를 'approved'로 변경하고, 사용자의 사용 연차 일수를 업데이트합니다.
-     *
-     * @param int $leaveId 승인할 휴가 신청의 ID
-     * @param int $adminUserId 승인 작업을 수행한 관리자의 ID
-     * @return array [성공 여부(bool), 메시지(string)]
-     */
-    public function approveRequest(int $leaveId, int $adminUserId): array {
-        $leave = $this->leaveRepository->findById($leaveId);
-        if (!$leave || $leave['status'] !== '대기') {
-            return [false, "승인할 수 없는 신청 건입니다."];
-        }
-
-        $year = (int)(new DateTime($leave['start_date']))->format('Y');
-
-        $updatedStatus = $this->leaveRepository->updateStatus($leaveId, '승인', $adminUserId, null);
-        if ($updatedStatus) {
-            $updatedDays = $this->leaveRepository->updateUsedDays($leave['employee_id'], $year, $leave['days_count']);
-            if ($updatedDays) {
-                return [true, "연차 신청이 승인되었습니다."];
-            }
-        }
-        return [false, "처리 중 오류가 발생했습니다."];
-    }
+    // ===================================================================
+    // 조회 및 통계 메서드 (Query and Statistics Methods) - 본인 조회용
+    // ===================================================================
 
     /**
-     * 관리자가 직원의 휴가 신청을 반려합니다.
-     *
-     * @param int $leaveId 반려할 휴가 신청의 ID
-     * @param int $adminUserId 반려 작업을 수행한 관리자의 ID
-     * @param string $reason 반려 사유
-     * @return array [성공 여부(bool), 메시지(string)]
-     */
-    public function rejectRequest(int $leaveId, int $adminUserId, string $reason): array {
-        $leave = $this->leaveRepository->findById($leaveId);
-        if (!$leave || $leave['status'] !== '대기') {
-            return [false, "반려할 수 없는 신청 건입니다."];
-        }
-
-        if ($this->leaveRepository->updateStatus($leaveId, '반려', $adminUserId, $reason)) {
-            return [true, "연차 신청을 반려 처리했습니다."];
-        }
-        return [false, "처리 중 오류가 발생했습니다."];
-    }
-
-    /**
-     * 직원이 자신의 휴가 신청을 취소합니다.
-     * 'pending' 상태는 바로 취소됩니다.
-     * 'approved' 상태는 'cancellation_requested' 상태로 변경되고 관리자 승인을 대기합니다.
-     *
-     * @param int $leaveId 취소할 휴가 신청의 ID
-     * @param int $employeeId 신청을 취소하는 직원의 ID
-     * @param string|null $reason 승인된 휴가 취소 시 사유
-     * @return array [성공 여부(bool), 메시지(string)]
-     */
-    public function cancelRequest(int $leaveId, int $employeeId, ?string $reason = null): array {
-        $leave = $this->leaveRepository->findById($leaveId);
-        if (!$leave || $leave['employee_id'] != $employeeId) {
-            return [false, "권한이 없습니다."];
-        }
-
-        switch ($leave['status']) {
-            case '대기':
-                if ($this->leaveRepository->updateStatus($leaveId, '취소', null, "사용자 취소")) {
-                    return [true, "신청이 취소되었습니다."];
-                }
-                break;
-            
-            case '승인':
-                if (empty($reason)) {
-                    return [false, "승인된 연차를 취소하려면 사유를 반드시 입력해야 합니다."];
-                }
-                if ($this->leaveRepository->updateStatus($leaveId, '취소요청', null, $reason)) {
-                    return [true, "연차 취소 요청이 완료되었습니다. 관리자 승인 후 최종 처리됩니다."];
-                }
-                break;
-
-            default:
-                return [false, "이미 처리되었거나 취소된 신청은 변경할 수 없습니다."];
-        }
-        
-        return [false, "처리 중 오류가 발생했습니다."];
-    }
-
-    /**
-     * 모든 활성 직원에 대해 연차를 일괄적으로 계산하고 부여합니다.
-     *
-     * @param int $year 연차를 부여할 기준 연도
-     * @return array [성공 여부(bool), 결과 메시지(string)]
-     */
-    public function grantAnnualLeaveForAllEmployees(int $year): array
-    {
-        $employees = $this->employeeRepository->findAllActive();
-        $total_count = count($employees);
-        $success_count = 0;
-        $failed_count = 0;
-        $errors = [];
-
-        foreach ($employees as $employee) {
-            try {
-                $this->grantCalculatedAnnualLeave($employee['id'], $year);
-                $success_count++;
-            } catch (Exception $e) {
-                $failed_count++;
-                $errors[] = "{$employee['name']}: " . $e->getMessage();
-            }
-        }
-
-        $message = "총 {$total_count}명 중 {$success_count}명에게 연차 부여를 완료했습니다.";
-        if ($failed_count > 0) {
-            $message .= "\n{$failed_count}명 실패. 오류: " . implode(', ', $errors);
-            return [false, $message];
-        }
-
-        return [true, $message];
-    }
-
-    /**
-     * 관리자가 특정 직원의 부여된 연차를 수동으로 조정하고, 조정 내역을 로그로 기록합니다.
-     *
-     * @param int $employeeId 조정할 직원의 ID
-     * @param int $year 조정할 연도
-     * @param float $adjustedDays 조정할 일수 (양수: 추가, 음수: 차감)
-     * @param string $reason 조정 사유
-     * @param int $adminId 조정을 수행한 관리자의 ID
-     * @return bool 조정 성공 여부
-     * @throws Exception 조정 사유가 없거나 조정 일수가 0일 경우
-     */
-    public function adjustLeaveEntitlement(int $employeeId, int $year, float $adjustedDays, string $reason, int $adminId): bool
-    {
-        if (empty($reason)) {
-            throw new Exception("조정 사유는 필수입니다.");
-        }
-        if ($adjustedDays == 0) {
-            throw new Exception("조정할 일수가 0일 수 없습니다.");
-        }
-
-        $success = $this->leaveRepository->adjustEntitlement($employeeId, $year, $adjustedDays);
-        if ($success) {
-            $this->leaveRepository->logAdjustment($employeeId, $year, $adjustedDays, $reason, $adminId);
-        }
-        return $success;
-    }
-
-    /**
-     * 관리자가 직원의 연차 취소 요청을 승인합니다.
-     *
-     * @param int $leaveId 취소 요청을 승인할 휴가 ID
-     * @param int $adminUserId 승인 작업을 수행한 관리자 ID
-     * @return array [성공 여부(bool), 메시지(string)]
-     */
-    public function approveCancellation(int $leaveId, int $adminUserId): array {
-        $leave = $this->leaveRepository->findById($leaveId);
-        if (!$leave || $leave['status'] !== '취소요청') {
-            return [false, "승인할 수 없는 취소 요청입니다."];
-        }
-
-        $year = (int)(new DateTime($leave['start_date']))->format('Y');
-        
-        // 1. 연차 상태를 'cancelled'로 변경
-        $reason = "관리자 승인에 의한 취소";
-        if ($this->leaveRepository->updateStatus($leaveId, '취소', $adminUserId, $reason)) {
-            // 2. 사용했던 연차 일수 복원
-            $this->leaveRepository->updateUsedDays($leave['employee_id'], $year, -$leave['days_count']);
-            return [true, "연차 취소 요청이 승인되었습니다."];
-        }
-        
-        return [false, "처리 중 오류가 발생했습니다."];
-    }
-    
-    /**
-     * 관리자가 직원의 연차 취소 요청을 반려합니다.
-     *
-     * @param int $leaveId 취소 요청을 반려할 휴가 ID
-     * @param int $adminUserId 반려 작업을 수행한 관리자 ID
-     * @param string $reason 반려 사유
-     * @return array [성공 여부(bool), 메시지(string)]
-     */
-    public function rejectCancellation(int $leaveId, int $adminUserId, string $reason): array {
-        $leave = $this->leaveRepository->findById($leaveId);
-        if (!$leave || $leave['status'] !== '취소요청') {
-            return [false, "반려할 수 없는 취소 요청입니다."];
-        }
-
-        // 상태를 다시 'approved'로 변경하고 반려 사유를 기록
-        if ($this->leaveRepository->updateStatus($leaveId, '승인', $adminUserId, $reason)) {
-            return [true, "연차 취소 요청을 반려 처리했습니다."];
-        }
-        
-        return [false, "처리 중 오류가 발생했습니다."];
-    }
-
-    /**
-     * 직원의 종합적인 휴가 통계를 가져오는 향상된 메소드
+     * 직원의 종합적인 연차 통계 조회 (본인 조회용)
      * 
      * @param int $employeeId 직원 ID
      * @param int $year 대상 연도
-     * @return array 종합 휴가 통계
+     * @return array 종합 연차 통계
      */
-    public function getEmployeeLeaveStatistics(int $employeeId, int $year): array
-    {
-        $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
-        $leaveHistory = $this->leaveRepository->findByEmployeeId($employeeId, ['year' => $year]);
+    public function getEmployeeLeaveStatistics(int $employeeId, int $year): array {
+        $currentBalance = $this->calculateCurrentBalance($employeeId, 'all');
+        $applications = $this->leaveRepository->getEmployeeApplications($employeeId, ['year' => $year]);
         
         $stats = [
-            'total_days' => $entitlement['total_days'] ?? 0,
-            'used_days' => $entitlement['used_days'] ?? 0,
-            'remaining_days' => ($entitlement['total_days'] ?? 0) - ($entitlement['used_days'] ?? 0),
+            'current_balance' => $currentBalance,
             'pending_requests' => 0,
             'approved_requests' => 0,
             'rejected_requests' => 0,
             'cancelled_requests' => 0,
-            'leave_history' => []
+            'used_days_this_year' => 0,
+            'application_history' => []
         ];
         
-        foreach ($leaveHistory as $leave) {
-            switch ($leave['status']) {
+        foreach ($applications as $application) {
+            switch ($application['status']) {
+                case 'PENDING':
                 case '대기':
                     $stats['pending_requests']++;
                     break;
+                case 'APPROVED':
                 case '승인':
                     $stats['approved_requests']++;
+                    $stats['used_days_this_year'] += $application['days'];
                     break;
+                case 'REJECTED':
                 case '반려':
                     $stats['rejected_requests']++;
                     break;
+                case 'CANCELLED':
                 case '취소':
                     $stats['cancelled_requests']++;
                     break;
             }
             
-            $stats['leave_history'][] = [
-                'id' => $leave['id'],
-                'start_date' => $leave['start_date'],
-                'end_date' => $leave['end_date'],
-                'days_count' => $leave['days_count'],
-                'leave_type' => $leave['leave_type'],
-                'status' => $leave['status'],
-                'reason' => $leave['reason'],
-                'created_at' => $leave['created_at']
-            ];
+            $stats['application_history'][] = $application;
         }
         
         return $stats;
     }
 
     /**
-     * 포괄적인 비즈니스 규칙으로 휴가 요청을 검증하는 향상된 메소드
-     * 
-     * @param array $data 휴가 요청 데이터
-     * @param int $employeeId 직원 ID
-     * @return array [유효성 여부, 오류 메시지 배열]
-     */
-    public function validateLeaveRequest(array $data, int $employeeId): array
-    {
-        $errors = [];
-        
-        // 기본 유효성 검사
-        if (empty($data['start_date']) || empty($data['end_date'])) {
-            $errors[] = "시작일과 종료일을 모두 입력해주세요.";
-        }
-        
-        if (empty($data['leave_type'])) {
-            $errors[] = "휴가 종류를 선택해주세요.";
-        }
-        
-        if (!empty($data['start_date']) && !empty($data['end_date'])) {
-            $startDate = new DateTime($data['start_date']);
-            $endDate = new DateTime($data['end_date']);
-            
-            // 날짜 유효성 검사
-            if ($startDate > $endDate) {
-                $errors[] = "시작일이 종료일보다 늦을 수 없습니다.";
-            }
-            
-            // 과거 날짜 유효성 검사
-            $today = new DateTime();
-            if ($startDate < $today->setTime(0, 0, 0)) {
-                $errors[] = "과거 날짜로는 연차를 신청할 수 없습니다.";
-            }
-            
-            // 미래 제한 유효성 검사 (예: 1년 이상 미리 요청할 수 없음)
-            $maxFutureDate = (new DateTime())->add(new DateInterval('P1Y'));
-            if ($startDate > $maxFutureDate) {
-                $errors[] = "1년 이후의 날짜로는 연차를 신청할 수 없습니다.";
-            }
-            
-            // 중복 휴가 확인
-            if ($this->leaveRepository->findOverlappingLeaves($employeeId, $data['start_date'], $data['end_date'])) {
-                $errors[] = "신청하신 기간에 이미 다른 연차 신청 내역이 존재합니다.";
-            }
-            
-            // 반차 유효성 검사
-            if (($data['leave_type'] ?? '') === '반차' && $data['start_date'] !== $data['end_date']) {
-                $errors[] = "반차는 하루만 선택 가능합니다.";
-            }
-        }
-        
-        // 직원 유효성 검사
-        $employee = $this->employeeRepository->findById($employeeId);
-        if (!$employee) {
-            $errors[] = "직원 정보를 찾을 수 없습니다.";
-        } elseif ($employee['status'] !== '활성') {
-            $errors[] = "비활성 상태의 직원은 연차를 신청할 수 없습니다.";
-        }
-        
-        return [empty($errors), $errors];
-    }
-
-    /**
-     * 부서 수준의 가시성을 적용하여 필터가 있는 휴가 기록을 가져옵니다.
-     *
-     * @param array $filters
-     * @return array
-     */
-    public function getLeaveHistory(array $filters = []): array
-    {
-        return $this->leaveRepository->findAll($filters);
-    }
-
-    /**
-     * 부서 수준의 가시성이 적용된 보류 중인 휴가 요청을 가져옵니다.
-     * @return array
-     */
-    public function getPendingLeaveRequests(): array
-    {
-        return $this->leaveRepository->findByStatus('대기');
-    }
-
-    /**
-     * 부서 수준의 가시성이 적용된 모든 연차 부여 내역을 가져옵니다.
-     * @param array $filters
-     * @return array
-     */
-    public function getAllEntitlements(array $filters = []): array
-    {
-        return $this->leaveRepository->getAllEntitlements($filters);
-    }
-
-    /**
-     * 예측을 포함하여 휴가 잔액을 계산하는 향상된 메소드
+     * 현재 연차 잔여량 조회 (본인 조회용)
      * 
      * @param int $employeeId 직원 ID
-     * @param int $year 대상 연도
-     * @return array 예측이 포함된 휴가 잔액
+     * @param int|null $year 대상 연도 (null이면 현재 연도) - 현재는 사용하지 않음
+     * @return float 현재 잔여량
      */
-    public function calculateLeaveBalance(int $employeeId, int $year): array
-    {
-        $entitlement = $this->leaveRepository->findEntitlement($employeeId, $year);
-        $pendingLeaves = $this->leaveRepository->findByStatus('대기', ['employee_id' => $employeeId, 'year' => $year]);
-        
-        $totalDays = $entitlement['total_days'] ?? 0;
-        $usedDays = $entitlement['used_days'] ?? 0;
-        $pendingDays = array_sum(array_column($pendingLeaves, 'days_count'));
-        
-        return [
-            'total_days' => $totalDays,
-            'used_days' => $usedDays,
-            'pending_days' => $pendingDays,
-            'available_days' => $totalDays - $usedDays - $pendingDays,
-            'remaining_days' => $totalDays - $usedDays,
-            'projected_remaining' => $totalDays - $usedDays - $pendingDays
-        ];
+    public function getCurrentBalance(int $employeeId, int $year = null): float {
+        return $this->calculateCurrentBalance($employeeId, 'all');
     }
+
 }

@@ -27,8 +27,8 @@
                     <div class="mb-3">
                         <label for="leave_type" class="form-label">휴가 종류</label>
                         <select class="form-select" id="leave_type" name="leave_type">
-                            <option value="annual">연차 (하루)</option>
-                            <option value="half_day">연차 (반차)</option>
+                            <option value="연차">연차 (하루)</option>
+                            <option value="반차">연차 (반차)</option>
                             <option value="sick">병가</option>
                             <option value="special">특별휴가</option>
                             <option value="other">기타</option>

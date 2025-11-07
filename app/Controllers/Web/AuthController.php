@@ -51,9 +51,13 @@ class AuthController extends BaseController
      */
     public function kakaoCallback()
     {
+        error_log("AuthController::kakaoCallback - Starting callback process");
+        
         $code = $this->request->input('code');
         $state = $this->request->input('state');
         $sessionState = $this->authService->getSessionManager()->get('oauth2state');
+
+        // OAuth state 검증
 
         if (!$code || !$state || !$sessionState || $state !== $sessionState) {
             // CSRF 공격이 감지되었거나 상태가 일치하지 않습니다.
@@ -74,10 +78,9 @@ class AuthController extends BaseController
             $this->authService->login($user);
 
             // 사용자 상태에 따라 리디렉션합니다.
-            if ($user['status'] === 'pending') {
+            if ($user['status'] === 'pending' || $user['status'] === '대기') {
                 $this->redirect('/status'); // 계정이 승인 대기 중임을 알리는 페이지
             }
-
             $this->redirect('/dashboard');
         } catch (\Exception $e) {
             // 오류 처리 - 토큰 또는 사용자 프로필 가져오기 실패

@@ -50,11 +50,11 @@ API 요청에 대한 퍼미션 권한 확인은 다음 순서로 이루어집니
 
 퍼미션 권한 시스템은 아래 테이블들을 통해 관리됩니다.
 
-*   `users`: 사용자 계정 정보.
-*   `roles`: 역할 정보 (예: 관리자, 팀장, 일반직원).
-*   `permissions`: 개별 권한 정보 (예: `employee.view` - 직원 조회, `employee.create` - 직원 생성).
-*   `role_user` (Pivot): 사용자와 역할을 연결하는 테이블 (Many-to-Many).
-*   `permission_role` (Pivot): 역할과 권한을 연결하는 테이블 (Many-to-Many).
+*   `sys_users`: 사용자 계정 정보.
+*   `sys_roles`: 역할 정보 (예: 관리자, 팀장, 일반직원).
+*   `sys_permissions`: 개별 권한 정보 (예: `employee.view` - 직원 조회, `employee.create` - 직원 생성).
+*   `sys_user_roles` (Pivot): 사용자와 역할을 연결하는 테이블 (Many-to-Many).
+*   `sys_role_permissions` (Pivot): 역할과 권한을 연결하는 테이블 (Many-to-Many).
 
 ## 3. 데이터 권한 (Data Authorization)
 
@@ -107,8 +107,8 @@ API 요청에 대한 퍼미션 권한 확인은 다음 순서로 이루어집니
 
 데이터 권한 시스템은 주로 아래 테이블들을 통해 관리됩니다.
 
-*   `employees`: 직원 정보 (특히 `department_id` 컬럼이 중요).
-*   `departments`: 조직의 부서 정보 (부모-자식 관계 포함).
+*   `hr_employees`: 직원 정보 (특히 `department_id` 컬럼이 중요).
+*   `hr_departments`: 조직의 부서 정보 (부모-자식 관계 포함).
 *   `hr_department_managers`: 특정 직원이 특정 부서의 데이터를 조회/관리할 수 있는 권한을 직접 부여하는 테이블.
 *   `hr_department_view_permissions`: 특정 부서가 다른 부서의 데이터를 조회할 수 있는 권한을 부여하는 테이블.
 

@@ -82,7 +82,11 @@ abstract class BaseController
      */
     protected function redirect(string $url): void
     {
-        header("Location: {$url}");
+        // Don't close session before redirect - let PHP handle it naturally
+        // This prevents session ID changes between requests
+        
+        // 리디렉션 헤더 설정
+        header("Location: {$url}", true, 302);
         exit;
     }
 

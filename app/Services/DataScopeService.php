@@ -29,12 +29,18 @@ class DataScopeService
     public function getVisibleDepartmentIdsForCurrentUser(): ?array
     {
         $user = $this->sessionManager->get('user');
+        error_log("DataScopeService: user from session: " . json_encode($user));
+        
         if (!$user) {
+            error_log("DataScopeService: No user in session, returning empty array");
             return []; // 로그인하지 않은 경우 빈 배열 반환
         }
 
         $permissions = $user['permissions'] ?? [];
+        error_log("DataScopeService: user permissions: " . json_encode($permissions));
+        
         if (in_array('employee.manage', $permissions)) {
+            error_log("DataScopeService: User has employee.manage permission, returning null (full access)");
             return null; // null은 '전체 조회'를 의미
         }
 

@@ -64,8 +64,10 @@ class AuthService {
             throw new Exception("차단된 계정은 로그인할 수 없습니다.");
         }
 
+        // 세션에 사용자 정보 저장 및 권한 새로고침
         $this->_refreshSessionPermissions($user);
 
+        // 로그인 로그 기록
         $this->logRepository->insert([
             ':user_id' => $user['id'],
             ':user_name' => $user['nickname'],
@@ -171,6 +173,8 @@ class AuthService {
      * @return void
      */
     private function _refreshSessionPermissions(array $user): void {
+        // 세션에 사용자 정보와 권한을 저장합니다
+
         // 직원 정보 로드
         if (!empty($user['employee_id'])) {
             $user['employee'] = $this->employeeRepository->findById($user['employee_id']);

@@ -77,10 +77,8 @@ $container->register(\App\Services\HolidayService::class, fn($c) => new \App\Ser
 $container->register(\App\Services\LeaveService::class, fn($c) => new \App\Services\LeaveService(
     $c->resolve(\App\Repositories\LeaveRepository::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class),
-    $c->resolve(\App\Services\HolidayService::class),
-    $c->resolve(\App\Repositories\LogRepository::class),
-    $c->resolve(\App\Services\AuthService::class),
     $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(\App\Services\HolidayService::class),
     $c->resolve(\App\Services\DataScopeService::class)
 ));
 $container->register(\App\Services\LitteringService::class, fn($c) => new \App\Services\LitteringService($c->resolve(\App\Repositories\LitteringRepository::class), $c->resolve(Database::class)));
@@ -160,11 +158,19 @@ $container->register(\App\Controllers\Api\EmployeeApiController::class, fn($c) =
     $c->resolve(\App\Repositories\PositionRepository::class),
     $c->resolve(\App\Services\DataScopeService::class)
 ));
+$container->register(\App\Controllers\Api\LeaveController::class, fn($c) => new \App\Controllers\Api\LeaveController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(JsonResponse::class),
+    $c->resolve(\App\Services\LeaveService::class)
+));
 
-// Start and regenerate session
+// Start session (temporarily disable regeneration for debugging)
 $sessionManager = $container->resolve(SessionManager::class);
 $sessionManager->start();
-$sessionManager->regenerate();
+// $sessionManager->regenerate(); // Temporarily disabled for debugging
 
 // Load configuration
 require_once __DIR__ . '/../config/config.php';

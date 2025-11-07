@@ -40,8 +40,9 @@
 
 -   `app/Controllers/Api/EmployeeApiController.php`
 -   `app/Controllers/Api/OrganizationApiController.php`
+-   `app/Controllers/Web/AdminController.php`
     -   **[수정]** 수동으로 부서 목록을 필터링하던 로직을 제거하고, 리팩토링된 리포지토리의 `getAll()` 메서드를 직접 호출하도록 코드를 단순화했습니다.
-    -   **[수정]** 코드 리뷰에서 발견된 사소한 오타(`$this.` -> `$this->`)를 수정했습니다.
+    -   **[수정]** 컨트롤러에서 `BaseController`를 상속받아 공통 기능을 재사용하도록 구조를 개선했습니다.
 
 ### 4. Core & Configuration
 

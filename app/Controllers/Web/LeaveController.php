@@ -29,48 +29,125 @@ class LeaveController extends BaseController
         $this->employeeService = $employeeService;
     }
 
+    // ===================================================================
+    // 직원용 페이지 (Employee Pages)
+    // ===================================================================
+
+
+
     /**
-     * 관리자를 위한 휴가 관리 인덱스 페이지를 표시합니다.
-     * 일반 사용자는 이제 대시보드로 이동합니다.
+     * 연차 관리 메인 페이지
+     * - 연차 현황 대시보드
+     * - 연차 신청 폼 및 유효성 검증
+     * - 연차 신청 내역 관리 (조회, 취소)
+     * 요구사항: 5.1, 5.4 - 연차 신청 폼, 실시간 잔여 연차 표시, 사용 이력 조회
      */
-    public function index(): void
+    public function apply(): void
     {
-        // 이 페이지는 관리자를 위한 페이지이며, 일반 사용자는 대시보드에서 이 정보를 확인할 수 있습니다.
-        // 관리자의 기본값으로 승인 페이지로 리디렉션할 수 있습니다.
-        $this->redirect('/leaves/approval');
+        $user = $this->user();
+        $employeeId = $user['employee_id'] ?? null;
+        
+        if (!$employeeId) {
+            $this->redirect('/dashboard?error=no_employee_link');
+            return;
+        }
+
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/chart.js/chart.umd.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-apply.js');
+        
+        echo $this->render('pages/leaves/apply', [], 'layouts/app');
     }
 
     /**
-     * 관리자를 위한 휴가 승인 페이지를 표시합니다
+     * 팀 캘린더 조회
+     * 요구사항: 8.1, 8.3, 8.4 - 승인된 연차 일정 표시, 부서별 데이터 접근, 중복 휴가자 표시
      */
-    public function approval(): void
+    public function teamCalendar(): void
     {
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-approval.js');
+        $user = $this->user();
+        $employeeId = $user['employee_id'] ?? null;
+        
+        if (!$employeeId) {
+            $this->redirect('/dashboard?error=no_employee_link');
+            return;
+        }
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/chart.js/chart.umd.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/fullcalendar/index.global.min.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-team-calendar.js');
+        
+        echo $this->render('pages/leaves/team-calendar', [], 'layouts/app');
+    }
 
-        echo $this->render('pages/leaves/approval', [], 'layouts/app');
+    // ===================================================================
+    // 관리자용 페이지 (Administrator Pages)
+    // ===================================================================
+
+    /**
+     * 관리자 대시보드
+     * 요구사항: 6.1, 6.2, 6.4 - 팀별 연차 소진율 시각화, 미사용자 현황, 승인 대기 목록
+     */
+    public function adminDashboard(): void
+    {
+        $user = $this->user();
+        $employeeId = $user['employee_id'] ?? null;
+        
+        if (!$employeeId) {
+            $this->redirect('/dashboard?error=no_employee_link');
+            return;
+        }
+
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/chart.js/chart.umd.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-admin-dashboard.js');
+        
+        echo $this->render('pages/leaves/admin-dashboard', [], 'layouts/app');
     }
 
     /**
-     * 관리자를 위한 휴가 부여 페이지를 표시합니다
+     * 관리자 연차 관리 페이지
+     * 요구사항: 7.1, 7.2, 7.3, 7.4 - 연차 부여, 조정, 소멸 관리 기능
      */
-    public function granting(): void
+    public function adminManagement(): void
     {
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-granting.js');
+        $user = $this->user();
+        $employeeId = $user['employee_id'] ?? null;
+        
+        if (!$employeeId) {
+            $this->redirect('/dashboard?error=no_employee_link');
+            return;
+        }
 
-        echo $this->render('pages/leaves/granting', [], 'layouts/app');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-admin-management.js');
+        
+        echo $this->render('pages/leaves/admin-management', [], 'layouts/app');
     }
+
+
 
     /**
-     * 관리자를 위한 휴가 내역을 표시합니다
+     * 승인 대기 목록
+     * 요구사항: 6.4 - 승인 대기 목록 관리 인터페이스
      */
-    public function history(): void
+    public function pendingApprovals(): void
     {
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-history-admin.js');
+        $user = $this->user();
+        $employeeId = $user['employee_id'] ?? null;
+        
+        if (!$employeeId) {
+            $this->redirect('/dashboard?error=no_employee_link');
+            return;
+        }
 
-        // 서비스 계층을 통해 드롭다운에 대한 모든 직원을 가져옵니다
-        $employees = $this->employeeService->getActiveEmployees();
-
-        echo $this->render('pages/leaves/history', compact('employees'), 'layouts/app');
+        // CSS 파일 추가
+        View::getInstance()->addCss(BASE_ASSETS_URL . '/assets/css/leave-dashboard.css');
+        View::getInstance()->addCss(BASE_ASSETS_URL . '/assets/css/leave-pending-approvals.css');
+        
+        // JavaScript 파일 추가
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/leave-pending-approvals.js');
+        
+        echo $this->render('pages/leaves/pending-approvals', [], 'layouts/app');
     }
+
 
 }

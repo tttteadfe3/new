@@ -14,7 +14,7 @@ class AuthMiddleware extends BaseMiddleware
     }
 
     public function handle($value = null): void
-    {
+    {        
         if (! $this->authService->isLoggedIn()) {
             if ($this->isApiRequest()) {
                 $this->jsonResponse(['error' => 'Unauthorized'], 401);
@@ -23,6 +23,7 @@ class AuthMiddleware extends BaseMiddleware
             }
             exit();
         }
+        
         $this->authService->checkAccess();
     }
 }

@@ -24,12 +24,29 @@ if (ENVIRONMENT === 'development') {
 }
 date_default_timezone_set('Asia/Seoul');
 
-
 // 2. 경로 및 URL 상수 (.env 파일 사용 권장)
+define('ROOT_PATH', dirname(__DIR__));
+
+// .env 파일 로드
+$envFile = ROOT_PATH . '/.env';
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) {
+            continue;
+        }
+        list($name, $value) = explode('=', $line, 2);
+        $name = trim($name);
+        $value = trim($value);
+        if (!array_key_exists($name, $_ENV)) {
+            $_ENV[$name] = $value;
+        }
+    }
+}
+
 // .env 파일에 APP_URL=http://yourdomain.com/your-app-root 형식으로 설정하는 것을 권장합니다.
 define('BASE_URL', rtrim($_ENV['APP_URL'] ?? 'http://localhost', '/'));
 define('BASE_ASSETS_URL', BASE_URL);
-define('ROOT_PATH', dirname(__DIR__));
 
 // 3. 데이터베이스 설정 (.env 파일 사용)
 define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');

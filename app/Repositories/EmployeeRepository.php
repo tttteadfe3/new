@@ -46,7 +46,7 @@ class EmployeeRepository {
             $params[':department_id'] = $departmentId;
         }
 
-        $sql .= " ORDER BY p.level ASC, e.hire_date ASC";
+        $sql .= " ORDER BY e.hire_date ASC";
         return $this->db->query($sql, $params);
     }
 
@@ -129,9 +129,9 @@ class EmployeeRepository {
         }
 
         if (isset($filters['status']) && $filters['status']) {
-            if ($filters['status'] === '재직중') {
+            if ($filters['status'] === '재직중' || $filters['status'] === 'active') {
                 $queryParts['where'][] = "e.termination_date IS NULL";
-            } elseif ($filters['status'] === '퇴사') {
+            } elseif ($filters['status'] === '퇴사' || $filters['status'] === 'inactive') {
                 $queryParts['where'][] = "e.termination_date IS NOT NULL";
             }
         }
@@ -158,6 +158,38 @@ class EmployeeRepository {
                 ORDER BY p.level ASC, e.hire_date ASC";
 
         return $this->db->query($sql);
+    }
+
+    /**
+     * 활성 직원 목록을 조회합니다. (부서 필터링 지원)
+     * @param int|null $departmentId 부서 ID (null이면 모든 부서)
+     * @return array
+     */
+    public function getActiveEmployees(?int $departmentId = null): array {
+        $queryParts = [
+            'sql' => "SELECT e.*, d.name as department_name, p.name as position_name
+                      FROM hr_employees e
+                      LEFT JOIN hr_departments d ON e.department_id = d.id
+                      LEFT JOIN hr_positions p ON e.position_id = p.id",
+            'params' => [],
+            'where' => ['e.termination_date IS NULL']
+        ];
+
+        // 데이터 스코프 적용
+        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+
+        if ($departmentId) {
+            $queryParts['where'][] = "e.department_id = :department_id";
+            $queryParts['params'][':department_id'] = $departmentId;
+        }
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
+
+        $queryParts['sql'] .= " ORDER BY p.level ASC, e.hire_date ASC";
+
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**
@@ -343,4 +375,6 @@ class EmployeeRepository {
             return false;
         }
     }
+
+
 }

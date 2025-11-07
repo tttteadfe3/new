@@ -230,4 +230,27 @@ class HolidayService
         
         return false;
     }
+
+    /**
+     * 필터 조건에 따라 휴일을 조회합니다.
+     * @param array $filters
+     * @return array
+     */
+    public function getHolidaysByFilter(array $filters): array
+    {
+        $year = $filters['year'] ?? date('Y');
+        $month = $filters['month'] ?? null;
+        
+        if ($month) {
+            // 특정 월의 휴일 조회
+            $startDate = sprintf('%04d-%02d-01', $year, $month);
+            $endDate = date('Y-m-t', strtotime($startDate)); // 해당 월의 마지막 날
+        } else {
+            // 전체 연도의 휴일 조회
+            $startDate = sprintf('%04d-01-01', $year);
+            $endDate = sprintf('%04d-12-31', $year);
+        }
+        
+        return $this->getHolidaysForDateRange($startDate, $endDate);
+    }
 }

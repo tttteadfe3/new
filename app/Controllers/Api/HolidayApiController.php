@@ -155,4 +155,27 @@ class HolidayApiController extends BaseApiController
             $this->apiError('삭제 중 오류가 발생했습니다.', 'SERVER_ERROR', 404);
         }
     }
+
+    /**
+     * 특정 연도/월의 휴일 정보를 조회합니다.
+     * GET /api/holidays?year=2024&month=11
+     */
+    public function getHolidays(): void
+    {
+        try {
+            $year = (int)$this->request->input('year', date('Y'));
+            $month = $this->request->input('month');
+
+            $filters = ['year' => $year];
+            if ($month) {
+                $filters['month'] = (int)$month;
+            }
+
+            $holidays = $this->holidayService->getHolidaysByFilter($filters);
+
+            $this->apiSuccess($holidays);
+        } catch (Exception $e) {
+            $this->apiError('휴일 정보를 불러오는 중 오류가 발생했습니다.', 'SERVER_ERROR', 500);
+        }
+    }
 }

@@ -35,20 +35,28 @@ $router->get('/admin/users', [AdminController::class, 'users'])
 
 우리 시스템은 **"사용자는 자신의 부서 및 허가된 하위 부서의 데이터만 조회/수정할 수 있다"**는 엄격한 데이터 격리 정책을 따릅니다. 이 규칙은 `DataScopeService`를 통해 중앙에서 관리됩니다.
 
-**구현 방법:** 데이터베이스에서 데이터를 조회하는 모든 리포지토리 메소드는 `DataScopeService::getVisibleDepartmentIdsForCurrentUser()`가 제공하는 '조회 가능한 부서 ID 목록'을 `WHERE` 조건에 반드시 포함해야 합니다.
+**구현 방법:** 데이터베이스에서 데이터를 조회하는 모든 리포지토리 메소드는 `DataScopeService`의 스코프 적용 메소드를 호출하여 자동으로 권한이 적용된 쿼리를 실행해야 합니다.
 
 **올바른 코드 예시:**
 ```php
 // EmployeeRepository.php
-public function getAll(array $filters = [], ?array $visibleDeptIds = null)
+public function getAll(array $filters = []): array
 {
-    // ...
-    if ($visibleDeptIds !== null) {
-        // ...
-        $whereClauses[] = "e.department_id IN ($inClause)";
-        $params = array_merge($params, $visibleDeptIds);
+    $queryParts = [
+        'sql' => "SELECT e.*, d.name as department_name FROM hr_employees e LEFT JOIN hr_departments d ON e.department_id = d.id",
+        'params' => [],
+        'where' => []
+    ];
+
+    // DataScopeService를 통해 현재 사용자의 권한에 맞는 WHERE 절이 자동으로 추가됨
+    $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+
+    // 추가 필터 조건들...
+    if (!empty($queryParts['where'])) {
+        $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
     }
-    // ...
+
+    return $this->db->query($queryParts['sql'], $queryParts['params']);
 }
 ```
 **⚠️ 위험성:** 데이터 스코프를 무시하면 일반 사용자가 다른 부서의 민감한 개인정보를 조회할 수 있는 심각한 데이터 유출 사고가 발생할 수 있습니다.
@@ -115,6 +123,7 @@ const response = await this.apiCall('/some-data');
 ```
 
 ### 4.3. 공통 UI 유틸리티를 사용해야 합니다
-`Toast` 알림, `Confirm` 확인창 등은 `public/assets/js/utils/ui-helpers.js`에 미리 만들어진 함수를 사용해야 합니다.
+`Toast` 알림, `Confirm` 확인창 등은 전역으로 사용 가능한 유틸리티 함수들을 사용해야 합니다.
 - **알림**: `Toast.success('성공했습니다.')`, `Toast.error('실패했습니다.')`
 - **확인창**: `const result = await Confirm.fire({ title: '정말 삭제하시겠습니까?' });`
+- **XSS 방지**: `this.sanitizeHTML(userInput)` - 사용자 입력을 HTML에 출력할 때 반드시 사용
