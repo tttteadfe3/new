@@ -202,6 +202,20 @@ class DataScopeService
         return in_array($targetEmployee['department_id'], $visibleDeptIds);
     }
 
+    /**
+     * 지급품 분류 테이블에 대한 데이터 스코프를 적용합니다.
+     * 현재 정책: 모든 사용자가 모든 분류를 볼 수 있습니다.
+     * @param array $queryParts
+     * @param string $categoryTableAlias
+     * @return array
+     */
+    public function applyItemCategoryScope(array $queryParts, string $categoryTableAlias = 'ic'): array
+    {
+        // 현재는 별도의 스코프 제한이 없으므로, 받은 쿼리를 그대로 반환합니다.
+        // 추후 권한 정책이 추가되면 여기에 로직을 구현합니다.
+        return $queryParts;
+    }
+
     // =================================================================
     // Private helper methods to query DB directly, avoiding circular deps
     // =================================================================

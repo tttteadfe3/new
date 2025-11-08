@@ -49,9 +49,11 @@ $container->register(\App\Repositories\MenuRepository::class, fn($c) => new \App
 $container->register(\App\Repositories\PositionRepository::class, fn($c) => new \App\Repositories\PositionRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\RoleRepository::class, fn($c) => new \App\Repositories\RoleRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\WasteCollectionRepository::class, fn($c) => new \App\Repositories\WasteCollectionRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\ItemCategoryRepository::class, fn($c) => new \App\Repositories\ItemCategoryRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 
 
 // 3. Application services that depend on repositories and other services.
+$container->register(\App\Services\ItemCategoryService::class, fn($c) => new \App\Services\ItemCategoryService($c->resolve(\App\Repositories\ItemCategoryRepository::class)));
 $container->register(\App\Services\AuthService::class, fn($c) => new \App\Services\AuthService(
     $c->resolve(SessionManager::class),
     $c->resolve(\App\Repositories\UserRepository::class),
@@ -125,6 +127,12 @@ $container->register(\App\Controllers\Web\AdminController::class, fn($c) => new 
     $c->resolve(\App\Services\MenuManagementService::class),
     $c->resolve(\App\Services\PositionService::class)
 ));
+$container->register(\App\Controllers\Web\InventoryController::class, fn($c) => new \App\Controllers\Web\InventoryController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class)
+));
 $container->register(\App\Controllers\Api\OrganizationApiController::class, fn($c) => new \App\Controllers\Api\OrganizationApiController(
     $c->resolve(Request::class),
     $c->resolve(\App\Services\AuthService::class),
@@ -165,6 +173,15 @@ $container->register(\App\Controllers\Api\LeaveController::class, fn($c) => new 
     $c->resolve(\App\Services\ActivityLogger::class),
     $c->resolve(JsonResponse::class),
     $c->resolve(\App\Services\LeaveService::class)
+));
+$container->register(\App\Controllers\Api\ItemCategoryController::class, fn($c) => new \App\Controllers\Api\ItemCategoryController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(JsonResponse::class),
+    $c->resolve(\App\Services\ItemCategoryService::class)
 ));
 
 // Start session (temporarily disable regeneration for debugging)

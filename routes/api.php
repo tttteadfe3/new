@@ -159,4 +159,10 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->post('/waste-collections/admin/parse-html', [WasteCollectionApiController::class, 'parseHtmlFile'])->name('api.waste-collections.parse-html')->middleware('auth')->middleware('permission', 'waste.manage');
     $router->post('/waste-collections/admin/batch-register', [WasteCollectionApiController::class, 'batchRegister'])->name('api.waste-collections.batch-register')->middleware('auth')->middleware('permission', 'waste.manage');
     $router->delete('/waste-collections/admin/online-submissions', [WasteCollectionApiController::class, 'clearOnlineSubmissions'])->name('api.waste-collections.clear-online')->middleware('auth')->middleware('permission', 'waste.manage');
+
+    // Item Category (지급품 분류) API routes
+    $router->get('/item-categories', [ItemCategoryController::class, 'index'])->name('api.item-categories.index')->middleware('auth')->middleware('permission', 'item.category.view');
+    $router->post('/item-categories', [ItemCategoryController::class, 'store'])->name('api.item-categories.store')->middleware('auth')->middleware('permission', 'item.category.manage');
+    $router->put('/item-categories/{id}', [ItemCategoryController::class, 'update'])->name('api.item-categories.update')->middleware('auth')->middleware('permission', 'item.category.manage');
+    $router->delete('/item-categories/{id}', [ItemCategoryController::class, 'destroy'])->name('api.item-categories.destroy')->middleware('auth')->middleware('permission', 'item.category.manage');
 });

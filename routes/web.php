@@ -73,5 +73,9 @@ $router->get('/admin/menus', [AdminController::class, 'menus'])->name('admin.men
 // --- 프로필 및 로그 ---
 $router->get('/logs', [LogController::class, 'index'])->name('logs.index')->middleware('auth')->middleware('permission', 'log.view');
 
+// --- 지급품 관리 ---
+use App\Controllers\Web\InventoryController;
+$router->get('/inventory/categories', [InventoryController::class, 'categories'])->name('inventory.categories')->middleware('auth')->middleware('permission', 'item.category.view');
+
 // --- 유틸리티 ---
 $router->get('/blank', ['App\Controllers\Web\UtilityController', 'blank'])->name('blank');

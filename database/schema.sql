@@ -543,3 +543,131 @@ GROUP BY
 -- --------------------------------------------------------
 
 COMMIT;
+
+--
+-- 지급품 관리 테이블
+--
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조  (지급품 분류)
+--
+
+CREATE TABLE `im_item_categories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+  `parent_id` int(11) DEFAULT NULL COMMENT '상위 분류 ID (대분류의 경우 NULL)',
+  `name` varchar(255) NOT NULL COMMENT '분류명',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT '사용 여부 (1: 사용, 0: 미사용)',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  PRIMARY KEY (`id`),
+  KEY `fk_item_cat_parent_id` (`parent_id`),
+  CONSTRAINT `fk_item_cat_parent_id` FOREIGN KEY (`parent_id`) REFERENCES `im_item_categories` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='지급품 분류 (대/소분류)';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조  (지급품 품목 및 재고)
+--
+
+CREATE TABLE `im_items` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+  `category_id` int(11) NOT NULL COMMENT '분류 ID',
+  `name` varchar(255) NOT NULL COMMENT '지급품명 (예: 안전모 A-Type)',
+  `stock` int(11) NOT NULL DEFAULT 0 COMMENT '현재고',
+  `note` text DEFAULT NULL COMMENT '비고',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_item_cat_name` (`category_id`, `name`),
+  CONSTRAINT `fk_item_category_id` FOREIGN KEY (`category_id`) REFERENCES `im_item_categories` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='지급품 품목 및 재고 정보';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조  (연간 지급품 계획)
+--
+
+CREATE TABLE `im_item_plans` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+  `year` year(4) NOT NULL COMMENT '계획 수립 연도',
+  `item_id` int(11) NOT NULL COMMENT '지급품 ID',
+  `unit_price` decimal(12,2) NOT NULL DEFAULT 0.00 COMMENT '단가',
+  `quantity` int(11) NOT NULL COMMENT '예정 수량',
+  `budget` decimal(15,2) GENERATED ALWAYS AS (`unit_price` * `quantity`) STORED COMMENT '예산금액 (자동계산)',
+  `note` text DEFAULT NULL COMMENT '비고',
+  `created_by` int(11) DEFAULT NULL COMMENT '등록자 직원 ID',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  PRIMARY KEY (`id`),
+  KEY `fk_plan_item_id` (`item_id`),
+  KEY `fk_plan_created_by` (`created_by`),
+  CONSTRAINT `fk_plan_item_id` FOREIGN KEY (`item_id`) REFERENCES `im_items` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_plan_created_by` FOREIGN KEY (`created_by`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='연간 지급품 계획';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조  (지급품 구입 관리)
+--
+
+CREATE TABLE `im_item_purchases` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+  `item_id` int(11) NOT NULL COMMENT '지급품 ID',
+  `plan_id` int(11) DEFAULT NULL COMMENT '관련 계획 ID (계획에 없는 구매일 경우 NULL)',
+  `purchase_date` date NOT NULL COMMENT '구입일자',
+  `quantity` int(11) NOT NULL COMMENT '구입수량',
+  `unit_price` decimal(12,2) NOT NULL COMMENT '단가',
+  `supplier` varchar(255) DEFAULT NULL COMMENT '공급업체',
+  `is_stocked` tinyint(1) NOT NULL DEFAULT 0 COMMENT '입고 여부 (0: 미입고, 1: 입고완료)',
+  `stocked_by` int(11) DEFAULT NULL COMMENT '입고 처리자 직원 ID',
+  `stocked_at` datetime DEFAULT NULL COMMENT '입고 처리일시',
+  `created_by` int(11) DEFAULT NULL COMMENT '등록자 직원 ID',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  PRIMARY KEY (`id`),
+  KEY `fk_purchase_item_id` (`item_id`),
+  KEY `fk_purchase_plan_id` (`plan_id`),
+  KEY `fk_purchase_stocked_by` (`stocked_by`),
+  KEY `fk_purchase_created_by` (`created_by`),
+  CONSTRAINT `fk_purchase_item_id` FOREIGN KEY (`item_id`) REFERENCES `im_items` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_purchase_plan_id` FOREIGN KEY (`plan_id`) REFERENCES `im_item_plans` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_purchase_stocked_by` FOREIGN KEY (`stocked_by`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_purchase_created_by` FOREIGN KEY (`created_by`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='지급품 구입 및 입고 관리';
+
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조  (지급 내역)
+--
+
+CREATE TABLE `im_item_gives` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+  `item_id` int(11) NOT NULL COMMENT '지급품 ID',
+  `give_date` date NOT NULL COMMENT '지급일자',
+  `department_id` int(11) DEFAULT NULL COMMENT '지급 대상 부서 ID',
+  `employee_id` int(11) DEFAULT NULL COMMENT '지급 대상 직원 ID',
+  `quantity` int(11) NOT NULL COMMENT '지급 수량',
+  `note` text DEFAULT NULL COMMENT '비고',
+  `created_by` int(11) DEFAULT NULL COMMENT '지급 처리자 직원 ID',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  PRIMARY KEY (`id`),
+  KEY `fk_give_item_id` (`item_id`),
+  KEY `fk_give_department_id` (`department_id`),
+  KEY `fk_give_employee_id` (`employee_id`),
+  KEY `fk_give_created_by` (`created_by`),
+  CONSTRAINT `fk_give_item_id` FOREIGN KEY (`item_id`) REFERENCES `im_items` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_give_department_id` FOREIGN KEY (`department_id`) REFERENCES `hr_departments` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_give_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_give_created_by` FOREIGN KEY (`created_by`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='지급품 지급 내역';
+
+
+
+--
