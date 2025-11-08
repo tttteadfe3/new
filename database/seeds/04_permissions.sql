@@ -12,12 +12,10 @@ INSERT INTO `sys_permissions` (`id`, `key`, `description`) VALUES
 (15, 'employee.terminate', '직원 퇴사 처리'),
 (16, 'employee.assign', '직원 인사 발령(부서/직급 변경)'),
 
--- Leave Management (5)
-(20, 'leave.request', '휴가 신청 및 취소'),
-(21, 'leave.view_own', '자신의 휴가 내역 조회'),
-(22, 'leave.view_all', '전체 직원의 휴가 내역 조회'),
-(23, 'leave.approve', '휴가 신청 승인/거부'),
-(24, 'leave.manage_entitlement', '연차 부여 및 수동 조정'),
+-- Leave Management (3)
+(20, 'leave.view', '자신의 연차 내역 조회'),
+(21, 'leave.approve', '팀원의 연차 신청 승인/반려 및 현황 조회'),
+(22, 'leave.manage', '전사 연차 부여, 소멸, 조정 등 제도 관리'),
 
 -- Littering Management (8)
 (30, 'littering.view', '부적정배출 현황 조회'),

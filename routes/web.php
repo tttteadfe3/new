@@ -44,12 +44,12 @@ $router->get('/holidays', [HolidayController::class, 'index'])->name('holidays.i
 
 // --- 연차 관리 (Annual Leave Management) ---
 // 직원용 페이지 (Employee Pages)
-$router->get('/leaves/apply', [LeaveController::class, 'apply'])->name('leaves.apply')->middleware('auth');
-$router->get('/leaves/team-calendar', [LeaveController::class, 'teamCalendar'])->name('leaves.team-calendar')->middleware('auth');
+$router->get('/leaves/apply', [LeaveController::class, 'apply'])->name('leaves.apply')->middleware('auth')->middleware('permission', 'leave.view');
+$router->get('/leaves/team-calendar', [LeaveController::class, 'teamCalendar'])->name('leaves.team-calendar')->middleware('auth')->middleware('permission', 'leave.view');
 
 // 관리자용 페이지 (Administrator Pages)
-$router->get('/leaves/admin-dashboard', [LeaveController::class, 'adminDashboard'])->name('leaves.admin-dashboard')->middleware('auth')->middleware('permission', 'leave.view_all');
-$router->get('/leaves/admin-management', [LeaveController::class, 'adminManagement'])->name('leaves.admin-management')->middleware('auth')->middleware('permission', 'leave.manage_entitlement');
+$router->get('/leaves/admin-dashboard', [LeaveController::class, 'adminDashboard'])->name('leaves.admin-dashboard')->middleware('auth')->middleware('permission', 'leave.approve');
+$router->get('/leaves/admin-management', [LeaveController::class, 'adminManagement'])->name('leaves.admin-management')->middleware('auth')->middleware('permission', 'leave.manage');
 $router->get('/leaves/pending-approvals', [LeaveController::class, 'pendingApprovals'])->name('leaves.pending-approvals')->middleware('auth')->middleware('permission', 'leave.approve');
 
 // --- 무단투기 관리 ---
