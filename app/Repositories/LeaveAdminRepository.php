@@ -419,7 +419,10 @@ class LeaveAdminRepository {
 
         // 처리일시 기준 정렬
         usort($results, function($a, $b) {
-            return strtotime($b['processed_at']) - strtotime($a['processed_at']);
+            // null 체크 후 strtotime 호출
+            $timeA = ($a['processed_at'] !== null) ? strtotime($a['processed_at']) : 0;
+            $timeB = ($b['processed_at'] !== null) ? strtotime($b['processed_at']) : 0;
+            return $timeB - $timeA;
         });
 
         return $results;
