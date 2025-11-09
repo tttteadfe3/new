@@ -53,10 +53,10 @@ class ItemPlanRepository
 
         $queryParts = $this->dataScopeService->applyItemPlanScope($queryParts, 'ip');
 
+        // The base query already has a WHERE clause for the year.
+        // We only need to add the data scope conditions.
         if (!empty($queryParts['where'])) {
-            // The initial WHERE clause for the year is already part of the SQL string.
-            // Additional scope conditions should be appended with AND.
-            $queryParts['sql'] .= " AND " . implode(" AND ", array_slice($queryParts['where'], 1));
+            $queryParts['sql'] .= " AND " . implode(" AND ", $queryParts['where']);
         }
 
         $queryParts['sql'] .= " ORDER BY ic.name, i.name";

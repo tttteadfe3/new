@@ -164,6 +164,7 @@ class ItemGiveRepository
 
         $queryParts = $this->dataScopeService->applyItemScope($queryParts, 'i');
 
+        // This query builder logic is now robust.
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
         }
