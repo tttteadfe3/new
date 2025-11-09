@@ -57,4 +57,16 @@ INSERT INTO `sys_permissions` (`id`, `key`, `description`) VALUES
 
 -- Log Management (2)
 (100, 'log.view', '활동 로그 조회'),
-(101, 'log.delete', '활동 로그 삭제');
+(101, 'log.delete', '활동 로그 삭제'),
+
+-- Item Management (지급품 관리)
+(110, 'item.manage', '지급품 품목 관리 (등록,수정,삭제)'),
+(111, 'item.category.view', '지급품 분류 조회'),
+(112, 'item.category.manage', '지급품 분류 관리'),
+(113, 'item.plan.view', '연간 지급계획 조회'),
+(114, 'item.plan.manage', '연간 지급계획 관리'),
+(115, 'item.purchase.view', '지급품 구입 내역 조회'),
+(116, 'item.purchase.manage', '지급품 구입 및 입고 관리'),
+(117, 'item.give.view', '지급 내역 조회'),
+(118, 'item.give.manage', '지급 처리 관리'),
+(119, 'item.statistic.view', '지급품 통계/현황 조회');

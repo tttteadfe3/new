@@ -15,6 +15,7 @@ use App\Controllers\Api\ProfileApiController;
 use App\Controllers\Api\PositionApiController;
 use App\Controllers\Api\LogApiController;
 use App\Controllers\Api\WasteCollectionApiController;
+use App\Controllers\Api\ItemCategoryController;
 
 $router->group('/api', function($router) {
     // Employee API routes

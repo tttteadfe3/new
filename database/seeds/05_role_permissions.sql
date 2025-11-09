@@ -59,4 +59,16 @@ INSERT INTO `sys_role_permissions` (`role_id`, `permission_id`) VALUES
 
 -- Log Management
 (1, 100),
-(1, 101);
+(1, 101),
+
+-- Item Management (지급품 관리) - Admin only for now
+(1, 110),
+(1, 111),
+(1, 112),
+(1, 113),
+(1, 114),
+(1, 115),
+(1, 116),
+(1, 117),
+(1, 118),
+(1, 119);

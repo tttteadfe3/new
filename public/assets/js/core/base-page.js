@@ -61,6 +61,18 @@ class BasePage {
     }
 
     /**
+     * Sanitizes a string to prevent XSS by escaping HTML characters.
+     * @param {string | null | undefined} str - The string to sanitize.
+     * @returns {string} The sanitized string.
+     */
+    sanitizeHTML(str) {
+        if (!str) return '';
+        const temp = document.createElement('div');
+        temp.textContent = str;
+        return temp.innerHTML;
+    }
+
+    /**
      * Sets a button to its loading state.
      * @param {string} selector - The CSS selector for the button.
      * @param {string} text - The text to display while loading.

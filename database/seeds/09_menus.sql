@@ -15,6 +15,15 @@ INSERT INTO `sys_menus` (`id`, `parent_id`, `name`, `url`, `icon`, `permission_k
 (402, 400, '검토 및 승인', '/littering/manage', 'ri-user-shared-line', 'littering.confirm', 20),
 (403, 400, '처리 완료 내역', '/littering/history', 'ri-history-line', 'littering.view', 30),
 (404, 400, '삭제된 항목', '/littering/deleted', 'ri-delete-bin-line', 'littering.restore', 40),
+
+-- 지급품 관리 메뉴 (ID 500 range)
+(500, NULL, '지급품 관리', '/inventory/categories', 'ri-archive-stack-line', 'item.category.view', 50),
+(501, 500, '품목 분류 관리', '/inventory/categories', 'ri-function-line', 'item.category.view', 10),
+(502, 500, '연간 계획 관리', '/inventory/plans', 'ri-calendar-check-line', 'item.plan.view', 20),
+(503, 500, '구입 및 재고 관리', '/inventory/purchases', 'ri-shopping-cart-2-line', 'item.purchase.view', 30),
+(504, 500, '지급 관리', '/inventory/gives', 'ri-user-take-line', 'item.give.view', 40),
+(505, 500, '현황 및 통계', '/inventory/statistics', 'ri-bar-chart-2-line', 'item.statistic.view', 50),
+
 (900, NULL, '시스템 관리', '/employees', 'ri-settings-3-line', 'employee.view', 90),
 (910, 900, '사용자/조직', '#', 'ri-team-line', '', 10),
 (911, 910, '직원 관리', '/employees', 'ri-user-star-line', 'employee.view', 10),
