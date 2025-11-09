@@ -15,6 +15,7 @@ use App\Repositories\LogRepository;
 class ItemStatisticController extends BaseApiController
 {
     private ItemStatisticService $itemStatisticService;
+    private LogRepository $logRepository;
 
     public function __construct(
         Request $request,

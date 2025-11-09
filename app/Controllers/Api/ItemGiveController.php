@@ -16,6 +16,7 @@ use App\Repositories\LogRepository;
 class ItemGiveController extends BaseApiController
 {
     private ItemGiveService $itemGiveService;
+    private LogRepository $logRepository;
 
     public function __construct(
         Request $request,

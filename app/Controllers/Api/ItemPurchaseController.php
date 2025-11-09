@@ -16,6 +16,7 @@ use App\Repositories\LogRepository;
 class ItemPurchaseController extends BaseApiController
 {
     private ItemPurchaseService $itemPurchaseService;
+    private LogRepository $logRepository;
 
     public function __construct(
         Request $request,

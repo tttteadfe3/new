@@ -239,12 +239,16 @@ class DataScopeService
             return $queryParts;
         }
 
-        // Join with hr_employees table is needed to filter by department
-        $queryParts['sql'] = str_replace(
-            "FROM {$planTableAlias}",
-            "FROM {$planTableAlias} LEFT JOIN hr_employees creator_e ON {$planTableAlias}.created_by = creator_e.id",
-            $queryParts['sql']
-        );
+        // Only add the join if it's not already present
+        if (strpos($queryParts['sql'], 'creator_e') === false) {
+            // Join with hr_employees table is needed to filter by department
+            $queryParts['sql'] = preg_replace(
+                "/FROM\s+`?{$planTableAlias}`?\b/i",
+                "FROM `{$planTableAlias}` LEFT JOIN hr_employees creator_e ON {$planTableAlias}.created_by = creator_e.id",
+                $queryParts['sql'],
+                1
+            );
+        }
 
         if (empty($visibleDeptIds)) {
             $queryParts['where'][] = "1=0"; // No departments visible
@@ -271,12 +275,15 @@ class DataScopeService
             return $queryParts;
         }
 
-        // Join with hr_employees table is needed to filter by department
-        $queryParts['sql'] = str_replace(
-            "FROM {$purchaseTableAlias}",
-            "FROM {$purchaseTableAlias} LEFT JOIN hr_employees creator_e ON {$purchaseTableAlias}.created_by = creator_e.id",
-            $queryParts['sql']
-        );
+        // Only add the join if it's not already present
+        if (strpos($queryParts['sql'], 'creator_e') === false) {
+            $queryParts['sql'] = preg_replace(
+                "/FROM\s+`?{$purchaseTableAlias}`?\b/i",
+                "FROM `{$purchaseTableAlias}` LEFT JOIN hr_employees creator_e ON {$purchaseTableAlias}.created_by = creator_e.id",
+                $queryParts['sql'],
+                1
+            );
+        }
 
         if (empty($visibleDeptIds)) {
             $queryParts['where'][] = "1=0";
@@ -303,12 +310,16 @@ class DataScopeService
             return $queryParts;
         }
 
-        // Join with hr_employees table is needed for employee-based gives
-        $queryParts['sql'] = str_replace(
-            "FROM {$giveTableAlias}",
-            "FROM {$giveTableAlias} LEFT JOIN hr_employees given_e ON {$giveTableAlias}.employee_id = given_e.id",
-            $queryParts['sql']
-        );
+        // Only add the join if it's not already present
+        if (strpos($queryParts['sql'], 'given_e') === false) {
+            // Join with hr_employees table is needed for employee-based gives
+            $queryParts['sql'] = preg_replace(
+                "/FROM\s+`?{$giveTableAlias}`?\b/i",
+                "FROM `{$giveTableAlias}` LEFT JOIN hr_employees given_e ON {$giveTableAlias}.employee_id = given_e.id",
+                $queryParts['sql'],
+                1
+            );
+        }
 
         if (empty($visibleDeptIds)) {
             $queryParts['where'][] = "1=0";
