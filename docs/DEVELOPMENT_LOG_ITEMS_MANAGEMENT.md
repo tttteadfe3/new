@@ -31,3 +31,33 @@
     *   `ItemCategory` Model, Repository, Service, API Controller 개발 완료.
     *   `InventoryController`(Web), `categories.php`(View), `inventory-categories.js` 개발 완료.
     *   DI 컨테이너 등록 및 웹/API 라우트 설정 완료.
+
+---
+
+## Phase 2: 지급품 품목 및 계획 관리
+
+### 계획 (2025-11-07)
+
+1.  **개발 로그 업데이트:** `DEVELOPMENT_LOG_ITEMS_MANAGEMENT.md` 파일에 2단계 개발 계획 추가.
+2.  **'지급품 품목 및 계획' 백엔드 개발:**
+    *   `Item`, `ItemPlan` 모델 생성.
+    *   `ItemRepository`, `ItemPlanRepository` 생성.
+    *   `ItemService`, `ItemPlanService` 생성.
+    *   `ItemController`, `ItemPlanController` API 컨트롤러 생성.
+    *   생성된 모든 클래스에 대한 DI 및 라우트 설정.
+3.  **'지급품 계획 관리' 프론트엔드 개발:**
+    *   `InventoryController`에 `plans()` 메소드 추가 및 웹 라우트 설정.
+    *   `plans.php` 뷰 파일 생성 (목록 테이블, 등록/수정 모달).
+    *   `inventory-plans.js` 파일 생성 (API 연동 및 동적 UI 구현).
+4.  **기능 검증 및 로그 업데이트:** 개발 기능 검토 및 본 파일에 완료 내역 기록.
+
+### 진행 상황
+
+*   **2단계 완료 (2025-11-07):** '지급품 품목' 및 '지급품 계획 관리' 기능의 백엔드, 프론트엔드 개발을 모두 완료함.
+
+### 완료
+
+*   **Phase 2: 지급품 품목 및 계획 관리**
+    *   `Item`, `ItemPlan` Model, Repository, Service, API Controller 개발 완료.
+    *   `InventoryController`에 `plans` 페이지 추가 및 `inventory-plans.js` 개발 완료.
+    *   DI 컨테이너 등록 및 웹/API 라우트 설정 완료.

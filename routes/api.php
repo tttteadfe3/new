@@ -165,4 +165,14 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->post('/item-categories', [ItemCategoryController::class, 'store'])->name('api.item-categories.store')->middleware('auth')->middleware('permission', 'item.category.manage');
     $router->put('/item-categories/{id}', [ItemCategoryController::class, 'update'])->name('api.item-categories.update')->middleware('auth')->middleware('permission', 'item.category.manage');
     $router->delete('/item-categories/{id}', [ItemCategoryController::class, 'destroy'])->name('api.item-categories.destroy')->middleware('auth')->middleware('permission', 'item.category.manage');
+
+    // Item (지급품 품목) API routes
+    $router->get('/items', [\App\Controllers\Api\ItemController::class, 'index'])->name('api.items.index')->middleware('auth')->middleware('permission', 'item.manage');
+    $router->post('/items', [\App\Controllers\Api\ItemController::class, 'store'])->name('api.items.store')->middleware('auth')->middleware('permission', 'item.manage');
+
+    // Item Plan (지급품 계획) API routes
+    $router->get('/item-plans', [\App\Controllers\Api\ItemPlanController::class, 'index'])->name('api.item-plans.index')->middleware('auth')->middleware('permission', 'item.plan.view');
+    $router->post('/item-plans', [\App\Controllers\Api\ItemPlanController::class, 'store'])->name('api.item-plans.store')->middleware('auth')->middleware('permission', 'item.plan.manage');
+    $router->put('/item-plans/{id}', [\App\Controllers\Api\ItemPlanController::class, 'update'])->name('api.item-plans.update')->middleware('auth')->middleware('permission', 'item.plan.manage');
+    $router->delete('/item-plans/{id}', [\App\Controllers\Api\ItemPlanController::class, 'destroy'])->name('api.item-plans.destroy')->middleware('auth')->middleware('permission', 'item.plan.manage');
 });

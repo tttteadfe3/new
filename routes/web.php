@@ -76,6 +76,7 @@ $router->get('/logs', [LogController::class, 'index'])->name('logs.index')->midd
 // --- 지급품 관리 ---
 use App\Controllers\Web\InventoryController;
 $router->get('/inventory/categories', [InventoryController::class, 'categories'])->name('inventory.categories')->middleware('auth')->middleware('permission', 'item.category.view');
+$router->get('/inventory/plans', [InventoryController::class, 'plans'])->name('inventory.plans')->middleware('auth')->middleware('permission', 'item.plan.view');
 
 // --- 유틸리티 ---
 $router->get('/blank', ['App\Controllers\Web\UtilityController', 'blank'])->name('blank');

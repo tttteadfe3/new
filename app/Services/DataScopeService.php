@@ -216,6 +216,22 @@ class DataScopeService
         return $queryParts;
     }
 
+    /**
+     * 지급품 품목 테이블에 대한 데이터 스코프를 적용합니다.
+     */
+    public function applyItemScope(array $queryParts, string $itemTableAlias = 'i'): array
+    {
+        return $queryParts;
+    }
+
+    /**
+     * 지급품 계획 테이블에 대한 데이터 스코프를 적용합니다.
+     */
+    public function applyItemPlanScope(array $queryParts, string $planTableAlias = 'ip'): array
+    {
+        return $queryParts;
+    }
+
     // =================================================================
     // Private helper methods to query DB directly, avoiding circular deps
     // =================================================================

@@ -2,7 +2,7 @@
 
 namespace App\Controllers\Api;
 
-use App\Services\ItemCategoryService;
+use App\Services\ItemPlanService;
 use Exception;
 use InvalidArgumentException;
 use App\Core\Request;
@@ -13,63 +13,64 @@ use App\Repositories\EmployeeRepository;
 use App\Core\JsonResponse;
 use App\Repositories\LogRepository;
 
-class ItemCategoryController extends BaseApiController
+class ItemPlanController extends BaseApiController
 {
-    private ItemCategoryService $itemCategoryService;
+    private ItemPlanService $itemPlanService;
     private LogRepository $logRepository;
 
     public function __construct(
-        // BaseApiController dependencies
         Request $request,
         AuthService $authService,
         ViewDataService $viewDataService,
         ActivityLogger $activityLogger,
         EmployeeRepository $employeeRepository,
         JsonResponse $jsonResponse,
-        // ItemCategoryController specific dependencies
-        ItemCategoryService $itemCategoryService,
+        ItemPlanService $itemPlanService,
         LogRepository $logRepository
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
-        $this->itemCategoryService = $itemCategoryService;
+        $this->itemPlanService = $itemPlanService;
         $this->logRepository = $logRepository;
     }
 
     /**
-     * 모든 지급품 분류 목록을 계층 구조로 가져옵니다.
+     * 특정 연도의 계획 목록을 가져옵니다.
      */
     public function index(): void
     {
         try {
-            $categories = $this->itemCategoryService->getAllCategoriesAsHierarchy();
-            $this->apiSuccess($categories);
+            $year = $this->request->input('year');
+            if (!$year) {
+                $this->apiBadRequest('year는 필수입니다.');
+                return;
+            }
+            $plans = $this->itemPlanService->getPlansByYear((int)$year);
+            $this->apiSuccess($plans);
         } catch (Exception $e) {
             $this->handleException($e);
         }
     }
 
     /**
-     * 새 지급품 분류를 생성합니다.
+     * 새 계획을 생성합니다.
      */
     public function store(): void
     {
         try {
             $data = $this->getJsonInput();
-            $newCategoryId = $this->itemCategoryService->createCategory($data);
+            $newPlanId = $this->itemPlanService->createPlan($data);
 
-            if ($newCategoryId) {
-                // 감사 로그 추가
+            if ($newPlanId) {
                 $currentUser = $this->authService->user();
                 $this->logRepository->insert([
                     'user_id' => $currentUser['id'],
                     'employee_id' => $currentUser['employee_id'],
-                    'action' => 'item_category_create',
-                    'details' => json_encode(['id' => $newCategoryId, 'name' => $data['name']]),
+                    'action' => 'item_plan_create',
+                    'details' => json_encode(['id' => $newPlanId, 'data' => $data]),
                 ]);
-
-                $this->apiSuccess(['id' => $newCategoryId], '분류가 성공적으로 생성되었습니다.');
+                $this->apiSuccess(['id' => $newPlanId], '계획이 성공적으로 생성되었습니다.');
             } else {
-                $this->apiError('분류 생성에 실패했습니다.');
+                $this->apiError('계획 생성에 실패했습니다.');
             }
         } catch (InvalidArgumentException $e) {
             $this->apiBadRequest($e->getMessage());
@@ -79,28 +80,26 @@ class ItemCategoryController extends BaseApiController
     }
 
     /**
-     * 특정 지급품 분류 정보를 업데이트합니다.
-     * @param int $id 분류 ID
+     * 특정 계획을 업데이트합니다.
+     * @param int $id
      */
     public function update(int $id): void
     {
         try {
             $data = $this->getJsonInput();
-            $success = $this->itemCategoryService->updateCategory($id, $data);
+            $success = $this->itemPlanService->updatePlan($id, $data);
 
             if ($success) {
-                // 감사 로그 추가
                 $currentUser = $this->authService->user();
                 $this->logRepository->insert([
                     'user_id' => $currentUser['id'],
                     'employee_id' => $currentUser['employee_id'],
-                    'action' => 'item_category_update',
+                    'action' => 'item_plan_update',
                     'details' => json_encode(['id' => $id, 'data' => $data]),
                 ]);
-
-                $this->apiSuccess(null, '분류가 성공적으로 수정되었습니다.');
+                $this->apiSuccess(null, '계획이 성공적으로 수정되었습니다.');
             } else {
-                $this->apiError('분류 수정에 실패했거나 변경된 내용이 없습니다.');
+                $this->apiError('계획 수정에 실패했거나 변경된 내용이 없습니다.');
             }
         } catch (InvalidArgumentException $e) {
             $this->apiBadRequest($e->getMessage());
@@ -110,31 +109,27 @@ class ItemCategoryController extends BaseApiController
     }
 
     /**
-     * 특정 지급품 분류를 삭제합니다.
-     * @param int $id 분류 ID
+     * 특정 계획을 삭제합니다.
+     * @param int $id
      */
     public function destroy(int $id): void
     {
         try {
-            $success = $this->itemCategoryService->deleteCategory($id);
+            $success = $this->itemPlanService->deletePlan($id);
             if ($success) {
-                // 감사 로그 추가
                 $currentUser = $this->authService->user();
                 $this->logRepository->insert([
                     'user_id' => $currentUser['id'],
                     'employee_id' => $currentUser['employee_id'],
-                    'action' => 'item_category_delete',
+                    'action' => 'item_plan_delete',
                     'details' => json_encode(['id' => $id]),
                 ]);
-
-                $this->apiSuccess(null, '분류가 성공적으로 삭제되었습니다.');
+                $this->apiSuccess(null, '계획이 성공적으로 삭제되었습니다.');
             } else {
-                $this->apiError('분류 삭제에 실패했습니다.');
+                $this->apiError('계획 삭제에 실패했습니다.');
             }
         } catch (InvalidArgumentException $e) {
             $this->apiBadRequest($e->getMessage());
-        } catch (\RuntimeException $e) {
-            $this->apiError($e->getMessage(), 'DELETE_FAILED');
         } catch (Exception $e) {
             $this->handleException($e);
         }
