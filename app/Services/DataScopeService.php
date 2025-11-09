@@ -229,6 +229,30 @@ class DataScopeService
      */
     public function applyItemPlanScope(array $queryParts, string $planTableAlias = 'ip'): array
     {
+        $user = $this->sessionManager->get('user');
+        if (!$user || in_array('item.manage_all', $user['permissions'] ?? [])) {
+            return $queryParts;
+        }
+
+        $visibleDeptIds = $this->getVisibleDepartmentIdsForCurrentUser();
+        if ($visibleDeptIds === null) { // Should not happen if user does not have manage_all, but as a safeguard
+            return $queryParts;
+        }
+
+        // Join with hr_employees table is needed to filter by department
+        $queryParts['sql'] = str_replace(
+            "FROM {$planTableAlias}",
+            "FROM {$planTableAlias} LEFT JOIN hr_employees creator_e ON {$planTableAlias}.created_by = creator_e.id",
+            $queryParts['sql']
+        );
+
+        if (empty($visibleDeptIds)) {
+            $queryParts['where'][] = "1=0"; // No departments visible
+        } else {
+            $inClause = implode(',', array_map('intval', $visibleDeptIds));
+            $queryParts['where'][] = "creator_e.department_id IN ($inClause)";
+        }
+
         return $queryParts;
     }
 
@@ -237,6 +261,62 @@ class DataScopeService
      */
     public function applyItemPurchaseScope(array $queryParts, string $purchaseTableAlias = 'ip'): array
     {
+        $user = $this->sessionManager->get('user');
+        if (!$user || in_array('item.manage_all', $user['permissions'] ?? [])) {
+            return $queryParts;
+        }
+
+        $visibleDeptIds = $this->getVisibleDepartmentIdsForCurrentUser();
+        if ($visibleDeptIds === null) {
+            return $queryParts;
+        }
+
+        // Join with hr_employees table is needed to filter by department
+        $queryParts['sql'] = str_replace(
+            "FROM {$purchaseTableAlias}",
+            "FROM {$purchaseTableAlias} LEFT JOIN hr_employees creator_e ON {$purchaseTableAlias}.created_by = creator_e.id",
+            $queryParts['sql']
+        );
+
+        if (empty($visibleDeptIds)) {
+            $queryParts['where'][] = "1=0";
+        } else {
+            $inClause = implode(',', array_map('intval', $visibleDeptIds));
+            $queryParts['where'][] = "creator_e.department_id IN ($inClause)";
+        }
+
+        return $queryParts;
+    }
+
+    /**
+     * 지급 내역 테이블에 대한 데이터 스코프를 적용합니다.
+     */
+    public function applyItemGiveScope(array $queryParts, string $giveTableAlias = 'ig'): array
+    {
+        $user = $this->sessionManager->get('user');
+        if (!$user || in_array('item.manage_all', $user['permissions'] ?? [])) {
+            return $queryParts;
+        }
+
+        $visibleDeptIds = $this->getVisibleDepartmentIdsForCurrentUser();
+        if ($visibleDeptIds === null) {
+            return $queryParts;
+        }
+
+        // Join with hr_employees table is needed for employee-based gives
+        $queryParts['sql'] = str_replace(
+            "FROM {$giveTableAlias}",
+            "FROM {$giveTableAlias} LEFT JOIN hr_employees given_e ON {$giveTableAlias}.employee_id = given_e.id",
+            $queryParts['sql']
+        );
+
+        if (empty($visibleDeptIds)) {
+            $queryParts['where'][] = "1=0";
+        } else {
+            $inClause = implode(',', array_map('intval', $visibleDeptIds));
+            $queryParts['where'][] = "({$giveTableAlias}.department_id IN ($inClause) OR given_e.department_id IN ($inClause))";
+        }
+
         return $queryParts;
     }
 

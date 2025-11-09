@@ -55,8 +55,7 @@ class ItemGiveRepository
             $queryParts['params'][':department_id'] = $filters['department_id'];
         }
 
-        // TODO: DataScope 적용 필요 (지급 내역 레벨)
-        // $queryParts = $this->dataScopeService->applyItemGiveScope($queryParts, 'ig');
+        $queryParts = $this->dataScopeService->applyItemGiveScope($queryParts, 'ig');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -155,12 +154,22 @@ class ItemGiveRepository
      */
     public function getAvailableItems(): array
     {
-        // TODO: DataScope 적용 필요 (품목 레벨)
-        $sql = "SELECT i.id, i.name, i.stock, ic.name as category_name
-                FROM im_items i
-                JOIN im_item_categories ic ON i.category_id = ic.id
-                WHERE i.stock > 0
-                ORDER BY ic.name, i.name";
-        return $this->db->query($sql);
+        $queryParts = [
+            'sql' => "SELECT i.id, i.name, i.stock, ic.name as category_name
+                      FROM im_items i
+                      JOIN im_item_categories ic ON i.category_id = ic.id",
+            'params' => [],
+            'where' => ['i.stock > 0']
+        ];
+
+        $queryParts = $this->dataScopeService->applyItemScope($queryParts, 'i');
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
+
+        $queryParts['sql'] .= " ORDER BY ic.name, i.name";
+
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 }

@@ -122,4 +122,43 @@ class ItemPlanRepository
 
         return $this->db->execute("DELETE FROM im_item_plans WHERE id = :id", [':id' => $id]) > 0;
     }
+
+    /**
+     * 여러 계획을 한 번에 생성합니다. (Transaction)
+     * @param array $plansData
+     * @return int
+     * @throws \Exception
+     */
+    public function createBulk(array $plansData): int
+    {
+        if (empty($plansData)) {
+            return 0;
+        }
+
+        $this->db->beginTransaction();
+        try {
+            $sql = "INSERT INTO im_item_plans (year, item_id, unit_price, quantity, note, created_by)
+                    VALUES (:year, :item_id, :unit_price, :quantity, :note, :created_by)";
+
+            $rowCount = 0;
+            foreach ($plansData as $data) {
+                $params = [
+                    ':year' => $data['year'],
+                    ':item_id' => $data['item_id'],
+                    ':unit_price' => $data['unit_price'],
+                    ':quantity' => $data['quantity'],
+                    ':note' => $data['note'] ?? null,
+                    ':created_by' => $data['created_by'],
+                ];
+                $this->db->execute($sql, $params);
+                $rowCount++;
+            }
+
+            $this->db->commit();
+            return $rowCount;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
 }

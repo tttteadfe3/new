@@ -23,6 +23,7 @@ class InventoryPlansPage extends BasePage {
             addPlanBtn: document.getElementById('add-plan-btn'),
             tableBody: document.getElementById('plans-table-body'),
             tablePlaceholder: document.getElementById('table-placeholder'),
+            exportBtn: document.getElementById('export-btn'),
             modal: new bootstrap.Modal(document.getElementById('plan-modal')),
             form: document.getElementById('plan-form'),
             planIdInput: document.getElementById('plan-id'),
@@ -38,6 +39,7 @@ class InventoryPlansPage extends BasePage {
 
     setupEventListeners() {
         this.dom.yearFilter.addEventListener('change', () => this.loadPlans());
+        this.dom.exportBtn.addEventListener('click', () => this.handleExport());
 
         this.dom.form.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -268,6 +270,12 @@ class InventoryPlansPage extends BasePage {
         } else {
             this.dom.tablePlaceholder.style.display = 'none';
         }
+    }
+
+    handleExport() {
+        const year = this.dom.yearFilter.value;
+        const url = `/api/item-plans/export?year=${year}`;
+        window.open(url, '_blank');
     }
 }
 

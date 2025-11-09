@@ -54,9 +54,11 @@ $container->register(\App\Repositories\ItemRepository::class, fn($c) => new \App
 $container->register(\App\Repositories\ItemPlanRepository::class, fn($c) => new \App\Repositories\ItemPlanRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 $container->register(\App\Repositories\ItemPurchaseRepository::class, fn($c) => new \App\Repositories\ItemPurchaseRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 $container->register(\App\Repositories\ItemGiveRepository::class, fn($c) => new \App\Repositories\ItemGiveRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\ItemStatisticRepository::class, fn($c) => new \App\Repositories\ItemStatisticRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 
 
 // 3. Application services that depend on repositories and other services.
+$container->register(\App\Services\ItemStatisticService::class, fn($c) => new \App\Services\ItemStatisticService($c->resolve(\App\Repositories\ItemStatisticRepository::class)));
 $container->register(\App\Services\ItemGiveService::class, fn($c) => new \App\Services\ItemGiveService($c->resolve(\App\Repositories\ItemGiveRepository::class), $c->resolve(\App\Services\AuthService::class)));
 $container->register(\App\Services\ItemPurchaseService::class, fn($c) => new \App\Services\ItemPurchaseService($c->resolve(\App\Repositories\ItemPurchaseRepository::class), $c->resolve(\App\Repositories\ItemRepository::class), $c->resolve(\App\Repositories\ItemPlanRepository::class), $c->resolve(\App\Services\AuthService::class)));
 $container->register(\App\Services\ItemCategoryService::class, fn($c) => new \App\Services\ItemCategoryService($c->resolve(\App\Repositories\ItemCategoryRepository::class)));
@@ -230,6 +232,16 @@ $container->register(\App\Controllers\Api\ItemGiveController::class, fn($c) => n
     $c->resolve(\App\Repositories\EmployeeRepository::class),
     $c->resolve(JsonResponse::class),
     $c->resolve(\App\Services\ItemGiveService::class),
+    $c->resolve(\App\Repositories\LogRepository::class)
+));
+$container->register(\App\Controllers\Api\ItemStatisticController::class, fn($c) => new \App\Controllers\Api\ItemStatisticController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(JsonResponse::class),
+    $c->resolve(\App\Services\ItemStatisticService::class),
     $c->resolve(\App\Repositories\LogRepository::class)
 ));
 

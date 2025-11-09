@@ -119,3 +119,30 @@
     *   `InventoryController`에 `gives` 페이지 추가 및 `inventory-gives.js` 개발 완료.
     *   지급/취소에 따른 재고 차감/복원 트랜잭션 로직 구현 완료.
     *   DI 컨테이너 등록 및 웹/API 라우트 설정 완료.
+
+---
+
+## Phase 5: 통계 및 현황 조회
+
+### 계획 (2025-11-09)
+
+1.  **개발 로그 업데이트:** `DEVELOPMENT_LOG_ITEMS_MANAGEMENT.md` 파일에 5단계 개발 계획 추가.
+2.  **'통계 및 현황' 백엔드 개발:**
+    *   통계 데이터 조회를 위한 `ItemStatisticRepository` (또는 기존 Repository 확장), `ItemStatisticService`, `ItemStatisticController` 생성.
+    *   DI 컨테이너 및 API 라우트 설정.
+3.  **'통계 및 현황' 프론트엔드 개발:**
+    *   `InventoryController`에 `statistics()` 메소드 추가 및 웹 라우트 설정.
+    *   `statistics.php` 뷰 파일 생성 (카드, 테이블, 차트 영역).
+    *   `inventory-statistics.js` 파일 생성 (API 연동, Chart.js를 이용한 데이터 시각화).
+4.  **기능 검증 및 로그 업데이트:** 개발 기능 검토 및 본 파일에 완료 내역 기록.
+
+### 진행 상황
+
+*   **5단계 완료 (2025-11-09):** '통계 및 현황 조회' 기능의 백엔드, 프론트엔드 개발을 모두 완료함.
+
+### 완료
+
+*   **Phase 5: 통계 및 현황 조회**
+    *   `ItemStatisticRepository`, `ItemStatisticService`, `ItemStatisticController` 개발 완료.
+    *   `InventoryController`에 `statistics` 페이지 추가 및 `inventory-statistics.js` (Chart.js 연동 포함) 개발 완료.
+    *   DI 컨테이너 등록 및 웹/API 라우트 설정 완료.

@@ -171,6 +171,8 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->post('/items', [\App\Controllers\Api\ItemController::class, 'store'])->name('api.items.store')->middleware('auth')->middleware('permission', 'item.manage');
 
     // Item Plan (지급품 계획) API routes
+    $router->get('/item-plans/export', [\App\Controllers\Api\ItemPlanController::class, 'export'])->name('api.item-plans.export')->middleware('auth')->middleware('permission', 'item.plan.view');
+    $router->post('/item-plans/import', [\App\Controllers\Api\ItemPlanController::class, 'import'])->name('api.item-plans.import')->middleware('auth')->middleware('permission', 'item.plan.manage');
     $router->get('/item-plans', [\App\Controllers\Api\ItemPlanController::class, 'index'])->name('api.item-plans.index')->middleware('auth')->middleware('permission', 'item.plan.view');
     $router->post('/item-plans', [\App\Controllers\Api\ItemPlanController::class, 'store'])->name('api.item-plans.store')->middleware('auth')->middleware('permission', 'item.plan.manage');
     $router->put('/item-plans/{id}', [\App\Controllers\Api\ItemPlanController::class, 'update'])->name('api.item-plans.update')->middleware('auth')->middleware('permission', 'item.plan.manage');
@@ -188,4 +190,7 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->get('/item-gives/available-items', [\App\Controllers\Api\ItemGiveController::class, 'getAvailableItems'])->name('api.item-gives.available-items')->middleware('auth')->middleware('permission', 'item.give.manage');
     $router->post('/item-gives', [\App\Controllers\Api\ItemGiveController::class, 'store'])->name('api.item-gives.store')->middleware('auth')->middleware('permission', 'item.give.manage');
     $router->delete('/item-gives/{id}', [\App\Controllers\Api\ItemGiveController::class, 'destroy'])->name('api.item-gives.destroy')->middleware('auth')->middleware('permission', 'item.give.manage');
+
+    // Item Statistics (통계) API routes
+    $router->get('/item-statistics/dashboard', [\App\Controllers\Api\ItemStatisticController::class, 'dashboard'])->name('api.item-statistics.dashboard')->middleware('auth')->middleware('permission', 'item.statistic.view');
 });

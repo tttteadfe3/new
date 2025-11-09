@@ -73,12 +73,5 @@ $router->get('/admin/menus', [AdminController::class, 'menus'])->name('admin.men
 // --- 프로필 및 로그 ---
 $router->get('/logs', [LogController::class, 'index'])->name('logs.index')->middleware('auth')->middleware('permission', 'log.view');
 
-// --- 지급품 관리 ---
-use App\Controllers\Web\InventoryController;
-$router->get('/inventory/categories', [InventoryController::class, 'categories'])->name('inventory.categories')->middleware('auth')->middleware('permission', 'item.category.view');
-$router->get('/inventory/plans', [InventoryController::class, 'plans'])->name('inventory.plans')->middleware('auth')->middleware('permission', 'item.plan.view');
-$router->get('/inventory/purchases', [InventoryController::class, 'purchases'])->name('inventory.purchases')->middleware('auth')->middleware('permission', 'item.purchase.view');
-$router->get('/inventory/gives', [InventoryController::class, 'gives'])->name('inventory.gives')->middleware('auth')->middleware('permission', 'item.give.view');
-
 // --- 유틸리티 ---
 $router->get('/blank', ['App\Controllers\Web\UtilityController', 'blank'])->name('blank');

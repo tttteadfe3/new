@@ -134,4 +134,81 @@ class ItemPlanController extends BaseApiController
             $this->handleException($e);
         }
     }
+
+    /**
+     * 계획 목록을 CSV로 내보냅니다.
+     */
+    public function export(): void
+    {
+        try {
+            $year = $this->request->input('year');
+            if (!$year) {
+                // Not using apiBadRequest because this is not an AJAX call
+                http_response_code(400);
+                echo "year는 필수입니다.";
+                return;
+            }
+            $plans = $this->itemPlanService->getPlansByYear((int)$year);
+
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="plans_' . $year . '.csv"');
+
+            $output = fopen('php://output', 'w');
+            fputcsv($output, ["분류", "품목명", "단가", "예정 수량", "예산 금액", "비고", "등록자"]);
+
+            foreach ($plans as $plan) {
+                fputcsv($output, [
+                    $plan['category_name'],
+                    $plan['item_name'],
+                    $plan['unit_price'],
+                    $plan['quantity'],
+                    $plan['budget'],
+                    $plan['note'],
+                    $plan['creator_name'],
+                ]);
+            }
+            fclose($output);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo "Export failed: " . $e->getMessage();
+        }
+    }
+
+    /**
+     * CSV 파일로 계획을 일괄 등록합니다.
+     */
+    public function import(): void
+    {
+        try {
+            if (empty($_FILES['import_file']) || $_FILES['import_file']['error'] !== UPLOAD_ERR_OK) {
+                $this->apiBadRequest("파일이 업로드되지 않았거나 오류가 발생했습니다.");
+                return;
+            }
+
+            $file = $_FILES['import_file']['tmp_name'];
+            $year = $this->request->input('year');
+            if (!$year) {
+                $this->apiBadRequest("연도를 지정해야 합니다.");
+                return;
+            }
+
+            $result = $this->itemPlanService->createPlansFromCsv($file, (int)$year);
+
+            $currentUser = $this->authService->user();
+            $this->logRepository->insert([
+                'user_id' => $currentUser['id'],
+                'employee_id' => $currentUser['employee_id'],
+                'action' => 'item_plan_import',
+                'details' => json_encode(['year' => $year, 'created_count' => $result['created']]),
+            ]);
+
+            $this->apiSuccess($result, "{$result['created']}개의 계획을 성공적으로 등록했습니다.");
+
+        } catch (InvalidArgumentException $e) {
+            $this->apiBadRequest($e->getMessage());
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
 }

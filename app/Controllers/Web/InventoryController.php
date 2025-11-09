@@ -74,4 +74,20 @@ class InventoryController extends BaseController
             'pageTitle' => '지급 관리'
         ], 'layouts/app');
     }
+
+    /**
+     * 통계 및 현황 페이지를 렌더링합니다.
+     */
+    public function statistics(): void
+    {
+        // Chart.js 라이브러리 추가
+        View::getInstance()->addJs('https://cdn.jsdelivr.net/npm/chart.js');
+        // 페이지별 JavaScript 파일 추가
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/inventory-statistics.js');
+
+        // 뷰 렌더링 (레이아웃 포함)
+        echo $this->render('pages/inventory/statistics', [
+            'pageTitle' => '통계 및 현황'
+        ], 'layouts/app');
+    }
 }
