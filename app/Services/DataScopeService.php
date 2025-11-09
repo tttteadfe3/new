@@ -232,6 +232,14 @@ class DataScopeService
         return $queryParts;
     }
 
+    /**
+     * 지급품 구매 테이블에 대한 데이터 스코프를 적용합니다.
+     */
+    public function applyItemPurchaseScope(array $queryParts, string $purchaseTableAlias = 'ip'): array
+    {
+        return $queryParts;
+    }
+
     // =================================================================
     // Private helper methods to query DB directly, avoiding circular deps
     // =================================================================

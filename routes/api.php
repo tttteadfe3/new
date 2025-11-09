@@ -175,4 +175,11 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->post('/item-plans', [\App\Controllers\Api\ItemPlanController::class, 'store'])->name('api.item-plans.store')->middleware('auth')->middleware('permission', 'item.plan.manage');
     $router->put('/item-plans/{id}', [\App\Controllers\Api\ItemPlanController::class, 'update'])->name('api.item-plans.update')->middleware('auth')->middleware('permission', 'item.plan.manage');
     $router->delete('/item-plans/{id}', [\App\Controllers\Api\ItemPlanController::class, 'destroy'])->name('api.item-plans.destroy')->middleware('auth')->middleware('permission', 'item.plan.manage');
+
+    // Item Purchase (지급품 구입) API routes
+    $router->get('/item-purchases', [\App\Controllers\Api\ItemPurchaseController::class, 'index'])->name('api.item-purchases.index')->middleware('auth')->middleware('permission', 'item.purchase.view');
+    $router->post('/item-purchases', [\App\Controllers\Api\ItemPurchaseController::class, 'store'])->name('api.item-purchases.store')->middleware('auth')->middleware('permission', 'item.purchase.manage');
+    $router->put('/item-purchases/{id}', [\App\Controllers\Api\ItemPurchaseController::class, 'update'])->name('api.item-purchases.update')->middleware('auth')->middleware('permission', 'item.purchase.manage');
+    $router->delete('/item-purchases/{id}', [\App\Controllers\Api\ItemPurchaseController::class, 'destroy'])->name('api.item-purchases.destroy')->middleware('auth')->middleware('permission', 'item.purchase.manage');
+    $router->post('/item-purchases/{id}/stock-in', [\App\Controllers\Api\ItemPurchaseController::class, 'stockIn'])->name('api.item-purchases.stock-in')->middleware('auth')->middleware('permission', 'item.purchase.manage');
 });
