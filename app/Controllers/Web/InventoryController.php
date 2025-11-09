@@ -60,4 +60,18 @@ class InventoryController extends BaseController
             'pageTitle' => '지급품 구입 관리'
         ], 'layouts/app');
     }
+
+    /**
+     * 지급품 지급 관리 페이지를 렌더링합니다.
+     */
+    public function gives(): void
+    {
+        // 페이지별 JavaScript 파일 추가
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/inventory-gives.js');
+
+        // 뷰 렌더링 (레이아웃 포함)
+        echo $this->render('pages/inventory/gives', [
+            'pageTitle' => '지급 관리'
+        ], 'layouts/app');
+    }
 }

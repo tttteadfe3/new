@@ -90,3 +90,32 @@
     *   `InventoryController`에 `purchases` 페이지 추가 및 `inventory-purchases.js` 개발 완료.
     *   입고 처리에 따른 재고 업데이트 트랜잭션 로직 구현 완료.
     *   DI 컨테이너 등록 및 웹/API 라우트 설정 완료.
+
+---
+
+## Phase 4: 지급 관리
+
+### 계획 (2025-11-09)
+
+1.  **개발 로그 업데이트:** `DEVELOPMENT_LOG_ITEMS_MANAGEMENT.md` 파일에 4단계 개발 계획 추가.
+2.  **'지급 관리' 백엔드 개발:**
+    *   `ItemGive` 모델 및 리포지토리, 서비스, API 컨트롤러 생성.
+    *   지급/취소에 따른 재고 차감/복원 로직 구현 (트랜잭션 적용).
+    *   DI 컨테이너 및 API 라우트 설정.
+3.  **'지급 관리' 프론트엔드 개발:**
+    *   `InventoryController`에 `gives()` 메소드 추가 및 웹 라우트 설정.
+    *   `gives.php` 뷰 파일 생성 (목록 테이블, 지급 등록 모달).
+    *   `inventory-gives.js` 파일 생성 (API 연동 및 동적 UI 구현).
+4.  **기능 검증 및 로그 업데이트:** 개발 기능 검토 및 본 파일에 완료 내역 기록.
+
+### 진행 상황
+
+*   **4단계 완료 (2025-11-09):** '지급 관리' 기능의 백엔드, 프론트엔드 개발을 모두 완료함.
+
+### 완료
+
+*   **Phase 4: 지급 관리**
+    *   `ItemGive` Model, Repository, Service, API Controller 개발 완료.
+    *   `InventoryController`에 `gives` 페이지 추가 및 `inventory-gives.js` 개발 완료.
+    *   지급/취소에 따른 재고 차감/복원 트랜잭션 로직 구현 완료.
+    *   DI 컨테이너 등록 및 웹/API 라우트 설정 완료.

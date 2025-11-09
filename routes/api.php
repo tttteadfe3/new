@@ -182,4 +182,10 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->put('/item-purchases/{id}', [\App\Controllers\Api\ItemPurchaseController::class, 'update'])->name('api.item-purchases.update')->middleware('auth')->middleware('permission', 'item.purchase.manage');
     $router->delete('/item-purchases/{id}', [\App\Controllers\Api\ItemPurchaseController::class, 'destroy'])->name('api.item-purchases.destroy')->middleware('auth')->middleware('permission', 'item.purchase.manage');
     $router->post('/item-purchases/{id}/stock-in', [\App\Controllers\Api\ItemPurchaseController::class, 'stockIn'])->name('api.item-purchases.stock-in')->middleware('auth')->middleware('permission', 'item.purchase.manage');
+
+    // Item Give (지급) API routes
+    $router->get('/item-gives', [\App\Controllers\Api\ItemGiveController::class, 'index'])->name('api.item-gives.index')->middleware('auth')->middleware('permission', 'item.give.view');
+    $router->get('/item-gives/available-items', [\App\Controllers\Api\ItemGiveController::class, 'getAvailableItems'])->name('api.item-gives.available-items')->middleware('auth')->middleware('permission', 'item.give.manage');
+    $router->post('/item-gives', [\App\Controllers\Api\ItemGiveController::class, 'store'])->name('api.item-gives.store')->middleware('auth')->middleware('permission', 'item.give.manage');
+    $router->delete('/item-gives/{id}', [\App\Controllers\Api\ItemGiveController::class, 'destroy'])->name('api.item-gives.destroy')->middleware('auth')->middleware('permission', 'item.give.manage');
 });
