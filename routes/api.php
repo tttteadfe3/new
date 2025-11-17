@@ -23,7 +23,6 @@ use App\Controllers\Api\WasteCollectionApiController;
     use App\Controllers\Api\SupplyPurchaseApiController;
     use App\Controllers\Api\SupplyDistributionApiController;
     use App\Controllers\Api\SupplyStockApiController;
-    use App\Controllers\Api\SupplyStockApiController;
     use App\Controllers\Api\SupplyReportApiController;
 
 $router->group('/api', function($router) {
