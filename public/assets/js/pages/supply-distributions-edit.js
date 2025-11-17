@@ -5,7 +5,7 @@
 class SupplyDistributionsEditPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/distributions'
+            API_URL: '/supply/distributions'
         });
         
         this.distributionId = document.getElementById('distribution-id')?.value || null;
@@ -38,7 +38,7 @@ class SupplyDistributionsEditPage extends BasePage {
         }
 
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}/${this.distributionId}`);
+            const data = await this.apiCall(`${this.config.API_URL}/${this.distributionId}`);
             this.distribution = data.data;
             this.originalQuantity = this.distribution.quantity;
             this.renderDistributionForm();
@@ -146,7 +146,7 @@ class SupplyDistributionsEditPage extends BasePage {
         };
 
         try {
-            const result = await this.apiCall(`${this.config.apiBaseUrl}/${this.distributionId}`, {
+            const result = await this.apiCall(`${this.config.API_URL}/${this.distributionId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'

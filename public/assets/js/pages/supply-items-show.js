@@ -5,7 +5,7 @@
 class SupplyItemShowPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/items'
+            API_URL: '/supply/items'
         });
         
         this.itemId = document.getElementById('item-id')?.value;
@@ -24,7 +24,7 @@ class SupplyItemShowPage extends BasePage {
 
     async loadItemDetails() {
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}/${this.itemId}`);
+            const data = await this.apiCall(`${this.config.API_URL}/${this.itemId}`);
             const item = data.data;
             
             const container = document.getElementById('item-details-container');
