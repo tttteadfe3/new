@@ -22,6 +22,7 @@ use App\Controllers\Api\WasteCollectionApiController;
     use App\Controllers\Api\SupplyPlanApiController;
     use App\Controllers\Api\SupplyPurchaseApiController;
     use App\Controllers\Api\SupplyDistributionApiController;
+    use App\Controllers\Api\SupplyStockApiController;
     use App\Controllers\Api\SupplyReportApiController;
 
 $router->group('/api', function($router) {
@@ -219,6 +220,9 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->post('/supply/distributions', [SupplyDistributionApiController::class, 'store'])->name('api.supply.distributions.store')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
     $router->put('/supply/distributions/{id}', [SupplyDistributionApiController::class, 'update'])->name('api.supply.distributions.update')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
     $router->post('/supply/distributions/{id}/cancel', [SupplyDistributionApiController::class, 'cancel'])->name('api.supply.distributions.cancel')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
+
+    // 재고 현황 API
+    $router->get('/supply/stocks', [SupplyStockApiController::class, 'index'])->name('api.supply.stocks.index')->middleware('auth')->middleware('permission', 'supply.stock.view');
 
     // 보고서 API
     $router->get('/supply/reports/distribution', [SupplyReportApiController::class, 'getDistributionReport'])->name('api.supply.reports.distribution')->middleware('auth')->middleware('permission', 'supply.report.view');
