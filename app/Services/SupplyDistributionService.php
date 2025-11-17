@@ -18,6 +18,7 @@ class SupplyDistributionService
     private EmployeeRepository $employeeRepository;
     private DepartmentRepository $departmentRepository;
     private ActivityLogger $activityLogger;
+    private Database $db;
 
     public function __construct(
         SupplyDistributionRepository $distributionRepository,
@@ -25,7 +26,8 @@ class SupplyDistributionService
         SupplyStockService $stockService,
         EmployeeRepository $employeeRepository,
         DepartmentRepository $departmentRepository,
-        ActivityLogger $activityLogger
+        ActivityLogger $activityLogger,
+        Database $db
     ) {
         $this->distributionRepository = $distributionRepository;
         $this->itemRepository = $itemRepository;
@@ -33,6 +35,7 @@ class SupplyDistributionService
         $this->employeeRepository = $employeeRepository;
         $this->departmentRepository = $departmentRepository;
         $this->activityLogger = $activityLogger;
+        $this->db = $db;
     }
 
     /**

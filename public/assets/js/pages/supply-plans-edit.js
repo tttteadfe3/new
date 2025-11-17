@@ -5,7 +5,7 @@
 class SupplyPlansEditPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/plans'
+            API_URL: '/supply/plans'
         });
         
         this.planId = window.supplyPlanEditData?.planId || null;
@@ -45,7 +45,7 @@ class SupplyPlansEditPage extends BasePage {
         }
 
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}/${this.planId}`);
+            const data = await this.apiCall(`${this.config.API_URL}/${this.planId}`);
             this.originalData = data.data;
             this.renderPlanForm();
         } catch (error) {
@@ -182,7 +182,7 @@ class SupplyPlansEditPage extends BasePage {
         };
 
         try {
-            const result = await this.apiCall(`${this.config.apiBaseUrl}/${this.planId}`, {
+            const result = await this.apiCall(`${this.config.API_URL}/${this.planId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'

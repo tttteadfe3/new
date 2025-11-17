@@ -5,7 +5,7 @@
 class SupplyPlansCreatePage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/plans'
+            API_URL: '/supply/plans'
         });
         
         this.year = window.supplyPlanCreateData?.year || new Date().getFullYear();
@@ -178,7 +178,7 @@ class SupplyPlansCreatePage extends BasePage {
         };
 
         try {
-            const result = await this.apiCall(this.config.apiBaseUrl, {
+            const result = await this.apiCall(this.config.API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

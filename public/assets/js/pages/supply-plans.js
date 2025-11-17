@@ -5,16 +5,16 @@
 class SupplyPlansPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/plans'
+            API_URL: '/supply/plans'
         });
         
+        this.dataTable = null;
         this.currentYear = new Date().getFullYear();
         this.currentDeleteId = null;
         this.deletePlanModal = null;
     }
 
     setupEventListeners() {
-        // 연도 선택 변경
         const yearSelector = document.getElementById('year-selector');
         if (yearSelector) {
             yearSelector.addEventListener('change', () => {
@@ -22,13 +22,11 @@ class SupplyPlansPage extends BasePage {
             });
         }
 
-        // 엑셀 다운로드
         const exportExcelBtn = document.getElementById('export-excel-btn');
         if (exportExcelBtn) {
             exportExcelBtn.addEventListener('click', () => this.exportToExcel());
         }
 
-        // 삭제 버튼 이벤트
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('delete-plan-btn') || 
                 e.target.closest('.delete-plan-btn')) {
@@ -43,7 +41,6 @@ class SupplyPlansPage extends BasePage {
             }
         });
 
-        // 삭제 확인 버튼
         const confirmDeleteBtn = document.getElementById('confirm-delete-plan-btn');
         if (confirmDeleteBtn) {
             confirmDeleteBtn.addEventListener('click', () => {
@@ -52,45 +49,56 @@ class SupplyPlansPage extends BasePage {
                 }
             });
         }
+
+        // 검색 및 필터 이벤트
+        $('#search-plans, #filter-category').on('keyup change', this.debounce(() => {
+            this.loadPlans();
+        }, 300));
     }
 
     loadInitialData() {
         this.initializeDataTable();
+        this.loadPlans();
         this.deletePlanModal = new bootstrap.Modal(document.getElementById('deletePlanModal'));
+    }
+
+    async loadPlans() {
+        try {
+            const params = {
+                year: $('#year-selector').val() || this.currentYear,
+                search: $('#search-plans').val(),
+                category_id: $('#filter-category').val()
+            };
+
+            const queryString = new URLSearchParams(params).toString();
+            const result = await this.apiCall(`${this.config.API_URL}?${queryString}`);
+
+            this.dataTable.clear().rows.add(result.data || []).draw();
+        } catch (error) {
+            console.error('Error loading plans:', error);
+            Toast.error('계획을 불러오는 중 오류가 발생했습니다.');
+        }
     }
 
     initializeDataTable() {
         const plansTable = document.getElementById('plans-table');
         if (plansTable && typeof $.fn.DataTable !== 'undefined') {
-            $(plansTable).DataTable({
+            this.dataTable = $(plansTable).DataTable({
                 responsive: true,
                 pageLength: 25,
                 order: [[7, 'desc']], // 등록일 기준 내림차순
+                columns: [
+                    // ... 컬럼 정의 ...
+                ],
                 columnDefs: [
                     { targets: [4, 5, 6], className: 'text-end' },
                     { targets: [8], orderable: false }
                 ],
                 language: {
                     url: '/assets/libs/datatables.net/i18n/Korean.json'
-                }
+                },
+                searching: false
             });
-
-            // 검색 기능
-            const searchInput = document.getElementById('search-plans');
-            if (searchInput) {
-                searchInput.addEventListener('keyup', function() {
-                    $(plansTable).DataTable().search(this.value).draw();
-                });
-            }
-
-            // 분류 필터
-            const categoryFilter = document.getElementById('filter-category');
-            if (categoryFilter) {
-                categoryFilter.addEventListener('change', function() {
-                    const filterValue = this.value;
-                    $(plansTable).DataTable().column(2).search(filterValue).draw();
-                });
-            }
         }
     }
 
@@ -113,14 +121,12 @@ class SupplyPlansPage extends BasePage {
         this.setButtonLoading('#confirm-delete-plan-btn', '삭제 중...');
 
         try {
-            await this.apiCall(`${this.config.apiBaseUrl}/${planId}`, {
+            await this.apiCall(`${this.config.API_URL}/${planId}`, {
                 method: 'DELETE'
             });
 
             Toast.success('계획이 성공적으로 삭제되었습니다.');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            this.loadPlans(); // 데이터 다시 로드
         } catch (error) {
             console.error('Error:', error);
             Toast.error('오류: ' + (error.message || '계획 삭제에 실패했습니다.'));
@@ -134,7 +140,19 @@ class SupplyPlansPage extends BasePage {
     exportToExcel() {
         const yearSelector = document.getElementById('year-selector');
         const year = yearSelector ? yearSelector.value : this.currentYear;
-        window.open(this.config.apiBaseUrl + '/export-excel?year=' + year, '_blank');
+        window.open(`${this.config.API_URL}/export-excel?year=${year}`, '_blank');
+    }
+
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
 }
 

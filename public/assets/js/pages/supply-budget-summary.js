@@ -5,7 +5,7 @@
 class SupplyBudgetSummaryPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/plans'
+            API_URL: '/supply/plans'
         });
         
         this.charts = {};
@@ -257,7 +257,7 @@ class SupplyBudgetSummaryPage extends BasePage {
     exportBudget() {
         const yearSelector = document.getElementById('year-selector');
         const year = yearSelector ? yearSelector.value : new Date().getFullYear();
-        window.open(`${this.config.apiBaseUrl}/export-budget?year=${year}`, '_blank');
+        window.open(`${this.config.API_URL}/export-budget?year=${year}`, '_blank');
     }
 }
 

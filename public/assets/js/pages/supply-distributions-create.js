@@ -5,7 +5,7 @@
 class SupplyDistributionsCreatePage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/distributions'
+            API_URL: '/supply/distributions'
         });
         
         this.availableItems = [];
@@ -42,7 +42,7 @@ class SupplyDistributionsCreatePage extends BasePage {
     async loadAvailableItems() {
         const itemSelect = document.getElementById('item-id');
         try {
-            const response = await this.apiCall(`${this.config.apiBaseUrl}/available-items`);
+            const response = await this.apiCall(`${this.config.API_URL}/available-items`);
             this.availableItems = response.data || [];
             this.renderOptions(itemSelect, this.availableItems, {
                 value: 'id',
@@ -61,7 +61,7 @@ class SupplyDistributionsCreatePage extends BasePage {
     async loadDepartments() {
         const deptSelect = document.getElementById('department-id');
         try {
-            const response = await this.apiCall(`${this.config.apiBaseUrl}/departments`);
+            const response = await this.apiCall(`${this.config.API_URL}/departments`);
             this.departments = response.data || [];
             this.renderOptions(deptSelect, this.departments, {
                 value: 'id',
@@ -87,7 +87,7 @@ class SupplyDistributionsCreatePage extends BasePage {
         employeeSelect.disabled = true;
 
         try {
-            const response = await this.apiCall(`${this.config.apiBaseUrl}/employees-by-department/${departmentId}`);
+            const response = await this.apiCall(`${this.config.API_URL}/employees-by-department/${departmentId}`);
             this.employees = response.data || [];
             this.renderOptions(employeeSelect, this.employees, {
                 value: 'id',
@@ -153,7 +153,7 @@ class SupplyDistributionsCreatePage extends BasePage {
         const data = Object.fromEntries(formData.entries());
         
         try {
-            await this.apiCall(this.config.apiBaseUrl, {
+            await this.apiCall(this.config.API_URL, {
                 method: 'POST',
                 body: JSON.stringify(data)
             });

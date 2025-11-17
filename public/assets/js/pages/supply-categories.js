@@ -5,7 +5,7 @@
 class SupplyCategoryPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/categories'
+            API_URL: '/supply/categories'
         });
         
         this.categories = [];
@@ -62,7 +62,7 @@ class SupplyCategoryPage extends BasePage {
 
     async loadCategories() {
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}?hierarchical=true`);
+            const data = await this.apiCall(`${this.config.API_URL}?hierarchical=true`);
             this.categories = data.data || [];
             this.filteredCategories = [...this.categories];
             this.renderCategoryList();
@@ -196,7 +196,7 @@ class SupplyCategoryPage extends BasePage {
 
     async showCategoryDetails(categoryId) {
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}/${categoryId}`);
+            const data = await this.apiCall(`${this.config.API_URL}/${categoryId}`);
             const category = data.data;
             this.renderCategoryDetails(category);
         } catch (error) {
@@ -347,7 +347,7 @@ class SupplyCategoryPage extends BasePage {
 
     async loadParentCategoryOptions() {
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}/level/1`);
+            const data = await this.apiCall(`${this.config.API_URL}/level/1`);
             const mainCategories = data.data || [];
             
             const select = document.getElementById('parent-category');
@@ -395,7 +395,7 @@ class SupplyCategoryPage extends BasePage {
         }
         
         try {
-            const url = `${this.config.apiBaseUrl}/generate-code?level=${level}${parentId ? `&parent_id=${parentId}` : ''}`;
+            const url = `${this.config.API_URL}/generate-code?level=${level}${parentId ? `&parent_id=${parentId}` : ''}`;
             const data = await this.apiCall(url);
             document.getElementById('category-code').value = data.data.code;
         } catch (error) {
@@ -415,8 +415,8 @@ class SupplyCategoryPage extends BasePage {
         
         try {
             const url = this.isEditMode ? 
-                `${this.config.apiBaseUrl}/${this.selectedCategoryId}` : 
-                this.config.apiBaseUrl;
+                `${this.config.API_URL}/${this.selectedCategoryId}` :
+                this.config.API_URL;
             
             const method = this.isEditMode ? 'PUT' : 'POST';
             
@@ -494,7 +494,7 @@ class SupplyCategoryPage extends BasePage {
         if (!result.isConfirmed) return;
         
         try {
-            const response = await this.apiCall(`${this.config.apiBaseUrl}/${categoryId}/toggle-status`, {
+            const response = await this.apiCall(`${this.config.API_URL}/${categoryId}/toggle-status`, {
                 method: 'PUT'
             });
             
@@ -534,7 +534,7 @@ class SupplyCategoryPage extends BasePage {
         if (!this.selectedCategoryId) return;
         
         try {
-            await this.apiCall(`${this.config.apiBaseUrl}/${this.selectedCategoryId}`, {
+            await this.apiCall(`${this.config.API_URL}/${this.selectedCategoryId}`, {
                 method: 'DELETE'
             });
 
