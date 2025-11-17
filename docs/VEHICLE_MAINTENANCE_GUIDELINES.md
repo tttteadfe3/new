@@ -789,3 +789,401 @@ public function storeVehicle(): string
 이 지침서의 모든 규칙은 **필수 사항**입니다. AI가 차량 유지관리 시스템의 코드를 생성하거나 수정할 때는 반드시 이 규칙들을 준수해야 합니다. 특히 자주 발생하는 오류 부분(상속, DI 주입, 데이터 스코프, 권한 설정, 파일 구조)에 대해서는 더욱 세심한 주의를 기울여야 합니다.
 
 **모든 코드 생성 작업 전에 이 문서를 참조하고, 완료 후에는 체크리스트를 통해 검증하시기 바랍니다.**
+
+---
+
+## 12. API 명세서 (OpenAPI Specification)
+
+```yaml
+openapi: 3.0.0
+info:
+  title: "차량 유지관리 시스템 API (Vehicle Maintenance System API)"
+  version: "1.0.0"
+  description: "차량 관리, 고장 처리, 정비, 소모품 등 시스템 전반의 API 명세서"
+  contact:
+    name: "시스템 관리자"
+    email: "admin@example.com"
+
+servers:
+  - url: "/api/v1"
+    description: "메인 API 서버"
+
+paths:
+  /vehicles:
+    get:
+      tags: [Vehicle Management]
+      summary: "모든 차량 목록 조회"
+      description: "필터링, 정렬, 페이지네이션을 지원하여 차량 목록을 조회합니다."
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+          description: "차량 상태 코드로 필터링"
+        - in: query
+          name: department_id
+          schema: { type: integer }
+          description: "부서 ID로 필터링"
+      responses:
+        '200':
+          description: "성공"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vehicle'
+    post:
+      tags: [Vehicle Management]
+      summary: "신규 차량 등록"
+      description: "관리자가 신규 차량 정보를 시스템에 등록합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vehicle'
+      responses:
+        '201':
+          description: "생성 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+
+  /vehicles/{vehicleId}:
+    get:
+      tags: [Vehicle Management]
+      summary: "특정 차량 정보 조회"
+      parameters:
+        - in: path
+          name: vehicleId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: "성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+    put:
+      tags: [Vehicle Management]
+      summary: "차량 정보 수정"
+      parameters:
+        - in: path
+          name: vehicleId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vehicle'
+      responses:
+        '200':
+          description: "수정 성공"
+    delete:
+      tags: [Vehicle Management]
+      summary: "차량 정보 삭제"
+      parameters:
+        - in: path
+          name: vehicleId
+          required: true
+          schema: { type: integer }
+      responses:
+        '204':
+          description: "삭제 성공"
+
+  /breakdowns:
+    post:
+      tags: [Breakdown Management]
+      summary: "고장 등록 (운전자)"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                vehicle_id: { type: integer }
+                breakdown_item: { type: string }
+                description: { type: string }
+                mileage: { type: integer }
+                photo:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: "등록 성공"
+
+  /breakdowns/{breakdownId}/receive:
+    post:
+      tags: [Breakdown Management]
+      summary: "고장 접수 (중간관리자)"
+      parameters:
+        - in: path
+          name: breakdownId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: "접수 성공"
+
+  /breakdowns/{breakdownId}/decide:
+    post:
+      tags: [Breakdown Management]
+      summary: "조치 결정 (중간관리자)"
+      parameters:
+        - in: path
+          name: breakdownId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action_type:
+                  type: string
+                  enum: [SELF_REPAIR, EXTERNAL_REPAIR]
+                repair_schedule:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: "결정 성공"
+
+  /breakdowns/{breakdownId}/complete:
+    post:
+      tags: [Breakdown Management]
+      summary: "수리 완료 (중간관리자/수리자)"
+      parameters:
+        - in: path
+          name: breakdownId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                repair_details: { type: string }
+                used_parts: { type: string }
+                cost: { type: number }
+      responses:
+        '200':
+          description: "완료 성공"
+
+  /breakdowns/{breakdownId}/approve:
+    post:
+      tags: [Breakdown Management]
+      summary: "최종 승인 (최종관리자)"
+      parameters:
+        - in: path
+          name: breakdownId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: "승인 성공"
+
+  /maintenances:
+    post:
+      tags: [Self-Maintenance]
+      summary: "자체 정비 등록 (운전자)"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+      responses:
+        '201':
+          description: "등록 성공"
+
+  /reports/monthly-cost:
+    get:
+      tags: [Reports]
+      summary: "월간 비용 리포트"
+      parameters:
+        - in: query
+          name: year
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: month
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: "성공"
+          content:
+            application/pdf: {}
+            application/vnd.ms-excel: {}
+
+  /users:
+    get:
+      tags: [User Management]
+      summary: "사용자 목록 조회"
+      responses:
+        '200':
+          description: "성공"
+    post:
+      tags: [User Management]
+      summary: "신규 사용자 등록"
+      responses:
+        '201':
+          description: "성공"
+
+components:
+  schemas:
+    # ===============================================
+    # Basic Models
+    # ===============================================
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 차량 고유 ID
+          readOnly: true
+        vehicle_number:
+          type: string
+          description: 차량번호
+        model:
+          type: string
+          description: 차종/모델
+        year:
+          type: integer
+          description: 연식
+        department_id:
+          type: integer
+          description: 배정 부서 ID
+        status_code:
+          type: string
+          description: "차량 상태 코드 (NORMAL, REPAIRING, DISPOSED)"
+          enum: [NORMAL, REPAIRING, DISPOSED]
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    Breakdown:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        vehicle_id:
+          type: integer
+          description: 차량 ID
+        driver_id:
+          type: integer
+          description: 운전자(신고자) ID
+        breakdown_item:
+          type: string
+          description: 고장 항목
+        description:
+          type: string
+          description: 고장 상세 내용
+        mileage:
+          type: integer
+          description: 주행거리
+        status:
+          type: string
+          description: "고장 처리 상태 (REGISTERED, RECEIVED, DECIDED, COMPLETED, APPROVED)"
+          enum: [REGISTERED, RECEIVED, DECIDED, COMPLETED, APPROVED]
+          readOnly: true
+        photo_path:
+          type: string
+          description: 고장 사진 파일 경로
+
+    Maintenance:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        vehicle_id:
+          type: integer
+        driver_id:
+          type: integer
+        maintenance_item:
+          type: string
+          description: 정비 항목
+        description:
+          type: string
+          description: 정비 상세 내용
+        used_parts:
+          type: string
+          description: 사용 부품
+        photo_path:
+          type: string
+          description: 정비 사진 파일 경로
+        status:
+          type: string
+          description: "자체 정비 상태 (REGISTERED, COMPLETED, APPROVED)"
+          enum: [REGISTERED, COMPLETED, APPROVED]
+          readOnly: true
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          description: "사용자 역할 (admin, manager, driver, system)"
+          enum: [admin, manager, driver, system]
+        department_id:
+          type: integer
+
+    # ===============================================
+    # API Response Wrappers
+    # ===============================================
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+
+    ApiError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+        details:
+          type: object
+          nullable: true
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
+```
