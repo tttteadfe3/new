@@ -23,8 +23,32 @@ use App\Controllers\Api\WasteCollectionApiController;
     use App\Controllers\Api\SupplyPurchaseApiController;
     use App\Controllers\Api\SupplyDistributionApiController;
     use App\Controllers\Api\SupplyReportApiController;
+    use App\Controllers\Api\VehicleController;
+    use App\Controllers\Api\BreakdownController;
+    use App\Controllers\Api\MaintenanceController;
 
 $router->group('/api', function($router) {
+    // Vehicle Management API routes
+    $router->get('/vehicles', [VehicleController::class, 'index'])->name('api.vehicles.index')->middleware('auth')->middleware('permission', 'vehicle.view');
+    $router->get('/vehicles/{id}', [VehicleController::class, 'show'])->name('api.vehicles.show')->middleware('auth')->middleware('permission', 'vehicle.view');
+    $router->post('/vehicles', [VehicleController::class, 'store'])->name('api.vehicles.store')->middleware('auth')->middleware('permission', 'vehicle.create');
+    $router->put('/vehicles/{id}', [VehicleController::class, 'update'])->name('api.vehicles.update')->middleware('auth')->middleware('permission', 'vehicle.update');
+    $router->delete('/vehicles/{id}', [VehicleController::class, 'destroy'])->name('api.vehicles.destroy')->middleware('auth')->middleware('permission', 'vehicle.delete');
+
+    // Breakdown Management API routes
+    $router->get('/breakdowns', [BreakdownController::class, 'index'])->name('api.breakdowns.index')->middleware('auth')->middleware('permission', 'breakdown.view');
+    $router->get('/breakdowns/{id}', [BreakdownController::class, 'show'])->name('api.breakdowns.show')->middleware('auth')->middleware('permission', 'breakdown.view');
+    $router->post('/breakdowns', [BreakdownController::class, 'store'])->name('api.breakdowns.store')->middleware('auth')->middleware('permission', 'breakdown.create');
+    $router->put('/breakdowns/{id}', [BreakdownController::class, 'update'])->name('api.breakdowns.update')->middleware('auth')->middleware('permission', 'breakdown.update');
+    $router->delete('/breakdowns/{id}', [BreakdownController::class, 'destroy'])->name('api.breakdowns.destroy')->middleware('auth')->middleware('permission', 'breakdown.delete');
+
+    // Maintenance Management API routes
+    $router->get('/maintenances', [MaintenanceController::class, 'index'])->name('api.maintenances.index')->middleware('auth')->middleware('permission', 'maintenance.view');
+    $router->get('/maintenances/{id}', [MaintenanceController::class, 'show'])->name('api.maintenances.show')->middleware('auth')->middleware('permission', 'maintenance.view');
+    $router->post('/maintenances', [MaintenanceController::class, 'store'])->name('api.maintenances.store')->middleware('auth')->middleware('permission', 'maintenance.create');
+    $router->put('/maintenances/{id}', [MaintenanceController::class, 'update'])->name('api.maintenances.update')->middleware('auth')->middleware('permission', 'maintenance.update');
+    $router->delete('/maintenances/{id}', [MaintenanceController::class, 'destroy'])->name('api.maintenances.destroy')->middleware('auth')->middleware('permission', 'maintenance.delete');
+
     // Employee API routes
     $router->get('/employees', [EmployeeApiController::class, 'index'])->name('api.employees.index')->middleware('auth')->middleware('permission', 'employee.view');
     $router->post('/employees', [EmployeeApiController::class, 'store'])->name('api.employees.store')->middleware('auth')->middleware('permission', 'employee.create');
