@@ -49,6 +49,7 @@ $container->register(\App\Repositories\MenuRepository::class, fn($c) => new \App
 $container->register(\App\Repositories\PositionRepository::class, fn($c) => new \App\Repositories\PositionRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\RoleRepository::class, fn($c) => new \App\Repositories\RoleRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\WasteCollectionRepository::class, fn($c) => new \App\Repositories\WasteCollectionRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\VehicleRepository::class, fn($c) => new \App\Repositories\VehicleRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 
 // Supply Management Repositories
 $container->register(\App\Repositories\SupplyCategoryRepository::class, fn($c) => new \App\Repositories\SupplyCategoryRepository($c->resolve(Database::class)));
@@ -114,6 +115,7 @@ $container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Se
 $container->register(\App\Services\WasteCollectionService::class, fn($c) => new \App\Services\WasteCollectionService($c->resolve(\App\Repositories\WasteCollectionRepository::class), $c->resolve(Database::class)));
 
 // Supply Management Services
+$container->register(\App\Services\VehicleService::class, fn($c) => new \App\Services\VehicleService($c->resolve(\App\Repositories\VehicleRepository::class)));
 $container->register(\App\Services\SupplyCategoryService::class, fn($c) => new \App\Services\SupplyCategoryService(
     $c->resolve(\App\Repositories\SupplyCategoryRepository::class),
     $c->resolve(\App\Repositories\SupplyItemRepository::class),
@@ -221,6 +223,7 @@ $container->register(\App\Controllers\Api\LeaveController::class, fn($c) => new 
     $c->resolve(JsonResponse::class),
     $c->resolve(\App\Services\LeaveService::class)
 ));
+$container->register(\App\Controllers\Api\VehicleController::class, fn($c) => new \App\Controllers\Api\VehicleController($c->resolve(\App\Services\VehicleService::class)));
 
 // Start session (temporarily disable regeneration for debugging)
 $sessionManager = $container->resolve(SessionManager::class);
