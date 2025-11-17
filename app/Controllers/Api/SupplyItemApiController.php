@@ -27,9 +27,9 @@ class SupplyItemApiController extends BaseApiController
     {
         try {
             $filters = [
-                'category_id' => $this->request->get('category_id'),
-                'is_active' => $this->request->get('is_active'),
-                'search' => $this->request->get('search')
+                'category_id' => $this->request->input('category_id'),
+                'is_active' => $this->request->input('is_active'),
+                'search' => $this->request->input('search')
             ];
 
             $items = $this->itemService->getAllItems(array_filter($filters));

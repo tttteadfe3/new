@@ -8,7 +8,7 @@ class SupplyDistributionsEditPage extends BasePage {
             apiBaseUrl: '/supply/distributions'
         });
         
-        this.distributionId = window.supplyDistributionEditData?.distributionId || null;
+        this.distributionId = document.getElementById('distribution-id')?.value || null;
         this.distribution = null;
         this.originalQuantity = 0;
     }

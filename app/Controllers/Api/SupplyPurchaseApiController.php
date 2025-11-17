@@ -38,10 +38,10 @@ class SupplyPurchaseApiController extends BaseApiController
     public function index(): void
     {
         try {
-            $itemId = $this->request->get('item_id');
-            $startDate = $this->request->get('start_date');
-            $endDate = $this->request->get('end_date');
-            $isReceived = $this->request->get('is_received');
+            $itemId = $this->request->input('item_id');
+            $startDate = $this->request->input('start_date');
+            $endDate = $this->request->input('end_date');
+            $isReceived = $this->request->input('is_received');
             
             // 필터링 조건에 따라 조회
             if ($itemId) {
@@ -217,7 +217,7 @@ class SupplyPurchaseApiController extends BaseApiController
     public function getStatistics(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
             
             $stats = $this->supplyPurchaseService->getPurchaseStatsByYear($year);
@@ -237,7 +237,7 @@ class SupplyPurchaseApiController extends BaseApiController
     public function getPurchaseHistory(): void
     {
         try {
-            $itemId = $this->request->get('item_id');
+            $itemId = $this->request->input('item_id');
             
             if (!$itemId) {
                 $this->apiBadRequest('품목 ID가 필요합니다.');
@@ -337,9 +337,9 @@ class SupplyPurchaseApiController extends BaseApiController
     public function search(): void
     {
         try {
-            $query = $this->request->get('q', '');
-            $startDate = $this->request->get('start_date');
-            $endDate = $this->request->get('end_date');
+            $query = $this->request->input('q', '');
+            $startDate = $this->request->input('start_date');
+            $endDate = $this->request->input('end_date');
             
             if (empty($query) && (!$startDate || !$endDate)) {
                 $this->apiBadRequest('검색어 또는 날짜 범위를 입력해주세요.');
@@ -380,7 +380,7 @@ class SupplyPurchaseApiController extends BaseApiController
     public function getStockStatus(): void
     {
         try {
-            $itemId = $this->request->get('item_id');
+            $itemId = $this->request->input('item_id');
             
             if (!$itemId) {
                 $this->apiBadRequest('품목 ID가 필요합니다.');
@@ -403,7 +403,7 @@ class SupplyPurchaseApiController extends BaseApiController
     /**
      * 예외를 처리합니다.
      */
-    private function handleException(Exception $e): void
+    protected function handleException(Exception $e): void
     {
         if ($e instanceof \InvalidArgumentException) {
             $this->apiBadRequest($e->getMessage());

@@ -46,8 +46,52 @@ class SupplyPlansCreatePage extends BasePage {
         form?.addEventListener('submit', (e) => this.handleSubmit(e));
     }
 
-    loadInitialData() {
-        // 초기 데이터는 이미 뷰에서 로드됨
+    async loadInitialData() {
+        await this.loadCategories();
+        await this.loadAvailableItems();
+    }
+
+    async loadCategories() {
+        try {
+            const response = await this.apiCall('/supply/categories?active=true');
+            const categories = response.data || [];
+            const categoryFilter = document.getElementById('category-filter');
+            if (categoryFilter) {
+                categoryFilter.innerHTML = '<option value="">전체 분류</option>';
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.category_name;
+                    categoryFilter.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            Toast.error('카테고리 목록을 불러오는 데 실패했습니다.');
+        }
+    }
+
+    async loadAvailableItems() {
+        try {
+            const response = await this.apiCall(`/supply/items/active`);
+            const items = response.data || [];
+            const itemSelect = document.getElementById('item-id');
+            if (itemSelect) {
+                itemSelect.innerHTML = '<option value="">품목 선택</option>';
+                items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = `[${item.item_code}] ${item.item_name}`;
+                    option.dataset.unit = item.unit;
+                    option.dataset.code = item.item_code;
+                    option.dataset.category = item.category_id;
+                    itemSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading items:', error);
+            Toast.error('사용 가능한 품목 목록을 불러오는 데 실패했습니다.');
+        }
     }
 
     calculateTotalBudget() {
