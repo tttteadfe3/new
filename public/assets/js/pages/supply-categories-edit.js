@@ -5,7 +5,7 @@
 class SupplyCategoryEditPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/categories'
+            API_URL: '/supply/categories'
         });
         
         // From the global scope, injected by the controller
@@ -25,7 +25,7 @@ class SupplyCategoryEditPage extends BasePage {
         }
 
         try {
-            const response = await this.apiCall(`${this.config.apiBaseUrl}/${this.categoryId}`);
+            const response = await this.apiCall(`${this.config.API_URL}/${this.categoryId}`);
             this.categoryData = response.data;
             this.renderForm();
             this.renderInfo();
@@ -165,7 +165,7 @@ class SupplyCategoryEditPage extends BasePage {
         };
 
         try {
-            await this.apiCall(`${this.config.apiBaseUrl}/${this.categoryId}`, {
+            await this.apiCall(`${this.config.API_URL}/${this.categoryId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
