@@ -543,3 +543,149 @@ GROUP BY
 -- --------------------------------------------------------
 
 COMMIT;
+-- Vehicle Maintenance System Schema
+-- All tables are prefixed with 'vm_' to avoid conflicts and group them logically.
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+--
+-- Table structure for table `vm_vehicles`
+--
+
+CREATE TABLE `vm_vehicles` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+  `vehicle_number` varchar(255) NOT NULL COMMENT '차량번호',
+  `model` varchar(255) NOT NULL COMMENT '차종/모델',
+  `year` year(4) DEFAULT NULL COMMENT '연식',
+  `department_id` int(11) DEFAULT NULL COMMENT '배정 부서 ID',
+  `status_code` varchar(50) NOT NULL DEFAULT 'NORMAL' COMMENT '차량 상태 코드 (NORMAL, REPAIRING, DISPOSED)',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_vehicle_number` (`vehicle_number`),
+  KEY `fk_vehicle_department` (`department_id`),
+  CONSTRAINT `fk_vehicle_department` FOREIGN KEY (`department_id`) REFERENCES `hr_departments` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='차량 기본 정보';
+
+--
+-- Table structure for table `vm_vehicle_breakdowns`
+--
+
+CREATE TABLE `vm_vehicle_breakdowns` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+  `vehicle_id` int(11) NOT NULL COMMENT '차량 ID',
+  `driver_employee_id` int(11) NOT NULL COMMENT '신고한 운전자 직원 ID',
+  `breakdown_item` varchar(255) NOT NULL COMMENT '고장 항목',
+  `description` text COMMENT '고장 상세 내용',
+  `mileage` int(11) DEFAULT NULL COMMENT '고장 당시 주행거리',
+  `photo_path` varchar(255) DEFAULT NULL COMMENT '고장 사진 파일 경로',
+  `status` varchar(50) NOT NULL DEFAULT 'REGISTERED' COMMENT '고장 처리 상태 (REGISTERED, RECEIVED, DECIDED, COMPLETED, APPROVED)',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '등록일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  PRIMARY KEY (`id`),
+  KEY `fk_breakdown_vehicle` (`vehicle_id`),
+  KEY `fk_breakdown_driver` (`driver_employee_id`),
+  CONSTRAINT `fk_breakdown_driver` FOREIGN KEY (`driver_employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE NO ACTION,
+  CONSTRAINT `fk_breakdown_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vm_vehicles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='차량 고장 처리 관리';
+
+--
+-- Table structure for table `vm_vehicle_maintenances`
+--
+
+CREATE TABLE `vm_vehicle_maintenances` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+  `vehicle_id` int(11) NOT NULL COMMENT '차량 ID',
+  `driver_employee_id` int(11) NOT NULL COMMENT '정비 수행 운전자 직원 ID',
+  `maintenance_item` varchar(255) NOT NULL COMMENT '정비 항목',
+  `description` text COMMENT '정비 상세 내용',
+  `used_parts` text COMMENT '사용 부품',
+  `photo_path` varchar(255) DEFAULT NULL COMMENT '정비 사진 파일 경로',
+  `status` varchar(50) NOT NULL DEFAULT 'COMPLETED' COMMENT '정비 상태 (COMPLETED, APPROVED)',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '등록일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  PRIMARY KEY (`id`),
+  KEY `fk_maintenance_vehicle` (`vehicle_id`),
+  KEY `fk_maintenance_driver` (`driver_employee_id`),
+  CONSTRAINT `fk_maintenance_driver` FOREIGN KEY (`driver_employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE NO ACTION,
+  CONSTRAINT `fk_maintenance_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vm_vehicles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='운전자 자체 정비 관리';
+
+--
+-- Table structure for table `vm_vehicle_consumables`
+--
+
+CREATE TABLE `vm_vehicle_consumables` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+  `name` varchar(255) NOT NULL COMMENT '소모품명 (예: 엔진 오일, 타이어)',
+  `unit_price` decimal(10,2) DEFAULT NULL COMMENT '단가',
+  `unit` varchar(50) DEFAULT NULL COMMENT '단위 (예: L, 개)',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_consumable_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='소모품 정보';
+
+--
+-- Table structure for table `vm_vehicle_consumable_logs`
+--
+
+CREATE TABLE `vm_vehicle_consumable_logs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+  `vehicle_id` int(11) NOT NULL COMMENT '차량 ID',
+  `consumable_id` int(11) NOT NULL COMMENT '소모품 ID',
+  `quantity` decimal(10,2) NOT NULL COMMENT '사용 수량',
+  `total_cost` decimal(10,2) NOT NULL COMMENT '총 비용',
+  `replaced_by_employee_id` int(11) DEFAULT NULL COMMENT '교체자 직원 ID',
+  `replacement_date` date NOT NULL COMMENT '교체일',
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_log_vehicle` (`vehicle_id`),
+  KEY `fk_log_consumable` (`consumable_id`),
+  KEY `fk_log_employee` (`replaced_by_employee_id`),
+  CONSTRAINT `fk_log_consumable` FOREIGN KEY (`consumable_id`) REFERENCES `vm_vehicle_consumables` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_log_employee` FOREIGN KEY (`replaced_by_employee_id`) REFERENCES `hr_employees` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_log_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vm_vehicles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='소모품 교체 이력';
+
+--
+-- Table structure for table `vm_vehicle_insurance`
+--
+
+CREATE TABLE `vm_vehicle_insurance` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `vehicle_id` int(11) NOT NULL,
+  `insurer_name` varchar(255) NOT NULL COMMENT '보험사명',
+  `policy_number` varchar(255) NOT NULL COMMENT '증권번호',
+  `start_date` date NOT NULL COMMENT '보험 시작일',
+  `end_date` date NOT NULL COMMENT '보험 종료일',
+  `premium` decimal(10,2) NOT NULL COMMENT '보험료',
+  `document_path` varchar(255) DEFAULT NULL COMMENT '보험증서 파일 경로',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_insurance_vehicle` (`vehicle_id`),
+  CONSTRAINT `fk_insurance_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vm_vehicles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='차량 보험 정보';
+
+--
+-- Table structure for table `vm_vehicle_inspections`
+--
+
+CREATE TABLE `vm_vehicle_inspections` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `vehicle_id` int(11) NOT NULL,
+  `inspection_date` date NOT NULL COMMENT '검사일',
+  `expiry_date` date NOT NULL COMMENT '다음 검사 예정일 (만료일)',
+  `inspector_name` varchar(255) DEFAULT NULL COMMENT '검사소/검사자명',
+  `result` varchar(50) NOT NULL COMMENT '검사 결과 (예: 합격, 불합격)',
+  `cost` decimal(10,2) DEFAULT NULL COMMENT '검사 비용',
+  `document_path` varchar(255) DEFAULT NULL COMMENT '검사 결과 파일 경로',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_inspection_vehicle` (`vehicle_id`),
+  CONSTRAINT `fk_inspection_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vm_vehicles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='차량 정기검사 관리';
