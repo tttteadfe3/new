@@ -5,7 +5,7 @@
 class SupplyCategoryCreatePage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/categories'
+            API_URL: '/supply/categories'
         });
         
         this.mainCategories = [];
@@ -36,7 +36,7 @@ class SupplyCategoryCreatePage extends BasePage {
 
     async loadMainCategories() {
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}/level/1`);
+            const data = await this.apiCall(`${this.config.API_URL}/level/1`);
             this.mainCategories = data.data || [];
             this.renderParentOptions();
         } catch (error) {
@@ -90,7 +90,7 @@ class SupplyCategoryCreatePage extends BasePage {
         }
         
         try {
-            const url = `${this.config.apiBaseUrl}/generate-code?level=${level}${parentId ? `&parent_id=${parentId}` : ''}`;
+            const url = `${this.config.API_URL}/generate-code?level=${level}${parentId ? `&parent_id=${parentId}` : ''}`;
             const data = await this.apiCall(url);
             document.getElementById('category-code').value = data.data.code;
         } catch (error) {
@@ -115,7 +115,7 @@ class SupplyCategoryCreatePage extends BasePage {
         const data = Object.fromEntries(formData.entries());
 
         try {
-            const result = await this.apiCall(this.config.apiBaseUrl, {
+            const result = await this.apiCall(this.config.API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

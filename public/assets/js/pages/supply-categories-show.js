@@ -5,7 +5,7 @@
 class SupplyCategoryShowPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/categories'
+            API_URL: '/supply/categories'
         });
         
         this.categoryId = window.viewData?.categoryId || null;
@@ -24,7 +24,7 @@ class SupplyCategoryShowPage extends BasePage {
         }
 
         try {
-            const response = await this.apiCall(`${this.config.apiBaseUrl}/${this.categoryId}`);
+            const response = await this.apiCall(`${this.config.API_URL}/${this.categoryId}`);
             this.categoryData = response.data;
 
             document.getElementById('loading-container').style.display = 'none';
@@ -195,7 +195,7 @@ class SupplyCategoryShowPage extends BasePage {
 
         if (result.isConfirmed) {
             try {
-                await this.apiCall(`${this.config.apiBaseUrl}/${this.categoryId}/toggle-status`, { method: 'PUT' });
+                await this.apiCall(`${this.config.API_URL}/${this.categoryId}/toggle-status`, { method: 'PUT' });
                 Toast.success('상태가 변경되었습니다.');
                 this.loadInitialData(); // Reload data to show updated status
             } catch (error) {
