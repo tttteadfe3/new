@@ -202,6 +202,7 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
 
     // 구매 관리 API
     $router->get('/supply/purchases', [SupplyPurchaseApiController::class, 'index'])->name('api.supply.purchases.index')->middleware('auth')->middleware('permission', 'supply.purchase.view');
+    $router->get('/supply/purchases/statistics', [SupplyPurchaseApiController::class, 'getStatistics'])->name('api.supply.purchases.statistics')->middleware('auth')->middleware('permission', 'supply.purchase.view');
     $router->get('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'show'])->name('api.supply.purchases.show')->middleware('auth')->middleware('permission', 'supply.purchase.view');
     $router->post('/supply/purchases', [SupplyPurchaseApiController::class, 'store'])->name('api.supply.purchases.store')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
     $router->put('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'update'])->name('api.supply.purchases.update')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
