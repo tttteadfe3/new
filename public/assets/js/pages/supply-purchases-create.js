@@ -5,7 +5,7 @@
 class SupplyPurchasesCreatePage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/purchases'
+            API_URL: '/supply/purchases'
         });
         
         this.items = [];
@@ -120,7 +120,7 @@ class SupplyPurchasesCreatePage extends BasePage {
         };
 
         try {
-            const result = await this.apiCall(this.config.apiBaseUrl, {
+            const result = await this.apiCall(this.config.API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

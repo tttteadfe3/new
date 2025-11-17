@@ -5,7 +5,7 @@
 class SupplyItemEditPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/items'
+            API_URL: '/supply/items'
         });
         
         this.itemId = document.getElementById('item-id')?.value;
@@ -45,7 +45,7 @@ class SupplyItemEditPage extends BasePage {
 
     async loadItemData() {
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}/${this.itemId}`);
+            const data = await this.apiCall(`${this.config.API_URL}/${this.itemId}`);
             const item = data.data;
             
             if (item) {
@@ -84,7 +84,7 @@ class SupplyItemEditPage extends BasePage {
                 is_active: document.getElementById('is-active').checked ? 1 : 0
             };
 
-            await this.apiCall(`${this.config.apiBaseUrl}/${this.itemId}`, {
+            await this.apiCall(`${this.config.API_URL}/${this.itemId}`, {
                 method: 'PUT',
                 body: JSON.stringify(formData)
             });
