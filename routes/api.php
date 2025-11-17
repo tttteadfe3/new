@@ -16,6 +16,14 @@ use App\Controllers\Api\PositionApiController;
 use App\Controllers\Api\LogApiController;
 use App\Controllers\Api\WasteCollectionApiController;
 
+    // Supply Management API routes
+    use App\Controllers\Api\SupplyCategoryApiController;
+    use App\Controllers\Api\SupplyItemApiController;
+    use App\Controllers\Api\SupplyPlanApiController;
+    use App\Controllers\Api\SupplyPurchaseApiController;
+    use App\Controllers\Api\SupplyDistributionApiController;
+    use App\Controllers\Api\SupplyReportApiController;
+
 $router->group('/api', function($router) {
     // Employee API routes
     $router->get('/employees', [EmployeeApiController::class, 'index'])->name('api.employees.index')->middleware('auth')->middleware('permission', 'employee.view');
@@ -159,4 +167,62 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->post('/waste-collections/admin/parse-html', [WasteCollectionApiController::class, 'parseHtmlFile'])->name('api.waste-collections.parse-html')->middleware('auth')->middleware('permission', 'waste.manage');
     $router->post('/waste-collections/admin/batch-register', [WasteCollectionApiController::class, 'batchRegister'])->name('api.waste-collections.batch-register')->middleware('auth')->middleware('permission', 'waste.manage');
     $router->delete('/waste-collections/admin/online-submissions', [WasteCollectionApiController::class, 'clearOnlineSubmissions'])->name('api.waste-collections.clear-online')->middleware('auth')->middleware('permission', 'waste.manage');
+
+
+    // 분류 관리 API
+    $router->get('/supply/categories', [SupplyCategoryApiController::class, 'index'])->name('api.supply.categories.index')->middleware('auth')->middleware('permission', 'supply.category.manage');
+    $router->get('/supply/categories/level/{level}', [SupplyCategoryApiController::class, 'getByLevel'])->name('api.supply.categories.by-level')->middleware('auth')->middleware('permission', 'supply.category.manage');
+    $router->get('/supply/categories/generate-code', [SupplyCategoryApiController::class, 'generateCode'])->name('api.supply.categories.generate-code')->middleware('auth')->middleware('permission', 'supply.category.manage');
+    $router->post('/supply/categories', [SupplyCategoryApiController::class, 'store'])->name('api.supply.categories.store')->middleware('auth')->middleware('permission', 'supply.category.manage');
+    $router->put('/supply/categories/{id}/toggle-status', [SupplyCategoryApiController::class, 'toggleStatus'])->name('api.supply.categories.toggle-status')->middleware('auth')->middleware('permission', 'supply.category.manage');
+    $router->get('/supply/categories/{id}', [SupplyCategoryApiController::class, 'show'])->name('api.supply.categories.show')->middleware('auth')->middleware('permission', 'supply.category.manage');
+    $router->put('/supply/categories/{id}', [SupplyCategoryApiController::class, 'update'])->name('api.supply.categories.update')->middleware('auth')->middleware('permission', 'supply.category.manage');
+    $router->delete('/supply/categories/{id}', [SupplyCategoryApiController::class, 'destroy'])->name('api.supply.categories.destroy')->middleware('auth')->middleware('permission', 'supply.category.manage');
+
+    // 품목 관리 API
+    $router->get('/supply/items', [SupplyItemApiController::class, 'index'])->name('api.supply.items.index')->middleware('auth')->middleware('permission', 'supply.item.view');
+    $router->get('/supply/items/active', [SupplyItemApiController::class, 'getActiveItems'])->name('api.supply.items.active')->middleware('auth')->middleware('permission', 'supply.item.view');
+    $router->get('/supply/items/generate-code', [SupplyItemApiController::class, 'generateCode'])->name('api.supply.items.generate-code')->middleware('auth')->middleware('permission', 'supply.item.manage');
+    $router->post('/supply/items', [SupplyItemApiController::class, 'store'])->name('api.supply.items.store')->middleware('auth')->middleware('permission', 'supply.item.manage');
+    $router->get('/supply/items/{id}', [SupplyItemApiController::class, 'show'])->name('api.supply.items.show')->middleware('auth')->middleware('permission', 'supply.item.view');
+    $router->put('/supply/items/{id}', [SupplyItemApiController::class, 'update'])->name('api.supply.items.update')->middleware('auth')->middleware('permission', 'supply.item.manage');
+    $router->delete('/supply/items/{id}', [SupplyItemApiController::class, 'destroy'])->name('api.supply.items.destroy')->middleware('auth')->middleware('permission', 'supply.item.manage');
+    $router->put('/supply/items/{id}/toggle-status', [SupplyItemApiController::class, 'toggleStatus'])->name('api.supply.items.toggle-status')->middleware('auth')->middleware('permission', 'supply.item.manage');
+
+    // 연간 계획 관리 API
+    $router->get('/supply/plans', [SupplyPlanApiController::class, 'index'])->name('api.supply.plans.index')->middleware('auth')->middleware('permission', 'supply.plan.view');
+    $router->get('/supply/plans/{id}', [SupplyPlanApiController::class, 'show'])->name('api.supply.plans.show')->middleware('auth')->middleware('permission', 'supply.plan.view');
+    $router->post('/supply/plans', [SupplyPlanApiController::class, 'store'])->name('api.supply.plans.store')->middleware('auth')->middleware('permission', 'supply.plan.manage');
+    $router->put('/supply/plans/{id}', [SupplyPlanApiController::class, 'update'])->name('api.supply.plans.update')->middleware('auth')->middleware('permission', 'supply.plan.manage');
+    $router->delete('/supply/plans/{id}', [SupplyPlanApiController::class, 'destroy'])->name('api.supply.plans.destroy')->middleware('auth')->middleware('permission', 'supply.plan.manage');
+    $router->post('/supply/plans/import-excel', [SupplyPlanApiController::class, 'importExcel'])->name('api.supply.plans.import-excel')->middleware('auth')->middleware('permission', 'supply.plan.manage');
+    $router->get('/supply/plans/export-excel/{year}', [SupplyPlanApiController::class, 'exportExcel'])->name('api.supply.plans.export-excel')->middleware('auth')->middleware('permission', 'supply.plan.view');
+    $router->get('/supply/plans/budget-summary/{year}', [SupplyPlanApiController::class, 'getBudgetSummary'])->name('api.supply.plans.budget-summary')->middleware('auth')->middleware('permission', 'supply.plan.view');
+    $router->post('/supply/plans/copy', [SupplyPlanApiController::class, 'copyPlans'])->name('api.supply.plans.copy')->middleware('auth')->middleware('permission', 'supply.plan.manage');
+
+    // 구매 관리 API
+    $router->get('/supply/purchases', [SupplyPurchaseApiController::class, 'index'])->name('api.supply.purchases.index')->middleware('auth')->middleware('permission', 'supply.purchase.view');
+    $router->get('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'show'])->name('api.supply.purchases.show')->middleware('auth')->middleware('permission', 'supply.purchase.view');
+    $router->post('/supply/purchases', [SupplyPurchaseApiController::class, 'store'])->name('api.supply.purchases.store')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
+    $router->put('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'update'])->name('api.supply.purchases.update')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
+    $router->delete('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'destroy'])->name('api.supply.purchases.destroy')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
+    $router->post('/supply/purchases/{id}/mark-received', [SupplyPurchaseApiController::class, 'markReceived'])->name('api.supply.purchases.mark-received')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
+
+    // 지급 관리 API
+    $router->get('/supply/distributions/available-items', [SupplyDistributionApiController::class, 'getAvailableItems'])->name('api.supply.distributions.available-items')->middleware('auth')->middleware('permission', 'supply.distribution.view');
+    $router->get('/supply/distributions/departments', [SupplyDistributionApiController::class, 'getDepartments'])->name('api.supply.distributions.departments')->middleware('auth')->middleware('permission', 'supply.distribution.view');
+    $router->get('/supply/distributions/employees-by-department/{deptId}', [SupplyDistributionApiController::class, 'getEmployeesByDepartment'])->name('api.supply.distributions.employees')->middleware('auth')->middleware('permission', 'supply.distribution.view');
+    $router->get('/supply/distributions/statistics', [SupplyDistributionApiController::class, 'getStatistics'])->name('api.supply.distributions.statistics')->middleware('auth')->middleware('permission', 'supply.distribution.view');
+    $router->get('/supply/distributions', [SupplyDistributionApiController::class, 'index'])->name('api.supply.distributions.index')->middleware('auth')->middleware('permission', 'supply.distribution.view');
+    $router->get('/supply/distributions/{id}', [SupplyDistributionApiController::class, 'show'])->name('api.supply.distributions.show')->middleware('auth')->middleware('permission', 'supply.distribution.view');
+    $router->post('/supply/distributions', [SupplyDistributionApiController::class, 'store'])->name('api.supply.distributions.store')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
+    $router->put('/supply/distributions/{id}', [SupplyDistributionApiController::class, 'update'])->name('api.supply.distributions.update')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
+    $router->post('/supply/distributions/{id}/cancel', [SupplyDistributionApiController::class, 'cancel'])->name('api.supply.distributions.cancel')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
+
+    // 보고서 API
+    $router->get('/supply/reports/distribution', [SupplyReportApiController::class, 'getDistributionReport'])->name('api.supply.reports.distribution')->middleware('auth')->middleware('permission', 'supply.report.view');
+    $router->get('/supply/reports/stock', [SupplyReportApiController::class, 'getStockReport'])->name('api.supply.reports.stock')->middleware('auth')->middleware('permission', 'supply.report.view');
+    $router->get('/supply/reports/budget/{year}', [SupplyReportApiController::class, 'getBudgetExecutionReport'])->name('api.supply.reports.budget')->middleware('auth')->middleware('permission', 'supply.report.view');
+    $router->get('/supply/reports/department/{deptId}/{year}', [SupplyReportApiController::class, 'getDepartmentUsageReport'])->name('api.supply.reports.department')->middleware('auth')->middleware('permission', 'supply.report.view');
+    $router->post('/supply/reports/export', [SupplyReportApiController::class, 'exportReport'])->name('api.supply.reports.export')->middleware('auth')->middleware('permission', 'supply.report.view');
 });

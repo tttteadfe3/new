@@ -50,6 +50,14 @@ $container->register(\App\Repositories\PositionRepository::class, fn($c) => new 
 $container->register(\App\Repositories\RoleRepository::class, fn($c) => new \App\Repositories\RoleRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\WasteCollectionRepository::class, fn($c) => new \App\Repositories\WasteCollectionRepository($c->resolve(Database::class)));
 
+// Supply Management Repositories
+$container->register(\App\Repositories\SupplyCategoryRepository::class, fn($c) => new \App\Repositories\SupplyCategoryRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\SupplyItemRepository::class, fn($c) => new \App\Repositories\SupplyItemRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\SupplyPlanRepository::class, fn($c) => new \App\Repositories\SupplyPlanRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\SupplyPurchaseRepository::class, fn($c) => new \App\Repositories\SupplyPurchaseRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\SupplyDistributionRepository::class, fn($c) => new \App\Repositories\SupplyDistributionRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\SupplyStockRepository::class, fn($c) => new \App\Repositories\SupplyStockRepository($c->resolve(Database::class)));
+
 
 // 3. Application services that depend on repositories and other services.
 $container->register(\App\Services\AuthService::class, fn($c) => new \App\Services\AuthService(
@@ -104,6 +112,53 @@ $container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Se
     $c->resolve(\App\Services\ActivityLogger::class)
 ));
 $container->register(\App\Services\WasteCollectionService::class, fn($c) => new \App\Services\WasteCollectionService($c->resolve(\App\Repositories\WasteCollectionRepository::class), $c->resolve(Database::class)));
+
+// Supply Management Services
+$container->register(\App\Services\SupplyCategoryService::class, fn($c) => new \App\Services\SupplyCategoryService(
+    $c->resolve(\App\Repositories\SupplyCategoryRepository::class),
+    $c->resolve(\App\Repositories\SupplyItemRepository::class),
+    $c->resolve(\App\Services\ActivityLogger::class)
+));
+$container->register(\App\Services\SupplyItemService::class, fn($c) => new \App\Services\SupplyItemService(
+    $c->resolve(\App\Repositories\SupplyItemRepository::class),
+    $c->resolve(\App\Repositories\SupplyCategoryRepository::class),
+    $c->resolve(\App\Services\ActivityLogger::class)
+));
+$container->register(\App\Services\SupplyStockService::class, fn($c) => new \App\Services\SupplyStockService(
+    $c->resolve(\App\Repositories\SupplyStockRepository::class),
+    $c->resolve(\App\Repositories\SupplyItemRepository::class),
+    $c->resolve(\App\Services\ActivityLogger::class)
+));
+$container->register(\App\Services\SupplyPlanService::class, fn($c) => new \App\Services\SupplyPlanService(
+    $c->resolve(\App\Repositories\SupplyPlanRepository::class),
+    $c->resolve(\App\Repositories\SupplyItemRepository::class),
+    $c->resolve(\App\Repositories\SupplyPurchaseRepository::class),
+    $c->resolve(SessionManager::class),
+    $c->resolve(\App\Services\ActivityLogger::class)
+));
+$container->register(\App\Services\SupplyPurchaseService::class, fn($c) => new \App\Services\SupplyPurchaseService(
+    $c->resolve(\App\Repositories\SupplyPurchaseRepository::class),
+    $c->resolve(\App\Repositories\SupplyItemRepository::class),
+    $c->resolve(\App\Services\SupplyStockService::class),
+    $c->resolve(SessionManager::class),
+    $c->resolve(\App\Services\ActivityLogger::class)
+));
+$container->register(\App\Services\SupplyDistributionService::class, fn($c) => new \App\Services\SupplyDistributionService(
+    $c->resolve(\App\Repositories\SupplyDistributionRepository::class),
+    $c->resolve(\App\Repositories\SupplyItemRepository::class),
+    $c->resolve(\App\Services\SupplyStockService::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(\App\Services\ActivityLogger::class)
+));
+$container->register(\App\Services\SupplyReportService::class, fn($c) => new \App\Services\SupplyReportService(
+    $c->resolve(\App\Repositories\SupplyDistributionRepository::class),
+    $c->resolve(\App\Repositories\SupplyStockRepository::class),
+    $c->resolve(\App\Repositories\SupplyPlanRepository::class),
+    $c->resolve(\App\Repositories\SupplyPurchaseRepository::class),
+    $c->resolve(\App\Repositories\SupplyItemRepository::class),
+    $c->resolve(\App\Repositories\DepartmentRepository::class)
+));
 
 // 4. Controllers (Web and API)
 $container->register(\App\Controllers\Web\LeaveController::class, fn($c) => new \App\Controllers\Web\LeaveController(

@@ -1,0 +1,209 @@
+<?php
+
+namespace App\Repositories;
+
+use App\Core\Database;
+use App\Models\SupplyItem;
+
+class SupplyItemRepository
+{
+    private Database $db;
+
+    public function __construct(Database $db)
+    {
+        $this->db = $db;
+    }
+
+    /**
+     * 모든 품목을 조회합니다.
+     */
+    public function findAll(array $filters = []): array
+    {
+        $sql = "SELECT si.*, sc.category_name 
+                FROM supply_items si
+                LEFT JOIN supply_categories sc ON si.category_id = sc.id
+                WHERE 1=1";
+        $params = [];
+
+        if (!empty($filters['category_id'])) {
+            $sql .= " AND si.category_id = :category_id";
+            $params[':category_id'] = $filters['category_id'];
+        }
+
+        if (isset($filters['is_active'])) {
+            $sql .= " AND si.is_active = :is_active";
+            $params[':is_active'] = $filters['is_active'];
+        }
+
+        if (!empty($filters['search'])) {
+            $sql .= " AND (si.item_name LIKE :search OR si.item_code LIKE :search)";
+            $params[':search'] = '%' . $filters['search'] . '%';
+        }
+
+        $sql .= " ORDER BY si.item_code ASC";
+
+        return $this->db->fetchAll($sql, $params);
+    }
+
+    /**
+     * ID로 품목을 조회합니다.
+     */
+    public function findById(int $id): ?array
+    {
+        $sql = "SELECT si.*, sc.category_name 
+                FROM supply_items si
+                LEFT JOIN supply_categories sc ON si.category_id = sc.id
+                WHERE si.id = :id";
+        $result = $this->db->fetchOne($sql, [':id' => $id]);
+        return $result ?: null;
+    }
+
+    /**
+     * 품목 코드로 조회합니다.
+     */
+    public function findByCode(string $code): ?array
+    {
+        $sql = "SELECT * FROM supply_items WHERE item_code = :code";
+        $result = $this->db->fetchOne($sql, [':code' => $code]);
+        return $result ?: null;
+    }
+
+    /**
+     * 활성 품목만 조회합니다.
+     */
+    public function findActiveItems(): array
+    {
+        $sql = "SELECT si.*, sc.category_name 
+                FROM supply_items si
+                LEFT JOIN supply_categories sc ON si.category_id = sc.id
+                WHERE si.is_active = 1
+                ORDER BY si.item_code ASC";
+        return $this->db->fetchAll($sql);
+    }
+
+    /**
+     * 분류별 품목을 조회합니다.
+     */
+    public function findByCategoryId(int $categoryId): array
+    {
+        $sql = "SELECT * FROM supply_items WHERE category_id = :category_id ORDER BY item_code ASC";
+        return $this->db->fetchAll($sql, [':category_id' => $categoryId]);
+    }
+
+    /**
+     * 품목 코드 중복 검사
+     */
+    public function isDuplicateCode(string $code, ?int $excludeId = null): bool
+    {
+        $sql = "SELECT COUNT(*) as count FROM supply_items WHERE item_code = :code";
+        $params = [':code' => $code];
+
+        if ($excludeId !== null) {
+            $sql .= " AND id != :id";
+            $params[':id'] = $excludeId;
+        }
+
+        $result = $this->db->fetchOne($sql, $params);
+        return $result['count'] > 0;
+    }
+
+    /**
+     * 품목을 생성합니다.
+     */
+    public function create(array $data): int
+    {
+        $sql = "INSERT INTO supply_items (item_code, item_name, category_id, unit, description, is_active, created_at, updated_at)
+                VALUES (:item_code, :item_name, :category_id, :unit, :description, :is_active, NOW(), NOW())";
+
+        $params = [
+            ':item_code' => $data['item_code'],
+            ':item_name' => $data['item_name'],
+            ':category_id' => $data['category_id'],
+            ':unit' => $data['unit'] ?? '개',
+            ':description' => $data['description'] ?? null,
+            ':is_active' => $data['is_active'] ?? 1
+        ];
+
+        $this->db->execute($sql, $params);
+        return (int)$this->db->lastInsertId();
+    }
+
+    /**
+     * 품목을 수정합니다.
+     */
+    public function update(int $id, array $data): bool
+    {
+        $fields = [];
+        $params = [':id' => $id];
+
+        foreach ($data as $key => $value) {
+            $fields[] = "$key = :$key";
+            $params[":$key"] = $value;
+        }
+
+        $fields[] = "updated_at = NOW()";
+        $sql = "UPDATE supply_items SET " . implode(', ', $fields) . " WHERE id = :id";
+
+        return $this->db->execute($sql, $params);
+    }
+
+    /**
+     * 품목을 삭제합니다.
+     */
+    public function delete(int $id): bool
+    {
+        $sql = "DELETE FROM supply_items WHERE id = :id";
+        return $this->db->execute($sql, [':id' => $id]);
+    }
+
+    /**
+     * 품목에 연관된 계획이 있는지 확인
+     */
+    public function hasAssociatedPlans(int $itemId): bool
+    {
+        $sql = "SELECT COUNT(*) as count FROM supply_plans WHERE item_id = :item_id";
+        $result = $this->db->fetchOne($sql, [':item_id' => $itemId]);
+        return $result['count'] > 0;
+    }
+
+    /**
+     * 품목에 연관된 구매가 있는지 확인
+     */
+    public function hasAssociatedPurchases(int $itemId): bool
+    {
+        $sql = "SELECT COUNT(*) as count FROM supply_purchases WHERE item_id = :item_id";
+        $result = $this->db->fetchOne($sql, [':item_id' => $itemId]);
+        return $result['count'] > 0;
+    }
+
+    /**
+     * 품목에 연관된 지급이 있는지 확인
+     */
+    public function hasAssociatedDistributions(int $itemId): bool
+    {
+        $sql = "SELECT COUNT(*) as count FROM supply_distributions WHERE item_id = :item_id";
+        $result = $this->db->fetchOne($sql, [':item_id' => $itemId]);
+        return $result['count'] > 0;
+    }
+
+    /**
+     * 다음 품목 코드를 생성합니다.
+     */
+    public function generateNextCode(): string
+    {
+        $sql = "SELECT item_code FROM supply_items ORDER BY item_code DESC LIMIT 1";
+        $result = $this->db->fetchOne($sql);
+
+        if (!$result) {
+            return 'ITEM001';
+        }
+
+        $lastCode = $result['item_code'];
+        if (preg_match('/^ITEM(\d{3})$/', $lastCode, $matches)) {
+            $nextNumber = (int)$matches[1] + 1;
+            return 'ITEM' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        }
+
+        return 'ITEM001';
+    }
+}
