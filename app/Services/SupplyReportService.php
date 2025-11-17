@@ -8,6 +8,7 @@ use App\Repositories\SupplyPlanRepository;
 use App\Repositories\SupplyPurchaseRepository;
 use App\Repositories\SupplyItemRepository;
 use App\Repositories\DepartmentRepository;
+use App\Core\Database;
 
 class SupplyReportService
 {
@@ -17,6 +18,8 @@ class SupplyReportService
     private SupplyPurchaseRepository $purchaseRepository;
     private SupplyItemRepository $itemRepository;
     private DepartmentRepository $departmentRepository;
+    private Database $db;
+    private ActivityLogger $activityLogger;
 
     public function __construct(
         SupplyDistributionRepository $distributionRepository,
@@ -24,7 +27,9 @@ class SupplyReportService
         SupplyPlanRepository $planRepository,
         SupplyPurchaseRepository $purchaseRepository,
         SupplyItemRepository $itemRepository,
-        DepartmentRepository $departmentRepository
+        DepartmentRepository $departmentRepository,
+        Database $db,
+        ActivityLogger $activityLogger
     ) {
         $this->distributionRepository = $distributionRepository;
         $this->stockRepository = $stockRepository;
@@ -32,6 +37,8 @@ class SupplyReportService
         $this->purchaseRepository = $purchaseRepository;
         $this->itemRepository = $itemRepository;
         $this->departmentRepository = $departmentRepository;
+        $this->db = $db;
+        $this->activityLogger = $activityLogger;
     }
 
     /**

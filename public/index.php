@@ -149,7 +149,8 @@ $container->register(\App\Services\SupplyDistributionService::class, fn($c) => n
     $c->resolve(\App\Services\SupplyStockService::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class),
     $c->resolve(\App\Repositories\DepartmentRepository::class),
-    $c->resolve(\App\Services\ActivityLogger::class)
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(Database::class)
 ));
 $container->register(\App\Services\SupplyReportService::class, fn($c) => new \App\Services\SupplyReportService(
     $c->resolve(\App\Repositories\SupplyDistributionRepository::class),
@@ -157,7 +158,9 @@ $container->register(\App\Services\SupplyReportService::class, fn($c) => new \Ap
     $c->resolve(\App\Repositories\SupplyPlanRepository::class),
     $c->resolve(\App\Repositories\SupplyPurchaseRepository::class),
     $c->resolve(\App\Repositories\SupplyItemRepository::class),
-    $c->resolve(\App\Repositories\DepartmentRepository::class)
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(Database::class),
+    $c->resolve(\App\Services\ActivityLogger::class)
 ));
 
 // 4. Controllers (Web and API)
