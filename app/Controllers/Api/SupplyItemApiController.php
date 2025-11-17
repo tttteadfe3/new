@@ -5,6 +5,11 @@ namespace App\Controllers\Api;
 use App\Core\Request;
 use App\Services\AuthService;
 use App\Services\SupplyItemService;
+use App\Services\ViewDataService;
+use App\Services\ActivityLogger;
+use App\Repositories\EmployeeRepository;
+use App\Core\JsonResponse;
+use Exception;
 
 class SupplyItemApiController extends BaseApiController
 {
@@ -13,15 +18,18 @@ class SupplyItemApiController extends BaseApiController
     public function __construct(
         Request $request,
         AuthService $authService,
+        ViewDataService $viewDataService,
+        ActivityLogger $activityLogger,
+        EmployeeRepository $employeeRepository,
+        JsonResponse $jsonResponse,
         SupplyItemService $itemService
     ) {
-        parent::__construct($request, $authService);
+        parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->itemService = $itemService;
     }
 
     /**
      * 품목 목록 조회
-     * GET /api/supply/items
      */
     public function index(): void
     {
@@ -33,215 +41,118 @@ class SupplyItemApiController extends BaseApiController
             ];
 
             $items = $this->itemService->getAllItems(array_filter($filters));
-
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $items
-            ]);
-        } catch (\Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
+            $this->apiSuccess($items);
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
     }
 
     /**
      * 품목 상세 조회
-     * GET /api/supply/items/{id}
      */
     public function show(int $id): void
     {
         try {
             $item = $this->itemService->getItemById($id);
-
             if (!$item) {
-                $this->jsonResponse([
-                    'success' => false,
-                    'message' => '품목을 찾을 수 없습니다.'
-                ], 404);
+                $this->apiNotFound('품목을 찾을 수 없습니다.');
                 return;
             }
-
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $item
-            ]);
-        } catch (\Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
+            $this->apiSuccess($item);
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
     }
 
     /**
      * 활성 품목 목록 조회
-     * GET /api/supply/items/active
      */
     public function getActiveItems(): void
     {
         try {
             $items = $this->itemService->getActiveItems();
-
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $items
-            ]);
-        } catch (\Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
+            $this->apiSuccess($items);
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
     }
 
     /**
      * 품목 생성
-     * POST /api/supply/items
      */
     public function store(): void
     {
         try {
-            $data = [
-                'item_code' => $this->request->post('item_code'),
-                'item_name' => $this->request->post('item_name'),
-                'category_id' => $this->request->post('category_id'),
-                'unit' => $this->request->post('unit', '개'),
-                'description' => $this->request->post('description'),
-                'is_active' => $this->request->post('is_active', 1)
-            ];
-
+            $data = $this->getJsonInput();
             $itemId = $this->itemService->createItem($data);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => '품목이 생성되었습니다.',
-                'data' => ['id' => $itemId]
-            ], 201);
-        } catch (\InvalidArgumentException $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
-        } catch (\Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => '품목 생성 중 오류가 발생했습니다.'
-            ], 500);
+            $this->apiSuccess(['id' => $itemId], '품목이 생성되었습니다.', 201);
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
     }
 
     /**
      * 품목 수정
-     * PUT /api/supply/items/{id}
      */
     public function update(int $id): void
     {
         try {
-            $data = [
-                'item_code' => $this->request->post('item_code'),
-                'item_name' => $this->request->post('item_name'),
-                'category_id' => $this->request->post('category_id'),
-                'unit' => $this->request->post('unit'),
-                'description' => $this->request->post('description'),
-                'is_active' => $this->request->post('is_active')
-            ];
-
-            // null 값 제거
-            $data = array_filter($data, function ($value) {
-                return $value !== null && $value !== '';
-            });
-
+            $data = $this->getJsonInput();
             $this->itemService->updateItem($id, $data);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => '품목이 수정되었습니다.'
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
-        } catch (\Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => '품목 수정 중 오류가 발생했습니다.'
-            ], 500);
+            $this->apiSuccess(null, '품목이 수정되었습니다.');
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
     }
 
     /**
      * 품목 삭제
-     * DELETE /api/supply/items/{id}
      */
     public function destroy(int $id): void
     {
         try {
             $this->itemService->deleteItem($id);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => '품목이 삭제되었습니다.'
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
-        } catch (\Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => '품목 삭제 중 오류가 발생했습니다.'
-            ], 500);
+            $this->apiSuccess(null, '품목이 삭제되었습니다.');
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
     }
 
     /**
      * 품목 상태 변경
-     * PUT /api/supply/items/{id}/toggle-status
      */
     public function toggleStatus(int $id): void
     {
         try {
             $this->itemService->toggleItemStatus($id);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => '품목 상태가 변경되었습니다.'
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
-        } catch (\Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => '품목 상태 변경 중 오류가 발생했습니다.'
-            ], 500);
+            $this->apiSuccess(null, '품목 상태가 변경되었습니다.');
+        } catch (Exception $e) {
+            $this->handleException($e);
         }
     }
 
     /**
      * 다음 품목 코드 생성
-     * GET /api/supply/items/generate-code
      */
     public function generateCode(): void
     {
         try {
             $code = $this->itemService->generateNextCode();
+            $this->apiSuccess(['code' => $code]);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
 
-            $this->jsonResponse([
-                'success' => true,
-                'data' => ['code' => $code]
-            ]);
-        } catch (\Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
+    /**
+     * 예외를 처리합니다.
+     */
+    protected function handleException(Exception $e): void
+    {
+        if ($e instanceof \InvalidArgumentException) {
+            $this->apiBadRequest($e->getMessage());
+        } else {
+            $this->apiError('서버 오류가 발생했습니다: ' . $e->getMessage());
         }
     }
 }
