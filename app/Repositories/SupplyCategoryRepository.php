@@ -24,7 +24,7 @@ class SupplyCategoryRepository
     {
         $sql = "SELECT * FROM supply_categories ORDER BY level ASC, display_order ASC, category_name ASC";
         $results = $this->db->fetchAll($sql);
-        return array_map(fn($row) => SupplyCategory::make($row), $results);
+        return array_map(fn($row) => SupplyCategory::make($row)->toArray(), $results);
     }
 
     /**
@@ -34,7 +34,7 @@ class SupplyCategoryRepository
     {
         $sql = "SELECT * FROM supply_categories WHERE id = :id";
         $row = $this->db->fetchOne($sql, [':id' => $id]);
-        return $row ? SupplyCategory::make($row) : null;
+        return $row ? SupplyCategory::make($row)->toArray() : null;
     }
 
     /**
@@ -44,7 +44,7 @@ class SupplyCategoryRepository
     {
         $sql = "SELECT * FROM supply_categories WHERE level = :level ORDER BY display_order ASC, category_name ASC";
         $results = $this->db->fetchAll($sql, [':level' => $level]);
-        return array_map(fn($row) => SupplyCategory::make($row), $results);
+        return array_map(fn($row) => SupplyCategory::make($row)->toArray(), $results);
     }
 
     /**
@@ -54,7 +54,7 @@ class SupplyCategoryRepository
     {
         $sql = "SELECT * FROM supply_categories WHERE is_active = 1 ORDER BY level ASC, display_order ASC, category_name ASC";
         $results = $this->db->fetchAll($sql);
-        return array_map(fn($row) => SupplyCategory::make($row), $results);
+        return array_map(fn($row) => SupplyCategory::make($row)->toArray(), $results);
     }
 
     /**
@@ -64,7 +64,7 @@ class SupplyCategoryRepository
     {
         $sql = "SELECT * FROM supply_categories WHERE parent_id = :parent_id ORDER BY display_order ASC, category_name ASC";
         $results = $this->db->fetchAll($sql, [':parent_id' => $parentId]);
-        return array_map(fn($row) => SupplyCategory::make($row), $results);
+        return array_map(fn($row) => SupplyCategory::make($row)->toArray(), $results);
     }
 
     /**
