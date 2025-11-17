@@ -192,14 +192,14 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
 
     // 연간 계획 관리 API
     $router->get('/supply/plans', [SupplyPlanApiController::class, 'index'])->name('api.supply.plans.index')->middleware('auth')->middleware('permission', 'supply.plan.view');
-    $router->get('/supply/plans/{id}', [SupplyPlanApiController::class, 'show'])->name('api.supply.plans.show')->middleware('auth')->middleware('permission', 'supply.plan.view');
     $router->post('/supply/plans', [SupplyPlanApiController::class, 'store'])->name('api.supply.plans.store')->middleware('auth')->middleware('permission', 'supply.plan.manage');
-    $router->put('/supply/plans/{id}', [SupplyPlanApiController::class, 'update'])->name('api.supply.plans.update')->middleware('auth')->middleware('permission', 'supply.plan.manage');
-    $router->delete('/supply/plans/{id}', [SupplyPlanApiController::class, 'destroy'])->name('api.supply.plans.destroy')->middleware('auth')->middleware('permission', 'supply.plan.manage');
     $router->post('/supply/plans/import-excel', [SupplyPlanApiController::class, 'importExcel'])->name('api.supply.plans.import-excel')->middleware('auth')->middleware('permission', 'supply.plan.manage');
     $router->get('/supply/plans/export-excel/{year}', [SupplyPlanApiController::class, 'exportExcel'])->name('api.supply.plans.export-excel')->middleware('auth')->middleware('permission', 'supply.plan.view');
     $router->get('/supply/plans/budget-summary/{year}', [SupplyPlanApiController::class, 'getBudgetSummary'])->name('api.supply.plans.budget-summary')->middleware('auth')->middleware('permission', 'supply.plan.view');
     $router->post('/supply/plans/copy', [SupplyPlanApiController::class, 'copyPlans'])->name('api.supply.plans.copy')->middleware('auth')->middleware('permission', 'supply.plan.manage');
+    $router->get('/supply/plans/{id}', [SupplyPlanApiController::class, 'show'])->name('api.supply.plans.show')->middleware('auth')->middleware('permission', 'supply.plan.view');
+    $router->put('/supply/plans/{id}', [SupplyPlanApiController::class, 'update'])->name('api.supply.plans.update')->middleware('auth')->middleware('permission', 'supply.plan.manage');
+    $router->delete('/supply/plans/{id}', [SupplyPlanApiController::class, 'destroy'])->name('api.supply.plans.destroy')->middleware('auth')->middleware('permission', 'supply.plan.manage');
 
     // 구매 관리 API
     $router->get('/supply/purchases', [SupplyPurchaseApiController::class, 'index'])->name('api.supply.purchases.index')->middleware('auth')->middleware('permission', 'supply.purchase.view');
