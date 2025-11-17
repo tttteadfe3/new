@@ -5,7 +5,7 @@
 class SupplyPlansCopyPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/plans'
+            API_URL: '/supply/plans'
         });
 
         this.sourceYear = new Date().getFullYear() - 1;
@@ -39,8 +39,8 @@ class SupplyPlansCopyPage extends BasePage {
         this.showLoading();
         try {
             const [sourceResponse, targetResponse] = await Promise.all([
-                this.apiCall(`${this.config.apiBaseUrl}?year=${this.sourceYear}`),
-                this.apiCall(`${this.config.apiBaseUrl}?year=${this.targetYear}`)
+                this.apiCall(`${this.config.API_URL}?year=${this.sourceYear}`),
+                this.apiCall(`${this.config.API_URL}?year=${this.targetYear}`)
             ]);
 
             this.sourcePlans = sourceResponse.data || [];
@@ -124,7 +124,7 @@ class SupplyPlansCopyPage extends BasePage {
         this.setButtonLoading('#copy-plans-btn', '복사 중...');
 
         try {
-            const response = await this.apiCall(`${this.config.apiBaseUrl}/copy`, {
+            const response = await this.apiCall(`${this.config.API_URL}/copy`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

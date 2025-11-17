@@ -35,11 +35,11 @@ class SupplyCategoryApiController extends BaseApiController
     {
         try {
             $hierarchical = $this->request->input('hierarchical', false);
-            $activeOnly = $this->request->input('active_only', false);
+            $active = $this->request->input('active', false);
             
             if ($hierarchical) {
                 $categories = $this->supplyCategoryService->getHierarchicalCategories();
-            } elseif ($activeOnly) {
+            } elseif ($active) {
                 $categories = $this->supplyCategoryService->getActiveCategories();
             } else {
                 $categories = $this->supplyCategoryService->getAllCategories();

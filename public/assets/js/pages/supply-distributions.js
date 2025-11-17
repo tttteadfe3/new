@@ -5,9 +5,10 @@
 class SupplyDistributionsPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/distributions'
+            API_URL: '/supply/distributions'
         });
         
+        this.dataTable = null;
         this.currentDistributionId = null;
     }
 
@@ -19,6 +20,7 @@ class SupplyDistributionsPage extends BasePage {
 
     loadInitialData() {
         if (document.getElementById('distributions-table')) {
+            this.initializeDataTable();
             this.loadDistributionsData();
         }
         if (document.getElementById('distribution-form')) {
@@ -29,12 +31,17 @@ class SupplyDistributionsPage extends BasePage {
     async loadDistributionsData() {
         try {
             const currentYear = new Date().getFullYear();
-            const statsData = await this.apiCall(`${this.config.apiBaseUrl}/statistics?start_date=${currentYear}-01-01&end_date=${currentYear}-12-31`);
+            const statsData = await this.apiCall(`${this.config.API_URL}/statistics?start_date=${currentYear}-01-01&end_date=${currentYear}-12-31`);
             this.renderStats(statsData.data.statistics);
 
-            const distributionsData = await this.apiCall(this.config.apiBaseUrl);
-            this.renderDistributions(distributionsData.data.distributions);
-            this.initializeDataTable();
+            const params = {
+                search: document.getElementById('search-distributions')?.value || ''
+            };
+            const queryString = new URLSearchParams(params).toString();
+            const distributionsData = await this.apiCall(`${this.config.API_URL}?${queryString}`);
+
+            this.dataTable.clear().rows.add(distributionsData.data.distributions || []).draw();
+            this.rebindEventListeners();
         } catch (error) {
             console.error('Error loading distributions data:', error);
             Toast.error('데이터를 불러오는 중 오류가 발생했습니다.');
@@ -91,75 +98,66 @@ class SupplyDistributionsPage extends BasePage {
         `;
     }
 
-    renderDistributions(distributions) {
-        const tbody = document.getElementById('distributions-tbody');
-        if (!tbody) return;
-
-        if (!distributions || distributions.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center py-5">
-                        <i class="ri-gift-line fs-1 text-muted"></i>
-                        <p class="mt-3 text-muted">등록된 지급이 없습니다.</p>
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        tbody.innerHTML = distributions.map(dist => {
-            const isCancelled = dist.is_cancelled;
-            const statusBadge = isCancelled 
-                ? `<span class="badge badge-soft-danger"><i class="ri-close-circle-line me-1"></i>취소됨</span>`
-                : `<span class="badge badge-soft-success"><i class="ri-checkbox-circle-line me-1"></i>지급 완료</span>`;
-
-            return `
-                <tr>
-                    <td>${new Date(dist.distribution_date).toLocaleDateString('ko-KR')}</td>
-                    <td>
-                        <h6 class="fs-14 mb-0">${this.escapeHtml(dist.item_name)}</h6>
-                        <p class="text-muted mb-0 fs-12">${this.escapeHtml(dist.item_code)}</p>
-                    </td>
-                    <td class="text-end">${parseInt(dist.quantity).toLocaleString()}</td>
-                    <td>${this.escapeHtml(dist.employee_name)}</td>
-                    <td>${this.escapeHtml(dist.department_name)}</td>
-                    <td>${statusBadge}</td>
-                    <td>
+    initializeDataTable() {
+        const self = this;
+        this.dataTable = $('#distributions-table').DataTable({
+            responsive: true,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json'
+            },
+            order: [[0, 'desc']],
+            searching: false,
+            columns: [
+                { data: 'distribution_date', render: data => new Date(data).toLocaleDateString('ko-KR') },
+                {
+                    data: null,
+                    render: (data, type, row) => `
+                        <h6 class="fs-14 mb-0">${self.escapeHtml(row.item_name)}</h6>
+                        <p class="text-muted mb-0 fs-12">${self.escapeHtml(row.item_code)}</p>
+                    `
+                },
+                { data: 'quantity', className: 'text-end', render: data => parseInt(data).toLocaleString() },
+                { data: 'employee_name', render: data => self.escapeHtml(data) },
+                { data: 'department_name', render: data => self.escapeHtml(data) },
+                {
+                    data: 'is_cancelled',
+                    render: data => data
+                        ? `<span class="badge badge-soft-danger"><i class="ri-close-circle-line me-1"></i>취소됨</span>`
+                        : `<span class="badge badge-soft-success"><i class="ri-checkbox-circle-line me-1"></i>지급 완료</span>`
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    render: (data, type, row) => `
                         <div class="dropdown">
                             <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                 <i class="ri-more-fill align-middle"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                ${!isCancelled ? `
-                                    <li><button class="dropdown-item cancel-distribution-btn" data-id="${dist.id}" data-name="${this.escapeHtml(dist.item_name)}">
+                                ${!row.is_cancelled ? `
+                                    <li><button class="dropdown-item cancel-distribution-btn" data-id="${row.id}" data-name="${self.escapeHtml(row.item_name)}">
                                         <i class="ri-close-circle-fill align-bottom me-2"></i> 취소
                                     </button></li>
                                 ` : ''}
                             </ul>
                         </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-        this.initializeModalHandlers();
+                    `
+                }
+            ],
+            drawCallback: () => {
+                this.rebindEventListeners();
+            }
+        });
     }
 
-    initializeDataTable() {
-        const table = document.getElementById('distributions-table');
-        if (table && typeof $.fn.DataTable !== 'undefined') {
-            if ($.fn.DataTable.isDataTable(table)) {
-                $(table).DataTable().destroy();
-            }
-
-            $(table).DataTable({
-                responsive: true,
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json'
-                },
-                order: [[0, 'desc']]
-            });
-        }
+    rebindEventListeners() {
+        // 기존 이벤트 리스너 제거 후 다시 바인딩 (중복 방지)
+        $('.cancel-distribution-btn').off('click').on('click', (e) => {
+            const btn = e.currentTarget;
+            const id = btn.dataset.id;
+            const itemName = btn.dataset.name;
+            this.showCancelModal(id, itemName);
+        });
     }
 
     initializeFormHandlers() {
@@ -179,12 +177,9 @@ class SupplyDistributionsPage extends BasePage {
         this.setButtonLoading('#submit-btn', '처리 중...');
 
         try {
-            await this.apiCall(this.config.apiBaseUrl, {
+            await this.apiCall(this.config.API_URL, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
+                body: data
             });
 
             Toast.success('지급이 성공적으로 등록되었습니다.');
@@ -199,14 +194,6 @@ class SupplyDistributionsPage extends BasePage {
     }
 
     initializeModalHandlers() {
-        document.querySelectorAll('.cancel-distribution-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.dataset.id;
-                const itemName = btn.dataset.name;
-                this.showCancelModal(id, itemName);
-            });
-        });
-
         const confirmCancelBtn = document.getElementById('confirm-cancel-distribution-btn');
         if (confirmCancelBtn) {
             confirmCancelBtn.addEventListener('click', () => this.handleCancelDistribution());
@@ -239,21 +226,21 @@ class SupplyDistributionsPage extends BasePage {
         this.setButtonLoading('#confirm-cancel-distribution-btn', '처리 중...');
 
         try {
-            await this.apiCall(`${this.config.apiBaseUrl}/${this.currentDistributionId}/cancel`, {
+            await this.apiCall(`${this.config.API_URL}/${this.currentDistributionId}/cancel`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ cancel_reason: cancelReason })
+                body: { cancel_reason: cancelReason }
             });
 
             Toast.success('지급이 성공적으로 취소되었습니다.');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            this.loadDistributionsData();
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('cancelDistributionModal'));
+            modal.hide();
+
         } catch (error) {
             console.error('Error canceling distribution:', error);
             Toast.error(error.message || '지급 취소에 실패했습니다.');
+        } finally {
             this.resetButtonLoading('#confirm-cancel-distribution-btn', '취소 처리');
         }
     }
@@ -261,20 +248,7 @@ class SupplyDistributionsPage extends BasePage {
     initializeSearchAndFilter() {
         const searchInput = document.getElementById('search-distributions');
         if (searchInput) {
-            searchInput.addEventListener('input', this.debounce(() => this.handleSearch(), 300));
-        }
-    }
-
-    handleSearch() {
-        const searchTerm = document.getElementById('search-distributions').value.toLowerCase();
-        const table = document.getElementById('distributions-table');
-        
-        if (table) {
-            const rows = table.querySelectorAll('tbody tr');
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? '' : 'none';
-            });
+            searchInput.addEventListener('input', this.debounce(() => this.loadDistributionsData(), 300));
         }
     }
 
@@ -291,6 +265,7 @@ class SupplyDistributionsPage extends BasePage {
     }
 
     escapeHtml(text) {
+        if (text === null || typeof text === 'undefined') return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
