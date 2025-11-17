@@ -5,7 +5,7 @@
 class SupplyCategoryEditPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/api/supply/categories'
+            apiBaseUrl: '/supply/categories'
         });
         
         // From the global scope, injected by the controller

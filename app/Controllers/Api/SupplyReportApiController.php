@@ -36,13 +36,13 @@ class SupplyReportApiController extends BaseApiController
         try {
             // 필터 설정
             $filters = [
-                'year' => $this->request->get('year'),
-                'start_date' => $this->request->get('start_date'),
-                'end_date' => $this->request->get('end_date'),
-                'category_id' => $this->request->get('category_id'),
-                'item_id' => $this->request->get('item_id'),
-                'department_id' => $this->request->get('department_id'),
-                'is_cancelled' => $this->request->get('is_cancelled')
+                'year' => $this->request->input('year'),
+                'start_date' => $this->request->input('start_date'),
+                'end_date' => $this->request->input('end_date'),
+                'category_id' => $this->request->input('category_id'),
+                'item_id' => $this->request->input('item_id'),
+                'department_id' => $this->request->input('department_id'),
+                'is_cancelled' => $this->request->input('is_cancelled')
             ];
 
             // 빈 필터 제거
@@ -70,11 +70,11 @@ class SupplyReportApiController extends BaseApiController
         try {
             // 필터 설정
             $filters = [
-                'category_id' => $this->request->get('category_id'),
-                'item_id' => $this->request->get('item_id'),
-                'low_stock' => $this->request->get('low_stock'),
-                'out_of_stock' => $this->request->get('out_of_stock'),
-                'threshold' => $this->request->get('threshold', 10)
+                'category_id' => $this->request->input('category_id'),
+                'item_id' => $this->request->input('item_id'),
+                'low_stock' => $this->request->input('low_stock'),
+                'out_of_stock' => $this->request->input('out_of_stock'),
+                'threshold' => $this->request->input('threshold', 10)
             ];
 
             // 빈 필터 제거
@@ -115,7 +115,7 @@ class SupplyReportApiController extends BaseApiController
     public function getBudgetExecutionReport(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
             
             $budgetData = $this->supplyReportService->getBudgetExecutionReport($year);
@@ -155,8 +155,8 @@ class SupplyReportApiController extends BaseApiController
     public function getDepartmentUsageReport(): void
     {
         try {
-            $departmentId = $this->request->get('department_id');
-            $year = $this->request->get('year', date('Y'));
+            $departmentId = $this->request->input('department_id');
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
 
             if (!$departmentId) {
@@ -190,7 +190,7 @@ class SupplyReportApiController extends BaseApiController
     public function getItemDistributionSummary(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
             
             $itemSummary = $this->supplyReportService->getItemDistributionSummary($year);
@@ -211,7 +211,7 @@ class SupplyReportApiController extends BaseApiController
     public function exportReport(): void
     {
         try {
-            $reportType = $this->request->get('report_type');
+            $reportType = $this->request->input('report_type');
             
             if (!$reportType) {
                 $this->apiBadRequest('보고서 유형을 선택해주세요.');
@@ -223,12 +223,12 @@ class SupplyReportApiController extends BaseApiController
             switch ($reportType) {
                 case 'distribution':
                     $filters = [
-                        'year' => $this->request->get('year'),
-                        'start_date' => $this->request->get('start_date'),
-                        'end_date' => $this->request->get('end_date'),
-                        'category_id' => $this->request->get('category_id'),
-                        'department_id' => $this->request->get('department_id'),
-                        'is_cancelled' => $this->request->get('is_cancelled')
+                        'year' => $this->request->input('year'),
+                        'start_date' => $this->request->input('start_date'),
+                        'end_date' => $this->request->input('end_date'),
+                        'category_id' => $this->request->input('category_id'),
+                        'department_id' => $this->request->input('department_id'),
+                        'is_cancelled' => $this->request->input('is_cancelled')
                     ];
                     $filters = array_filter($filters, function($value) {
                         return $value !== null && $value !== '';
@@ -238,10 +238,10 @@ class SupplyReportApiController extends BaseApiController
 
                 case 'stock':
                     $filters = [
-                        'category_id' => $this->request->get('category_id'),
-                        'low_stock' => $this->request->get('low_stock'),
-                        'out_of_stock' => $this->request->get('out_of_stock'),
-                        'threshold' => $this->request->get('threshold', 10)
+                        'category_id' => $this->request->input('category_id'),
+                        'low_stock' => $this->request->input('low_stock'),
+                        'out_of_stock' => $this->request->input('out_of_stock'),
+                        'threshold' => $this->request->input('threshold', 10)
                     ];
                     $filters = array_filter($filters, function($value) {
                         return $value !== null && $value !== '';
@@ -250,13 +250,13 @@ class SupplyReportApiController extends BaseApiController
                     break;
 
                 case 'budget':
-                    $year = $this->request->get('year', date('Y'));
+                    $year = $this->request->input('year', date('Y'));
                     $filePath = $this->supplyReportService->exportBudgetExecutionReport((int)$year);
                     break;
 
                 case 'department':
-                    $departmentId = $this->request->get('department_id');
-                    $year = $this->request->get('year', date('Y'));
+                    $departmentId = $this->request->input('department_id');
+                    $year = $this->request->input('year', date('Y'));
                     
                     if (!$departmentId) {
                         $this->apiBadRequest('부서를 선택해주세요.');
@@ -303,7 +303,7 @@ class SupplyReportApiController extends BaseApiController
     public function getDashboardStats(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
 
             // 지급 현황 통계
@@ -368,7 +368,7 @@ class SupplyReportApiController extends BaseApiController
     public function getMonthlyDistributionTrend(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
 
             $distributions = $this->supplyReportService->getDistributionReport([
@@ -414,7 +414,7 @@ class SupplyReportApiController extends BaseApiController
     public function getCategoryStats(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
 
             $distributions = $this->supplyReportService->getDistributionReport([
@@ -458,7 +458,7 @@ class SupplyReportApiController extends BaseApiController
     /**
      * 예외를 처리합니다.
      */
-    private function handleException(Exception $e): void
+    protected function handleException(Exception $e): void
     {
         if ($e instanceof \InvalidArgumentException) {
             $this->apiBadRequest($e->getMessage());

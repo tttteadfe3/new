@@ -5,7 +5,7 @@
 class SupplyPurchasesIndexPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/api/supply/purchases'
+            apiBaseUrl: '/supply/purchases'
         });
 
         this.currentPurchaseId = null;

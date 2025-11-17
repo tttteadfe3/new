@@ -5,7 +5,7 @@
 class SupplyPlansCopyPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/api/supply/plans'
+            apiBaseUrl: '/supply/plans'
         });
 
         this.sourceYear = new Date().getFullYear() - 1;

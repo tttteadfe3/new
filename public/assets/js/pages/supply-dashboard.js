@@ -5,7 +5,7 @@
 class SupplyDashboardPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/api/supply'
+            apiBaseUrl: '/supply'
         });
     }
 

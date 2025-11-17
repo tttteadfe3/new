@@ -5,7 +5,7 @@
 class SupplyCategoryCreatePage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/api/supply/categories'
+            apiBaseUrl: '/supply/categories'
         });
         
         this.mainCategories = [];

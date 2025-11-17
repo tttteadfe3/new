@@ -5,7 +5,7 @@
 class SupplyDistributionsCreatePage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/api/supply/distributions'
+            apiBaseUrl: '/supply/distributions'
         });
         
         this.availableItems = [];

@@ -5,7 +5,7 @@
 class SupplyDistributionsIndexPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/api/supply/distributions'
+            apiBaseUrl: '/supply/distributions'
         });
         
         this.currentDistributionId = null;

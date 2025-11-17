@@ -5,7 +5,7 @@
 class SupplyBudgetSummaryPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/api/supply/plans'
+            apiBaseUrl: '/supply/plans'
         });
         
         this.charts = {};
