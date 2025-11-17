@@ -95,6 +95,30 @@ class DataScopeService
     }
 
     /**
+     * 차량 테이블에 대한 데이터 스코프를 적용합니다.
+     * @param array $queryParts
+     * @param string $vehicleTableAlias
+     * @return array
+     */
+    public function applyVehicleScope(array $queryParts, string $vehicleTableAlias = 'v'): array
+    {
+        $visibleDepartmentIds = $this->getVisibleDepartmentIdsForCurrentUser();
+
+        if ($visibleDepartmentIds === null) {
+            return $queryParts;
+        }
+
+        if (empty($visibleDepartmentIds)) {
+            $queryParts['where'][] = "1=0";
+        } else {
+            $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+            $queryParts['where'][] = "{$vehicleTableAlias}.department_id IN ($inClause)";
+        }
+
+        return $queryParts;
+    }
+
+    /**
      * 부서 테이블 자체에 대한 데이터 스코프를 적용합니다.
      * @param array $queryParts
      * @param string $departmentTableAlias
