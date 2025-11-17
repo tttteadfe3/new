@@ -2,7 +2,7 @@
 <div class="row">
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-            <h4 class="mb-sm-0"><?= e($pageTitle) ?></h4>
+            <h4 class="mb-sm-0"><?= e($pageTitle ?? '지급품 지급 등록') ?></h4>
             <div class="page-title-right">
                 <ol class="breadcrumb m-0">
                     <li class="breadcrumb-item"><a href="/">홈</a></li>
@@ -28,14 +28,7 @@
                             <div class="mb-3">
                                 <label for="item-id" class="form-label">지급 품목 <span class="text-danger">*</span></label>
                                 <select class="form-select" id="item-id" name="item_id" required>
-                                    <option value="">품목을 선택하세요</option>
-                                    <?php foreach ($availableItems as $item): ?>
-                                        <option value="<?= $item['id'] ?>" 
-                                                data-stock="<?= $item['current_stock'] ?>" 
-                                                data-unit="<?= e($item['unit']) ?>">
-                                            <?= e($item['item_name']) ?> (재고: <?= number_format($item['current_stock']) ?> <?= e($item['unit']) ?>)
-                                        </option>
-                                    <?php endforeach; ?>
+                                    <option value="">불러오는 중...</option>
                                 </select>
                                 <div class="form-text">재고가 있는 품목만 표시됩니다.</div>
                             </div>
@@ -59,10 +52,7 @@
                             <div class="mb-3">
                                 <label for="department-id" class="form-label">부서 <span class="text-danger">*</span></label>
                                 <select class="form-select" id="department-id" name="department_id" required>
-                                    <option value="">부서를 선택하세요</option>
-                                    <?php foreach ($departments as $dept): ?>
-                                        <option value="<?= $dept['id'] ?>"><?= e($dept['name']) ?></option>
-                                    <?php endforeach; ?>
+                                    <option value="">불러오는 중...</option>
                                 </select>
                             </div>
                         </div>
@@ -82,6 +72,15 @@
                             <div class="mb-3">
                                 <label for="notes" class="form-label">비고</label>
                                 <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="추가 정보를 입력하세요"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="distribution_date" class="form-label">지급일 <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="distribution_date" name="distribution_date" required>
                             </div>
                         </div>
                     </div>

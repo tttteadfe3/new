@@ -4,14 +4,17 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\SupplyCategory;
+use App\Services\DataScopeService;
 
 class SupplyCategoryRepository
 {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, DataScopeService $dataScopeService)
     {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
@@ -19,8 +22,21 @@ class SupplyCategoryRepository
      */
     public function findAll(): array
     {
-        $sql = "SELECT * FROM supply_categories ORDER BY level ASC, display_order ASC, category_name ASC";
-        return $this->db->fetchAllAs(SupplyCategory::class, $sql);
+        $queryParts = [
+            'sql' => "SELECT * FROM supply_categories",
+            'params' => [],
+            'where' => []
+        ];
+
+        // supply_categories 테이블은 전사 공통 데이터로 간주되므로 별도의 데이터 스코프를 적용하지 않습니다.
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
+
+        $queryParts['sql'] .= " ORDER BY level ASC, display_order ASC, category_name ASC";
+
+        return $this->db->fetchAllAs(SupplyCategory::class, $queryParts['sql'], $queryParts['params']);
     }
 
     /**
@@ -162,11 +178,22 @@ class SupplyCategoryRepository
      */
     public function findHierarchical(): array
     {
-        $sql = "SELECT c1.*, c2.category_name as parent_name
-                FROM supply_categories c1
-                LEFT JOIN supply_categories c2 ON c1.parent_id = c2.id
-                ORDER BY c1.level ASC, c1.display_order ASC, c1.category_name ASC";
+        $queryParts = [
+            'sql' => "SELECT c1.*, c2.category_name as parent_name
+                      FROM supply_categories c1
+                      LEFT JOIN supply_categories c2 ON c1.parent_id = c2.id",
+            'params' => [],
+            'where' => []
+        ];
+
+        // supply_categories 테이블은 전사 공통 데이터로 간주되므로 별도의 데이터 스코프를 적용하지 않습니다.
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
+
+        $queryParts['sql'] .= " ORDER BY c1.level ASC, c1.display_order ASC, c1.category_name ASC";
         
-        return $this->db->query($sql);
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 }
