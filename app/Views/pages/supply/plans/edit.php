@@ -21,7 +21,7 @@
             <div class="card-header">
                 <div class="d-flex align-items-center">
                     <h5 class="card-title mb-0 flex-grow-1">지급품 계획 수정</h5>
-                    <a href="/supply/plans?year=<?= $plan->getYear() ?>" class="btn btn-secondary">
+                    <a href="/supply/plans" id="back-to-list-btn" class="btn btn-secondary">
                         <i class="ri-arrow-left-line me-1"></i> 목록으로
                     </a>
                 </div>

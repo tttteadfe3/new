@@ -5,7 +5,7 @@
 class SupplyDistributionsIndexPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/distributions'
+            apiBaseUrl: '/api/supply/distributions'
         });
         
         this.currentDistributionId = null;
@@ -14,13 +14,12 @@ class SupplyDistributionsIndexPage extends BasePage {
     }
 
     setupEventListeners() {
-        this.initializeSearchAndFilter();
         this.initializeCancelHandlers();
     }
 
     loadInitialData() {
+        this.loadStatistics();
         this.initializeDataTable();
-        this.initializeCounterAnimation();
         
         const cancelModalElement = document.getElementById('cancelDistributionModal');
         if (cancelModalElement) {
@@ -28,102 +27,131 @@ class SupplyDistributionsIndexPage extends BasePage {
         }
     }
 
+    async loadStatistics() {
+        const statsContainer = document.getElementById('stats-container');
+        try {
+            const response = await this.apiCall(`${this.config.apiBaseUrl}/statistics`);
+            const stats = response.data;
+
+            statsContainer.innerHTML = `
+                <div class="col-xl-3 col-md-6">
+                    <div class="card card-animate">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 지급 건수</p></div>
+                                <div class="flex-shrink-0"><span class="avatar-title bg-success-subtle rounded fs-3"><i class="bx bx-package text-success"></i></span></div>
+                            </div>
+                            <div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">${stats.total_distributions.toLocaleString()}</span>건</h4></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card card-animate">
+                        <div class="card-body">
+                           <div class="d-flex align-items-center">
+                                <div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 지급 수량</p></div>
+                                <div class="flex-shrink-0"><span class="avatar-title bg-info-subtle rounded fs-3"><i class="bx bx-cube text-info"></i></span></div>
+                            </div>
+                            <div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">${stats.total_quantity.toLocaleString()}</span>개</h4></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card card-animate">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">지급 직원 수</p></div>
+                                <div class="flex-shrink-0"><span class="avatar-title bg-warning-subtle rounded fs-3"><i class="bx bx-user text-warning"></i></span></div>
+                            </div>
+                            <div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">${stats.unique_employees.toLocaleString()}</span>명</h4></div></div>
+                        </div>
+                    </div>
+                </div>
+               <div class="col-xl-3 col-md-6">
+                    <div class="card card-animate">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">지급 부서 수</p></div>
+                                <div class="flex-shrink-0"><span class="avatar-title bg-primary-subtle rounded fs-3"><i class="bx bx-buildings text-primary"></i></span></div>
+                            </div>
+                            <div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">${stats.unique_departments.toLocaleString()}</span>개</h4></div></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            console.error('Failed to load statistics:', error);
+            statsContainer.innerHTML = '<p class="text-danger">통계 정보를 불러오는데 실패했습니다.</p>';
+        }
+    }
+
     initializeDataTable() {
         const table = document.getElementById('distributions-table');
         if (table && typeof $.fn.DataTable !== 'undefined') {
             this.dataTable = $(table).DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: this.config.apiBaseUrl,
+                    type: 'GET',
+                    error: (xhr, error, thrown) => {
+                        Toast.error(`데이터를 불러오는 중 오류가 발생했습니다: ${thrown}`);
+                    }
+                },
+                columns: [
+                    { data: 'distribution_date' },
+                    { data: 'item_name', render: (data, type, row) => `
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="fs-14 mb-0">${this.escapeHtml(data)}</h6>
+                                <p class="text-muted mb-0 fs-12">${this.escapeHtml(row.item_code)}</p>
+                            </div>
+                        </div>`
+                    },
+                    { data: 'quantity', className: 'text-end', render: data => Number(data).toLocaleString() },
+                    { data: 'employee_name' },
+                    { data: 'department_name' },
+                    { data: 'is_cancelled', render: (data, type, row) => {
+                        if (data) {
+                            return `<span class="badge badge-soft-danger"><i class="ri-close-circle-line me-1"></i>취소됨</span>
+                                    <br><small class="text-muted">${new Date(row.cancelled_at).toLocaleDateString()}</small>`;
+                        }
+                        return `<span class="badge badge-soft-success"><i class="ri-checkbox-circle-line me-1"></i>지급 완료</span>`;
+                    }},
+                    { data: 'id', orderable: false, render: (data, type, row) => `
+                        <div class="dropdown">
+                            <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="ri-more-fill align-middle"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/supply/distributions/show?id=${data}"><i class="ri-eye-fill align-bottom me-2 text-muted"></i> 상세보기</a></li>
+                                ${!row.is_cancelled ? `
+                                <li><a class="dropdown-item" href="/supply/distributions/edit?id=${data}"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 수정</a></li>
+                                <li><button class="dropdown-item cancel-distribution-btn" data-id="${data}" data-name="${this.escapeHtml(row.item_name)}" data-employee="${this.escapeHtml(row.employee_name)}"><i class="ri-close-circle-fill align-bottom me-2 text-muted"></i> 취소</button></li>
+                                ` : ''}
+                            </ul>
+                        </div>`
+                    }
+                ],
                 responsive: true,
                 pageLength: 25,
-                order: [[0, 'desc']], // 지급일 기준 내림차순
-                columnDefs: [
-                    { targets: [2], className: 'text-end' },
-                    { targets: [6], orderable: false }
-                ],
+                order: [[0, 'desc']],
                 language: {
                     url: '/assets/libs/datatables.net/i18n/Korean.json'
-                }
+                },
+                dom: 'Bfrtip',
+                buttons: ['copy', 'csv', 'excel', 'print']
             });
-        }
-    }
-
-    initializeCounterAnimation() {
-        const counters = document.querySelectorAll('.counter-value');
-        counters.forEach(counter => {
-            const target = parseInt(counter.getAttribute('data-target'));
-            const duration = 1000;
-            const step = target / (duration / 16);
-            let current = 0;
-
-            const updateCounter = () => {
-                current += step;
-                if (current < target) {
-                    counter.textContent = Math.floor(current).toLocaleString('ko-KR');
-                    requestAnimationFrame(updateCounter);
-                } else {
-                    counter.textContent = target.toLocaleString('ko-KR');
-                }
-            };
-
-            updateCounter();
-        });
-    }
-
-    initializeSearchAndFilter() {
-        const searchInput = document.getElementById('search-distributions');
-        if (searchInput && this.dataTable) {
-            searchInput.addEventListener('keyup', () => {
-                this.dataTable.search(searchInput.value).draw();
-            });
-        }
-
-        const startDateInput = document.getElementById('filter-start-date');
-        const endDateInput = document.getElementById('filter-end-date');
-
-        if (startDateInput && endDateInput) {
-            startDateInput.addEventListener('change', () => this.filterByDateRange());
-            endDateInput.addEventListener('change', () => this.filterByDateRange());
-        }
-    }
-
-    filterByDateRange() {
-        const startDate = document.getElementById('filter-start-date').value;
-        const endDate = document.getElementById('filter-end-date').value;
-
-        if (this.dataTable) {
-            $.fn.dataTable.ext.search.push((settings, data, dataIndex) => {
-                const dateStr = data[0]; // 첫 번째 컬럼이 날짜
-                
-                if (!startDate && !endDate) return true;
-                
-                const rowDate = new Date(dateStr);
-                const start = startDate ? new Date(startDate) : null;
-                const end = endDate ? new Date(endDate) : null;
-
-                if (start && rowDate < start) return false;
-                if (end && rowDate > end) return false;
-                
-                return true;
-            });
-
-            this.dataTable.draw();
-            $.fn.dataTable.ext.search.pop();
         }
     }
 
     initializeCancelHandlers() {
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('cancel-distribution-btn') || 
-                e.target.closest('.cancel-distribution-btn')) {
-                
-                const btn = e.target.classList.contains('cancel-distribution-btn') ? 
-                    e.target : e.target.closest('.cancel-distribution-btn');
-                
-                const id = btn.getAttribute('data-id');
-                const itemName = btn.getAttribute('data-name');
-                const employeeName = btn.getAttribute('data-employee');
-                
-                this.showCancelModal(id, itemName, employeeName);
-            }
+        $(document).on('click', '.cancel-distribution-btn', (e) => {
+            const btn = e.currentTarget;
+            const id = btn.getAttribute('data-id');
+            const itemName = btn.getAttribute('data-name');
+            const employeeName = btn.getAttribute('data-employee');
+            this.showCancelModal(id, itemName, employeeName);
         });
 
         const confirmCancelBtn = document.getElementById('confirm-cancel-distribution-btn');
@@ -139,8 +167,8 @@ class SupplyDistributionsIndexPage extends BasePage {
         if (infoDiv) {
             infoDiv.innerHTML = `
                 <div class="alert alert-info">
-                    <p class="mb-1"><strong>품목:</strong> ${this.escapeHtml(itemName)}</p>
-                    <p class="mb-0"><strong>직원:</strong> ${this.escapeHtml(employeeName)}</p>
+                    <p class="mb-1"><strong>품목:</strong> ${itemName}</p>
+                    <p class="mb-0"><strong>직원:</strong> ${employeeName}</p>
                 </div>
             `;
         }
@@ -160,34 +188,19 @@ class SupplyDistributionsIndexPage extends BasePage {
         this.setButtonLoading('#confirm-cancel-distribution-btn', '처리 중...');
 
         try {
-            const result = await this.apiCall(`${this.config.apiBaseUrl}/${this.currentDistributionId}/cancel`, {
+            await this.apiCall(`${this.config.apiBaseUrl}/${this.currentDistributionId}/cancel`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({ cancel_reason: cancelReason })
             });
-
-            if (result.success) {
-                Toast.success('지급이 성공적으로 취소되었습니다.');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-            } else {
-                Toast.error(result.message || '지급 취소에 실패했습니다.');
-                this.resetButtonLoading('#confirm-cancel-distribution-btn', '취소 처리');
-            }
+            Toast.success('지급이 성공적으로 취소되었습니다.');
+            this.cancelModal.hide();
+            this.dataTable.ajax.reload(); // Reload table data
+            this.loadStatistics(); // Reload stats
         } catch (error) {
-            console.error('Error:', error);
-            Toast.error('서버 오류가 발생했습니다.');
+            Toast.error(error.message || '지급 취소에 실패했습니다.');
+        } finally {
             this.resetButtonLoading('#confirm-cancel-distribution-btn', '취소 처리');
         }
-    }
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 }
 

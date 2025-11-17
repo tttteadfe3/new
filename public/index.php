@@ -51,12 +51,12 @@ $container->register(\App\Repositories\RoleRepository::class, fn($c) => new \App
 $container->register(\App\Repositories\WasteCollectionRepository::class, fn($c) => new \App\Repositories\WasteCollectionRepository($c->resolve(Database::class)));
 
 // Supply Management Repositories
-$container->register(\App\Repositories\SupplyCategoryRepository::class, fn($c) => new \App\Repositories\SupplyCategoryRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\SupplyItemRepository::class, fn($c) => new \App\Repositories\SupplyItemRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\SupplyPlanRepository::class, fn($c) => new \App\Repositories\SupplyPlanRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\SupplyPurchaseRepository::class, fn($c) => new \App\Repositories\SupplyPurchaseRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\SupplyDistributionRepository::class, fn($c) => new \App\Repositories\SupplyDistributionRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\SupplyStockRepository::class, fn($c) => new \App\Repositories\SupplyStockRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\SupplyCategoryRepository::class, fn($c) => new \App\Repositories\SupplyCategoryRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\SupplyItemRepository::class, fn($c) => new \App\Repositories\SupplyItemRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\SupplyPlanRepository::class, fn($c) => new \App\Repositories\SupplyPlanRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\SupplyPurchaseRepository::class, fn($c) => new \App\Repositories\SupplyPurchaseRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\SupplyDistributionRepository::class, fn($c) => new \App\Repositories\SupplyDistributionRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\SupplyStockRepository::class, fn($c) => new \App\Repositories\SupplyStockRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 
 
 // 3. Application services that depend on repositories and other services.

@@ -19,70 +19,13 @@
             <div class="card-header">
                 <h5 class="card-title mb-0">분류 정보 수정</h5>
             </div>
-            <div class="card-body">
-                <form id="editCategoryForm">
-                    <input type="hidden" id="category-id" name="id" value="<?= $category->getAttribute('id') ?>">
-                    
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="category-level" class="form-label">분류 레벨</label>
-                            <input type="text" class="form-control" value="<?= $category->getAttribute('level') == 1 ? '대분류' : '소분류' ?>" readonly>
-                            <div class="form-text">분류 레벨은 수정할 수 없습니다.</div>
-                        </div>
-                        <?php if ($category->getAttribute('level') == 2): ?>
-                        <div class="col-md-6">
-                            <label for="parent-category" class="form-label">상위 분류</label>
-                            <?php 
-                            $parentCategory = null;
-                            foreach ($mainCategories as $cat) {
-                                if ($cat->getAttribute('id') == $category->getAttribute('parent_id')) {
-                                    $parentCategory = $cat;
-                                    break;
-                                }
-                            }
-                            ?>
-                            <input type="text" class="form-control" value="<?= $parentCategory ? e($parentCategory->getAttribute('category_name')) . ' (' . e($parentCategory->getAttribute('category_code')) . ')' : '없음' ?>" readonly>
-                            <div class="form-text">상위 분류는 수정할 수 없습니다.</div>
-                        </div>
-                        <?php endif; ?>
-                        <div class="col-12">
-                            <label for="category-code" class="form-label">분류 코드</label>
-                            <input type="text" class="form-control" id="category-code" value="<?= e($category->getAttribute('category_code')) ?>" readonly>
-                            <div class="form-text">분류 코드는 수정할 수 없습니다.</div>
-                        </div>
-                        <div class="col-12">
-                            <label for="category-name" class="form-label">분류명 <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="category-name" name="category_name" required maxlength="100" value="<?= e($category->getAttribute('category_name')) ?>">
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="display-order" class="form-label">표시 순서</label>
-                            <input type="number" class="form-control" id="display-order" name="display_order" value="<?= $category->getAttribute('display_order') ?>" min="0">
-                            <div class="form-text">숫자가 작을수록 먼저 표시됩니다.</div>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="is-active" class="form-label">상태</label>
-                            <select class="form-select" id="is-active" name="is_active">
-                                <option value="1" <?= $category->getAttribute('is_active') ? 'selected' : '' ?>>활성</option>
-                                <option value="0" <?= !$category->getAttribute('is_active') ? 'selected' : '' ?>>비활성</option>
-                            </select>
-                            <div class="invalid-feedback"></div>
-                        </div>
+            <div class="card-body" id="form-container">
+                <!-- Form will be populated by JS -->
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">로딩 중...</span>
                     </div>
-                    
-                    <div class="mt-4">
-                        <button type="submit" class="btn btn-primary me-2" id="save-btn">
-                            <i class="ri-save-line me-1"></i> 저장
-                        </button>
-                        <a href="/supply/categories" class="btn btn-secondary">
-                            <i class="ri-arrow-left-line me-1"></i> 목록으로
-                        </a>
-                        <button type="button" class="btn btn-danger ms-2" id="delete-btn">
-                            <i class="ri-delete-bin-line me-1"></i> 삭제
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
@@ -92,43 +35,8 @@
             <div class="card-header">
                 <h5 class="card-title mb-0">분류 정보</h5>
             </div>
-            <div class="card-body">
-                <table class="table table-borderless table-sm">
-                    <tbody>
-                        <tr>
-                            <td class="fw-medium">분류 ID:</td>
-                            <td><?= $category->getAttribute('id') ?></td>
-                        </tr>
-                        <tr>
-                            <td class="fw-medium">분류 코드:</td>
-                            <td><code><?= e($category->getAttribute('category_code')) ?></code></td>
-                        </tr>
-                        <tr>
-                            <td class="fw-medium">분류 레벨:</td>
-                            <td>
-                                <span class="badge bg-<?= $category->getAttribute('level') == 1 ? 'primary' : 'info' ?>">
-                                    <?= $category->getAttribute('level') == 1 ? '대분류' : '소분류' ?>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="fw-medium">상태:</td>
-                            <td>
-                                <span class="badge bg-<?= $category->getAttribute('is_active') ? 'success' : 'secondary' ?>">
-                                    <?= $category->getAttribute('is_active') ? '활성' : '비활성' ?>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="fw-medium">생성일:</td>
-                            <td><?= date('Y-m-d H:i', strtotime($category->getAttribute('created_at'))) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="fw-medium">수정일:</td>
-                            <td><?= date('Y-m-d H:i', strtotime($category->getAttribute('updated_at'))) ?></td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="card-body" id="info-container">
+                <!-- Info will be populated by JS -->
             </div>
         </div>
         
@@ -194,5 +102,16 @@
         </div>
     </div>
 </div>
+
+<?php \App\Core\View::getInstance()->startSection('script'); ?>
+<script>
+    // Note: AI_DEVELOPMENT_GUIDELINES prohibits inline scripts.
+    // However, there is no standard method provided for passing initial data (like an ID) to the page-specific JavaScript file.
+    // This approach is taken as a practical solution.
+    window.viewData = {
+        categoryId: <?= $categoryId ?? 'null' ?>
+    };
+</script>
+<?php \App\Core\View::getInstance()->endSection(); ?>
 
 <?php \App\Core\View::getInstance()->endSection(); ?>

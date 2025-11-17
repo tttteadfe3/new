@@ -5,10 +5,10 @@
 class SupplyDistributionsEditPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/distributions'
+            apiBaseUrl: '/api/supply/distributions'
         });
         
-        this.distributionId = window.supplyDistributionEditData?.distributionId || null;
+        this.distributionId = document.getElementById('distribution-id')?.value || null;
         this.distribution = null;
         this.originalQuantity = 0;
     }

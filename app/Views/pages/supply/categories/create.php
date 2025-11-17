@@ -34,14 +34,7 @@
                         <div class="col-md-6" id="parent-category-container" style="display: none;">
                             <label for="parent-category" class="form-label">상위 분류 <span class="text-danger">*</span></label>
                             <select class="form-select" id="parent-category" name="parent_id">
-                                <option value="">선택하세요</option>
-                                <?php if (!empty($mainCategories)): ?>
-                                    <?php foreach ($mainCategories as $category): ?>
-                                        <option value="<?= $category->getAttribute('id') ?>">
-                                            <?= e($category->getAttribute('category_name')) ?> (<?= e($category->getAttribute('category_code')) ?>)
-                                        </option>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+                                <option value="">불러오는 중...</option>
                             </select>
                             <div class="invalid-feedback"></div>
                         </div>

@@ -67,6 +67,7 @@ class SupplyPlansEditPage extends BasePage {
         if (form) form.style.display = 'block';
 
         // 품목 정보 표시
+        document.getElementById('back-to-list-btn').href = `/supply/plans?year=${this.originalData.year}`;
         document.getElementById('plan-year').textContent = this.originalData.year;
         document.getElementById('item-code').textContent = this.originalData.item_code;
         document.getElementById('item-name').textContent = this.originalData.item_name;

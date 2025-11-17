@@ -4,14 +4,17 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\SupplyStock;
+use App\Services\DataScopeService;
 
 class SupplyStockRepository
 {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, DataScopeService $dataScopeService)
     {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
@@ -213,15 +216,26 @@ class SupplyStockRepository
     /**
      * 품목 정보와 함께 재고를 조회합니다.
      */
-    public function findWithItems(): array
+    public function findWithItems(array $filters = []): array
     {
-        $sql = "SELECT ss.*, si.item_name, si.item_code, si.unit, sc.category_name
-                FROM supply_stocks ss
-                JOIN supply_items si ON ss.item_id = si.id
-                LEFT JOIN supply_categories sc ON si.category_id = sc.id
-                ORDER BY sc.category_name ASC, si.item_name ASC";
+        $queryParts = [
+            'sql' => "SELECT ss.*, si.item_name, si.item_code, si.unit, sc.category_name
+                      FROM supply_stocks ss
+                      JOIN supply_items si ON ss.item_id = si.id
+                      LEFT JOIN supply_categories sc ON si.category_id = sc.id",
+            'params' => [],
+            'where' => []
+        ];
+
+        // supply_stocks 테이블은 전사 재고 현황을 나타내므로 별도의 데이터 스코프를 적용하지 않습니다.
         
-        return $this->db->query($sql);
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
+
+        $queryParts['sql'] .= " ORDER BY sc.category_name ASC, si.item_name ASC";
+
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**
