@@ -5,7 +5,7 @@
 class SupplyPurchasesEditPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/purchases'
+            API_URL: '/supply/purchases'
         });
         
         this.purchaseId = window.purchaseEditData?.purchaseId || null;
@@ -40,7 +40,7 @@ class SupplyPurchasesEditPage extends BasePage {
         }
 
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}/${this.purchaseId}`);
+            const data = await this.apiCall(`${this.config.API_URL}/${this.purchaseId}`);
             this.purchase = data.data;
             this.item = this.purchase.item;
             this.renderPurchaseForm();
@@ -112,7 +112,7 @@ class SupplyPurchasesEditPage extends BasePage {
         };
 
         try {
-            const result = await this.apiCall(`${this.config.apiBaseUrl}/${this.purchaseId}`, {
+            const result = await this.apiCall(`${this.config.API_URL}/${this.purchaseId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'

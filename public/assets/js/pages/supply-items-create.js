@@ -5,7 +5,7 @@
 class SupplyItemCreatePage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/items'
+            API_URL: '/supply/items'
         });
     }
 
@@ -45,7 +45,7 @@ class SupplyItemCreatePage extends BasePage {
 
     async generateItemCode() {
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}/generate-code`);
+            const data = await this.apiCall(`${this.config.API_URL}/generate-code`);
             const codeInput = document.getElementById('item-code');
             if (codeInput && data.data?.code) {
                 codeInput.value = data.data.code;
@@ -77,7 +77,7 @@ class SupplyItemCreatePage extends BasePage {
                 is_active: document.getElementById('is-active').checked ? 1 : 0
             };
 
-            await this.apiCall(this.config.apiBaseUrl, {
+            await this.apiCall(this.config.API_URL, {
                 method: 'POST',
                 body: JSON.stringify(formData)
             });
