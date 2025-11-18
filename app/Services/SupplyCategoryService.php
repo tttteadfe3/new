@@ -100,7 +100,8 @@ class SupplyCategoryService
         $categoryId = $this->categoryRepository->create($data);
 
         // 활동 로그 기록
-        $this->activityLogger->logSupplyCategoryCreate($categoryId, $data);
+        $details = "Created new supply category (ID: {$categoryId}): " . json_encode($data);
+        $this->activityLogger->logApiCall('SERVICE_ACTION', 'SupplyCategoryCreate', $details);
 
         return $categoryId;
     }
@@ -154,7 +155,8 @@ class SupplyCategoryService
             // 활동 로그 기록
             $oldData = $existingCategory->toArray();
             $newData = array_merge($oldData, $updateData);
-            $this->activityLogger->logSupplyCategoryUpdate($id, $oldData, $newData);
+            $details = "Updated supply category (ID: {$id}). FROM: " . json_encode($oldData) . " TO: " . json_encode($newData);
+            $this->activityLogger->logApiCall('SERVICE_ACTION', 'SupplyCategoryUpdate', $details);
         }
 
         return $success;
@@ -180,7 +182,8 @@ class SupplyCategoryService
 
         if ($success) {
             // 활동 로그 기록
-            $this->activityLogger->logSupplyCategoryDelete($id, $category->toArray());
+            $details = "Deleted supply category (ID: {$id}): " . json_encode($category->toArray());
+            $this->activityLogger->logApiCall('SERVICE_ACTION', 'SupplyCategoryDelete', $details);
         }
 
         return $success;
@@ -206,7 +209,8 @@ class SupplyCategoryService
             // 활동 로그 기록
             $oldData = $category->toArray();
             $newData = array_merge($oldData, ['is_active' => $newStatus]);
-            $this->activityLogger->logSupplyCategoryUpdate($id, $oldData, $newData);
+            $details = "Toggled supply category status (ID: {$id}) to '{$statusText}'. FROM: " . json_encode($oldData) . " TO: " . json_encode($newData);
+            $this->activityLogger->logApiCall('SERVICE_ACTION', 'SupplyCategoryToggle', $details);
         }
 
         return $success;

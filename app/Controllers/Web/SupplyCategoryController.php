@@ -39,36 +39,6 @@ class SupplyCategoryController extends BaseController
         ], 'layouts/app');
     }
 
-    /**
-     * 새 분류 생성 폼 페이지를 표시합니다.
-     */
-    public function create(): void
-    {
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-categories-create.js');
-        
-        echo $this->render('pages/supply/categories/create', [
-            'pageTitle' => '지급품 분류 생성'
-        ], 'layouts/app');
-    }
-
-    /**
-     * 분류 수정 폼 페이지를 표시합니다.
-     */
-    public function edit(): void
-    {
-        $id = $this->request->input('id');
-        if (!$id) {
-            $this->redirect('/supply/categories');
-            return;
-        }
-
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-categories-edit.js');
-        
-        echo $this->render('pages/supply/categories/edit', [
-            'categoryId' => (int)$id,
-            'pageTitle' => '지급품 분류 수정'
-        ], 'layouts/app');
-    }
 
     /**
      * 분류 상세 정보 페이지를 표시합니다.
