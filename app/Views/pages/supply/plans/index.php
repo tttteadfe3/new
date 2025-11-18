@@ -30,9 +30,9 @@
                     </div>
                     <div class="col-md-6 text-end">
                         <div class="btn-group" role="group">
-                            <a href="/supply/plans/create?year=<?= e($currentYear) ?>" class="btn btn-success">
+                            <button type="button" class="btn btn-success" id="add-plan-btn">
                                 <i class="ri-add-line align-bottom me-1"></i> 신규 계획
-                            </a>
+                            </button>
                             <a href="/supply/plans/import?year=<?= e($currentYear) ?>" class="btn btn-info">
                                 <i class="ri-upload-2-line align-bottom me-1"></i> 엑셀 업로드
                             </a>
@@ -112,6 +112,64 @@
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" data-bs-dismiss="modal">취소</button>
                 <button type="button" class="btn btn-danger" id="confirm-delete-plan-btn">삭제</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Plan Modal -->
+<div class="modal fade" id="planModal" tabindex="-1" aria-labelledby="planModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="planModalLabel">계획 등록/수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="planForm" class="needs-validation" novalidate>
+                    <input type="hidden" id="plan-id" name="id">
+                    <input type="hidden" id="plan-year" name="year" value="<?= e($currentYear) ?>">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="modal-item-id" class="form-label">품목 선택 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modal-item-id" name="item_id" required>
+                                <option value="">품목을 선택하세요</option>
+                            </select>
+                            <div class="invalid-feedback">품목을 선택해주세요.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="modal-item-unit" class="form-label">단위</label>
+                            <input type="text" class="form-control" id="modal-item-unit" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label for="modal-planned-quantity" class="form-label">계획 수량 <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="modal-planned-quantity" name="planned_quantity" required min="1">
+                            <div class="invalid-feedback">1 이상의 숫자를 입력해주세요.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="modal-unit-price" class="form-label">단가 <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="modal-unit-price" name="unit_price" required min="0">
+                            <div class="invalid-feedback">0 이상의 숫자를 입력해주세요.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="modal-total-budget" class="form-label">총 예산</label>
+                            <input type="text" class="form-control" id="modal-total-budget" readonly>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label for="modal-notes" class="form-label">비고</label>
+                        <textarea class="form-control" id="modal-notes" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="save-plan-btn">저장</button>
             </div>
         </div>
     </div>

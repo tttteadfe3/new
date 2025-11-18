@@ -13,7 +13,9 @@ class SupplyPlansIndexPage extends BasePage {
 
         this.currentDeleteId = null;
         this.deletePlanModal = null;
+        this.planModal = null;
         this.dataTable = null;
+        this.activeItems = [];
     }
 
     setupEventListeners() {
@@ -35,6 +37,23 @@ class SupplyPlansIndexPage extends BasePage {
         $('#search-input').on('keyup', this.debounce(() => {
             this.loadPlans();
         }, 300));
+
+        const addPlanBtn = document.getElementById('add-plan-btn');
+        addPlanBtn?.addEventListener('click', () => this.openPlanModal());
+
+        const savePlanBtn = document.getElementById('save-plan-btn');
+        savePlanBtn?.addEventListener('click', () => this.handleSavePlan());
+
+        $(document).on('click', '.edit-plan-btn', (e) => this.openPlanModal(e.currentTarget.dataset.id));
+
+        const modalItemId = document.getElementById('modal-item-id');
+        modalItemId?.addEventListener('change', () => this.updateItemUnit());
+
+        const quantityInput = document.getElementById('modal-planned-quantity');
+        quantityInput?.addEventListener('input', () => this.calculateTotalBudget());
+
+        const priceInput = document.getElementById('modal-unit-price');
+        priceInput?.addEventListener('input', () => this.calculateTotalBudget());
     }
 
     loadInitialData() {
@@ -47,6 +66,13 @@ class SupplyPlansIndexPage extends BasePage {
         if (deleteModalElement) {
             this.deletePlanModal = new bootstrap.Modal(deleteModalElement);
         }
+
+        const planModalElement = document.getElementById('planModal');
+        if (planModalElement) {
+            this.planModal = new bootstrap.Modal(planModalElement);
+        }
+
+        this.loadActiveItems();
     }
 
     populateYearSelector() {
@@ -112,7 +138,7 @@ class SupplyPlansIndexPage extends BasePage {
                         <div class="dropdown">
                             <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="ri-more-fill"></i></button>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="/supply/plans/edit?id=${data}"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 수정</a></li>
+                                <li><button class="dropdown-item edit-plan-btn" data-id="${data}"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 수정</button></li>
                                 <li><button class="dropdown-item delete-plan-btn" data-id="${data}" data-name="${this.escapeHtml(row.item_name)}"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 삭제</button></li>
                             </ul>
                         </div>`
@@ -133,7 +159,6 @@ class SupplyPlansIndexPage extends BasePage {
         document.getElementById('plans-table-title').textContent = `${this.currentYear}년 지급품 계획 목록`;
 
         // Update button links
-        document.querySelector('a[href^="/supply/plans/create"]').href = `/supply/plans/create?year=${this.currentYear}`;
         document.querySelector('a[href^="/supply/plans/import"]').href = `/supply/plans/import?year=${this.currentYear}`;
         document.querySelector('a[href^="/supply/plans/budget-summary"]').href = `/supply/plans/budget-summary?year=${this.currentYear}`;
 
@@ -184,6 +209,113 @@ class SupplyPlansIndexPage extends BasePage {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    }
+
+    async loadActiveItems(selectedItemId = null) {
+        try {
+            const response = await this.apiCall('/api/supply/items/active');
+            if (response.success) {
+                this.activeItems = response.data;
+                const itemSelect = document.getElementById('modal-item-id');
+                itemSelect.innerHTML = '<option value="">품목을 선택하세요</option>';
+                this.activeItems.forEach(item => {
+                    const option = new Option(`${item.name} (${item.code})`, item.id);
+                    itemSelect.add(option);
+                });
+                if (selectedItemId) {
+                    itemSelect.value = selectedItemId;
+                    this.updateItemUnit();
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load active items:', error);
+        }
+    }
+
+    updateItemUnit() {
+        const selectedId = document.getElementById('modal-item-id').value;
+        const selectedItem = this.activeItems.find(item => item.id == selectedId);
+        document.getElementById('modal-item-unit').value = selectedItem ? selectedItem.unit : '';
+    }
+
+    calculateTotalBudget() {
+        const quantity = parseInt(document.getElementById('modal-planned-quantity').value) || 0;
+        const price = parseFloat(document.getElementById('modal-unit-price').value) || 0;
+        document.getElementById('modal-total-budget').value = `₩${(quantity * price).toLocaleString()}`;
+    }
+
+    async openPlanModal(planId = null) {
+        const form = document.getElementById('planForm');
+        form.reset();
+        form.classList.remove('was-validated');
+        document.getElementById('plan-id').value = '';
+        document.getElementById('planModalLabel').textContent = planId ? '계획 수정' : '신규 계획 등록';
+
+        if (planId) {
+            try {
+                const response = await this.apiCall(`/api/supply/plans/${planId}`);
+                if (response.success) {
+                    const plan = response.data;
+                    document.getElementById('plan-id').value = plan.id;
+                    await this.loadActiveItems(plan.item_id);
+                    document.getElementById('modal-planned-quantity').value = plan.planned_quantity;
+                    document.getElementById('modal-unit-price').value = plan.unit_price;
+                    document.getElementById('modal-notes').value = plan.notes;
+                }
+            } catch (error) {
+                console.error(`Failed to load plan ${planId}:`, error);
+                Toast.error('계획 정보를 불러오는데 실패했습니다.');
+                return;
+            }
+        } else {
+            await this.loadActiveItems();
+        }
+
+        this.calculateTotalBudget();
+        this.planModal.show();
+    }
+
+    async handleSavePlan() {
+        const form = document.getElementById('planForm');
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            return;
+        }
+
+        const planId = document.getElementById('plan-id').value;
+        const url = planId ? `/api/supply/plans/${planId}` : '/api/supply/plans';
+        const method = planId ? 'PUT' : 'POST';
+
+        const formData = {
+            year: this.currentYear,
+            item_id: document.getElementById('modal-item-id').value,
+            planned_quantity: document.getElementById('modal-planned-quantity').value,
+            unit_price: document.getElementById('modal-unit-price').value,
+            notes: document.getElementById('modal-notes').value
+        };
+
+        this.setButtonLoading('#save-plan-btn');
+        try {
+            const response = await this.apiCall(url, {
+                method: method,
+                body: JSON.stringify(formData),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.success) {
+                this.planModal.hide();
+                Toast.success('계획이 성공적으로 저장되었습니다.');
+                this.loadPlans();
+                this.loadBudgetSummary();
+            }
+        } catch (error) {
+            console.error('Failed to save plan:', error);
+            this.handleApiError(error);
+        } finally {
+            this.resetButtonLoading('#save-plan-btn', '저장');
+        }
     }
 }
 
