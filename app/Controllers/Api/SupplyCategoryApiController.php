@@ -68,7 +68,11 @@ class SupplyCategoryApiController extends BaseApiController
             
             // 대분류인 경우 하위 분류 포함
             if ($category->isMainCategory()) {
-                $categoryData['sub_categories'] = $this->supplyCategoryService->getSubCategories($id);
+                $subCategories = $this->supplyCategoryService->getSubCategories($id);
+                // SupplyCategory 객체 배열을 배열로 변환
+                $categoryData['sub_categories'] = array_map(function($subCategory) {
+                    return $subCategory->toArray();
+                }, $subCategories);
             }
             
             // 소분류인 경우 상위 분류 정보 포함
@@ -178,7 +182,10 @@ class SupplyCategoryApiController extends BaseApiController
             }
 
             $categories = $this->supplyCategoryService->getCategoriesByLevel($level);
-            $this->apiSuccess($categories);
+            $categoriesArray = array_map(function($category) {
+                return $category->toArray();
+            }, $categories);
+            $this->apiSuccess($categoriesArray);
         } catch (Exception $e) {
             $this->handleException($e);
         }
@@ -191,7 +198,10 @@ class SupplyCategoryApiController extends BaseApiController
     {
         try {
             $subCategories = $this->supplyCategoryService->getSubCategories($parentId);
-            $this->apiSuccess($subCategories);
+            $subCategoriesArray = array_map(function($category) {
+                return $category->toArray();
+            }, $subCategories);
+            $this->apiSuccess($subCategoriesArray);
         } catch (Exception $e) {
             $this->handleException($e);
         }
@@ -311,7 +321,12 @@ class SupplyCategoryApiController extends BaseApiController
                        stripos($categoryCode, $query) !== false;
             });
 
-            $this->apiSuccess(array_values($filteredCategories));
+            // SupplyCategory 객체 배열을 배열로 변환
+            $filteredCategoriesArray = array_map(function($category) {
+                return $category->toArray();
+            }, array_values($filteredCategories));
+
+            $this->apiSuccess($filteredCategoriesArray);
         } catch (Exception $e) {
             $this->handleException($e);
         }
