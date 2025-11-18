@@ -122,6 +122,7 @@ $container->register(\App\Services\VehicleService::class, fn($c) => new \App\Ser
 $container->register(\App\Services\BreakdownService::class, fn($c) => new \App\Services\BreakdownService($c->resolve(\App\Repositories\BreakdownRepository::class)));
 $container->register(\App\Services\MaintenanceService::class, fn($c) => new \App\Services\MaintenanceService($c->resolve(\App\Repositories\MaintenanceRepository::class)));
 $container->register(\App\Services\ConsumableService::class, fn($c) => new \App\Services\ConsumableService($c->resolve(\App\Repositories\ConsumableRepository::class)));
+
 $container->register(\App\Services\SupplyCategoryService::class, fn($c) => new \App\Services\SupplyCategoryService(
     $c->resolve(\App\Repositories\SupplyCategoryRepository::class),
     $c->resolve(\App\Repositories\SupplyItemRepository::class),
