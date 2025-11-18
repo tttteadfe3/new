@@ -219,7 +219,7 @@ class SupplyPlansIndexPage extends BasePage {
                 const itemSelect = document.getElementById('modal-item-id');
                 itemSelect.innerHTML = '<option value="">품목을 선택하세요</option>';
                 this.activeItems.forEach(item => {
-                    const option = new Option(`${item.name} (${item.code})`, item.id);
+                    const option = new Option(`${item.item_name} (${item.item_code})`, item.id);
                     itemSelect.add(option);
                 });
                 if (selectedItemId) {
@@ -309,10 +309,12 @@ class SupplyPlansIndexPage extends BasePage {
                 Toast.success('계획이 성공적으로 저장되었습니다.');
                 this.loadPlans();
                 this.loadBudgetSummary();
+            } else {
+                Toast.error(response.message || '계획 저장에 실패했습니다.');
             }
         } catch (error) {
             console.error('Failed to save plan:', error);
-            this.handleApiError(error);
+            Toast.error(error.message || '계획 저장 중 오류가 발생했습니다.');
         } finally {
             this.resetButtonLoading('#save-plan-btn', '저장');
         }

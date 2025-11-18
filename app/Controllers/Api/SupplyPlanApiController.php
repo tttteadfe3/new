@@ -83,6 +83,7 @@ class SupplyPlanApiController extends BaseApiController
 
             // 데이터 타입 변환
             $year = (int) $data['year'];
+            $data['created_by'] = $this->authService->getUserId();
             $data['item_id'] = (int) $data['item_id'];
             $data['planned_quantity'] = (int) $data['planned_quantity'];
             $data['unit_price'] = (float) $data['unit_price'];
