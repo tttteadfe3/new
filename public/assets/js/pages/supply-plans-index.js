@@ -60,7 +60,6 @@ class SupplyPlansIndexPage extends BasePage {
         this.populateYearSelector();
         this.loadBudgetSummary();
         this.initializeDataTable();
-        this.loadPlans();
         
         const deleteModalElement = document.getElementById('deletePlanModal');
         if (deleteModalElement) {
@@ -133,6 +132,10 @@ class SupplyPlansIndexPage extends BasePage {
             this.dataTable = $(table).DataTable({
                 processing: true,
                 serverSide: false,
+                ajax: {
+                    url: `/api/supply/plans?year=${this.currentYear}`,
+                    dataSrc: 'data.plans'
+                },
                 columns: [
                     { data: 'item_code' },
                     { data: 'item_name', render: (data, type, row) => this.escapeHtml(data) + (row.notes ? `<p class="text-muted mb-0 fs-12">${this.escapeHtml(row.notes)}</p>` : '') },

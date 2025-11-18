@@ -111,7 +111,7 @@ class SupplyDistributionsIndexPage extends BasePage {
                 pageLength: 25,
                 order: [[0, 'desc']],
                 language: {
-                    url: '/assets/libs/datatables.net/i18n/Korean.json'
+                    url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
                 },
                 dom: 'Bfrtip',
                 buttons: ['copy', 'csv', 'excel', 'print'],
