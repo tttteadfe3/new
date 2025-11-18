@@ -115,11 +115,14 @@ class SupplyPlansIndexPage extends BasePage {
     }
 
     async loadPlans() {
-        if (!this.dataTable) {
-            this.initializeDataTable();
-        } else {
-            const newUrl = `/api/supply/plans?year=${this.currentYear}`;
-            this.dataTable.ajax.url(newUrl).load();
+        try {
+            const response = await this.apiCall(`/supply/plans?year=${this.currentYear}`);
+            if (response.success && response.data && response.data.plans) {
+                this.dataTable.clear().rows.add(response.data.plans).draw();
+            }
+        } catch (error) {
+            console.error('Error loading plans:', error);
+            Toast.error('계획을 불러오는 중 오류가 발생했습니다.');
         }
     }
 
