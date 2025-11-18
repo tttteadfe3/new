@@ -78,9 +78,9 @@ class SupplyPurchase extends BaseModel
     /**
      * 구매 데이터의 유효성을 검증합니다.
      */
-    public function validate(): bool
+    public function validate(bool $isUpdate = false): bool
     {
-        $isValid = parent::validate();
+        $isValid = parent::validate($isUpdate);
 
         // 비즈니스 규칙: 총 금액 자동 계산
         $this->setAttribute('total_amount', $this->calculateTotalAmount());

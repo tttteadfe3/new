@@ -115,7 +115,7 @@ class SupplyPurchasesIndexPage extends BasePage {
             responsive: true,
             pageLength: 25,
             order: [[0, 'desc']],
-            language: { url: '/assets/libs/datatables.net/i18n/Korean.json' },
+            language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
             searching: false
         });
     }
