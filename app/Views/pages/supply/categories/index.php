@@ -71,45 +71,54 @@
             </div>
             <form id="categoryForm">
                 <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="category-level" class="form-label">분류 레벨 <span class="text-danger">*</span></label>
-                            <select class="form-select" id="category-level" name="level" required>
-                                <option value="">선택하세요</option>
-                                <option value="1">대분류</option>
-                                <option value="2">소분류</option>
-                            </select>
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="category-level" class="form-label">분류 레벨 <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="category-level" name="level" required>
+                                        <option value="">선택하세요</option>
+                                        <option value="1">대분류</option>
+                                        <option value="2">소분류</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6" id="parent-category-container" style="display: none;">
+                                    <label for="parent-category" class="form-label">상위 분류 <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="parent-category" name="parent_id">
+                                        <option value="">선택하세요</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label for="category-code" class="form-label">분류 코드 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="category-code" name="category_code" required maxlength="20">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button type="button" class="btn btn-outline-primary w-100" id="generate-code-btn">
+                                        <i class="ri-refresh-line me-1"></i> 자동 생성
+                                    </button>
+                                </div>
+                                <div class="col-12">
+                                    <label for="category-name" class="form-label">분류명 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="category-name" name="category_name" required maxlength="100">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="display-order" class="form-label">표시 순서</label>
+                                    <input type="number" class="form-control" id="display-order" name="display_order" value="0" min="0">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="is-active" class="form-label">상태</label>
+                                    <select class="form-select" id="is-active" name="is_active">
+                                        <option value="1" selected>활성</option>
+                                        <option value="0">비활성</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6" id="parent-category-container" style="display: none;">
-                            <label for="parent-category" class="form-label">상위 분류 <span class="text-danger">*</span></label>
-                            <select class="form-select" id="parent-category" name="parent_id">
-                                <option value="">선택하세요</option>
-                            </select>
-                        </div>
-                        <div class="col-md-8">
-                            <label for="category-code" class="form-label">분류 코드 <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="category-code" name="category_code" required maxlength="20">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">&nbsp;</label>
-                            <button type="button" class="btn btn-outline-primary w-100" id="generate-code-btn">
-                                <i class="ri-refresh-line me-1"></i> 자동 생성
-                            </button>
-                        </div>
-                        <div class="col-12">
-                            <label for="category-name" class="form-label">분류명 <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="category-name" name="category_name" required maxlength="100">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="display-order" class="form-label">표시 순서</label>
-                            <input type="number" class="form-control" id="display-order" name="display_order" value="0" min="0">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="is-active" class="form-label">상태</label>
-                            <select class="form-select" id="is-active" name="is_active">
-                                <option value="1" selected>활성</option>
-                                <option value="0">비활성</option>
-                            </select>
+                        <div class="col-lg-4">
+                            <div id="category-form-help">
+                                <!-- Help content will be injected by JS -->
+                            </div>
                         </div>
                     </div>
                 </div>

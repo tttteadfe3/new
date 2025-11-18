@@ -87,8 +87,6 @@ $router->get('/supply', [SupplyController::class, 'index'])->name('supply.dashbo
 
 // 분류 관리
 $router->get('/supply/categories', [SupplyCategoryController::class, 'index'])->name('supply.categories.index')->middleware('auth')->middleware('permission', 'supply.category.manage');
-$router->get('/supply/categories/create', [SupplyCategoryController::class, 'create'])->name('supply.categories.create')->middleware('auth')->middleware('permission', 'supply.category.manage');
-$router->get('/supply/categories/edit', [SupplyCategoryController::class, 'edit'])->name('supply.categories.edit')->middleware('auth')->middleware('permission', 'supply.category.manage');
 
 // 품목 관리
 $router->get('/supply/items', [SupplyItemController::class, 'index'])->name('supply.items.index')->middleware('auth')->middleware('permission', 'supply.item.view');
