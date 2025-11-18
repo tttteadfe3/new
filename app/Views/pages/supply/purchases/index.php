@@ -170,6 +170,18 @@
                         <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
                     </div>
 
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="is-received" name="is_received" value="1">
+                        <label class="form-check-label" for="is-received">
+                            즉시 입고 처리
+                        </label>
+                    </div>
+
+                    <div id="received-date-group" style="display: none;">
+                        <label for="received-date-modal" class="form-label">입고일</label>
+                        <input type="date" class="form-control" id="received-date-modal" name="received_date">
+                    </div>
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>

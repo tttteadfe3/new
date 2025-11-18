@@ -29,9 +29,19 @@ class SupplyPurchasesIndexPage extends BasePage {
         $('#search-input, #filter-status').on('keyup change', this.debounce(() => {
             this.loadPurchases();
         }, 300));
-        
+
         // 총액 자동 계산
         $('#quantity, #unit-price').on('input', () => this.calculateTotal());
+
+        // 즉시 입고 처리 체크박스 이벤트
+        $('#is-received').on('change', function() {
+            if ($(this).is(':checked')) {
+                $('#received-date-group').show();
+                $('#received-date-modal').val(new Date().toISOString().slice(0, 10));
+            } else {
+                $('#received-date-group').hide();
+            }
+        });
     }
 
     loadInitialData() {
@@ -206,7 +216,7 @@ class SupplyPurchasesIndexPage extends BasePage {
         try {
             const result = await this.apiCall(`${this.config.API_URL}/${this.currentPurchaseId}`);
             const purchase = result.data;
-            
+
             $('#purchase-id').val(purchase.id);
             $('#item-id').val(purchase.item_id);
             $('#purchase-date').val(purchase.purchase_date);
@@ -214,7 +224,7 @@ class SupplyPurchasesIndexPage extends BasePage {
             $('#quantity').val(purchase.quantity);
             $('#unit-price').val(purchase.unit_price);
             $('#notes').val(purchase.notes);
-            
+
             this.calculateTotal();
             $('#purchaseModalLabel').text('구매 수정');
             this.purchaseModal.show();
@@ -238,7 +248,9 @@ class SupplyPurchasesIndexPage extends BasePage {
             supplier: $('#supplier').val(),
             quantity: $('#quantity').val(),
             unit_price: $('#unit-price').val(),
-            notes: $('#notes').val()
+            notes: $('#notes').val(),
+            is_received: $('#is-received').is(':checked'),
+            received_date: $('#is-received').is(':checked') ? $('#received-date-modal').val() : null
         };
 
         const url = this.currentPurchaseId ? `${this.config.API_URL}/${this.currentPurchaseId}` : this.config.API_URL;
