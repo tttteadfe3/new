@@ -77,7 +77,7 @@ class SupplyPurchasesIndexPage extends BasePage {
             const queryString = new URLSearchParams(params).toString();
             const result = await this.apiCall(`${this.config.API_URL}?${queryString}`);
 
-            this.dataTable.clear().rows.add(result.data || []).draw();
+            this.dataTable.clear().rows.add(result.data.purchases || []).draw();
         } catch (error) {
             console.error('Error loading purchases:', error);
             Toast.error('구매 내역을 불러오는 중 오류가 발생했습니다.');
