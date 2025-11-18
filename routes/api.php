@@ -205,10 +205,10 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->get('/supply/purchases', [SupplyPurchaseApiController::class, 'index'])->name('api.supply.purchases.index')->middleware('auth')->middleware('permission', 'supply.purchase.view');
     $router->get('/supply/purchases/statistics', [SupplyPurchaseApiController::class, 'getStatistics'])->name('api.supply.purchases.statistics')->middleware('auth')->middleware('permission', 'supply.purchase.view');
     $router->get('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'show'])->name('api.supply.purchases.show')->middleware('auth')->middleware('permission', 'supply.purchase.view');
-    $router->post('/supply/purchases', [SupplyPurchaseApiController::class, 'store'])->name('api.supply.purchases.store')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
-    $router->put('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'update'])->name('api.supply.purchases.update')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
-    $router->delete('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'destroy'])->name('api.supply.purchases.destroy')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
-    $router->post('/supply/purchases/{id}/mark-received', [SupplyPurchaseApiController::class, 'markReceived'])->name('api.supply.purchases.mark-received')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
+    $router->post('/supply/purchases', [SupplyPurchaseApiController::class, 'store'])->name('api.supply.purchases.store')->middleware('auth')->middleware('permission', 'supply.purchase.create');
+    $router->patch('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'update'])->name('api.supply.purchases.update')->middleware('auth')->middleware('permission', 'supply.purchase.update');
+    $router->delete('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'destroy'])->name('api.supply.purchases.destroy')->middleware('auth')->middleware('permission', 'supply.purchase.delete');
+    $router->post('/supply/purchases/{id}/mark-received', [SupplyPurchaseApiController::class, 'markReceived'])->name('api.supply.purchases.mark-received')->middleware('auth')->middleware('permission', 'supply.purchase.update');
 
     // 지급 관리 API
     $router->get('/supply/distributions/available-items', [SupplyDistributionApiController::class, 'getAvailableItems'])->name('api.supply.distributions.available-items')->middleware('auth')->middleware('permission', 'supply.distribution.view');
