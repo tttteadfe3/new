@@ -1,62 +1,93 @@
-$(document).ready(function() {
-    let currentYear = new Date().getFullYear();
-    const yearParam = new URLSearchParams(window.location.search).get('year');
-    if (yearParam) {
-        currentYear = parseInt(yearParam);
-    }
-
-    let plansTable;
-
-    // Initialize year selector
-    const yearSelector = $('#year-selector');
-    const currentServerYear = new Date().getFullYear();
-    for (let y = currentServerYear + 1; y >= currentServerYear - 5; y--) {
-        yearSelector.append(new Option(y + '년', y, y === currentYear));
-    }
-
-    // Load data on year change
-    yearSelector.on('change', function() {
-        currentYear = parseInt($(this).val());
-        window.history.pushState({}, '', `?year=${currentYear}`);
-        loadAllData(currentYear);
-    });
-
-    function loadAllData(year) {
-        $('#plans-table-title').text(`${year}년 지급품 계획 목록`);
-        $('#plan-year').val(year);
-        loadBudgetSummary(year);
-        if (plansTable) {
-            plansTable.ajax.url(`/api/supply/plans?year=${year}`).load();
-        } else {
-            initializeDataTable(year);
+class SupplyPlansPage extends BasePage {
+    constructor() {
+        super();
+        this.state = {
+            currentYear: new Date().getFullYear(),
+            plansTable: null,
+            activeItems: []
+        };
+        const yearParam = new URLSearchParams(window.location.search).get('year');
+        if (yearParam) {
+            this.state.currentYear = parseInt(yearParam);
         }
     }
 
-    function loadBudgetSummary(year) {
-        $.ajax({
-            url: `/api/supply/plans/budget-summary`,
-            method: 'GET',
-            data: { year: year },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success && response.data) {
-                    updateBudgetSummary(response.data);
-                }
-            }
-        });
+    initializeApp() {
+        this.setupEventListeners();
+        this.loadInitialData();
+        this.initializeYearSelector();
     }
 
-    function updateBudgetSummary(data) {
-        $('#budget-summary-container').html(`
+    initializeYearSelector() {
+        const yearSelector = document.getElementById('year-selector');
+        const currentServerYear = new Date().getFullYear();
+        for (let y = currentServerYear + 1; y >= currentServerYear - 5; y--) {
+            const option = new Option(`${y}년`, y, y === this.state.currentYear);
+            yearSelector.add(option);
+        }
+    }
+
+    setupEventListeners() {
+        document.getElementById('year-selector').addEventListener('change', (e) => {
+            this.state.currentYear = parseInt(e.target.value);
+            window.history.pushState({}, '', `?year=${this.state.currentYear}`);
+            this.loadAllData(this.state.currentYear);
+        });
+
+        document.getElementById('add-plan-btn').addEventListener('click', () => this.openPlanModal());
+
+        document.getElementById('save-plan-btn').addEventListener('click', () => this.handleSavePlan());
+
+        $('#plans-table tbody').on('click', '.edit-plan-btn', (e) => {
+            const planId = e.target.dataset.id;
+            this.openPlanModal(planId);
+        });
+
+        document.getElementById('modal-item-id').addEventListener('change', () => this.updateItemUnit());
+
+        document.getElementById('modal-planned-quantity').addEventListener('input', () => this.calculateTotalBudget());
+        document.getElementById('modal-unit-price').addEventListener('input', () => this.calculateTotalBudget());
+
+    }
+
+    loadInitialData() {
+        this.loadAllData(this.state.currentYear);
+        this.loadActiveItems();
+    }
+
+    loadAllData(year) {
+        document.getElementById('plans-table-title').textContent = `${year}년 지급품 계획 목록`;
+        document.getElementById('plan-year').value = year;
+        this.loadBudgetSummary(year);
+        if (this.state.plansTable) {
+            this.state.plansTable.ajax.url(`/api/supply/plans?year=${year}`).load();
+        } else {
+            this.initializeDataTable(year);
+        }
+    }
+
+    async loadBudgetSummary(year) {
+        try {
+            const response = await this.apiCall(`/api/supply/plans/budget-summary?year=${year}`);
+            if (response.success && response.data) {
+                this.updateBudgetSummary(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to load budget summary:', error);
+        }
+    }
+
+    updateBudgetSummary(data) {
+        document.getElementById('budget-summary-container').innerHTML = `
             <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 계획 품목</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">${data.total_items}</span>개</h4></div></div></div></div></div>
             <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 계획 수량</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">${data.total_quantity}</span>개</h4></div></div></div></div></div>
             <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 예산</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0">₩<span class="counter-value">${data.total_budget.toLocaleString()}</span></h4></div></div></div></div></div>
             <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">평균 단가</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0">₩<span class="counter-value">${parseInt(data.avg_unit_price).toLocaleString()}</span></h4></div></div></div></div></div>
-        `);
+        `;
     }
 
-    function initializeDataTable(year) {
-        plansTable = $('#plans-table').DataTable({
+    initializeDataTable(year) {
+        this.state.plansTable = $('#plans-table').DataTable({
             ajax: {
                 url: `/api/supply/plans?year=${year}`,
                 dataSrc: 'data.plans'
@@ -72,7 +103,7 @@ $(document).ready(function() {
                 { data: 'created_at' },
                 {
                     data: 'id',
-                    render: function(data, type, row) {
+                    render: (data, type, row) => {
                         return `<button class="btn btn-sm btn-primary edit-plan-btn" data-id="${data}">수정</button>
                                 <button class="btn btn-sm btn-danger delete-plan-btn" data-id="${data}">삭제</button>`;
                     }
@@ -82,107 +113,107 @@ $(document).ready(function() {
         });
     }
 
-    // Modal handling
-    const planModal = new bootstrap.Modal(document.getElementById('planModal'));
-    let activeItems = [];
-
-    function loadActiveItems(selectedItemId = null) {
-        $.ajax({
-            url: '/api/supply/items/active',
-            method: 'GET',
-            success: function(response) {
-                if (response.success) {
-                    activeItems = response.data;
-                    const itemSelect = $('#modal-item-id');
-                    itemSelect.empty().append('<option value="">품목을 선택하세요</option>');
-                    activeItems.forEach(item => {
-                        itemSelect.append(new Option(`${item.name} (${item.code})`, item.id));
-                    });
-                    if (selectedItemId) {
-                        itemSelect.val(selectedItemId).trigger('change');
-                    }
+    async loadActiveItems(selectedItemId = null) {
+        try {
+            const response = await this.apiCall('/api/supply/items/active');
+            if (response.success) {
+                this.state.activeItems = response.data;
+                const itemSelect = document.getElementById('modal-item-id');
+                itemSelect.innerHTML = '<option value="">품목을 선택하세요</option>';
+                this.state.activeItems.forEach(item => {
+                    const option = new Option(`${item.name} (${item.code})`, item.id);
+                    itemSelect.add(option);
+                });
+                if (selectedItemId) {
+                    itemSelect.value = selectedItemId;
+                    this.updateItemUnit();
                 }
             }
-        });
+        } catch (error) {
+            console.error('Failed to load active items:', error);
+        }
     }
 
-    $('#modal-item-id').on('change', function() {
-        const selectedId = $(this).val();
-        const selectedItem = activeItems.find(item => item.id == selectedId);
-        $('#modal-item-unit').val(selectedItem ? selectedItem.unit : '');
-    });
-
-    function calculateTotalBudget() {
-        const quantity = parseInt($('#modal-planned-quantity').val()) || 0;
-        const price = parseFloat($('#modal-unit-price').val()) || 0;
-        $('#modal-total-budget').val(`₩${(quantity * price).toLocaleString()}`);
+    updateItemUnit() {
+        const selectedId = document.getElementById('modal-item-id').value;
+        const selectedItem = this.state.activeItems.find(item => item.id == selectedId);
+        document.getElementById('modal-item-unit').value = selectedItem ? selectedItem.unit : '';
     }
 
-    $('#modal-planned-quantity, #modal-unit-price').on('input', calculateTotalBudget);
+    calculateTotalBudget() {
+        const quantity = parseInt(document.getElementById('modal-planned-quantity').value) || 0;
+        const price = parseFloat(document.getElementById('modal-unit-price').value) || 0;
+        document.getElementById('modal-total-budget').value = `₩${(quantity * price).toLocaleString()}`;
+    }
 
-    $('#add-plan-btn').on('click', function() {
-        $('#planForm')[0].reset();
-        $('#plan-id').val('');
-        $('#planModalLabel').text('신규 계획 등록');
-        loadActiveItems();
-        calculateTotalBudget();
-        planModal.show();
-    });
+    async openPlanModal(planId = null) {
+        const form = document.getElementById('planForm');
+        form.reset();
+        document.getElementById('plan-id').value = '';
+        document.getElementById('planModalLabel').textContent = planId ? '계획 수정' : '신규 계획 등록';
 
-    $('#plans-table tbody').on('click', '.edit-plan-btn', function() {
-        const planId = $(this).data('id');
-        $.ajax({
-            url: `/api/supply/plans/${planId}`,
-            method: 'GET',
-            success: function(response) {
+        if (planId) {
+            try {
+                const response = await this.apiCall(`/api/supply/plans/${planId}`);
                 if (response.success) {
                     const plan = response.data;
-                    $('#planForm')[0].reset();
-                    $('#planModalLabel').text('계획 수정');
-                    $('#plan-id').val(plan.id);
-                    loadActiveItems(plan.item_id);
-                    $('#modal-planned-quantity').val(plan.planned_quantity);
-                    $('#modal-unit-price').val(plan.unit_price);
-                    $('#modal-notes').val(plan.notes);
-                    calculateTotalBudget();
-                    planModal.show();
+                    document.getElementById('plan-id').value = plan.id;
+                    await this.loadActiveItems(plan.item_id);
+                    document.getElementById('modal-planned-quantity').value = plan.planned_quantity;
+                    document.getElementById('modal-unit-price').value = plan.unit_price;
+                    document.getElementById('modal-notes').value = plan.notes;
                 }
+            } catch (error) {
+                console.error(`Failed to load plan ${planId}:`, error);
+                return;
             }
-        });
-    });
+        } else {
+            await this.loadActiveItems();
+        }
 
-    $('#save-plan-btn').on('click', function() {
-        if (!$('#planForm')[0].checkValidity()) {
-            $('#planForm').addClass('was-validated');
+        this.calculateTotalBudget();
+        const planModal = new bootstrap.Modal(document.getElementById('planModal'));
+        planModal.show();
+    }
+
+    async handleSavePlan() {
+        const form = document.getElementById('planForm');
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
             return;
         }
 
-        const planId = $('#plan-id').val();
+        const planId = document.getElementById('plan-id').value;
         const url = planId ? `/api/supply/plans/${planId}` : '/api/supply/plans';
         const method = planId ? 'PUT' : 'POST';
 
         const formData = {
-            year: currentYear,
-            item_id: $('#modal-item-id').val(),
-            planned_quantity: $('#modal-planned-quantity').val(),
-            unit_price: $('#modal-unit-price').val(),
-            notes: $('#modal-notes').val()
+            year: this.state.currentYear,
+            item_id: document.getElementById('modal-item-id').value,
+            planned_quantity: document.getElementById('modal-planned-quantity').value,
+            unit_price: document.getElementById('modal-unit-price').value,
+            notes: document.getElementById('modal-notes').value
         };
 
-        $.ajax({
-            url: url,
-            method: method,
-            contentType: 'application/json',
-            data: JSON.stringify(formData),
-            success: function(response) {
-                if (response.success) {
-                    planModal.hide();
-                    plansTable.ajax.reload();
-                    loadBudgetSummary(currentYear);
+        try {
+            const response = await this.apiCall(url, {
+                method: method,
+                body: JSON.stringify(formData),
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            }
-        });
-    });
+            });
 
-    loadAllData(currentYear);
-});
+            if (response.success) {
+                const planModal = bootstrap.Modal.getInstance(document.getElementById('planModal'));
+                planModal.hide();
+                this.state.plansTable.ajax.reload();
+                this.loadBudgetSummary(this.state.currentYear);
+            }
+        } catch (error) {
+            console.error('Failed to save plan:', error);
+        }
+    }
+}
+
+new SupplyPlansPage();

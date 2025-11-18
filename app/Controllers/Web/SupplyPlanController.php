@@ -50,6 +50,8 @@ class SupplyPlanController extends BaseController
         View::getInstance()->addJs('https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js');
         View::getInstance()->addJs('https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js');
 
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-plans.js');
 
         $year = $this->request->input('year', date('Y'));
