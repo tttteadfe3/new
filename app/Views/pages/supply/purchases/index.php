@@ -33,9 +33,9 @@
                     </div>
                     <div class="col-md-6 text-end">
                         <div class="btn-group" role="group">
-                            <a href="/supply/purchases/create" class="btn btn-success">
+                            <button type="button" class="btn btn-success" id="add-purchase-btn" data-bs-toggle="modal" data-bs-target="#purchaseModal">
                                 <i class="ri-add-line align-bottom me-1"></i> 구매 등록
-                            </a>
+                            </button>
                             <a href="/supply/purchases/receive" class="btn btn-info">
                                 <i class="ri-inbox-line align-bottom me-1"></i> 입고 처리
                             </a>
@@ -111,6 +111,71 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
                 <button type="button" class="btn btn-danger" id="confirm-delete-purchase-btn">삭제</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Purchase Create/Edit Modal -->
+<div class="modal fade" id="purchaseModal" tabindex="-1" aria-labelledby="purchaseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="purchaseModalLabel">구매 등록/수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="purchase-form" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <input type="hidden" id="purchase-id" name="id">
+
+                    <div class="mb-3">
+                        <label for="item-id" class="form-label">품목</label>
+                        <select class="form-select" id="item-id" name="item_id" required>
+                            <option value="">품목을 선택하세요...</option>
+                            <!-- Item options will be loaded dynamically -->
+                        </select>
+                        <div class="invalid-feedback">품목을 선택해주세요.</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="purchase-date" class="form-label">구매일</label>
+                            <input type="date" class="form-control" id="purchase-date" name="purchase_date" required>
+                            <div class="invalid-feedback">구매일을 입력해주세요.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="supplier" class="form-label">공급업체</label>
+                            <input type="text" class="form-control" id="supplier" name="supplier" placeholder="공급업체명">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="quantity" class="form-label">수량</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+                            <div class="invalid-feedback">1 이상의 수량을 입력해주세요.</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="unit-price" class="form-label">단가 (₩)</label>
+                            <input type="number" class="form-control" id="unit-price" name="unit_price" min="0" required>
+                            <div class="invalid-feedback">0 이상의 단가를 입력해주세요.</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="total-amount" class="form-label">총액 (₩)</label>
+                            <input type="text" class="form-control" id="total-amount" readonly>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">비고</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary" id="save-purchase-btn">저장</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
