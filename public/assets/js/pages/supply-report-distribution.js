@@ -54,7 +54,7 @@ class SupplyReportDistributionPage extends BasePage {
             pageLength: 25,
             order: [[0, 'desc']],
             language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json'
+                url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
             },
             searching: false
         });

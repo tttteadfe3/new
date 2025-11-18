@@ -65,7 +65,7 @@ class SupplyReportDepartmentPage extends BasePage {
             responsive: true,
             pageLength: 25,
             order: [[3, 'desc']],
-            language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json' },
+            language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
             searching: false
         });
 
@@ -73,7 +73,7 @@ class SupplyReportDepartmentPage extends BasePage {
             responsive: true,
             pageLength: 25,
             order: [[5, 'desc']],
-            language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json' },
+            language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
             searching: false
         });
     }

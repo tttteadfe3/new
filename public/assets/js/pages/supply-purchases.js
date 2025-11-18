@@ -57,7 +57,7 @@ class SupplyPurchasesPage extends BasePage {
             this.dataTable = $(table).DataTable({
                 responsive: true,
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json'
+                    url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
                 },
                 order: [[0, 'desc']],
                 columnDefs: [
