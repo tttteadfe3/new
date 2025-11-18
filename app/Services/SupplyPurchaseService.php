@@ -61,15 +61,18 @@ class SupplyPurchaseService
 
         // 입고 완료 상태면 재고 업데이트
         if (isset($purchaseData['is_received']) && $purchaseData['is_received']) {
-            $this->stockRepository->updateStock(
+            $this->stockService->updateStockFromPurchase(
                 $purchaseData['item_id'],
-                $purchaseData['quantity'],
-                'purchase'
+                $purchaseData['quantity']
             );
         }
 
         // 활동 로그 기록
-        $this->activityLogger->logSupplyPurchaseCreate($purchaseId, $purchaseData);
+        $this->activityLogger->log(
+            'supply_purchase_create',
+            "신규 구매 등록 (ID: {$purchaseId})",
+            $purchaseData
+        );
 
         return $purchaseId > 0;
     }
@@ -110,7 +113,11 @@ class SupplyPurchaseService
             $newData = array_merge($oldData, $updateData);
             
             // 활동 로그 기록
-            $this->activityLogger->logSupplyPurchaseUpdate($purchaseId, $oldData, $newData);
+            $this->activityLogger->log(
+                'supply_purchase_update',
+                "구매 정보 수정 (ID: {$purchaseId})",
+                ['old' => $oldData, 'new' => $newData]
+            );
         }
 
         return $success;
@@ -136,7 +143,11 @@ class SupplyPurchaseService
 
         if ($success) {
             // 활동 로그 기록
-            $this->activityLogger->logSupplyPurchaseDelete($purchaseId, $purchase->toArray());
+            $this->activityLogger->log(
+                'supply_purchase_delete',
+                "구매 삭제 (ID: {$purchaseId})",
+                $purchase->toArray()
+            );
         }
 
         return $success;
@@ -177,17 +188,20 @@ class SupplyPurchaseService
 
             if ($success) {
                 // 재고 업데이트
-                $this->stockRepository->updateStock(
+                $this->stockService->updateStockFromPurchase(
                     $purchase->getAttribute('item_id'),
-                    $purchase->getAttribute('quantity'),
-                    'purchase'
+                    $purchase->getAttribute('quantity')
                 );
 
                 // 활동 로그 기록
-                $this->activityLogger->logSupplyPurchaseReceive($purchaseId, [
-                    'quantity' => $purchase->getAttribute('quantity'),
-                    'received_date' => $receivedDate
-                ]);
+                $this->activityLogger->log(
+                    'supply_purchase_receive',
+                    "구매 입고 처리 (ID: {$purchaseId})",
+                    [
+                        'quantity' => $purchase->getAttribute('quantity'),
+                        'received_date' => $receivedDate
+                    ]
+                );
             }
 
             return $success;
