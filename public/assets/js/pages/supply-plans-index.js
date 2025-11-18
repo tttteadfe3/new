@@ -207,6 +207,7 @@ class SupplyPlansIndexPage extends BasePage {
     }
 
     exportToExcel() {
+        Toast.info('엑셀 다운로드를 시작합니다.');
         window.open(`/api/supply/plans/export-excel/${this.currentYear}`, '_blank');
     }
 

@@ -110,7 +110,7 @@
                 <div id="delete-plan-info"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
                 <button type="button" class="btn btn-danger" id="confirm-delete-plan-btn">삭제</button>
             </div>
         </div>
