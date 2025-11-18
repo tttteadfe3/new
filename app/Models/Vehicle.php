@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Core\BaseModel;
+
 class Vehicle extends BaseModel
 {
     protected array $fillable = [

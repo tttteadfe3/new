@@ -27,13 +27,13 @@ class BreakdownService
 
     public function createBreakdown(array $data): int
     {
-        // Set the initial status
-        $data['status'] = 'REGISTERED';
-
         $breakdown = Breakdown::make($data);
         if (!$breakdown->validate()) {
             throw new InvalidArgumentException('Invalid breakdown data: ' . implode(', ', $breakdown->getErrors()));
         }
+
+        // Set the initial status
+        $data['status'] = 'REGISTERED';
 
         return $this->breakdownRepository->save($breakdown->getAttributes());
     }
