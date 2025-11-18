@@ -330,6 +330,19 @@ class SupplyPlansIndexPage extends BasePage {
             this.resetButtonLoading('#save-plan-btn', '저장');
         }
     }
+
+    escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>"']/g, function(match) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[match];
+        });
+    }
 }
 
 // 인스턴스 생성
