@@ -103,20 +103,7 @@ class SupplyPlansIndexPage extends BasePage {
     }
 
     async loadPlans() {
-        try {
-            const params = {
-                year: this.currentYear,
-                search: $('#search-input').val()
-            };
-
-            const queryString = new URLSearchParams(params).toString();
-            const result = await this.apiCall(`/supply/plans?${queryString}`);
-
-            this.dataTable.clear().rows.add(result.data || []).draw();
-        } catch (error) {
-            console.error('Error loading plans:', error);
-            Toast.error('계획을 불러오는 중 오류가 발생했습니다.');
-        }
+        this.dataTable.ajax.reload();
     }
 
     initializeDataTable() {
@@ -125,6 +112,10 @@ class SupplyPlansIndexPage extends BasePage {
             this.dataTable = $(table).DataTable({
                 processing: true,
                 serverSide: false,
+                ajax: {
+                    url: `/api/supply/plans?year=${this.currentYear}`,
+                    dataSrc: 'data.plans'
+                },
                 columns: [
                     { data: 'item_code' },
                     { data: 'item_name', render: (data, type, row) => this.escapeHtml(data) + (row.notes ? `<p class="text-muted mb-0 fs-12">${this.escapeHtml(row.notes)}</p>` : '') },
