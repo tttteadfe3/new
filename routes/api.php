@@ -26,6 +26,7 @@ use App\Controllers\Api\WasteCollectionApiController;
     use App\Controllers\Api\VehicleController;
     use App\Controllers\Api\BreakdownController;
     use App\Controllers\Api\MaintenanceController;
+    use App\Controllers\Api\ConsumableController;
 
 $router->group('/api', function($router) {
     // Vehicle Management API routes
@@ -48,6 +49,13 @@ $router->group('/api', function($router) {
     $router->post('/maintenances', [MaintenanceController::class, 'store'])->name('api.maintenances.store')->middleware('auth')->middleware('permission', 'maintenance.create');
     $router->put('/maintenances/{id}', [MaintenanceController::class, 'update'])->name('api.maintenances.update')->middleware('auth')->middleware('permission', 'maintenance.update');
     $router->delete('/maintenances/{id}', [MaintenanceController::class, 'destroy'])->name('api.maintenances.destroy')->middleware('auth')->middleware('permission', 'maintenance.delete');
+
+    // Consumables Management API routes
+    $router->get('/consumables', [ConsumableController::class, 'index'])->name('api.consumables.index')->middleware('auth')->middleware('permission', 'consumable.view');
+    $router->get('/consumables/{id}', [ConsumableController::class, 'show'])->name('api.consumables.show')->middleware('auth')->middleware('permission', 'consumable.view');
+    $router->post('/consumables', [ConsumableController::class, 'store'])->name('api.consumables.store')->middleware('auth')->middleware('permission', 'consumable.create');
+    $router->put('/consumables/{id}', [ConsumableController::class, 'update'])->name('api.consumables.update')->middleware('auth')->middleware('permission', 'consumable.update');
+    $router->delete('/consumables/{id}', [ConsumableController::class, 'destroy'])->name('api.consumables.destroy')->middleware('auth')->middleware('permission', 'consumable.delete');
 
     // Employee API routes
     $router->get('/employees', [EmployeeApiController::class, 'index'])->name('api.employees.index')->middleware('auth')->middleware('permission', 'employee.view');
