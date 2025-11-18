@@ -94,7 +94,7 @@ class SupplyPlansIndexPage extends BasePage {
     async loadBudgetSummary() {
         const container = document.getElementById('budget-summary-container');
         try {
-            const response = await this.apiCall(`${this.config.API_URL}/budget-summary/${this.currentYear}`);
+            const response = await this.apiCall(`/supply/plans/budget-summary?year=${this.currentYear}`);
             const summary = response.data;
             // ... (render a lot of budget summary html)
         } catch (error) {
@@ -110,7 +110,7 @@ class SupplyPlansIndexPage extends BasePage {
             };
 
             const queryString = new URLSearchParams(params).toString();
-            const result = await this.apiCall(`${this.config.API_URL}?${queryString}`);
+            const result = await this.apiCall(`/supply/plans?${queryString}`);
 
             this.dataTable.clear().rows.add(result.data || []).draw();
         } catch (error) {
@@ -182,7 +182,7 @@ class SupplyPlansIndexPage extends BasePage {
 
         this.setButtonLoading('#confirm-delete-plan-btn', '삭제 중...');
         try {
-            await this.apiCall(`${this.config.API_URL}/${this.currentDeleteId}`, { method: 'DELETE' });
+            await this.apiCall(`/supply/plans/${this.currentDeleteId}`, { method: 'DELETE' });
             Toast.success('계획이 성공적으로 삭제되었습니다.');
             this.deletePlanModal.hide();
             this.loadPlans();
@@ -196,7 +196,7 @@ class SupplyPlansIndexPage extends BasePage {
     }
 
     exportToExcel() {
-        window.open(`${this.config.API_URL}/export-excel/${this.currentYear}`, '_blank');
+        window.open(`/api/supply/plans/export-excel/${this.currentYear}`, '_blank');
     }
 
     debounce(func, wait) {
@@ -213,7 +213,7 @@ class SupplyPlansIndexPage extends BasePage {
 
     async loadActiveItems(selectedItemId = null) {
         try {
-            const response = await this.apiCall('/api/supply/items/active');
+            const response = await this.apiCall('/supply/items/active');
             if (response.success) {
                 this.activeItems = response.data;
                 const itemSelect = document.getElementById('modal-item-id');
@@ -253,7 +253,7 @@ class SupplyPlansIndexPage extends BasePage {
 
         if (planId) {
             try {
-                const response = await this.apiCall(`/api/supply/plans/${planId}`);
+                const response = await this.apiCall(`/supply/plans/${planId}`);
                 if (response.success) {
                     const plan = response.data;
                     document.getElementById('plan-id').value = plan.id;
@@ -283,7 +283,7 @@ class SupplyPlansIndexPage extends BasePage {
         }
 
         const planId = document.getElementById('plan-id').value;
-        const url = planId ? `/api/supply/plans/${planId}` : '/api/supply/plans';
+        const url = planId ? `/supply/plans/${planId}` : '/supply/plans';
         const method = planId ? 'PUT' : 'POST';
 
         const formData = {
