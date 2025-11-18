@@ -319,14 +319,9 @@ class SupplyCategoryPage extends BasePage {
         modalTitle.textContent = this.isEditMode ? '분류 수정' : '분류 등록';
         form.reset();
         this.clearFormErrors();
-        
-        // Load parent categories first
-        await this.loadParentCategoryOptions();
 
         if (this.isEditMode && category) {
             // Edit mode
-            this.toggleParentCategoryField(category.level.toString());
-
             document.getElementById('category-level').value = category.level;
             document.getElementById('category-code').value = category.category_code;
             document.getElementById('category-name').value = category.category_name;
@@ -361,10 +356,10 @@ class SupplyCategoryPage extends BasePage {
             `;
         } else {
             // Create mode
-            this.toggleParentCategoryField('');
             document.getElementById('category-level').disabled = false;
             document.getElementById('category-code').readOnly = false;
             document.getElementById('generate-code-btn').disabled = false;
+            this.toggleParentCategoryField('');
 
             helpContainer.innerHTML = `
                 <div class="alert alert-info">
@@ -386,6 +381,7 @@ class SupplyCategoryPage extends BasePage {
             `;
         }
 
+        this.loadParentCategoryOptions();
         modal.show();
     }
 
@@ -456,14 +452,6 @@ class SupplyCategoryPage extends BasePage {
         // Ensure parent_id is null if not provided or invalid
         if (data.level !== '2' || !data.parent_id || data.parent_id === 'undefined') {
             data.parent_id = null;
-        }
-
-        // Add level back if in edit mode, as it's disabled and not included in form data
-        if (this.isEditMode) {
-            const category = this.categories.find(c => c.id === this.selectedCategoryId);
-            if (category) {
-                data.level = category.level;
-            }
         }
 
         if (!this.validateCategoryForm(data)) {
