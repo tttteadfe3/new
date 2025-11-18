@@ -199,8 +199,9 @@ class SupplyPurchaseRepository
             'where' => []
         ];
 
-        // 데이터 스코프 적용 (구매 생성자 기준)
-        $queryParts = $this->dataScopeService->applyCreatorScope($queryParts, 'sp', 'created_by');
+        // TODO: 향후 지급품 관리 권한 정책이 구체화되면 여기에 데이터 스코프를 적용해야 합니다.
+        // 예를 들어, 특정 부서의 관리자는 해당 부서원이 등록한 구매 내역만 조회할 수 있어야 합니다.
+        // $queryParts = $this->dataScopeService->applySomeScope($queryParts, 'sp');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);

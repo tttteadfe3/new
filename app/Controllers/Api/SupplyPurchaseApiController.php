@@ -109,15 +109,15 @@ class SupplyPurchaseApiController extends BaseApiController
             $data['item_id'] = (int) $data['item_id'];
             $data['quantity'] = (int) $data['quantity'];
             $data['unit_price'] = (float) $data['unit_price'];
-            $data['is_received'] = isset($data['is_received']) ? (bool) $data['is_received'] : false;
+            $data['is_received'] = isset($data['is_received']) && $data['is_received'] ? 1 : 0;
             if ($data['is_received'] && empty($data['received_date'])) {
                 $data['received_date'] = date('Y-m-d');
             }
 
             // 생성자 정보 추가
-            $currentUser = $this->authService->getCurrentUser();
+            $currentUser = $this->authService->user();
             if ($currentUser) {
-                $data['creator_id'] = $currentUser['id'];
+                $data['created_by'] = $currentUser['id'];
             }
 
             $success = $this->supplyPurchaseService->createPurchase($data);

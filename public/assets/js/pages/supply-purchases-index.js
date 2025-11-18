@@ -29,7 +29,7 @@ class SupplyPurchasesIndexPage extends BasePage {
         $('#search-input, #filter-status').on('keyup change', this.debounce(() => {
             this.loadPurchases();
         }, 300));
-
+        
         // 총액 자동 계산
         $('#quantity, #unit-price').on('input', () => this.calculateTotal());
     }
@@ -105,7 +105,7 @@ class SupplyPurchasesIndexPage extends BasePage {
             responsive: true,
             pageLength: 25,
             order: [[0, 'desc']],
-            language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
+            language: { url: '/assets/libs/datatables.net/i18n/Korean.json' },
             searching: false
         });
     }
@@ -206,7 +206,7 @@ class SupplyPurchasesIndexPage extends BasePage {
         try {
             const result = await this.apiCall(`${this.config.API_URL}/${this.currentPurchaseId}`);
             const purchase = result.data;
-
+            
             $('#purchase-id').val(purchase.id);
             $('#item-id').val(purchase.item_id);
             $('#purchase-date').val(purchase.purchase_date);
@@ -214,7 +214,7 @@ class SupplyPurchasesIndexPage extends BasePage {
             $('#quantity').val(purchase.quantity);
             $('#unit-price').val(purchase.unit_price);
             $('#notes').val(purchase.notes);
-
+            
             this.calculateTotal();
             $('#purchaseModalLabel').text('구매 수정');
             this.purchaseModal.show();
@@ -266,6 +266,24 @@ class SupplyPurchasesIndexPage extends BasePage {
         const unitPrice = parseFloat($('#unit-price').val()) || 0;
         const total = quantity * unitPrice;
         $('#total-amount').val(total > 0 ? `₩${total.toLocaleString()}` : '');
+    }
+
+    escapeHtml(text) {
+        if (text === null || text === undefined) {
+            return '';
+        }
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    handleApiError(error, defaultMessage = '작업 중 오류가 발생했습니다.') {
+        console.error('API Error:', error);
+        if (error && error.message) {
+            Toast.error(error.message);
+        } else {
+            Toast.error(defaultMessage);
+        }
     }
 }
 

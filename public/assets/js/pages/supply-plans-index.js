@@ -40,18 +40,18 @@ class SupplyPlansIndexPage extends BasePage {
 
         const addPlanBtn = document.getElementById('add-plan-btn');
         addPlanBtn?.addEventListener('click', () => this.openPlanModal());
-
+        
         const savePlanBtn = document.getElementById('save-plan-btn');
         savePlanBtn?.addEventListener('click', () => this.handleSavePlan());
 
         $(document).on('click', '.edit-plan-btn', (e) => this.openPlanModal(e.currentTarget.dataset.id));
-
+        
         const modalItemId = document.getElementById('modal-item-id');
         modalItemId?.addEventListener('change', () => this.updateItemUnit());
 
         const quantityInput = document.getElementById('modal-planned-quantity');
         quantityInput?.addEventListener('input', () => this.calculateTotalBudget());
-
+        
         const priceInput = document.getElementById('modal-unit-price');
         priceInput?.addEventListener('input', () => this.calculateTotalBudget());
     }
@@ -66,12 +66,12 @@ class SupplyPlansIndexPage extends BasePage {
         if (deleteModalElement) {
             this.deletePlanModal = new bootstrap.Modal(deleteModalElement);
         }
-
+        
         const planModalElement = document.getElementById('planModal');
         if (planModalElement) {
             this.planModal = new bootstrap.Modal(planModalElement);
         }
-
+        
         this.loadActiveItems();
     }
 
@@ -95,11 +95,24 @@ class SupplyPlansIndexPage extends BasePage {
         const container = document.getElementById('budget-summary-container');
         try {
             const response = await this.apiCall(`/supply/plans/budget-summary?year=${this.currentYear}`);
-            const summary = response.data;
-            // ... (render a lot of budget summary html)
+            if (response.success && response.data) {
+                this.updateBudgetSummary(response.data);
+            }
         } catch (error) {
             container.innerHTML = `<div class="col-12"><p class="text-danger">예산 요약 정보를 불러오는데 실패했습니다.</p></div>`;
         }
+    }
+
+    updateBudgetSummary(data) {
+        const container = document.getElementById('budget-summary-container');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 계획 품목</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">${(data.total_items || 0).toLocaleString()}</span>개</h4></div></div></div></div></div>
+            <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 계획 수량</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">${(data.total_quantity || 0).toLocaleString()}</span>개</h4></div></div></div></div></div>
+            <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 예산</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0">₩<span class="counter-value">${(data.total_budget || 0).toLocaleString()}</span></h4></div></div></div></div></div>
+            <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">평균 단가</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0">₩<span class="counter-value">${(parseInt(data.avg_unit_price) || 0).toLocaleString()}</span></h4></div></div></div></div></div>
+        `;
     }
 
     async loadPlans() {
@@ -138,7 +151,7 @@ class SupplyPlansIndexPage extends BasePage {
                 responsive: true,
                 pageLength: 25,
                 order: [[7, 'desc']],
-                language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
+                language: { url: '/assets/libs/datatables.net/i18n/Korean.json' },
                 searching: false
             });
         }
@@ -234,14 +247,14 @@ class SupplyPlansIndexPage extends BasePage {
         const price = parseFloat(document.getElementById('modal-unit-price').value) || 0;
         document.getElementById('modal-total-budget').value = `₩${(quantity * price).toLocaleString()}`;
     }
-
+    
     async openPlanModal(planId = null) {
         const form = document.getElementById('planForm');
         form.reset();
         form.classList.remove('was-validated');
         document.getElementById('plan-id').value = '';
         document.getElementById('planModalLabel').textContent = planId ? '계획 수정' : '신규 계획 등록';
-
+        
         if (planId) {
             try {
                 const response = await this.apiCall(`/supply/plans/${planId}`);
@@ -261,7 +274,7 @@ class SupplyPlansIndexPage extends BasePage {
         } else {
             await this.loadActiveItems();
         }
-
+        
         this.calculateTotalBudget();
         this.planModal.show();
     }
@@ -309,6 +322,15 @@ class SupplyPlansIndexPage extends BasePage {
         } finally {
             this.resetButtonLoading('#save-plan-btn', '저장');
         }
+    }
+
+    escapeHtml(text) {
+        if (text === null || text === undefined) {
+            return '';
+        }
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 

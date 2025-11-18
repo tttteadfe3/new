@@ -121,7 +121,7 @@ class SupplyPlanController extends BaseController
         $year = (int) $year;
 
         // Chart.js 라이브러리 추가
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/chart.js/chart.min.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/chart.js/chart.umd.js');
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-budget-summary.js');
 
         echo $this->render('pages/supply/plans/budget-summary', [
