@@ -500,7 +500,7 @@ class SupplyDistributionApiController extends BaseApiController
      */
     private function getCurrentUserId(): int
     {
-        $user = $this->authService->getCurrentUser();
+        $user = $this->authService->user();
         if (!$user) {
             throw new \RuntimeException('로그인이 필요합니다.');
         }

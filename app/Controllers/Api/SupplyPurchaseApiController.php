@@ -55,7 +55,7 @@ class SupplyPurchaseApiController extends BaseApiController
             }
             
             $this->apiSuccess([
-                'purchases' => $purchases,
+                'purchases' => array_map([$this, 'sanitizePurchaseOutput'], $purchases),
                 'total' => count($purchases)
             ]);
         } catch (Exception $e) {
@@ -75,7 +75,7 @@ class SupplyPurchaseApiController extends BaseApiController
                 return;
             }
 
-            $this->apiSuccess($purchase->toArray());
+            $this->apiSuccess($this->sanitizePurchaseOutput($purchase->toArray()));
         } catch (Exception $e) {
             $this->handleException($e);
         }
@@ -95,11 +95,30 @@ class SupplyPurchaseApiController extends BaseApiController
                 return;
             }
 
+            // 데이터 유효성 검사
+            if (new \DateTime($data['purchase_date']) > new \DateTime()) {
+                $this->apiBadRequest('구매일은 미래 날짜일 수 없습니다.');
+                return;
+            }
+            if ($data['quantity'] <= 0 || $data['unit_price'] <= 0) {
+                $this->apiBadRequest('수량과 단가는 0보다 커야 합니다.');
+                return;
+            }
+
             // 데이터 타입 변환
             $data['item_id'] = (int) $data['item_id'];
             $data['quantity'] = (int) $data['quantity'];
             $data['unit_price'] = (float) $data['unit_price'];
-            $data['is_received'] = isset($data['is_received']) ? (bool) $data['is_received'] : false;
+            $data['is_received'] = isset($data['is_received']) && $data['is_received'] ? 1 : 0;
+            if ($data['is_received'] && empty($data['received_date'])) {
+                $data['received_date'] = date('Y-m-d');
+            }
+
+            // 생성자 정보 추가
+            $currentUser = $this->authService->user();
+            if ($currentUser) {
+                $data['created_by'] = $currentUser['id'];
+            }
 
             $success = $this->supplyPurchaseService->createPurchase($data);
             
@@ -123,6 +142,16 @@ class SupplyPurchaseApiController extends BaseApiController
             
             if (empty($data)) {
                 $this->apiBadRequest('수정할 데이터가 없습니다.');
+                return;
+            }
+
+            // 데이터 유효성 검사
+            if (isset($data['purchase_date']) && new \DateTime($data['purchase_date']) > new \DateTime()) {
+                $this->apiBadRequest('구매일은 미래 날짜일 수 없습니다.');
+                return;
+            }
+            if ((isset($data['quantity']) && $data['quantity'] <= 0) || (isset($data['unit_price']) && $data['unit_price'] <= 0)) {
+                $this->apiBadRequest('수량과 단가는 0보다 커야 합니다.');
                 return;
             }
 
@@ -203,7 +232,7 @@ class SupplyPurchaseApiController extends BaseApiController
             $pendingPurchases = $this->supplyPurchaseService->getPendingPurchases();
             
             $this->apiSuccess([
-                'purchases' => $pendingPurchases,
+                'purchases' => array_map([$this, 'sanitizePurchaseOutput'], $pendingPurchases),
                 'total' => count($pendingPurchases)
             ]);
         } catch (Exception $e) {
@@ -248,7 +277,7 @@ class SupplyPurchaseApiController extends BaseApiController
             
             $this->apiSuccess([
                 'item_id' => (int) $itemId,
-                'purchases' => $purchases,
+                'purchases' => array_map([$this, 'sanitizePurchaseOutput'], $purchases),
                 'total' => count($purchases)
             ]);
         } catch (Exception $e) {
@@ -363,10 +392,10 @@ class SupplyPurchaseApiController extends BaseApiController
             }
 
             $this->apiSuccess([
-                'query' => $query,
-                'start_date' => $startDate,
-                'end_date' => $endDate,
-                'purchases' => array_values($purchases),
+                'query' => htmlspecialchars($query, ENT_QUOTES, 'UTF-8'),
+                'start_date' => htmlspecialchars($startDate, ENT_QUOTES, 'UTF-8'),
+                'end_date' => htmlspecialchars($endDate, ENT_QUOTES, 'UTF-8'),
+                'purchases' => array_values(array_map([$this, 'sanitizePurchaseOutput'], $purchases)),
                 'total' => count($purchases)
             ]);
         } catch (Exception $e) {
@@ -410,5 +439,19 @@ class SupplyPurchaseApiController extends BaseApiController
         } else {
             $this->apiError('서버 오류가 발생했습니다: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * 구매 정보를 반환하기 전에 XSS를 방지하기 위해 데이터를 정제합니다.
+     */
+    private function sanitizePurchaseOutput(array $purchase): array
+    {
+        $stringFields = ['supplier', 'notes', 'item_name', 'item_code', 'unit'];
+        foreach ($stringFields as $field) {
+            if (isset($purchase[$field])) {
+                $purchase[$field] = htmlspecialchars($purchase[$field], ENT_QUOTES, 'UTF-8');
+            }
+        }
+        return $purchase;
     }
 }

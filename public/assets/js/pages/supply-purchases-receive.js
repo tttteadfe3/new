@@ -33,8 +33,8 @@ class SupplyPurchasesReceivePage extends BasePage {
 
     async loadPendingPurchases() {
         try {
-            const data = await this.apiCall(`${this.config.API_URL}?status=pending`);
-            this.pendingPurchases = data.data || [];
+            const data = await this.apiCall(`${this.config.API_URL}?is_received=0`);
+            this.pendingPurchases = data.data.purchases || [];
             this.renderPendingPurchases();
         } catch (error) {
             console.error('Error loading pending purchases:', error);

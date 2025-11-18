@@ -199,8 +199,9 @@ class SupplyPurchaseRepository
             'where' => []
         ];
 
-        // supply_purchases 테이블은 현재 HR 관련 정보와 직접 조인되지 않아 부서/직원 스코프 적용이 어렵습니다.
-        // 향후 권한 정책이 확장되면 이 부분에 스코프 적용이 필요할 수 있습니다.
+        // TODO: 향후 지급품 관리 권한 정책이 구체화되면 여기에 데이터 스코프를 적용해야 합니다.
+        // 예를 들어, 특정 부서의 관리자는 해당 부서원이 등록한 구매 내역만 조회할 수 있어야 합니다.
+        // $queryParts = $this->dataScopeService->applySomeScope($queryParts, 'sp');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
