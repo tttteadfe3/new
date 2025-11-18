@@ -130,7 +130,7 @@ class SupplyItemsPage extends BasePage {
                 }
             ],
             language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json'
+                url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
             },
             order: [[0, 'asc']],
             pageLength: 25,

@@ -61,7 +61,7 @@ class SupplyReportBudgetPage extends BasePage {
                 pageLength: 25,
                 order: [[9, 'desc']], // Sort by execution rate
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json'
+                    url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
                 },
                 // ... columns definition ...
                 searching: false

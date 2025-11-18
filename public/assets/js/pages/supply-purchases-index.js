@@ -11,28 +11,38 @@ class SupplyPurchasesIndexPage extends BasePage {
         this.currentPurchaseId = null;
         this.receiveModal = null;
         this.deleteModal = null;
+        this.purchaseModal = null;
         this.dataTable = null;
+        this.items = [];
     }
 
     setupEventListeners() {
         $(document).on('click', '.receive-purchase-btn', (e) => this.handleReceiveClick(e));
         $(document).on('click', '.delete-purchase-btn', (e) => this.handleDeleteClick(e));
+        $(document).on('click', '.edit-purchase-btn', (e) => this.handleEditClick(e));
+        $('#add-purchase-btn').on('click', () => this.handleCreateClick());
         $('#confirm-receive-purchase-btn').on('click', () => this.confirmReception());
         $('#confirm-delete-purchase-btn').on('click', () => this.confirmDeletion());
+        $('#purchase-form').on('submit', (e) => this.handleFormSubmit(e));
 
         // 검색 및 필터 이벤트
         $('#search-input, #filter-status').on('keyup change', this.debounce(() => {
             this.loadPurchases();
         }, 300));
+        
+        // 총액 자동 계산
+        $('#quantity, #unit-price').on('input', () => this.calculateTotal());
     }
 
     loadInitialData() {
         this.loadStats();
         this.initializeDataTable();
         this.loadPurchases();
+        this.loadItems();
 
         this.receiveModal = new bootstrap.Modal(document.getElementById('receivePurchaseModal'));
         this.deleteModal = new bootstrap.Modal(document.getElementById('deletePurchaseModal'));
+        this.purchaseModal = new bootstrap.Modal(document.getElementById('purchaseModal'));
     }
 
     async loadStats() {
@@ -85,7 +95,7 @@ class SupplyPurchasesIndexPage extends BasePage {
                         <ul class="dropdown-menu dropdown-menu-end">
                             ${!r.is_received ? `
                             <li><button class="dropdown-item receive-purchase-btn" data-id="${d}" data-name="${this.escapeHtml(r.item_name)}"><i class="ri-inbox-fill align-bottom me-2 text-muted"></i> 입고 처리</button></li>
-                            <li><a class="dropdown-item" href="/supply/purchases/edit?id=${d}"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 수정</a></li>
+                            <li><button class="dropdown-item edit-purchase-btn" data-id="${d}"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 수정</button></li>
                             <li><button class="dropdown-item delete-purchase-btn" data-id="${d}" data-name="${this.escapeHtml(r.item_name)}"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 삭제</button></li>
                             ` : `<li><a class="dropdown-item" href="/supply/purchases/show?id=${d}"><i class="ri-eye-fill align-bottom me-2 text-muted"></i> 상세보기</a></li>`}
                         </ul>
@@ -162,6 +172,118 @@ class SupplyPurchasesIndexPage extends BasePage {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    }
+
+    async loadItems() {
+        try {
+            const result = await this.apiCall('/supply/items/active');
+            this.items = result.data || [];
+            this.renderItemOptions();
+        } catch (error) {
+            console.error('Error loading items:', error);
+            Toast.error('품목 정보를 불러오는 중 오류가 발생했습니다.');
+        }
+    }
+
+    renderItemOptions() {
+        const itemSelect = $('#item-id');
+        itemSelect.empty().append('<option value="">품목을 선택하세요...</option>');
+        this.items.forEach(item => {
+            itemSelect.append(`<option value="${item.id}">${this.escapeHtml(item.item_name)} (${this.escapeHtml(item.item_code)})</option>`);
+        });
+    }
+
+    handleCreateClick() {
+        this.currentPurchaseId = null;
+        $('#purchase-form')[0].reset();
+        $('#purchase-id').val('');
+        $('#purchaseModalLabel').text('구매 등록');
+        this.purchaseModal.show();
+    }
+
+    async handleEditClick(e) {
+        this.currentPurchaseId = $(e.currentTarget).data('id');
+        try {
+            const result = await this.apiCall(`${this.config.API_URL}/${this.currentPurchaseId}`);
+            const purchase = result.data;
+            
+            $('#purchase-id').val(purchase.id);
+            $('#item-id').val(purchase.item_id);
+            $('#purchase-date').val(purchase.purchase_date);
+            $('#supplier').val(purchase.supplier);
+            $('#quantity').val(purchase.quantity);
+            $('#unit-price').val(purchase.unit_price);
+            $('#notes').val(purchase.notes);
+            
+            this.calculateTotal();
+            $('#purchaseModalLabel').text('구매 수정');
+            this.purchaseModal.show();
+        } catch (error) {
+            this.handleApiError(error, '구매 정보를 불러오는 중 오류가 발생했습니다.');
+        }
+    }
+
+    async handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        if (!form.checkValidity()) {
+            e.stopPropagation();
+            form.classList.add('was-validated');
+            return;
+        }
+
+        const formData = {
+            item_id: $('#item-id').val(),
+            purchase_date: $('#purchase-date').val(),
+            supplier: $('#supplier').val(),
+            quantity: $('#quantity').val(),
+            unit_price: $('#unit-price').val(),
+            notes: $('#notes').val()
+        };
+
+        const url = this.currentPurchaseId ? `${this.config.API_URL}/${this.currentPurchaseId}` : this.config.API_URL;
+        const method = this.currentPurchaseId ? 'PUT' : 'POST';
+
+        this.setButtonLoading('#save-purchase-btn', '저장 중...');
+        try {
+            await this.apiCall(url, {
+                method: method,
+                body: JSON.stringify(formData)
+            });
+            Toast.success(`구매가 성공적으로 ${this.currentPurchaseId ? '수정' : '등록'}되었습니다.`);
+            this.purchaseModal.hide();
+            this.loadPurchases();
+            this.loadStats();
+        } catch (error) {
+            this.handleApiError(error);
+        } finally {
+            this.resetButtonLoading('#save-purchase-btn', '저장');
+        }
+    }
+
+    calculateTotal() {
+        const quantity = parseFloat($('#quantity').val()) || 0;
+        const unitPrice = parseFloat($('#unit-price').val()) || 0;
+        const total = quantity * unitPrice;
+        $('#total-amount').val(total > 0 ? `₩${total.toLocaleString()}` : '');
+    }
+
+    escapeHtml(text) {
+        if (text === null || text === undefined) {
+            return '';
+        }
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    handleApiError(error, defaultMessage = '작업 중 오류가 발생했습니다.') {
+        console.error('API Error:', error);
+        if (error && error.message) {
+            Toast.error(error.message);
+        } else {
+            Toast.error(defaultMessage);
+        }
     }
 }
 
