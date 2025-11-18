@@ -59,7 +59,12 @@ class SupplyPlanService
         $planId = $this->planRepository->create($planData);
 
         // 활동 로그 기록
-        $this->activityLogger->logSupplyPlanCreate($planId, $planData);
+        $this->activityLogger->log('supply_plan_create', "연간 계획 생성: 품목 ID {$planData['item_id']}", [
+            'plan_id' => $planId,
+            'year' => $year,
+            'item_id' => $planData['item_id'],
+            'quantity' => $planData['planned_quantity']
+        ]);
 
         return $planId > 0;
     }
@@ -111,7 +116,11 @@ class SupplyPlanService
         if ($success) {
             // 활동 로그 기록
             $newData = array_merge($oldData, $updateData);
-            $this->activityLogger->logSupplyPlanUpdate($planId, $oldData, $newData);
+            $this->activityLogger->log('supply_plan_update', "연간 계획 수정: ID {$planId}", [
+                'plan_id' => $planId,
+                'old_data' => $oldData,
+                'new_data' => $newData
+            ]);
         }
 
         return $success;
@@ -138,7 +147,10 @@ class SupplyPlanService
 
         if ($success) {
             // 활동 로그 기록
-            $this->activityLogger->logSupplyPlanDelete($planId, $plan->toArray());
+            $this->activityLogger->log('supply_plan_delete', "연간 계획 삭제: ID {$planId}", [
+                'plan_id' => $planId,
+                'deleted_data' => $plan->toArray()
+            ]);
         }
 
         return $success;
@@ -246,7 +258,7 @@ class SupplyPlanService
         fclose($handle);
 
         // 활동 로그 기록
-        $this->activityLogger->logSupplyPlanImport($results);
+        $this->activityLogger->log('supply_plan_import', "연간 계획 엑셀 가져오기 완료", $results);
 
         return $results;
     }
@@ -300,7 +312,7 @@ class SupplyPlanService
         fclose($handle);
 
         // 활동 로그 기록
-        $this->activityLogger->logSupplyPlanExport($year);
+        $this->activityLogger->log('supply_plan_export', "연간 계획 엑셀 내보내기: {$year}년");
 
         return $filepath;
     }
