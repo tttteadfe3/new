@@ -199,6 +199,7 @@ class SupplyPlansIndexPage extends BasePage {
             this.loadPlans();
             this.loadBudgetSummary();
         } catch (error) {
+            this.deletePlanModal.hide();
             this.handleApiError(error);
         } finally {
             this.resetButtonLoading('#confirm-delete-plan-btn', '삭제');
@@ -207,6 +208,7 @@ class SupplyPlansIndexPage extends BasePage {
     }
 
     exportToExcel() {
+        Toast.info('엑셀 다운로드를 시작합니다.');
         window.open(`/api/supply/plans/export-excel/${this.currentYear}`, '_blank');
     }
 
@@ -342,6 +344,12 @@ class SupplyPlansIndexPage extends BasePage {
                 "'": '&#39;'
             }[match];
         });
+    }
+
+    handleApiError(error) {
+        const message = error.message || 'An unexpected error occurred.';
+        Toast.error(message);
+        console.error('API Error:', error);
     }
 }
 
