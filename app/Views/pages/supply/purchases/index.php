@@ -126,7 +126,6 @@
             <form id="purchase-form" class="needs-validation" novalidate>
                 <div class="modal-body">
                     <input type="hidden" id="purchase-id" name="id">
-                    <input type="hidden" name="_token" value="<?= csrf_token() ?>">
 
                     <div class="mb-3">
                         <label for="item-id" class="form-label">품목</label>

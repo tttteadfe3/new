@@ -242,7 +242,7 @@ class SupplyPurchasesIndexPage extends BasePage {
         };
 
         const url = this.currentPurchaseId ? `${this.config.API_URL}/${this.currentPurchaseId}` : this.config.API_URL;
-        const method = this.currentPurchaseId ? 'PATCH' : 'POST';
+        const method = this.currentPurchaseId ? 'PUT' : 'POST';
 
         this.setButtonLoading('#save-purchase-btn', '저장 중...');
         try {
