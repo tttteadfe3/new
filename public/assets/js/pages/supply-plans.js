@@ -1,160 +1,188 @@
-/**
- * Supply Plans Management JavaScript
- */
-
-class SupplyPlansPage extends BasePage {
-    constructor() {
-        super({
-            API_URL: '/supply/plans'
-        });
-        
-        this.dataTable = null;
-        this.currentYear = new Date().getFullYear();
-        this.currentDeleteId = null;
-        this.deletePlanModal = null;
+$(document).ready(function() {
+    let currentYear = new Date().getFullYear();
+    const yearParam = new URLSearchParams(window.location.search).get('year');
+    if (yearParam) {
+        currentYear = parseInt(yearParam);
     }
 
-    setupEventListeners() {
-        const yearSelector = document.getElementById('year-selector');
-        if (yearSelector) {
-            yearSelector.addEventListener('change', () => {
-                window.location.href = '/supply/plans?year=' + yearSelector.value;
-            });
-        }
+    let plansTable;
 
-        const exportExcelBtn = document.getElementById('export-excel-btn');
-        if (exportExcelBtn) {
-            exportExcelBtn.addEventListener('click', () => this.exportToExcel());
-        }
+    // Initialize year selector
+    const yearSelector = $('#year-selector');
+    const currentServerYear = new Date().getFullYear();
+    for (let y = currentServerYear + 1; y >= currentServerYear - 5; y--) {
+        yearSelector.append(new Option(y + '년', y, y === currentYear));
+    }
 
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('delete-plan-btn') || 
-                e.target.closest('.delete-plan-btn')) {
-                
-                const btn = e.target.classList.contains('delete-plan-btn') ? 
-                    e.target : e.target.closest('.delete-plan-btn');
-                
-                const planId = btn.getAttribute('data-id');
-                const planName = btn.getAttribute('data-name');
-                
-                this.showDeleteConfirmation(planId, planName);
+    // Load data on year change
+    yearSelector.on('change', function() {
+        currentYear = parseInt($(this).val());
+        window.history.pushState({}, '', `?year=${currentYear}`);
+        loadAllData(currentYear);
+    });
+
+    function loadAllData(year) {
+        $('#plans-table-title').text(`${year}년 지급품 계획 목록`);
+        $('#plan-year').val(year);
+        loadBudgetSummary(year);
+        if (plansTable) {
+            plansTable.ajax.url(`/api/supply/plans?year=${year}`).load();
+        } else {
+            initializeDataTable(year);
+        }
+    }
+
+    function loadBudgetSummary(year) {
+        $.ajax({
+            url: `/api/supply/plans/budget-summary`,
+            method: 'GET',
+            data: { year: year },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data) {
+                    updateBudgetSummary(response.data);
+                }
             }
         });
+    }
 
-        const confirmDeleteBtn = document.getElementById('confirm-delete-plan-btn');
-        if (confirmDeleteBtn) {
-            confirmDeleteBtn.addEventListener('click', () => {
-                if (this.currentDeleteId) {
-                    this.deletePlan(this.currentDeleteId);
+    function updateBudgetSummary(data) {
+        $('#budget-summary-container').html(`
+            <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 계획 품목</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">${data.total_items}</span>개</h4></div></div></div></div></div>
+            <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 계획 수량</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">${data.total_quantity}</span>개</h4></div></div></div></div></div>
+            <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 예산</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0">₩<span class="counter-value">${data.total_budget.toLocaleString()}</span></h4></div></div></div></div></div>
+            <div class="col-xl-3 col-md-6"><div class="card card-animate"><div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">평균 단가</p></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0">₩<span class="counter-value">${parseInt(data.avg_unit_price).toLocaleString()}</span></h4></div></div></div></div></div>
+        `);
+    }
+
+    function initializeDataTable(year) {
+        plansTable = $('#plans-table').DataTable({
+            ajax: {
+                url: `/api/supply/plans?year=${year}`,
+                dataSrc: 'data.plans'
+            },
+            columns: [
+                { data: 'item_code' },
+                { data: 'item_name' },
+                { data: 'category_name' },
+                { data: 'unit' },
+                { data: 'planned_quantity' },
+                { data: 'unit_price', render: $.fn.dataTable.render.number(',', '.', 0, '₩') },
+                { data: 'total_budget', render: $.fn.dataTable.render.number(',', '.', 0, '₩') },
+                { data: 'created_at' },
+                {
+                    data: 'id',
+                    render: function(data, type, row) {
+                        return `<button class="btn btn-sm btn-primary edit-plan-btn" data-id="${data}">수정</button>
+                                <button class="btn btn-sm btn-danger delete-plan-btn" data-id="${data}">삭제</button>`;
+                    }
                 }
-            });
+            ],
+            // ... other datatable options
+        });
+    }
+
+    // Modal handling
+    const planModal = new bootstrap.Modal(document.getElementById('planModal'));
+    let activeItems = [];
+
+    function loadActiveItems(selectedItemId = null) {
+        $.ajax({
+            url: '/api/supply/items/active',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    activeItems = response.data;
+                    const itemSelect = $('#modal-item-id');
+                    itemSelect.empty().append('<option value="">품목을 선택하세요</option>');
+                    activeItems.forEach(item => {
+                        itemSelect.append(new Option(`${item.name} (${item.code})`, item.id));
+                    });
+                    if (selectedItemId) {
+                        itemSelect.val(selectedItemId).trigger('change');
+                    }
+                }
+            }
+        });
+    }
+
+    $('#modal-item-id').on('change', function() {
+        const selectedId = $(this).val();
+        const selectedItem = activeItems.find(item => item.id == selectedId);
+        $('#modal-item-unit').val(selectedItem ? selectedItem.unit : '');
+    });
+
+    function calculateTotalBudget() {
+        const quantity = parseInt($('#modal-planned-quantity').val()) || 0;
+        const price = parseFloat($('#modal-unit-price').val()) || 0;
+        $('#modal-total-budget').val(`₩${(quantity * price).toLocaleString()}`);
+    }
+
+    $('#modal-planned-quantity, #modal-unit-price').on('input', calculateTotalBudget);
+
+    $('#add-plan-btn').on('click', function() {
+        $('#planForm')[0].reset();
+        $('#plan-id').val('');
+        $('#planModalLabel').text('신규 계획 등록');
+        loadActiveItems();
+        calculateTotalBudget();
+        planModal.show();
+    });
+
+    $('#plans-table tbody').on('click', '.edit-plan-btn', function() {
+        const planId = $(this).data('id');
+        $.ajax({
+            url: `/api/supply/plans/${planId}`,
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    const plan = response.data;
+                    $('#planForm')[0].reset();
+                    $('#planModalLabel').text('계획 수정');
+                    $('#plan-id').val(plan.id);
+                    loadActiveItems(plan.item_id);
+                    $('#modal-planned-quantity').val(plan.planned_quantity);
+                    $('#modal-unit-price').val(plan.unit_price);
+                    $('#modal-notes').val(plan.notes);
+                    calculateTotalBudget();
+                    planModal.show();
+                }
+            }
+        });
+    });
+
+    $('#save-plan-btn').on('click', function() {
+        if (!$('#planForm')[0].checkValidity()) {
+            $('#planForm').addClass('was-validated');
+            return;
         }
 
-        // 검색 및 필터 이벤트
-        $('#search-plans, #filter-category').on('keyup change', this.debounce(() => {
-            this.loadPlans();
-        }, 300));
-    }
+        const planId = $('#plan-id').val();
+        const url = planId ? `/api/supply/plans/${planId}` : '/api/supply/plans';
+        const method = planId ? 'PUT' : 'POST';
 
-    loadInitialData() {
-        this.initializeDataTable();
-        this.loadPlans();
-        this.deletePlanModal = new bootstrap.Modal(document.getElementById('deletePlanModal'));
-    }
-
-    async loadPlans() {
-        try {
-            const params = {
-                year: $('#year-selector').val() || this.currentYear,
-                search: $('#search-plans').val(),
-                category_id: $('#filter-category').val()
-            };
-
-            const queryString = new URLSearchParams(params).toString();
-            const result = await this.apiCall(`${this.config.API_URL}?${queryString}`);
-
-            this.dataTable.clear().rows.add(result.data || []).draw();
-        } catch (error) {
-            console.error('Error loading plans:', error);
-            Toast.error('계획을 불러오는 중 오류가 발생했습니다.');
-        }
-    }
-
-    initializeDataTable() {
-        const plansTable = document.getElementById('plans-table');
-        if (plansTable && typeof $.fn.DataTable !== 'undefined') {
-            this.dataTable = $(plansTable).DataTable({
-                responsive: true,
-                pageLength: 25,
-                order: [[7, 'desc']], // 등록일 기준 내림차순
-                columns: [
-                    // ... 컬럼 정의 ...
-                ],
-                columnDefs: [
-                    { targets: [4, 5, 6], className: 'text-end' },
-                    { targets: [8], orderable: false }
-                ],
-                language: {
-                    url: '/assets/libs/datatables.net/i18n/Korean.json'
-                },
-                searching: false
-            });
-        }
-    }
-
-    showDeleteConfirmation(planId, planName) {
-        this.currentDeleteId = planId;
-        
-        const deleteInfo = document.getElementById('delete-plan-info');
-        if (deleteInfo) {
-            deleteInfo.innerHTML = `
-                <div class="alert alert-warning">
-                    <strong>삭제할 계획:</strong> ${planName}
-                </div>
-            `;
-        }
-        
-        this.deletePlanModal.show();
-    }
-
-    async deletePlan(planId) {
-        this.setButtonLoading('#confirm-delete-plan-btn', '삭제 중...');
-
-        try {
-            await this.apiCall(`${this.config.API_URL}/${planId}`, {
-                method: 'DELETE'
-            });
-
-            Toast.success('계획이 성공적으로 삭제되었습니다.');
-            this.loadPlans(); // 데이터 다시 로드
-        } catch (error) {
-            console.error('Error:', error);
-            Toast.error('오류: ' + (error.message || '계획 삭제에 실패했습니다.'));
-        } finally {
-            this.resetButtonLoading('#confirm-delete-plan-btn');
-            this.deletePlanModal.hide();
-            this.currentDeleteId = null;
-        }
-    }
-
-    exportToExcel() {
-        const yearSelector = document.getElementById('year-selector');
-        const year = yearSelector ? yearSelector.value : this.currentYear;
-        window.open(`${this.config.API_URL}/export-excel?year=${year}`, '_blank');
-    }
-
-    debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
+        const formData = {
+            year: currentYear,
+            item_id: $('#modal-item-id').val(),
+            planned_quantity: $('#modal-planned-quantity').val(),
+            unit_price: $('#modal-unit-price').val(),
+            notes: $('#modal-notes').val()
         };
-    }
-}
 
-// 전역 인스턴스 생성
-new SupplyPlansPage();
+        $.ajax({
+            url: url,
+            method: method,
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                if (response.success) {
+                    planModal.hide();
+                    plansTable.ajax.reload();
+                    loadBudgetSummary(currentYear);
+                }
+            }
+        });
+    });
+
+    loadAllData(currentYear);
+});
