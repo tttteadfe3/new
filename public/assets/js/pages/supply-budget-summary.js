@@ -305,7 +305,7 @@ class SupplyBudgetSummaryPage extends BasePage {
             </tr>
         `;
     }
-    
+
     escapeHtml(str) {
         if (str === null || str === undefined) return '';
         return String(str).replace(/[&<>"']/g, function(match) {

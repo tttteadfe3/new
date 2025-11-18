@@ -40,18 +40,18 @@ class SupplyPlansIndexPage extends BasePage {
 
         const addPlanBtn = document.getElementById('add-plan-btn');
         addPlanBtn?.addEventListener('click', () => this.openPlanModal());
-        
+
         const savePlanBtn = document.getElementById('save-plan-btn');
         savePlanBtn?.addEventListener('click', () => this.handleSavePlan());
 
         $(document).on('click', '.edit-plan-btn', (e) => this.openPlanModal(e.currentTarget.dataset.id));
-        
+
         const modalItemId = document.getElementById('modal-item-id');
         modalItemId?.addEventListener('change', () => this.updateItemUnit());
 
         const quantityInput = document.getElementById('modal-planned-quantity');
         quantityInput?.addEventListener('input', () => this.calculateTotalBudget());
-        
+
         const priceInput = document.getElementById('modal-unit-price');
         priceInput?.addEventListener('input', () => this.calculateTotalBudget());
     }
@@ -60,18 +60,17 @@ class SupplyPlansIndexPage extends BasePage {
         this.populateYearSelector();
         this.loadBudgetSummary();
         this.initializeDataTable();
-        this.loadPlans();
         
         const deleteModalElement = document.getElementById('deletePlanModal');
         if (deleteModalElement) {
             this.deletePlanModal = new bootstrap.Modal(deleteModalElement);
         }
-        
+
         const planModalElement = document.getElementById('planModal');
         if (planModalElement) {
             this.planModal = new bootstrap.Modal(planModalElement);
         }
-        
+
         this.loadActiveItems();
     }
 
@@ -116,7 +115,12 @@ class SupplyPlansIndexPage extends BasePage {
     }
 
     async loadPlans() {
-        this.dataTable.ajax.reload();
+        if (!this.dataTable) {
+            this.initializeDataTable();
+        } else {
+            const newUrl = `/api/supply/plans?year=${this.currentYear}`;
+            this.dataTable.ajax.url(newUrl).load();
+        }
     }
 
     initializeDataTable() {
@@ -247,14 +251,14 @@ class SupplyPlansIndexPage extends BasePage {
         const price = parseFloat(document.getElementById('modal-unit-price').value) || 0;
         document.getElementById('modal-total-budget').value = `₩${(quantity * price).toLocaleString()}`;
     }
-    
+
     async openPlanModal(planId = null) {
         const form = document.getElementById('planForm');
         form.reset();
         form.classList.remove('was-validated');
         document.getElementById('plan-id').value = '';
         document.getElementById('planModalLabel').textContent = planId ? '계획 수정' : '신규 계획 등록';
-        
+
         if (planId) {
             try {
                 const response = await this.apiCall(`/supply/plans/${planId}`);
@@ -274,7 +278,7 @@ class SupplyPlansIndexPage extends BasePage {
         } else {
             await this.loadActiveItems();
         }
-        
+
         this.calculateTotalBudget();
         this.planModal.show();
     }
@@ -322,15 +326,6 @@ class SupplyPlansIndexPage extends BasePage {
         } finally {
             this.resetButtonLoading('#save-plan-btn', '저장');
         }
-    }
-
-    escapeHtml(text) {
-        if (text === null || text === undefined) {
-            return '';
-        }
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 }
 
