@@ -309,7 +309,7 @@ class SupplyCategoryPage extends BasePage {
         container.innerHTML = html;
     }
 
-    showCategoryModal(category = null) {
+    async showCategoryModal(category = null) {
         this.isEditMode = !!category;
         const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
         const modalTitle = document.getElementById('categoryModalLabel');
@@ -330,7 +330,6 @@ class SupplyCategoryPage extends BasePage {
 
             if (category.level === 2) {
                 document.getElementById('parent-category').value = category.parent_id;
-                this.toggleParentCategoryField('2');
             }
 
             document.getElementById('category-level').disabled = true;
