@@ -5,7 +5,7 @@
 class SupplyCategoryPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/supply/categories'
+            API_URL: '/api/supply/categories'
         });
         
         this.categories = [];
@@ -314,33 +314,74 @@ class SupplyCategoryPage extends BasePage {
         const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
         const modalTitle = document.getElementById('categoryModalLabel');
         const form = document.getElementById('categoryForm');
-        
+        const helpContainer = document.getElementById('category-form-help');
+
         modalTitle.textContent = this.isEditMode ? '분류 수정' : '분류 등록';
         form.reset();
         this.clearFormErrors();
-        
+
         if (this.isEditMode && category) {
+            // Edit mode
             document.getElementById('category-level').value = category.level;
             document.getElementById('category-code').value = category.category_code;
             document.getElementById('category-name').value = category.category_name;
             document.getElementById('display-order').value = category.display_order;
             document.getElementById('is-active').value = category.is_active ? '1' : '0';
-            
+
             if (category.level === 2) {
                 document.getElementById('parent-category').value = category.parent_id;
                 this.toggleParentCategoryField('2');
             }
-            
+
             document.getElementById('category-level').disabled = true;
             document.getElementById('category-code').readOnly = true;
             document.getElementById('generate-code-btn').disabled = true;
+
+            helpContainer.innerHTML = `
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">수정 가능한 항목</h6>
+                    <ul class="mb-0 small">
+                        <li>분류명</li>
+                        <li>표시 순서</li>
+                        <li>상태 (활성/비활성)</li>
+                    </ul>
+                </div>
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">수정 불가능한 항목</h6>
+                    <ul class="mb-0 small">
+                        <li>분류 코드</li>
+                        <li>분류 레벨</li>
+                        <li>상위 분류</li>
+                    </ul>
+                </div>
+            `;
         } else {
+            // Create mode
             document.getElementById('category-level').disabled = false;
             document.getElementById('category-code').readOnly = false;
             document.getElementById('generate-code-btn').disabled = false;
             this.toggleParentCategoryField('');
+
+            helpContainer.innerHTML = `
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">분류 생성 가이드</h6>
+                    <ul class="mb-0 small">
+                        <li><strong>대분류:</strong> 최상위 분류입니다.</li>
+                        <li><strong>소분류:</strong> 대분류 하위에 속합니다.</li>
+                        <li><strong>분류 코드:</strong> 자동 생성을 권장합니다.</li>
+                        <li><strong>표시 순서:</strong> 숫자가 작을수록 먼저 표시됩니다.</li>
+                    </ul>
+                </div>
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">주의사항</h6>
+                    <ul class="mb-0 small">
+                        <li>분류 코드는 생성 후 수정할 수 없습니다.</li>
+                        <li>소분류는 반드시 상위 분류를 선택해야 합니다.</li>
+                    </ul>
+                </div>
+            `;
         }
-        
+
         this.loadParentCategoryOptions();
         modal.show();
     }
@@ -409,6 +450,11 @@ class SupplyCategoryPage extends BasePage {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
         
+        // Ensure parent_id is null if not provided or invalid
+        if (data.level !== '2' || !data.parent_id || data.parent_id === 'undefined') {
+            data.parent_id = null;
+        }
+
         if (!this.validateCategoryForm(data)) {
             return;
         }
