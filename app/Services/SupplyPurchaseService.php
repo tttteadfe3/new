@@ -61,10 +61,9 @@ class SupplyPurchaseService
 
         // 입고 완료 상태면 재고 업데이트
         if (isset($purchaseData['is_received']) && $purchaseData['is_received']) {
-            $this->stockRepository->updateStock(
+            $this->stockService->updateStockFromPurchase(
                 $purchaseData['item_id'],
-                $purchaseData['quantity'],
-                'purchase'
+                $purchaseData['quantity']
             );
         }
 
@@ -177,10 +176,9 @@ class SupplyPurchaseService
 
             if ($success) {
                 // 재고 업데이트
-                $this->stockRepository->updateStock(
+                $this->stockService->updateStockFromPurchase(
                     $purchase->getAttribute('item_id'),
-                    $purchase->getAttribute('quantity'),
-                    'purchase'
+                    $purchase->getAttribute('quantity')
                 );
 
                 // 활동 로그 기록
