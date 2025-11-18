@@ -50,6 +50,8 @@ class SupplyPlanController extends BaseController
         View::getInstance()->addJs('https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js');
         View::getInstance()->addJs('https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js');
 
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/services/api-service.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/core/base-page.js');
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-plans-index.js');
 
         $year = $this->request->input('year', date('Y'));
@@ -121,7 +123,7 @@ class SupplyPlanController extends BaseController
         $year = (int) $year;
 
         // Chart.js 라이브러리 추가
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/chart.js/chart.min.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/libs/chart.js/chart.umd.js');
         View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-budget-summary.js');
 
         echo $this->render('pages/supply/plans/budget-summary', [

@@ -24,8 +24,72 @@ use App\Controllers\Api\WasteCollectionApiController;
     use App\Controllers\Api\SupplyDistributionApiController;
     use App\Controllers\Api\SupplyStockApiController;
     use App\Controllers\Api\SupplyReportApiController;
+    use App\Controllers\Api\VehicleController;
+    use App\Controllers\Api\BreakdownController;
+    use App\Controllers\Api\MaintenanceController;
+    use App\Controllers\Api\ConsumableController;
+    use App\Controllers\Api\InsuranceController;
+    use App\Controllers\Api\InspectionController;
+    use App\Controllers\Api\TaxController;
+use App\Controllers\Api\ConsumableLogController;
 
 $router->group('/api', function($router) {
+    // Vehicle Management API routes
+    $router->get('/vehicles', [VehicleController::class, 'index'])->name('api.vehicles.index')->middleware('auth')->middleware('permission', 'vehicle.view');
+    $router->get('/vehicles/{id}', [VehicleController::class, 'show'])->name('api.vehicles.show')->middleware('auth')->middleware('permission', 'vehicle.view');
+    $router->post('/vehicles', [VehicleController::class, 'store'])->name('api.vehicles.store')->middleware('auth')->middleware('permission', 'vehicle.create');
+    $router->put('/vehicles/{id}', [VehicleController::class, 'update'])->name('api.vehicles.update')->middleware('auth')->middleware('permission', 'vehicle.update');
+    $router->delete('/vehicles/{id}', [VehicleController::class, 'destroy'])->name('api.vehicles.destroy')->middleware('auth')->middleware('permission', 'vehicle.delete');
+
+    // Breakdown Management API routes
+    $router->get('/breakdowns', [BreakdownController::class, 'index'])->name('api.breakdowns.index')->middleware('auth')->middleware('permission', 'breakdown.view');
+    $router->get('/breakdowns/{id}', [BreakdownController::class, 'show'])->name('api.breakdowns.show')->middleware('auth')->middleware('permission', 'breakdown.view');
+    $router->post('/breakdowns', [BreakdownController::class, 'store'])->name('api.breakdowns.store')->middleware('auth')->middleware('permission', 'breakdown.create');
+    $router->put('/breakdowns/{id}', [BreakdownController::class, 'update'])->name('api.breakdowns.update')->middleware('auth')->middleware('permission', 'breakdown.update');
+    $router->delete('/breakdowns/{id}', [BreakdownController::class, 'destroy'])->name('api.breakdowns.destroy')->middleware('auth')->middleware('permission', 'breakdown.delete');
+
+    // Maintenance Management API routes
+    $router->get('/maintenances', [MaintenanceController::class, 'index'])->name('api.maintenances.index')->middleware('auth')->middleware('permission', 'maintenance.view');
+    $router->get('/maintenances/{id}', [MaintenanceController::class, 'show'])->name('api.maintenances.show')->middleware('auth')->middleware('permission', 'maintenance.view');
+    $router->post('/maintenances', [MaintenanceController::class, 'store'])->name('api.maintenances.store')->middleware('auth')->middleware('permission', 'maintenance.create');
+    $router->put('/maintenances/{id}', [MaintenanceController::class, 'update'])->name('api.maintenances.update')->middleware('auth')->middleware('permission', 'maintenance.update');
+    $router->delete('/maintenances/{id}', [MaintenanceController::class, 'destroy'])->name('api.maintenances.destroy')->middleware('auth')->middleware('permission', 'maintenance.delete');
+
+    // Consumables Management API routes
+    $router->get('/consumables', [ConsumableController::class, 'index'])->name('api.consumables.index')->middleware('auth')->middleware('permission', 'consumable.view');
+    $router->get('/consumables/{id}', [ConsumableController::class, 'show'])->name('api.consumables.show')->middleware('auth')->middleware('permission', 'consumable.view');
+    $router->post('/consumables', [ConsumableController::class, 'store'])->name('api.consumables.store')->middleware('auth')->middleware('permission', 'consumable.create');
+    $router->put('/consumables/{id}', [ConsumableController::class, 'update'])->name('api.consumables.update')->middleware('auth')->middleware('permission', 'consumable.update');
+    $router->delete('/consumables/{id}', [ConsumableController::class, 'destroy'])->name('api.consumables.destroy')->middleware('auth')->middleware('permission', 'consumable.delete');
+
+    // Consumable Log Management API routes
+    $router->get('/consumable-logs', [ConsumableLogController::class, 'index'])->name('api.consumable-logs.index')->middleware('auth')->middleware('permission', 'consumable.view');
+    $router->get('/consumable-logs/{id}', [ConsumableLogController::class, 'show'])->name('api.consumable-logs.show')->middleware('auth')->middleware('permission', 'consumable.view');
+    $router->post('/consumable-logs', [ConsumableLogController::class, 'store'])->name('api.consumable-logs.store')->middleware('auth')->middleware('permission', 'consumable.create');
+    $router->put('/consumable-logs/{id}', [ConsumableLogController::class, 'update'])->name('api.consumable-logs.update')->middleware('auth')->middleware('permission', 'consumable.update');
+    $router->delete('/consumable-logs/{id}', [ConsumableLogController::class, 'destroy'])->name('api.consumable-logs.destroy')->middleware('auth')->middleware('permission', 'consumable.delete');
+
+    // Insurance Management API routes
+    $router->get('/insurances', [InsuranceController::class, 'index'])->name('api.insurances.index')->middleware('auth')->middleware('permission', 'insurance.view');
+    $router->get('/insurances/{id}', [InsuranceController::class, 'show'])->name('api.insurances.show')->middleware('auth')->middleware('permission', 'insurance.view');
+    $router->post('/insurances', [InsuranceController::class, 'store'])->name('api.insurances.store')->middleware('auth')->middleware('permission', 'insurance.create');
+    $router->put('/insurances/{id}', [InsuranceController::class, 'update'])->name('api.insurances.update')->middleware('auth')->middleware('permission', 'insurance.update');
+    $router->delete('/insurances/{id}', [InsuranceController::class, 'destroy'])->name('api.insurances.destroy')->middleware('auth')->middleware('permission', 'insurance.delete');
+
+    // Inspection Management API routes
+    $router->get('/inspections', [InspectionController::class, 'index'])->name('api.inspections.index')->middleware('auth')->middleware('permission', 'inspection.view');
+    $router->get('/inspections/{id}', [InspectionController::class, 'show'])->name('api.inspections.show')->middleware('auth')->middleware('permission', 'inspection.view');
+    $router->post('/inspections', [InspectionController::class, 'store'])->name('api.inspections.store')->middleware('auth')->middleware('permission', 'inspection.create');
+    $router->put('/inspections/{id}', [InspectionController::class, 'update'])->name('api.inspections.update')->middleware('auth')->middleware('permission', 'inspection.update');
+    $router->delete('/inspections/{id}', [InspectionController::class, 'destroy'])->name('api.inspections.destroy')->middleware('auth')->middleware('permission', 'inspection.delete');
+
+    // Tax Management API routes
+    $router->get('/taxes', [TaxController::class, 'index'])->name('api.taxes.index')->middleware('auth')->middleware('permission', 'tax.view');
+    $router->get('/taxes/{id}', [TaxController::class, 'show'])->name('api.taxes.show')->middleware('auth')->middleware('permission', 'tax.view');
+    $router->post('/taxes', [TaxController::class, 'store'])->name('api.taxes.store')->middleware('auth')->middleware('permission', 'tax.create');
+    $router->put('/taxes/{id}', [TaxController::class, 'update'])->name('api.taxes.update')->middleware('auth')->middleware('permission', 'tax.update');
+    $router->delete('/taxes/{id}', [TaxController::class, 'destroy'])->name('api.taxes.destroy')->middleware('auth')->middleware('permission', 'tax.delete');
+
     // Employee API routes
     $router->get('/employees', [EmployeeApiController::class, 'index'])->name('api.employees.index')->middleware('auth')->middleware('permission', 'employee.view');
     $router->post('/employees', [EmployeeApiController::class, 'store'])->name('api.employees.store')->middleware('auth')->middleware('permission', 'employee.create');
@@ -195,7 +259,7 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->post('/supply/plans', [SupplyPlanApiController::class, 'store'])->name('api.supply.plans.store')->middleware('auth')->middleware('permission', 'supply.plan.manage');
     $router->post('/supply/plans/import-excel', [SupplyPlanApiController::class, 'importExcel'])->name('api.supply.plans.import-excel')->middleware('auth')->middleware('permission', 'supply.plan.manage');
     $router->get('/supply/plans/export-excel/{year}', [SupplyPlanApiController::class, 'exportExcel'])->name('api.supply.plans.export-excel')->middleware('auth')->middleware('permission', 'supply.plan.view');
-    $router->get('/supply/plans/budget-summary/{year}', [SupplyPlanApiController::class, 'getBudgetSummary'])->name('api.supply.plans.budget-summary')->middleware('auth')->middleware('permission', 'supply.plan.view');
+    $router->get('/supply/plans/budget-summary', [SupplyPlanApiController::class, 'getBudgetSummary'])->name('api.supply.plans.budget-summary')->middleware('auth')->middleware('permission', 'supply.plan.view');
     $router->post('/supply/plans/copy', [SupplyPlanApiController::class, 'copyPlans'])->name('api.supply.plans.copy')->middleware('auth')->middleware('permission', 'supply.plan.manage');
     $router->get('/supply/plans/{id}', [SupplyPlanApiController::class, 'show'])->name('api.supply.plans.show')->middleware('auth')->middleware('permission', 'supply.plan.view');
     $router->put('/supply/plans/{id}', [SupplyPlanApiController::class, 'update'])->name('api.supply.plans.update')->middleware('auth')->middleware('permission', 'supply.plan.manage');

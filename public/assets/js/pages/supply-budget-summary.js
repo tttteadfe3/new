@@ -27,14 +27,20 @@ class SupplyBudgetSummaryPage extends BasePage {
         }
     }
 
+    initializeApp() {
+        this.populateYearSelector();
+        super.initializeApp(); // This will call setupEventListeners and loadInitialData
+    }
+
     async loadInitialData() {
         const yearSelector = document.getElementById('year-selector');
         const year = yearSelector ? yearSelector.value : new Date().getFullYear();
 
         try {
-            const response = await this.apiCall(`/supply/plans/budget-summary/${year}`);
+            const response = await this.apiCall(`/supply/plans/budget-summary?year=${year}`);
             const data = response.data;
             this.renderSummaryData(data);
+            this.renderCategoryDetailsTable(data.category_budgets);
             this.initializeCharts(data);
             this.initializeCounterAnimation();
         } catch (error) {
@@ -45,11 +51,16 @@ class SupplyBudgetSummaryPage extends BasePage {
     }
 
     renderSummaryData(data) {
+        const safeSet = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        };
+
         // Update summary cards
-        document.getElementById('total-budget').textContent = '₩' + (data.total_budget || 0).toLocaleString();
-        document.getElementById('total-items').textContent = (data.total_items || 0).toLocaleString();
-        document.getElementById('total-quantity').textContent = (data.total_quantity || 0).toLocaleString();
-        document.getElementById('avg-unit-price').textContent = '₩' + (data.avg_unit_price || 0).toLocaleString();
+        safeSet('total-budget', '₩' + (data.total_budget || 0).toLocaleString());
+        safeSet('total-items', (data.total_items || 0).toLocaleString());
+        safeSet('total-quantity', (data.total_quantity || 0).toLocaleString());
+        safeSet('avg-unit-price', '₩' + (data.avg_unit_price || 0).toLocaleString());
 
         // Update comparison data if available
         if (data.previous_year_summary) {
@@ -258,6 +269,73 @@ class SupplyBudgetSummaryPage extends BasePage {
         const yearSelector = document.getElementById('year-selector');
         const year = yearSelector ? yearSelector.value : new Date().getFullYear();
         window.open(`${this.config.API_URL}/export-budget?year=${year}`, '_blank');
+    }
+
+    renderCategoryDetailsTable(data = []) {
+        const tbody = document.getElementById('category-details-tbody');
+        const tfoot = document.getElementById('category-details-tfoot');
+        if (!tbody || !tfoot) return;
+
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center">데이터가 없습니다.</td></tr>';
+            tfoot.innerHTML = '';
+            return;
+        }
+
+        let totalItems = 0;
+        let totalBudget = 0;
+
+        tbody.innerHTML = data.map(item => {
+            totalItems += item.item_count;
+            totalBudget += item.total_budget;
+            return `
+                <tr>
+                    <td>${this.escapeHtml(item.category_name)}</td>
+                    <td class="text-end">${item.item_count.toLocaleString()}</td>
+                    <td class="text-end">₩${item.total_budget.toLocaleString()}</td>
+                </tr>
+            `;
+        }).join('');
+
+        tfoot.innerHTML = `
+            <tr>
+                <th><strong>합계</strong></th>
+                <th class="text-end"><strong>${totalItems.toLocaleString()}</strong></th>
+                <th class="text-end"><strong>₩${totalBudget.toLocaleString()}</strong></th>
+            </tr>
+        `;
+    }
+
+    escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>"']/g, function(match) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[match];
+        });
+    }
+
+    populateYearSelector() {
+        const selector = document.getElementById('year-selector');
+        if (!selector) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentYear = parseInt(urlParams.get('year'), 10) || new Date().getFullYear();
+
+        const startYear = new Date().getFullYear() + 1;
+        for (let y = startYear; y >= 2020; y--) {
+            const option = document.createElement('option');
+            option.value = y;
+            option.textContent = `${y}년`;
+            if (y === currentYear) {
+                option.selected = true;
+            }
+            selector.appendChild(option);
+        }
     }
 }
 
