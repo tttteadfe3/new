@@ -71,12 +71,15 @@ abstract class BaseModel
 
     /**
      * 모델 데이터를 확인합니다.
+     * @param bool $isUpdate 업데이트 시나리오인지 여부를 나타냅니다. true이면 현재 설정된 속성만 검사합니다.
      */
-    public function validate(): bool
+    public function validate(bool $isUpdate = false): bool
     {
         $this->errors = [];
         
-        foreach ($this->rules as $field => $rules) {
+        $rulesToValidate = $isUpdate ? array_intersect_key($this->rules, $this->attributes) : $this->rules;
+
+        foreach ($rulesToValidate as $field => $rules) {
             $value = $this->getAttribute($field);
             $fieldRules = is_string($rules) ? explode('|', $rules) : $rules;
             
