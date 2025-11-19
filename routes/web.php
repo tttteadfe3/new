@@ -110,8 +110,6 @@ $router->get('/supply/purchases/receive', [SupplyPurchaseController::class, 'rec
 
 // 지급 관리
 $router->get('/supply/distributions', [SupplyDistributionController::class, 'index'])->name('supply.distributions.index')->middleware('auth')->middleware('permission', 'supply.distribution.view');
-$router->get('/supply/distributions/create', [SupplyDistributionController::class, 'create'])->name('supply.distributions.create')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
-$router->get('/supply/distributions/edit', [SupplyDistributionController::class, 'edit'])->name('supply.distributions.edit')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
 
 // 재고 관리
 $router->get('/supply/stocks', [SupplyItemController::class, 'stocks'])->name('supply.stocks')->middleware('auth')->middleware('permission', 'supply.item.view');

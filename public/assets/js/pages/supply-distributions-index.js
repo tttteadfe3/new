@@ -1,195 +1,243 @@
-/**
- * Supply Distributions Index JavaScript
- */
-
 class SupplyDistributionsIndexPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/supply/distributions'
+            API_URL: '/api/supply/distributions'
         });
         
-        this.currentDistributionId = null;
-        this.cancelModal = null;
         this.dataTable = null;
-    }
-
-    setupEventListeners() {
-        this.initializeCancelHandlers();
-
-        // 필터 및 검색 이벤트 추가
-        $('#search-input, #filter-department, #filter-status, #start-date, #end-date').on('change keyup', this.debounce(() => {
-            this.loadDistributions();
-        }, 300));
+        this.distributionModal = null;
+        this.deleteModal = null;
+        this.cancelModal = null;
+        this.currentDistributionId = null;
     }
 
     loadInitialData() {
-        this.loadStatistics();
         this.initializeDataTable();
-        this.loadDistributions(); // 초기 데이터 로드
-        
-        const cancelModalElement = document.getElementById('cancelDistributionModal');
-        if (cancelModalElement) {
-            this.cancelModal = new bootstrap.Modal(cancelModalElement);
-        }
-    }
-
-    async loadStatistics() {
-        const statsContainer = document.getElementById('stats-container');
-        try {
-            const response = await this.apiCall(`${this.config.API_URL}/statistics`);
-            const stats = response.data;
-            // ... (render a lot of stats html)
-        } catch (error) {
-            console.error('Failed to load statistics:', error);
-            statsContainer.innerHTML = '<p class="text-danger">통계 정보를 불러오는데 실패했습니다.</p>';
-        }
-    }
-
-    async loadDistributions() {
-        try {
-            const params = {
-                search: $('#search-input').val(),
-                department_id: $('#filter-department').val(),
-                is_cancelled: $('#filter-status').val(),
-                start_date: $('#start-date').val(),
-                end_date: $('#end-date').val(),
-            };
-
-            const queryString = new URLSearchParams(params).toString();
-            const result = await this.apiCall(`${this.config.API_URL}?${queryString}`);
-
-            this.dataTable.clear().rows.add(result.data || []).draw();
-
-        } catch (error) {
-            console.error('Error loading distributions:', error);
-            Toast.error('지급 내역을 불러오는 중 오류가 발생했습니다.');
-        }
+        this.initializeModals();
+        this.setupEventListeners();
+        this.loadStatistics();
     }
 
     initializeDataTable() {
-        const table = document.getElementById('distributions-table');
-        if (table && typeof $.fn.DataTable !== 'undefined') {
-            this.dataTable = $(table).DataTable({
-                processing: true,
-                serverSide: false,
-                columns: [
-                    { data: 'distribution_date' },
-                    { data: 'item_name', render: (data, type, row) => `
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h6 class="fs-14 mb-0">${this.escapeHtml(data)}</h6>
-                                <p class="text-muted mb-0 fs-12">${this.escapeHtml(row.item_code)}</p>
-                            </div>
-                        </div>`
-                    },
-                    { data: 'quantity', className: 'text-end', render: data => Number(data).toLocaleString() },
-                    { data: 'employee_name' },
-                    { data: 'department_name' },
-                    { data: 'is_cancelled', render: (data, type, row) => {
-                        if (data) {
-                            return `<span class="badge badge-soft-danger"><i class="ri-close-circle-line me-1"></i>취소됨</span>
-                                    <br><small class="text-muted">${new Date(row.cancelled_at).toLocaleDateString()}</small>`;
-                        }
-                        return `<span class="badge badge-soft-success"><i class="ri-checkbox-circle-line me-1"></i>지급 완료</span>`;
-                    }},
-                    { data: 'id', orderable: false, render: (data, type, row) => `
-                        <div class="dropdown">
-                            <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="ri-more-fill align-middle"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="/supply/distributions/show?id=${data}"><i class="ri-eye-fill align-bottom me-2 text-muted"></i> 상세보기</a></li>
-                                ${!row.is_cancelled ? `
-                                <li><a class="dropdown-item" href="/supply/distributions/edit?id=${data}"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 수정</a></li>
-                                <li><button class="dropdown-item cancel-distribution-btn" data-id="${data}" data-name="${this.escapeHtml(row.item_name)}" data-employee="${this.escapeHtml(row.employee_name)}"><i class="ri-close-circle-fill align-bottom me-2 text-muted"></i> 취소</button></li>
-                                ` : ''}
-                            </ul>
-                        </div>`
-                    }
-                ],
-                responsive: true,
-                pageLength: 25,
-                order: [[0, 'desc']],
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
+        this.dataTable = $('#distributions-table').DataTable({
+            ajax: {
+                url: this.config.API_URL,
+                dataSrc: 'distributions'
+            },
+            columns: [
+                { data: 'distribution_date' },
+                { data: 'item_name' },
+                { data: 'quantity' },
+                { data: 'employee_name' },
+                { data: 'department_name' },
+                {
+                    data: 'is_cancelled',
+                    render: (data) => data ? '<span class="badge bg-danger">취소됨</span>' : '<span class="badge bg-success">완료</span>'
                 },
-                dom: 'Bfrtip',
-                buttons: ['copy', 'csv', 'excel', 'print'],
-                searching: false
-            });
-        }
+                {
+                    data: 'id',
+                    render: (data, type, row) => this.createActionButtons(data, row)
+                }
+            ],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
+            }
+        });
     }
 
-    initializeCancelHandlers() {
-        $(document).on('click', '.cancel-distribution-btn', (e) => {
-            const btn = e.currentTarget;
-            const id = btn.getAttribute('data-id');
-            const itemName = btn.getAttribute('data-name');
-            const employeeName = btn.getAttribute('data-employee');
-            this.showCancelModal(id, itemName, employeeName);
+    initializeModals() {
+        this.distributionModal = new bootstrap.Modal(document.getElementById('distributionModal'));
+        this.cancelModal = new bootstrap.Modal(document.getElementById('cancelDistributionModal'));
+    }
+
+    setupEventListeners() {
+        $('#add-distribution-btn').on('click', () => this.openDistributionModal());
+        $('#save-distribution-btn').on('click', () => this.saveDistribution());
+        $('#confirm-cancel-distribution-btn').on('click', () => this.handleCancelDistribution());
+
+        $('#distributions-table tbody').on('click', '.edit-btn', (e) => {
+            const id = $(e.currentTarget).data('id');
+            this.openDistributionModal(id);
         });
 
-        const confirmCancelBtn = document.getElementById('confirm-cancel-distribution-btn');
-        if (confirmCancelBtn) {
-            confirmCancelBtn.addEventListener('click', () => this.handleCancelDistribution());
+        $('#distributions-table tbody').on('click', '.cancel-btn', (e) => {
+            const id = $(e.currentTarget).data('id');
+            this.openCancelModal(id);
+        });
+    }
+
+    async loadStatistics() {
+        try {
+            const response = await this.apiCall(`${this.config.API_URL}/statistics`);
+            const stats = response.data.statistics;
+            $('#stats-container .counter-value').each(function() {
+                const key = $(this).closest('.card').find('p').text().trim();
+                let value = 0;
+                switch (key) {
+                    case '총 지급 건수':
+                        value = stats.total_distributions;
+                        break;
+                    case '총 지급 수량':
+                        value = stats.total_quantity_distributed;
+                        break;
+                    case '지급 직원 수':
+                        value = stats.unique_employees;
+                        break;
+                    case '지급 부서 수':
+                        value = stats.unique_departments;
+                        break;
+                }
+                $(this).text(value);
+            });
+        } catch (error) {
+            console.error('Failed to load statistics:', error);
         }
     }
 
-    showCancelModal(id, itemName, employeeName) {
-        this.currentDistributionId = id;
-        
-        const infoDiv = document.getElementById('cancel-distribution-info');
-        if (infoDiv) {
-            infoDiv.innerHTML = `
-                <div class="alert alert-info">
-                    <p class="mb-1"><strong>품목:</strong> ${itemName}</p>
-                    <p class="mb-0"><strong>직원:</strong> ${employeeName}</p>
-                </div>
-            `;
+    createActionButtons(id, row) {
+        let buttons = `
+            <a href="/supply/distributions/show?id=${id}" class="btn btn-sm btn-info">상세</a>
+            <button class="btn btn-sm btn-primary edit-btn" data-id="${id}">수정</button>
+        `;
+        if (!row.is_cancelled) {
+            buttons += `<button class="btn btn-sm btn-warning cancel-btn" data-id="${id}">취소</button>`;
         }
-        
-        document.getElementById('cancel-reason').value = '';
+        return buttons;
+    }
+
+    async openDistributionModal(id = null) {
+        this.currentDistributionId = id;
+        $('#distribution-form')[0].reset();
+        $('#distributionModalLabel').text(id ? '지급 수정' : '지급 등록');
+
+        await this.populateDropdowns();
+
+        if (id) {
+            try {
+                const response = await this.apiCall(`${this.config.API_URL}/${id}`);
+                const data = response.data;
+                $('#distribution-id').val(data.id);
+                $('#modal-item-id').val(data.item_id);
+                $('#modal-quantity').val(data.quantity);
+                $('#modal-department-id').val(data.department_id);
+
+                await this.populateEmployees(data.department_id);
+                $('#modal-employee-id').val(data.employee_id);
+
+                $('#modal-distribution-date').val(data.distribution_date);
+                $('#modal-notes').val(data.notes);
+            } catch (error) {
+                Toast.error('데이터를 불러오는 데 실패했습니다.');
+                return;
+            }
+        }
+        this.distributionModal.show();
+    }
+
+    async populateDropdowns() {
+        await this.populateItems();
+        await this.populateDepartments();
+
+        $('#modal-department-id').on('change', async (e) => {
+            const departmentId = $(e.currentTarget).val();
+            await this.populateEmployees(departmentId);
+        });
+    }
+
+    async populateItems() {
+        try {
+            const response = await this.apiCall(`${this.config.API_URL}/available-items`);
+            const items = response.data.items;
+            const $select = $('#modal-item-id');
+            $select.empty().append('<option value="">선택하세요</option>');
+            items.forEach(item => {
+                $select.append(`<option value="${item.id}">${item.name}</option>`);
+            });
+        } catch (error) {
+            Toast.error('품목을 불러오는 데 실패했습니다.');
+        }
+    }
+
+    async populateDepartments() {
+        try {
+            const response = await this.apiCall(`${this.config.API_URL}/departments`);
+            const departments = response.data.departments;
+            const $select = $('#modal-department-id');
+            $select.empty().append('<option value="">선택하세요</option>');
+            departments.forEach(dept => {
+                $select.append(`<option value="${dept.id}">${dept.name}</option>`);
+            });
+        } catch (error) {
+            Toast.error('부서를 불러오는 데 실패했습니다.');
+        }
+    }
+
+    async populateEmployees(departmentId) {
+        const $select = $('#modal-employee-id');
+        $select.empty().append('<option value="">선택하세요</option>');
+        if (!departmentId) {
+            return;
+        }
+
+        try {
+            const response = await this.apiCall(`${this.config.API_URL}/employees-by-department/${departmentId}`);
+            const employees = response.data.employees;
+            employees.forEach(emp => {
+                $select.append(`<option value="${emp.id}">${emp.name}</option>`);
+            });
+        } catch (error) {
+            Toast.error('직원을 불러오는 데 실패했습니다.');
+        }
+    }
+
+    async saveDistribution() {
+        const id = $('#distribution-id').val();
+        const data = {
+            item_id: $('#modal-item-id').val(),
+            quantity: $('#modal-quantity').val(),
+            department_id: $('#modal-department-id').val(),
+            employee_id: $('#modal-employee-id').val(),
+            distribution_date: $('#modal-distribution-date').val(),
+            notes: $('#modal-notes').val()
+        };
+
+        const url = id ? `${this.config.API_URL}/${id}` : this.config.API_URL;
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            await this.apiCall(url, { method, body: JSON.stringify(data) });
+            Toast.success(`지급이 성공적으로 ${id ? '수정' : '등록'}되었습니다.`);
+            this.distributionModal.hide();
+            this.dataTable.ajax.reload();
+        } catch (error) {
+            Toast.error(error.message || '저장에 실패했습니다.');
+        }
+    }
+
+    openCancelModal(id) {
+        this.currentDistributionId = id;
         this.cancelModal.show();
     }
 
     async handleCancelDistribution() {
-        const cancelReason = document.getElementById('cancel-reason').value.trim();
-        
-        if (!cancelReason) {
+        const reason = $('#cancel-reason').val();
+        if (!reason) {
             Toast.warning('취소 사유를 입력해주세요.');
             return;
         }
 
-        this.setButtonLoading('#confirm-cancel-distribution-btn', '처리 중...');
-
         try {
             await this.apiCall(`${this.config.API_URL}/${this.currentDistributionId}/cancel`, {
                 method: 'POST',
-                body: JSON.stringify({ cancel_reason: cancelReason })
+                body: JSON.stringify({ cancel_reason: reason })
             });
             Toast.success('지급이 성공적으로 취소되었습니다.');
             this.cancelModal.hide();
-            this.loadDistributions(); // Reload table data
-            this.loadStatistics(); // Reload stats
+            this.dataTable.ajax.reload();
         } catch (error) {
-            Toast.error(error.message || '지급 취소에 실패했습니다.');
-        } finally {
-            this.resetButtonLoading('#confirm-cancel-distribution-btn', '취소 처리');
+            Toast.error(error.message || '취소에 실패했습니다.');
         }
-    }
-
-    debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
     }
 }
 
-// 인스턴스 생성
 new SupplyDistributionsIndexPage();
