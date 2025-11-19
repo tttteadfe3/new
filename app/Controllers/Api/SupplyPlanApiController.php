@@ -61,7 +61,10 @@ class SupplyPlanApiController extends BaseApiController
                 return;
             }
 
-            $this->apiSuccess($plan->toArray());
+            $planData = $plan->toArray();
+            $planData['id'] = $id;
+
+            $this->apiSuccess($planData);
         } catch (Exception $e) {
             $this->handleException($e);
         }
