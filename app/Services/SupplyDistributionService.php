@@ -79,7 +79,11 @@ class SupplyDistributionService
                 'distribution_date' => $distributionDate,
                 'distributed_by' => $distributedBy
             ];
-            $this->activityLogger->logSupplyDistributionCreate($distributionId, $distributionData);
+            $this->activityLogger->log(
+                'supply_distribution_create',
+                "신규 지급 등록 (ID: {$distributionId})",
+                $distributionData
+            );
 
             $this->db->commit();
 
@@ -187,7 +191,11 @@ class SupplyDistributionService
             $this->stockService->updateStockFromCancelDistribution($itemId, $quantity);
 
             // 감사 로그 기록
-            $this->activityLogger->logSupplyDistributionCancel($distributionId, $distribution->toArray(), $reason);
+            $this->activityLogger->log(
+                'supply_distribution_cancel',
+                "지급 취소 (ID: {$distributionId})",
+                ['distribution' => $distribution->toArray(), 'reason' => $reason]
+            );
 
             $this->db->commit();
 
@@ -254,8 +262,12 @@ class SupplyDistributionService
 
             // 감사 로그 기록
             $oldData = $distribution->toArray();
-            $newData = array_merge($oldData, $updateData);
-            $this->activityLogger->logSupplyDistributionUpdate($distributionId, $oldData, $newData);
+            $newData = array_merge($oldData, $data);
+            $this->activityLogger->log(
+                'supply_distribution_update',
+                "지급 정보 수정 (ID: {$distributionId})",
+                ['old' => $oldData, 'new' => $newData]
+            );
 
             $this->db->commit();
 
