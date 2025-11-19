@@ -279,7 +279,7 @@ class SupplyDistributionService
                 'id' => $item['id'],
                 'item_code' => $item['item_code'],
                 'item_name' => $item['item_name'],
-                'category_name' => $item['category_name'],
+                'category_name' => $item['category_name'] ?? null,
                 'unit' => $item['unit'],
                 'current_stock' => $item['current_stock']
             ];
