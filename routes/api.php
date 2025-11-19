@@ -273,6 +273,7 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->put('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'update'])->name('api.supply.purchases.update')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
     $router->delete('/supply/purchases/{id}', [SupplyPurchaseApiController::class, 'destroy'])->name('api.supply.purchases.destroy')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
     $router->post('/supply/purchases/{id}/mark-received', [SupplyPurchaseApiController::class, 'markReceived'])->name('api.supply.purchases.mark-received')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
+    $router->post('/supply/purchases/bulk-receive', [SupplyPurchaseApiController::class, 'bulkReceive'])->name('api.supply.purchases.bulk-receive')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
 
     // 지급 관리 API
     $router->get('/supply/distributions/available-items', [SupplyDistributionApiController::class, 'getAvailableItems'])->name('api.supply.distributions.available-items')->middleware('auth')->middleware('permission', 'supply.distribution.view');

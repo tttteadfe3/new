@@ -77,7 +77,7 @@ class SupplyPurchasesIndexPage extends BasePage {
             const queryString = new URLSearchParams(params).toString();
             const result = await this.apiCall(`${this.config.API_URL}?${queryString}`);
 
-            this.dataTable.clear().rows.add(result.data || []).draw();
+            this.dataTable.clear().rows.add(result.data.purchases || []).draw();
         } catch (error) {
             console.error('Error loading purchases:', error);
             Toast.error('구매 내역을 불러오는 중 오류가 발생했습니다.');
@@ -115,7 +115,7 @@ class SupplyPurchasesIndexPage extends BasePage {
             responsive: true,
             pageLength: 25,
             order: [[0, 'desc']],
-            language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
+            language: { url: '/assets/libs/datatables.net/i18n/Korean.json' },
             searching: false
         });
     }
