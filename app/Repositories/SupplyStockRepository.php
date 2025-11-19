@@ -258,7 +258,7 @@ class SupplyStockRepository
     public function getStockList(array $filters = []): array
     {
         $queryParts = [
-            'sql' => "SELECT ss.id, si.item_code, si.item_name, COALESCE(sc.category_name, '미분류') as category_name, si.unit, ss.current_stock, si.safety_stock, ss.last_received_at
+            'sql' => "SELECT ss.id, si.item_code, si.item_name, COALESCE(sc.category_name, '미분류') as category_name, si.unit, ss.current_stock, ss.last_received_at
                       FROM supply_stocks ss
                       JOIN supply_items si ON ss.item_id = si.id
                       LEFT JOIN supply_categories sc ON si.category_id = sc.id",
@@ -274,13 +274,10 @@ class SupplyStockRepository
         if (!empty($filters['stock_status'])) {
             switch ($filters['stock_status']) {
                 case 'in_stock':
-                    $queryParts['where'][] = "ss.current_stock > si.safety_stock";
+                    $queryParts['where'][] = "ss.current_stock > 0";
                     break;
                 case 'out_of_stock':
                     $queryParts['where'][] = "ss.current_stock = 0";
-                    break;
-                case 'low_stock':
-                    $queryParts['where'][] = "ss.current_stock > 0 AND ss.current_stock <= si.safety_stock";
                     break;
             }
         }

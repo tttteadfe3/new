@@ -80,25 +80,6 @@ class SupplyStocksPage extends BasePage {
                     data: 'current_stock',
                     render: (data) => data ? parseInt(data).toLocaleString() : '0'
                 },
-                { 
-                    data: 'safety_stock',
-                    render: (data) => data ? parseInt(data).toLocaleString() : '0'
-                },
-                { 
-                    data: 'stock_status',
-                    render: (data, type, row) => {
-                        const current = parseInt(row.current_stock) || 0;
-                        const safety = parseInt(row.safety_stock) || 0;
-                        
-                        if (current === 0) {
-                            return '<span class="badge bg-danger">품절</span>';
-                        } else if (current < safety) {
-                            return '<span class="badge bg-warning">부족</span>';
-                        } else {
-                            return '<span class="badge bg-success">충분</span>';
-                        }
-                    }
-                },
                 { data: 'last_received_at' },
                 {
                     data: null,
