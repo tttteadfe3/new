@@ -22,7 +22,7 @@ class SupplyDistributionsIndexPage extends BasePage {
         this.dataTable = $('#distributions-table').DataTable({
             ajax: {
                 url: this.config.API_URL,
-                dataSrc: 'distributions'
+                dataSrc: 'data.distributions'
             },
             columns: [
                 { data: 'distribution_date' },
