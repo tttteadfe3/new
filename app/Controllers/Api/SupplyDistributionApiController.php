@@ -215,23 +215,6 @@ class SupplyDistributionApiController extends BaseApiController
         }
     }
 
-    /**
-     * 부서별 직원 목록을 조회합니다.
-     */
-    public function getEmployeesByDepartment(int $departmentId): void
-    {
-        try {
-            $employees = $this->supplyDistributionService->getEmployeesByDepartment($departmentId);
-            
-            $this->apiSuccess([
-                'department_id' => $departmentId,
-                'employees' => $employees,
-                'total' => count($employees)
-            ]);
-        } catch (Exception $e) {
-            $this->handleException($e);
-        }
-    }
 
     /**
      * 부서 전체 직원에게 지급합니다.
@@ -472,23 +455,6 @@ class SupplyDistributionApiController extends BaseApiController
             $this->apiSuccess([
                 'valid' => true,
                 'message' => '유효한 지급 데이터입니다.'
-            ]);
-        } catch (Exception $e) {
-            $this->handleException($e);
-        }
-    }
-
-    /**
-     * 모든 부서 목록을 조회합니다.
-     */
-    public function getDepartments(): void
-    {
-        try {
-            $departments = $this->supplyDistributionService->getAllDepartments();
-            
-            $this->apiSuccess([
-                'departments' => $departments,
-                'total' => count($departments)
             ]);
         } catch (Exception $e) {
             $this->handleException($e);
