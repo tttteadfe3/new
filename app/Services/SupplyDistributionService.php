@@ -298,18 +298,6 @@ class SupplyDistributionService
         }, $items);
     }
 
-    /**
-     * 부서별 직원 목록을 조회합니다.
-     */
-    public function getEmployeesByDepartment(int $departmentId): array
-    {
-        $sql = "SELECT id, name, position, email 
-                FROM hr_employees 
-                WHERE department_id = :department_id AND is_active = 1
-                ORDER BY name";
-        
-        return $this->db->query($sql, [':department_id' => $departmentId]);
-    }
 
     /**
      * 지급 내역을 조회합니다.
@@ -431,12 +419,4 @@ class SupplyDistributionService
         return $this->distributionRepository->findById($id);
     }
 
-    /**
-     * 모든 부서 목록을 조회합니다.
-     */
-    public function getAllDepartments(): array
-    {
-        $sql = "SELECT id, name, code FROM hr_departments WHERE is_active = 1 ORDER BY name";
-        return $this->db->query($sql);
-    }
 }
