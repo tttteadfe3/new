@@ -80,7 +80,6 @@ class SupplyStocksPage extends BasePage {
                     data: 'current_stock',
                     render: (data) => data ? parseInt(data).toLocaleString() : '0'
                 },
-                { data: 'last_received_at' },
                 {
                     data: null,
                     orderable: false,
