@@ -253,6 +253,50 @@ class SupplyStockRepository
     }
 
     /**
+     * 재고 목록을 필터링하여 조회합니다.
+     */
+    public function getStockList(array $filters = []): array
+    {
+        $queryParts = [
+            'sql' => "SELECT ss.id, si.item_code, si.item_name, COALESCE(sc.category_name, '미분류') as category_name, si.unit, ss.current_stock
+                      FROM supply_stocks ss
+                      JOIN supply_items si ON ss.item_id = si.id
+                      LEFT JOIN supply_categories sc ON si.category_id = sc.id",
+            'params' => [],
+            'where' => []
+        ];
+
+        if (!empty($filters['category_id'])) {
+            $queryParts['where'][] = "si.category_id = :category_id";
+            $queryParts['params'][':category_id'] = $filters['category_id'];
+        }
+
+        if (!empty($filters['stock_status'])) {
+            switch ($filters['stock_status']) {
+                case 'in_stock':
+                    $queryParts['where'][] = "ss.current_stock > 0";
+                    break;
+                case 'out_of_stock':
+                    $queryParts['where'][] = "ss.current_stock = 0";
+                    break;
+            }
+        }
+
+        if (!empty($filters['search'])) {
+            $queryParts['where'][] = "(si.item_name LIKE :search OR si.item_code LIKE :search)";
+            $queryParts['params'][':search'] = '%' . $filters['search'] . '%';
+        }
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
+
+        $queryParts['sql'] .= " ORDER BY sc.category_name ASC, si.item_name ASC";
+
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
+    }
+
+    /**
      * 품목별 재고 초기화를 합니다.
      */
     public function initializeStock(int $itemId): bool
