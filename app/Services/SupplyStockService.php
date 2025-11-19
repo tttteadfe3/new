@@ -239,4 +239,12 @@ class SupplyStockService
 
         return $this->stockRepository->initializeStock($itemId);
     }
+
+    /**
+     * 재고 상세 정보를 조회합니다.
+     */
+    public function getStockDetails(int $stockId): ?array
+    {
+        return $this->stockRepository->getStockDetails($stockId);
+    }
 }

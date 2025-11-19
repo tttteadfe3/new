@@ -288,6 +288,7 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
 
     // 재고 현황 API
     $router->get('/supply/stocks', [SupplyStockApiController::class, 'index'])->name('api.supply.stocks.index')->middleware('auth')->middleware('permission', 'supply.stock.view');
+    $router->get('/supply/stocks/{id}', [SupplyStockApiController::class, 'show'])->name('api.supply.stocks.show')->middleware('auth')->middleware('permission', 'supply.stock.view');
 
     // 보고서 API
     $router->get('/supply/reports/distribution', [SupplyReportApiController::class, 'getDistributionReport'])->name('api.supply.reports.distribution')->middleware('auth')->middleware('permission', 'supply.report.view');
