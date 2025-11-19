@@ -1,7 +1,7 @@
 class SupplyDistributionsIndexPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/api/supply/distributions'
+            API_URL: '/supply/distributions'
         });
         
         this.dataTable = null;
