@@ -12,6 +12,7 @@ class SupplyPurchasesIndexPage extends BasePage {
         this.receiveModal = null;
         this.deleteModal = null;
         this.purchaseModal = null;
+        this.viewModal = null;
         this.dataTable = null;
         this.items = [];
     }
@@ -20,6 +21,7 @@ class SupplyPurchasesIndexPage extends BasePage {
         $(document).on('click', '.receive-purchase-btn', (e) => this.handleReceiveClick(e));
         $(document).on('click', '.delete-purchase-btn', (e) => this.handleDeleteClick(e));
         $(document).on('click', '.edit-purchase-btn', (e) => this.handleEditClick(e));
+        $(document).on('click', '.view-purchase-btn', (e) => this.handleViewClick(e));
         $('#add-purchase-btn').on('click', () => this.handleCreateClick());
         $('#confirm-receive-purchase-btn').on('click', () => this.confirmReception());
         $('#confirm-delete-purchase-btn').on('click', () => this.confirmDeletion());
@@ -53,6 +55,7 @@ class SupplyPurchasesIndexPage extends BasePage {
         this.receiveModal = new bootstrap.Modal(document.getElementById('receivePurchaseModal'));
         this.deleteModal = new bootstrap.Modal(document.getElementById('deletePurchaseModal'));
         this.purchaseModal = new bootstrap.Modal(document.getElementById('purchaseModal'));
+        this.viewModal = new bootstrap.Modal(document.getElementById('viewPurchaseModal'));
     }
 
     async loadStats() {
@@ -77,7 +80,7 @@ class SupplyPurchasesIndexPage extends BasePage {
             const queryString = new URLSearchParams(params).toString();
             const result = await this.apiCall(`${this.config.API_URL}?${queryString}`);
 
-            this.dataTable.clear().rows.add(result.data || []).draw();
+            this.dataTable.clear().rows.add(result.data.purchases || []).draw();
         } catch (error) {
             console.error('Error loading purchases:', error);
             Toast.error('구매 내역을 불러오는 중 오류가 발생했습니다.');
@@ -107,7 +110,7 @@ class SupplyPurchasesIndexPage extends BasePage {
                             <li><button class="dropdown-item receive-purchase-btn" data-id="${d}" data-name="${this.escapeHtml(r.item_name)}"><i class="ri-inbox-fill align-bottom me-2 text-muted"></i> 입고 처리</button></li>
                             <li><button class="dropdown-item edit-purchase-btn" data-id="${d}"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 수정</button></li>
                             <li><button class="dropdown-item delete-purchase-btn" data-id="${d}" data-name="${this.escapeHtml(r.item_name)}"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 삭제</button></li>
-                            ` : `<li><a class="dropdown-item" href="/supply/purchases/show?id=${d}"><i class="ri-eye-fill align-bottom me-2 text-muted"></i> 상세보기</a></li>`}
+                            ` : `<li><button class="dropdown-item view-purchase-btn" data-id="${d}"><i class="ri-eye-fill align-bottom me-2 text-muted"></i> 상세보기</button></li>`}
                         </ul>
                     </div>`
                 }
@@ -296,6 +299,71 @@ class SupplyPurchasesIndexPage extends BasePage {
         } else {
             Toast.error(defaultMessage);
         }
+    }
+
+    async handleViewClick(e) {
+        const purchaseId = $(e.currentTarget).data('id');
+        const modalBody = $('#viewPurchaseModalBody');
+        modalBody.html('<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+        this.viewModal.show();
+
+        try {
+            const result = await this.apiCall(`${this.config.API_URL}/${purchaseId}`);
+            this.renderPurchaseDetails(result.data);
+        } catch (error) {
+            this.handleApiError(error, '상세 정보를 불러오는 중 오류가 발생했습니다.');
+            modalBody.html('<p class="text-danger">정보를 불러오는데 실패했습니다.</p>');
+        }
+    }
+
+    renderPurchaseDetails(purchase) {
+        const detailsHtml = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>기본 정보</h5>
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr><th>품목명</th><td>${this.escapeHtml(purchase.item_name)} (${this.escapeHtml(purchase.item_code)})</td></tr>
+                            <tr><th>구매일</th><td>${purchase.purchase_date}</td></tr>
+                            <tr><th>공급업체</th><td>${this.escapeHtml(purchase.supplier || '-')}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>금액 정보</h5>
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr><th>수량</th><td>${Number(purchase.quantity).toLocaleString()} ${this.escapeHtml(purchase.unit)}</td></tr>
+                            <tr><th>단가</th><td>₩${Number(purchase.unit_price).toLocaleString()}</td></tr>
+                            <tr><th>총액</th><td><strong>₩${(Number(purchase.quantity) * Number(purchase.unit_price)).toLocaleString()}</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h5>입고 정보</h5>
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th>상태</th>
+                                <td>${purchase.is_received ? `<span class="badge bg-success">입고 완료</span>` : `<span class="badge bg-warning">입고 대기</span>`}</td>
+                            </tr>
+                            ${purchase.is_received ? `
+                            <tr><th>입고일</th><td>${purchase.received_date}</td></tr>
+                            ` : ''}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h5>비고</h5>
+                    <p>${this.escapeHtml(purchase.notes || '<em>비고 없음</em>')}</p>
+                </div>
+            </div>
+        `;
+        $('#viewPurchaseModalBody').html(detailsHtml);
     }
 }
 
