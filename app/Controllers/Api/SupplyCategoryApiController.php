@@ -37,15 +37,23 @@ class SupplyCategoryApiController extends BaseApiController
             $hierarchical = $this->request->input('hierarchical', false);
             $active = $this->request->input('active', false);
             
-            if ($hierarchical) {
-                $categories = $this->supplyCategoryService->getHierarchicalCategories();
-            } elseif ($active) {
-                $categories = $this->supplyCategoryService->getActiveCategories();
-            } else {
-                $categories = $this->supplyCategoryService->getAllCategories();
-            }
-            
-            $this->apiSuccess($categories);
+if ($hierarchical) {
+    // getHierarchicalCategories()는 이미 배열을 반환하므로 그대로 사용
+    $categories = $this->supplyCategoryService->getHierarchicalCategories();
+    $this->apiSuccess($categories);
+} elseif ($active) {
+    $categories = $this->supplyCategoryService->getActiveCategories();
+    $categoriesArray = array_map(function($category) {
+        return $category->toArray();
+    }, $categories);
+    $this->apiSuccess($categoriesArray);
+} else {
+    $categories = $this->supplyCategoryService->getAllCategories();
+    $categoriesArray = array_map(function($category) {
+        return $category->toArray();
+    }, $categories);
+    $this->apiSuccess($categoriesArray);
+}
         } catch (Exception $e) {
             $this->handleException($e);
         }

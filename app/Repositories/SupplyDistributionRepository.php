@@ -169,7 +169,7 @@ class SupplyDistributionRepository
     {
         $sql = "SELECT 
                     COUNT(*) as total_distributions,
-                    SUM(quantity) as total_quantity,
+                    COALESCE(SUM(quantity), 0) as total_quantity,
                     COUNT(DISTINCT employee_id) as unique_employees,
                     COUNT(DISTINCT department_id) as unique_departments
                 FROM supply_distributions 

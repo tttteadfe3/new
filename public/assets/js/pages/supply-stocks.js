@@ -24,10 +24,25 @@ class SupplyStocksPage extends BasePage {
             this.loadStocks();
         });
 
-        $(document).on('click', '.view-detail-btn', (e) => {
-            const itemId = $(e.currentTarget).data('id');
-            // 상세 정보 로드 및 모달 표시
-            $('#stockDetailModal').modal('show');
+        $(document).on('click', '.view-detail-btn', async (e) => {
+            const stockId = $(e.currentTarget).data('id');
+            const modal = $('#stockDetailModal');
+            const content = modal.find('#stock-detail-content');
+
+            content.html('<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+            modal.modal('show');
+
+            try {
+                const result = await this.apiCall(`${this.config.API_URL}/${stockId}`);
+                if (result.success) {
+                    this.renderStockDetails(result.data);
+                } else {
+                    content.html(`<div class="alert alert-danger">${result.message}</div>`);
+                }
+            } catch (error) {
+                console.error('Error loading stock details:', error);
+                content.html('<div class="alert alert-danger">상세 정보를 불러오는 중 오류가 발생했습니다.</div>');
+            }
         });
     }
 
@@ -80,26 +95,6 @@ class SupplyStocksPage extends BasePage {
                     data: 'current_stock',
                     render: (data) => data ? parseInt(data).toLocaleString() : '0'
                 },
-                { 
-                    data: 'safety_stock',
-                    render: (data) => data ? parseInt(data).toLocaleString() : '0'
-                },
-                { 
-                    data: 'stock_status',
-                    render: (data, type, row) => {
-                        const current = parseInt(row.current_stock) || 0;
-                        const safety = parseInt(row.safety_stock) || 0;
-                        
-                        if (current === 0) {
-                            return '<span class="badge bg-danger">품절</span>';
-                        } else if (current < safety) {
-                            return '<span class="badge bg-warning">부족</span>';
-                        } else {
-                            return '<span class="badge bg-success">충분</span>';
-                        }
-                    }
-                },
-                { data: 'last_received_at' },
                 {
                     data: null,
                     orderable: false,
@@ -128,6 +123,67 @@ class SupplyStocksPage extends BasePage {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    }
+
+    renderStockDetails(data) {
+        const { stock, history } = data;
+        const content = $('#stock-detail-content');
+
+        let detailsHtml = `
+            <h5>기본 정보</h5>
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th>품목명</th>
+                        <td>${stock.item_name} (${stock.item_code})</td>
+                        <th>분류</th>
+                        <td>${stock.category_name || '미지정'}</td>
+                    </tr>
+                    <tr>
+                        <th>현재 재고</th>
+                        <td>${parseInt(stock.current_stock).toLocaleString()} ${stock.unit}</td>
+                        <th>단위</th>
+                        <td>${stock.unit}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <h5 class="mt-4">재고 변동 이력</h5>
+        `;
+
+        if (history && history.length > 0) {
+            detailsHtml += `
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>일자</th>
+                            <th>유형</th>
+                            <th>수량</th>
+                            <th>상세 내용</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            history.forEach(item => {
+                const badgeClass = item.type === 'purchase' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger';
+                const typeText = item.type === 'purchase' ? '입고' : '출고';
+                detailsHtml += `
+                    <tr>
+                        <td>${item.date}</td>
+                        <td><span class="badge ${badgeClass}">${typeText}</span></td>
+                        <td>${parseInt(item.quantity).toLocaleString()}</td>
+                        <td>${item.description}</td>
+                    </tr>
+                `;
+            });
+            detailsHtml += `
+                    </tbody>
+                </table>
+            `;
+        } else {
+            detailsHtml += '<p>재고 변동 이력이 없습니다.</p>';
+        }
+
+        content.html(detailsHtml);
     }
 }
 

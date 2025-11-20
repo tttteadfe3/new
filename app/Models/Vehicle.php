@@ -5,18 +5,22 @@ namespace App\Models;
 class Vehicle extends BaseModel
 {
     protected array $fillable = [
-        'vehicle_number',
+        'vin',
+        'license_plate',
+        'make',
         'model',
         'year',
         'department_id',
-        'status_code'
+        'status',
     ];
 
     protected array $rules = [
-        'vehicle_number' => 'required|string|max:255|unique:vm_vehicles,vehicle_number',
-        'model' => 'required|string|max:255',
-        'year' => 'nullable|integer|min:1900',
-        'department_id' => 'nullable|integer|exists:hr_departments,id',
-        'status_code' => 'required|string|in:NORMAL,REPAIRING,DISPOSED'
+        'vin' => 'required|string|max:17',
+        'license_plate' => 'required|string|max:20',
+        'make' => 'string|max:50',
+        'model' => 'string|max:50',
+        'year' => 'integer',
+        'department_id' => 'integer',
+        'status' => 'string|max:20',
     ];
 }

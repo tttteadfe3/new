@@ -542,6 +542,156 @@ GROUP BY
 
 -- --------------------------------------------------------
 
+--
+-- 차량 유지관리 시스템 테이블
+--
+-- --------------------------------------------------------
+
+--
+-- 테이블 구조 `vehicles`
+--
+CREATE TABLE `vehicles` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `vin` VARCHAR(17) NOT NULL UNIQUE COMMENT '차대번호',
+    `license_plate` VARCHAR(20) NOT NULL UNIQUE COMMENT '차량번호',
+    `make` VARCHAR(50) COMMENT '제조사',
+    `model` VARCHAR(50) COMMENT '모델',
+    `year` INT COMMENT '연식',
+    `department_id` INT COMMENT '배정부서 ID',
+    `status` VARCHAR(20) DEFAULT 'active' COMMENT '차량 상태 (e.g., active, in_repair, retired)',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`department_id`) REFERENCES `hr_departments`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='차량 기본 정보';
+
+--
+-- 테이블 구조 `vehicle_breakdowns`
+--
+CREATE TABLE `vehicle_breakdowns` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `vehicle_id` INT NOT NULL,
+    `reporter_id` INT NOT NULL COMMENT '신고자 (운전자) ID',
+    `breakdown_item` VARCHAR(100) NOT NULL COMMENT '고장 항목',
+    `description` TEXT COMMENT '고장 내용',
+    `mileage` INT COMMENT '주행거리',
+    `status` VARCHAR(20) DEFAULT 'reported' COMMENT '고장 처리 상태 (e.g., reported, confirmed, in_progress, resolved, approved)',
+    `reported_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '고장 등록일시',
+    `confirmed_at` TIMESTAMP NULL COMMENT '중간관리자 확인일시',
+    `resolved_at` TIMESTAMP NULL COMMENT '수리 완료일시',
+    `approved_at` TIMESTAMP NULL COMMENT '최종 승인일시',
+    FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles`(`id`),
+    FOREIGN KEY (`reporter_id`) REFERENCES `hr_employees`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='차량 고장 처리 관리';
+
+--
+-- 테이블 구조 `vehicle_repairs`
+--
+CREATE TABLE `vehicle_repairs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `breakdown_id` INT NOT NULL,
+    `repair_type` VARCHAR(50) COMMENT '조치 유형 (e.g., internal, external)',
+    `repair_item` VARCHAR(100) COMMENT '수리 항목',
+    `parts_used` TEXT COMMENT '사용 부품',
+    `cost` DECIMAL(10, 2) COMMENT '비용',
+    `repairer_id` INT COMMENT '수리자 ID',
+    `completed_at` TIMESTAMP NULL COMMENT '수리 완료일',
+    FOREIGN KEY (`breakdown_id`) REFERENCES `vehicle_breakdowns`(`id`),
+    FOREIGN KEY (`repairer_id`) REFERENCES `hr_employees`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='차량 수리 내역';
+
+--
+-- 테이블 구조 `vehicle_self_maintenances`
+--
+CREATE TABLE `vehicle_self_maintenances` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `vehicle_id` INT NOT NULL,
+    `driver_id` INT NOT NULL COMMENT '운전자 ID',
+    `maintenance_item` VARCHAR(100) NOT NULL COMMENT '정비 항목',
+    `description` TEXT COMMENT '정비 내용',
+    `parts_used` TEXT COMMENT '사용 부품',
+    `maintenance_date` DATE NOT NULL COMMENT '정비일',
+    FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles`(`id`),
+    FOREIGN KEY (`driver_id`) REFERENCES `hr_employees`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='운전자 자체 정비 내역';
+
+--
+-- 테이블 구조 `vehicle_consumables`
+--
+CREATE TABLE `vehicle_consumables` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(100) NOT NULL COMMENT '소모품명',
+    `unit` VARCHAR(20) COMMENT '단위',
+    `unit_price` DECIMAL(10, 2) COMMENT '단가'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='소모품 정보';
+
+--
+-- 테이블 구조 `vehicle_consumable_logs`
+--
+CREATE TABLE `vehicle_consumable_logs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `vehicle_id` INT NOT NULL,
+    `consumable_id` INT NOT NULL,
+    `quantity` INT NOT NULL COMMENT '사용 수량',
+    `replacement_date` DATE NOT NULL COMMENT '교체일',
+    `replacer_id` INT COMMENT '교체자 ID',
+    FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles`(`id`),
+    FOREIGN KEY (`consumable_id`) REFERENCES `vehicle_consumables`(`id`),
+    FOREIGN KEY (`replacer_id`) REFERENCES `hr_employees`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='소모품 교체 이력';
+
+--
+-- 테이블 구조 `vehicle_insurances`
+--
+CREATE TABLE `vehicle_insurances` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `vehicle_id` INT NOT NULL,
+    `insurer` VARCHAR(100) COMMENT '보험사',
+    `policy_number` VARCHAR(50) UNIQUE COMMENT '보험증권번호',
+    `start_date` DATE NOT NULL COMMENT '보험 시작일',
+    `end_date` DATE NOT NULL COMMENT '보험 종료일',
+    `premium` DECIMAL(10, 2) COMMENT '보험료',
+    `document_path` VARCHAR(255) COMMENT '증빙 파일 경로',
+    FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='차량 보험 정보';
+
+--
+-- 테이블 구조 `vehicle_taxes`
+--
+CREATE TABLE `vehicle_taxes` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `vehicle_id` INT NOT NULL,
+    `tax_type` VARCHAR(50) DEFAULT 'automobile_tax' COMMENT '세금 종류',
+    `payment_date` DATE NOT NULL COMMENT '납부일',
+    `amount` DECIMAL(10, 2) NOT NULL COMMENT '금액',
+    `year` INT NOT NULL COMMENT '귀속 연도',
+    FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='자동차세 납부 내역';
+
+--
+-- 테이블 구조 `vehicle_inspections`
+--
+CREATE TABLE `vehicle_inspections` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `vehicle_id` INT NOT NULL,
+    `inspection_date` DATE NOT NULL COMMENT '검사일',
+    `expiry_date` DATE NOT NULL COMMENT '만료일',
+    `result` VARCHAR(50) COMMENT '검사 결과 (e.g., pass, fail)',
+    `inspector` VARCHAR(100) COMMENT '검사소',
+    FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='차량 정기검사 관리';
+
+--
+-- 테이블 구조 `vehicle_documents`
+--
+CREATE TABLE `vehicle_documents` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `vehicle_id` INT NOT NULL,
+    `document_type` VARCHAR(50) NOT NULL COMMENT '문서 종류 (e.g., registration, insurance_policy)',
+    `file_path` VARCHAR(255) NOT NULL COMMENT '파일 경로',
+    `uploaded_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='차량 관련 문서';
+
 COMMIT;
 -- Vehicle Maintenance System Schema
 -- All tables are prefixed with 'vm_' to avoid conflicts and group them logically.

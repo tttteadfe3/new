@@ -199,6 +199,7 @@ class SupplyPlansIndexPage extends BasePage {
             this.loadPlans();
             this.loadBudgetSummary();
         } catch (error) {
+            this.deletePlanModal.hide();
             this.handleApiError(error);
         } finally {
             this.resetButtonLoading('#confirm-delete-plan-btn', '삭제');
@@ -343,6 +344,12 @@ class SupplyPlansIndexPage extends BasePage {
                 "'": '&#39;'
             }[match];
         });
+    }
+
+    handleApiError(error) {
+        const message = error.message || 'An unexpected error occurred.';
+        Toast.error(message);
+        console.error('API Error:', error);
     }
 }
 
