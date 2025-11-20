@@ -4,14 +4,17 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\SupplyCategory;
+use App\Services\DataScopeService;
 
 class SupplyCategoryRepository
 {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, DataScopeService $dataScopeService)
     {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
@@ -20,7 +23,8 @@ class SupplyCategoryRepository
     public function findAll(): array
     {
         $sql = "SELECT * FROM supply_categories ORDER BY level ASC, display_order ASC, category_name ASC";
-        return $this->db->fetchAllAs(SupplyCategory::class, $sql);
+        $results = $this->db->fetchAll($sql);
+        return array_map(fn($row) => SupplyCategory::make($row), $results);
     }
 
     /**
@@ -29,8 +33,8 @@ class SupplyCategoryRepository
     public function findById(int $id): ?SupplyCategory
     {
         $sql = "SELECT * FROM supply_categories WHERE id = :id";
-        $result = $this->db->fetchOneAs(SupplyCategory::class, $sql, [':id' => $id]);
-        return $result ?: null;
+        $row = $this->db->fetchOne($sql, [':id' => $id]);
+        return $row ? SupplyCategory::make($row) : null;
     }
 
     /**
@@ -39,7 +43,8 @@ class SupplyCategoryRepository
     public function findByLevel(int $level): array
     {
         $sql = "SELECT * FROM supply_categories WHERE level = :level ORDER BY display_order ASC, category_name ASC";
-        return $this->db->fetchAllAs(SupplyCategory::class, $sql, [':level' => $level]);
+        $results = $this->db->fetchAll($sql, [':level' => $level]);
+        return array_map(fn($row) => SupplyCategory::make($row), $results);
     }
 
     /**
@@ -48,7 +53,8 @@ class SupplyCategoryRepository
     public function findActiveCategories(): array
     {
         $sql = "SELECT * FROM supply_categories WHERE is_active = 1 ORDER BY level ASC, display_order ASC, category_name ASC";
-        return $this->db->fetchAllAs(SupplyCategory::class, $sql);
+        $results = $this->db->fetchAll($sql);
+        return array_map(fn($row) => SupplyCategory::make($row), $results);
     }
 
     /**
@@ -57,7 +63,8 @@ class SupplyCategoryRepository
     public function findByParentId(int $parentId): array
     {
         $sql = "SELECT * FROM supply_categories WHERE parent_id = :parent_id ORDER BY display_order ASC, category_name ASC";
-        return $this->db->fetchAllAs(SupplyCategory::class, $sql, [':parent_id' => $parentId]);
+        $results = $this->db->fetchAll($sql, [':parent_id' => $parentId]);
+        return array_map(fn($row) => SupplyCategory::make($row), $results);
     }
 
     /**
@@ -86,7 +93,6 @@ class SupplyCategoryRepository
      */
     public function update(int $id, array $data): bool
     {
-        // 동적으로 업데이트할 필드 구성
         $allowedFields = ['category_name', 'is_active', 'display_order'];
         $updateFields = [];
         $params = [':id' => $id];
@@ -99,12 +105,10 @@ class SupplyCategoryRepository
         }
         
         if (empty($updateFields)) {
-            return false; // 업데이트할 필드가 없음
+            return false;
         }
         
-        $sql = "UPDATE supply_categories 
-                SET " . implode(', ', $updateFields) . " 
-                WHERE id = :id";
+        $sql = "UPDATE supply_categories SET " . implode(', ', $updateFields) . " WHERE id = :id";
 
         return $this->db->execute($sql, $params) > 0;
     }
@@ -114,15 +118,7 @@ class SupplyCategoryRepository
      */
     public function delete(int $id): bool
     {
-        // 연관된 데이터가 있는지 확인
-        if ($this->hasAssociatedItems($id)) {
-            return false;
-        }
-
-        // 하위 분류가 있는지 확인
-        $childrenSql = "SELECT COUNT(*) as count FROM supply_categories WHERE parent_id = :id";
-        $childrenResult = $this->db->fetchOne($childrenSql, [':id' => $id]);
-        if ($childrenResult['count'] > 0) {
+        if ($this->hasAssociatedItems($id) || $this->hasChildren($id)) {
             return false;
         }
 
@@ -137,6 +133,16 @@ class SupplyCategoryRepository
     {
         $sql = "SELECT COUNT(*) as count FROM supply_items WHERE category_id = :category_id";
         $result = $this->db->fetchOne($sql, [':category_id' => $categoryId]);
+        return $result['count'] > 0;
+    }
+
+    /**
+     * 하위 분류가 있는지 확인합니다.
+     */
+    public function hasChildren(int $categoryId): bool
+    {
+        $sql = "SELECT COUNT(*) as count FROM supply_categories WHERE parent_id = :id";
+        $result = $this->db->fetchOne($sql, [':id' => $categoryId]);
         return $result['count'] > 0;
     }
 
@@ -167,6 +173,6 @@ class SupplyCategoryRepository
                 LEFT JOIN supply_categories c2 ON c1.parent_id = c2.id
                 ORDER BY c1.level ASC, c1.display_order ASC, c1.category_name ASC";
         
-        return $this->db->query($sql);
+        return $this->db->fetchAll($sql);
     }
 }

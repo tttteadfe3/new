@@ -50,9 +50,9 @@ class SupplyItem extends BaseModel
     /**
      * 지급품 코드의 고유성을 검증합니다.
      */
-    public function validate(): bool
+    public function validate(bool $isUpdate = false): bool
     {
-        $isValid = parent::validate();
+        $isValid = parent::validate($isUpdate);
 
         // 추가 비즈니스 규칙은 리포지토리에서 구현됩니다
         // (예: 품목 코드 중복 검사)

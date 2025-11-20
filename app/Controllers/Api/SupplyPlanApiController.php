@@ -34,7 +34,7 @@ class SupplyPlanApiController extends BaseApiController
     public function index(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
             
             $plans = $this->supplyPlanService->getAnnualPlans($year);
@@ -61,7 +61,10 @@ class SupplyPlanApiController extends BaseApiController
                 return;
             }
 
-            $this->apiSuccess($plan->toArray());
+            $planData = $plan->toArray();
+            $planData['id'] = $id;
+
+            $this->apiSuccess($planData);
         } catch (Exception $e) {
             $this->handleException($e);
         }
@@ -83,6 +86,12 @@ class SupplyPlanApiController extends BaseApiController
 
             // 데이터 타입 변환
             $year = (int) $data['year'];
+            $user = $this->authService->user();
+            if (!$user) {
+                $this->apiUnauthorized('로그인이 필요합니다.');
+                return;
+            }
+            $data['created_by'] = $user['id'];
             $data['item_id'] = (int) $data['item_id'];
             $data['planned_quantity'] = (int) $data['planned_quantity'];
             $data['unit_price'] = (float) $data['unit_price'];
@@ -206,7 +215,7 @@ class SupplyPlanApiController extends BaseApiController
     public function exportExcel(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
             
             $filePath = $this->supplyPlanService->exportPlansToExcel($year);
@@ -243,7 +252,7 @@ class SupplyPlanApiController extends BaseApiController
     public function getBudgetSummary(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
             
             $budgetSummary = $this->supplyPlanService->calculateBudgetSummary($year);
@@ -260,7 +269,7 @@ class SupplyPlanApiController extends BaseApiController
     public function getAvailableItems(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
             
             $availableItems = $this->supplyPlanService->getAvailableItemsForYear($year);
@@ -379,7 +388,7 @@ class SupplyPlanApiController extends BaseApiController
     public function getStatistics(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
+            $year = $this->request->input('year', date('Y'));
             $year = (int) $year;
             
             $plans = $this->supplyPlanService->getAnnualPlans($year);
@@ -429,9 +438,9 @@ class SupplyPlanApiController extends BaseApiController
     public function search(): void
     {
         try {
-            $year = $this->request->get('year', date('Y'));
-            $query = $this->request->get('q', '');
-            $categoryId = $this->request->get('category_id');
+            $year = $this->request->input('year', date('Y'));
+            $query = $this->request->input('q', '');
+            $categoryId = $this->request->input('category_id');
             
             $year = (int) $year;
 
@@ -469,7 +478,7 @@ class SupplyPlanApiController extends BaseApiController
     /**
      * 예외를 처리합니다.
      */
-    private function handleException(Exception $e): void
+    protected function handleException(Exception $e): void
     {
         if ($e instanceof \InvalidArgumentException) {
             $this->apiBadRequest($e->getMessage());

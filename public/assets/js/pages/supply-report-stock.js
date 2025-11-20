@@ -5,94 +5,68 @@
 class SupplyReportStockPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/reports'
+            API_URL: '/supply/reports'
         });
         
-        this.stockTable = null;
+        this.dataTable = null;
     }
 
     setupEventListeners() {
-        // Filter form submission
-        const filterForm = document.getElementById('filter-form');
-        if (filterForm) {
-            filterForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.applyFilters();
-            });
-        }
+        $('#filter-form').on('submit', (e) => {
+            e.preventDefault();
+            this.loadReportData();
+        });
 
-        // Reset filter button
-        const resetBtn = document.getElementById('reset-filter-btn');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                window.location.href = '/supply/reports/stock';
-            });
-        }
+        $('#reset-filter-btn').on('click', () => {
+            window.location.href = '/supply/reports/stock';
+        });
 
-        // Export button
-        const exportBtn = document.getElementById('export-report-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => this.exportReport());
-        }
+        $('#export-report-btn').on('click', () => this.exportReport());
     }
 
     loadInitialData() {
-        this.initDataTable();
+        this.initializeDataTable();
+        this.loadReportData();
     }
 
-    initDataTable() {
-        const tableElement = document.getElementById('stock-report-table');
-        if (tableElement && typeof DataTable !== 'undefined') {
-            this.stockTable = new DataTable('#stock-report-table', {
-                responsive: true,
-                pageLength: 25,
-                order: [[6, 'asc']], // Sort by current stock
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json'
-                }
-            });
+    async loadReportData() {
+        try {
+            const params = {
+                category_id: $('#category-filter').val(),
+                stock_status: $('#stock-status-filter').val()
+            };
+
+            const queryString = new URLSearchParams(params).toString();
+            const result = await this.apiCall(`${this.config.API_URL}/stock?${queryString}`);
+
+            this.dataTable.clear().rows.add(result.data || []).draw();
+        } catch (error) {
+            console.error('Error loading report data:', error);
+            Toast.error('보고서 데이터를 불러오는 중 오류가 발생했습니다.');
         }
     }
 
-    applyFilters() {
-        const form = document.getElementById('filter-form');
-        const formData = new FormData(form);
-        
-        // Handle stock status filter
-        const stockStatus = formData.get('stock_status');
-        if (stockStatus) {
-            formData.delete('stock_status');
-            if (stockStatus === 'low_stock') {
-                formData.set('low_stock', '1');
-            } else if (stockStatus === 'out_of_stock') {
-                formData.set('out_of_stock', '1');
-            }
-        }
-        
-        const params = new URLSearchParams(formData);
-        window.location.href = '/supply/reports/stock?' + params.toString();
+    initializeDataTable() {
+        this.dataTable = new DataTable('#stock-report-table', {
+            responsive: true,
+            pageLength: 25,
+            order: [[6, 'asc']], // Sort by current stock
+            language: {
+                url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
+            },
+            searching: false
+        });
     }
 
     exportReport() {
-        const form = document.getElementById('filter-form');
-        const formData = new FormData(form);
-        formData.append('report_type', 'stock');
+        const params = new URLSearchParams({
+            report_type: 'stock',
+            category_id: $('#category-filter').val(),
+            stock_status: $('#stock-status-filter').val()
+        });
         
-        // Handle stock status filter
-        const stockStatus = formData.get('stock_status');
-        if (stockStatus) {
-            formData.delete('stock_status');
-            if (stockStatus === 'low_stock') {
-                formData.set('low_stock', '1');
-            } else if (stockStatus === 'out_of_stock') {
-                formData.set('out_of_stock', '1');
-            }
-        }
-        
-        const params = new URLSearchParams(formData);
-        window.location.href = this.config.apiBaseUrl + '/export?' + params.toString();
+        window.location.href = `${this.config.API_URL}/export?${params.toString()}`;
     }
 }
 
-// 전역 인스턴스 생성
 new SupplyReportStockPage();

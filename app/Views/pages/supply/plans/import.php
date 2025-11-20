@@ -143,3 +143,7 @@
     </div>
 </div>
 <?php \App\Core\View::getInstance()->endSection(); ?>
+
+<?php \App\Core\View::getInstance()->startSection('scripts'); ?>
+<script src="/assets/js/pages/supply-plans-import.js"></script>
+<?php \App\Core\View::getInstance()->endSection(); ?>

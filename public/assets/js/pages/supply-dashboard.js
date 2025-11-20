@@ -5,7 +5,7 @@
 class SupplyDashboardPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/api/supply'
+            API_URL: '/supply'
         });
     }
 
@@ -37,7 +37,7 @@ class SupplyDashboardPage extends BasePage {
     async loadDashboardStats() {
         try {
             // 필요시 API를 통해 통계 데이터 로드
-            // const stats = await this.apiCall(`${this.config.apiBaseUrl}/dashboard-stats`);
+            // const stats = await this.apiCall(`${this.config.API_URL}/dashboard-stats`);
             // this.renderStats(stats);
         } catch (error) {
             console.error('Error loading dashboard stats:', error);

@@ -430,11 +430,6 @@ $router->get('/admin/users', [AdminController::class, 'users']); // 권한 체�
 
 // ✅ 필수 패턴 3: JavaScript 추가 (컨트롤러에서)
 \App\Core\View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/employees.js');
-
-// ✅ 레이아웃에서 섹션 출력
-<?= \App\Core\View::getInstance()->yieldSection('content') ?>
-<?= \App\Core\View::getInstance()->yieldSection('css') ?>
-<?= \App\Core\View::getInstance()->yieldSection('js') ?>
 ```
 
 #### 뷰 파일 위치 규칙
@@ -857,17 +852,6 @@ public function store(): string
         return $this->jsonResponse(['error' => $e->getMessage()], 500);
     }
 }
-```
-
-### 11.2. CSRF 보호
-
-```php
-// ✅ 폼에 CSRF 토큰 포함
-<form id="employee-form">
-    <input type="hidden" name="_token" value="<?= csrf_token() ?>">
-    <!-- 기타 폼 필드들 -->
-</form>
-```
 
 ---
 

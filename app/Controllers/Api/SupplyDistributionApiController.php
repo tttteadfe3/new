@@ -38,10 +38,10 @@ class SupplyDistributionApiController extends BaseApiController
     public function index(): void
     {
         try {
-            $employeeId = $this->request->get('employee_id');
-            $departmentId = $this->request->get('department_id');
-            $startDate = $this->request->get('start_date');
-            $endDate = $this->request->get('end_date');
+            $employeeId = $this->request->input('employee_id');
+            $departmentId = $this->request->input('department_id');
+            $startDate = $this->request->input('start_date');
+            $endDate = $this->request->input('end_date');
             
             // 필터링 조건에 따라 조회
             $filters = [];
@@ -215,23 +215,6 @@ class SupplyDistributionApiController extends BaseApiController
         }
     }
 
-    /**
-     * 부서별 직원 목록을 조회합니다.
-     */
-    public function getEmployeesByDepartment(int $departmentId): void
-    {
-        try {
-            $employees = $this->supplyDistributionService->getEmployeesByDepartment($departmentId);
-            
-            $this->apiSuccess([
-                'department_id' => $departmentId,
-                'employees' => $employees,
-                'total' => count($employees)
-            ]);
-        } catch (Exception $e) {
-            $this->handleException($e);
-        }
-    }
 
     /**
      * 부서 전체 직원에게 지급합니다.
@@ -283,10 +266,10 @@ class SupplyDistributionApiController extends BaseApiController
     public function getStatistics(): void
     {
         try {
-            $startDate = $this->request->get('start_date');
-            $endDate = $this->request->get('end_date');
-            $itemId = $this->request->get('item_id');
-            $departmentId = $this->request->get('department_id');
+            $startDate = $this->request->input('start_date');
+            $endDate = $this->request->input('end_date');
+            $itemId = $this->request->input('item_id');
+            $departmentId = $this->request->input('department_id');
             
             $filters = [];
             if ($startDate && $endDate) {
@@ -317,8 +300,8 @@ class SupplyDistributionApiController extends BaseApiController
     public function getDepartmentStats(): void
     {
         try {
-            $departmentId = $this->request->get('department_id');
-            $year = $this->request->get('year', date('Y'));
+            $departmentId = $this->request->input('department_id');
+            $year = $this->request->input('year', date('Y'));
             
             if (!$departmentId) {
                 $this->apiBadRequest('부서 ID가 필요합니다.');
@@ -346,8 +329,8 @@ class SupplyDistributionApiController extends BaseApiController
     public function getEmployeeStats(): void
     {
         try {
-            $employeeId = $this->request->get('employee_id');
-            $year = $this->request->get('year', date('Y'));
+            $employeeId = $this->request->input('employee_id');
+            $year = $this->request->input('year', date('Y'));
             
             if (!$employeeId) {
                 $this->apiBadRequest('직원 ID가 필요합니다.');
@@ -375,9 +358,9 @@ class SupplyDistributionApiController extends BaseApiController
     public function search(): void
     {
         try {
-            $query = $this->request->get('q', '');
-            $startDate = $this->request->get('start_date');
-            $endDate = $this->request->get('end_date');
+            $query = $this->request->input('q', '');
+            $startDate = $this->request->input('start_date');
+            $endDate = $this->request->input('end_date');
             
             if (empty($query) && (!$startDate || !$endDate)) {
                 $this->apiBadRequest('검색어 또는 날짜 범위를 입력해주세요.');
@@ -421,8 +404,8 @@ class SupplyDistributionApiController extends BaseApiController
     public function checkStock(): void
     {
         try {
-            $itemId = $this->request->get('item_id');
-            $quantity = $this->request->get('quantity');
+            $itemId = $this->request->input('item_id');
+            $quantity = $this->request->input('quantity');
             
             if (!$itemId || !$quantity) {
                 $this->apiBadRequest('품목 ID와 수량이 필요합니다.');
@@ -479,28 +462,11 @@ class SupplyDistributionApiController extends BaseApiController
     }
 
     /**
-     * 모든 부서 목록을 조회합니다.
-     */
-    public function getDepartments(): void
-    {
-        try {
-            $departments = $this->supplyDistributionService->getAllDepartments();
-            
-            $this->apiSuccess([
-                'departments' => $departments,
-                'total' => count($departments)
-            ]);
-        } catch (Exception $e) {
-            $this->handleException($e);
-        }
-    }
-
-    /**
      * 현재 로그인한 사용자 ID를 가져옵니다.
      */
     private function getCurrentUserId(): int
     {
-        $user = $this->authService->getCurrentUser();
+        $user = $this->authService->user();
         if (!$user) {
             throw new \RuntimeException('로그인이 필요합니다.');
         }
@@ -510,7 +476,7 @@ class SupplyDistributionApiController extends BaseApiController
     /**
      * 예외를 처리합니다.
      */
-    private function handleException(Exception $e): void
+    protected function handleException(Exception $e): void
     {
         if ($e instanceof \InvalidArgumentException) {
             $this->apiBadRequest($e->getMessage());

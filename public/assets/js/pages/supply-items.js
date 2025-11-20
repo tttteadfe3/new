@@ -5,7 +5,7 @@
 class SupplyItemsPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/items'
+            API_URL: '/supply/items'
         });
         
         this.dataTable = null;
@@ -15,15 +15,15 @@ class SupplyItemsPage extends BasePage {
     setupEventListeners() {
         // 필터 이벤트
         document.getElementById('filter-category')?.addEventListener('change', () => {
-            this.dataTable?.ajax.reload();
+            this.loadItems();
         });
 
         document.getElementById('filter-status')?.addEventListener('change', () => {
-            this.dataTable?.ajax.reload();
+            this.loadItems();
         });
 
         document.getElementById('search-input')?.addEventListener('keyup', () => {
-            this.dataTable?.search(document.getElementById('search-input').value).draw();
+            this.loadItems();
         });
 
         // 상태 변경 확인
@@ -40,6 +40,7 @@ class SupplyItemsPage extends BasePage {
     loadInitialData() {
         this.loadCategories();
         this.initializeDataTable();
+        this.loadItems(); // 데이터 로드
     }
 
     async loadCategories() {
@@ -61,24 +62,31 @@ class SupplyItemsPage extends BasePage {
         }
     }
 
+    async loadItems() {
+        try {
+            const params = {
+                category_id: document.getElementById('filter-category')?.value || '',
+                is_active: document.getElementById('filter-status')?.value || '',
+                search: document.getElementById('search-input')?.value || ''
+            };
+
+            const queryString = new URLSearchParams(params).toString();
+            const result = await this.apiCall(`${this.config.API_URL}?${queryString}`);
+
+            this.dataTable.clear().rows.add(result.data || []).draw();
+
+        } catch (error) {
+            console.error('Error loading items:', error);
+            Toast.error('품목을 불러오는 중 오류가 발생했습니다.');
+        }
+    }
+
     initializeDataTable() {
         const self = this;
         
         this.dataTable = $('#items-table').DataTable({
             processing: true,
-            serverSide: false,
-            ajax: {
-                url: this.config.apiBaseUrl,
-                type: 'GET',
-                data: function(d) {
-                    return {
-                        category_id: document.getElementById('filter-category')?.value || '',
-                        is_active: document.getElementById('filter-status')?.value || '',
-                        search: document.getElementById('search-input')?.value || ''
-                    };
-                },
-                dataSrc: 'data'
-            },
+            serverSide: false, // 데이터를 서버에서 가져오지만, DataTable의 serverSide 기능은 사용 안함
             columns: [
                 { data: 'item_code' },
                 { data: 'item_name' },
@@ -122,10 +130,11 @@ class SupplyItemsPage extends BasePage {
                 }
             ],
             language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json'
+                url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
             },
             order: [[0, 'asc']],
-            pageLength: 25
+            pageLength: 25,
+            searching: false // DataTable 자체 검색 기능 비활성화
         });
 
         // 이벤트 위임
@@ -154,12 +163,12 @@ class SupplyItemsPage extends BasePage {
 
     async confirmStatusChange() {
         try {
-            await this.apiCall(`${this.config.apiBaseUrl}/${this.currentItemId}/toggle-status`, {
+            await this.apiCall(`${this.config.API_URL}/${this.currentItemId}/toggle-status`, {
                 method: 'PUT'
             });
             
             Toast.success('품목 상태가 변경되었습니다.');
-            this.dataTable.ajax.reload();
+            this.loadItems();
             
             const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));
             modal.hide();
@@ -179,12 +188,12 @@ class SupplyItemsPage extends BasePage {
 
     async confirmDelete() {
         try {
-            await this.apiCall(`${this.config.apiBaseUrl}/${this.currentItemId}`, {
+            await this.apiCall(`${this.config.API_URL}/${this.currentItemId}`, {
                 method: 'DELETE'
             });
             
             Toast.success('품목이 삭제되었습니다.');
-            this.dataTable.ajax.reload();
+            this.loadItems();
             
             const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
             modal.hide();

@@ -47,6 +47,20 @@ class ActivityLogger
         ]);
     }
 
+    /**
+     * 일반 비즈니스 활동을 기록합니다.
+     * @param string $action 수행된 작업 유형 (e.g., 'supply_plan_create')
+     * @param string $message 로그 메시지
+     * @param array|null $context 추가 데이터
+     */
+    public function log(string $action, string $message, ?array $context = null): void
+    {
+        $details = $message;
+        if (!empty($context)) {
+            $details .= "\nContext: " . json_encode($context, JSON_UNESCAPED_UNICODE);
+        }
+        $this->_log($action, $details);
+    }
 
     /**
      * 사용자의 웹 페이지 접근 활동을 기록합니다.

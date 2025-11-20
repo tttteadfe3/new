@@ -97,9 +97,9 @@ class SupplyDistribution extends BaseModel
     /**
      * 지급 데이터의 유효성을 검증합니다.
      */
-    public function validate(): bool
+    public function validate(bool $isUpdate = false): bool
     {
-        $isValid = parent::validate();
+        $isValid = parent::validate($isUpdate);
 
         // 비즈니스 규칙: 지급일은 미래일 수 없음
         $distributionDate = $this->getAttribute('distribution_date');

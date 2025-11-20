@@ -4,14 +4,17 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\SupplyDistribution;
+use App\Services\DataScopeService;
 
 class SupplyDistributionRepository
 {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, DataScopeService $dataScopeService)
     {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
@@ -166,7 +169,7 @@ class SupplyDistributionRepository
     {
         $sql = "SELECT 
                     COUNT(*) as total_distributions,
-                    SUM(quantity) as total_quantity,
+                    COALESCE(SUM(quantity), 0) as total_quantity,
                     COUNT(DISTINCT employee_id) as unique_employees,
                     COUNT(DISTINCT department_id) as unique_departments
                 FROM supply_distributions 
@@ -254,16 +257,36 @@ class SupplyDistributionRepository
     /**
      * 품목, 직원, 부서 정보와 함께 지급을 조회합니다.
      */
-    public function findWithRelations(): array
+    public function findWithRelations(array $filters = []): array
     {
-        $sql = "SELECT sd.*, si.item_name, si.item_code, he.name as employee_name, hd.name as department_name
-                FROM supply_distributions sd
-                JOIN supply_items si ON sd.item_id = si.id
-                JOIN hr_employees he ON sd.employee_id = he.id
-                JOIN hr_departments hd ON sd.department_id = hd.id
-                ORDER BY sd.distribution_date DESC, sd.created_at DESC";
+        $queryParts = [
+            'sql' => "SELECT sd.*, si.item_name, si.item_code, he.name as employee_name, hd.name as department_name
+                      FROM supply_distributions sd
+                      JOIN supply_items si ON sd.item_id = si.id
+                      JOIN hr_employees he ON sd.employee_id = he.id
+                      JOIN hr_departments hd ON sd.department_id = hd.id",
+            'params' => [],
+            'where' => []
+        ];
+
+        // 데이터 스코프 적용
+        $queryParts = $this->dataScopeService->applyDepartmentScope($queryParts, 'hd');
+        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'he');
+
+        // 추가 필터
+        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+            $queryParts['where'][] = "sd.distribution_date BETWEEN :start_date AND :end_date";
+            $queryParts['params'][':start_date'] = $filters['start_date'];
+            $queryParts['params'][':end_date'] = $filters['end_date'];
+        }
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
+
+        $queryParts['sql'] .= " ORDER BY sd.distribution_date DESC, sd.created_at DESC";
         
-        return $this->db->query($sql);
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**

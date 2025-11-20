@@ -67,9 +67,9 @@ class SupplyCategory extends BaseModel
     /**
      * 분류 코드의 고유성을 검증합니다.
      */
-    public function validate(): bool
+    public function validate(bool $isUpdate = false): bool
     {
-        $isValid = parent::validate();
+        $isValid = parent::validate($isUpdate);
 
         // 비즈니스 규칙: 소분류는 반드시 상위 분류가 있어야 함
         if ($this->getAttribute('level') === 2 && !$this->getAttribute('parent_id')) {

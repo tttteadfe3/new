@@ -4,14 +4,17 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\SupplyPurchase;
+use App\Services\DataScopeService;
 
 class SupplyPurchaseRepository 
 {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, DataScopeService $dataScopeService)
     {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
@@ -185,15 +188,28 @@ class SupplyPurchaseRepository
     /**
      * 품목 정보와 함께 구매를 조회합니다.
      */
-    public function findWithItems(): array
+    public function findWithItems(array $filters = []): array
     {
-        $sql = "SELECT sp.*, si.item_name, si.item_code, si.unit, sc.category_name
-                FROM supply_purchases sp
-                JOIN supply_items si ON sp.item_id = si.id
-                LEFT JOIN supply_categories sc ON si.category_id = sc.id
-                ORDER BY sp.purchase_date DESC, sp.created_at DESC";
+        $queryParts = [
+            'sql' => "SELECT sp.*, si.item_name, si.item_code, si.unit, sc.category_name
+                      FROM supply_purchases sp
+                      JOIN supply_items si ON sp.item_id = si.id
+                      LEFT JOIN supply_categories sc ON si.category_id = sc.id",
+            'params' => [],
+            'where' => []
+        ];
+
+        // TODO: 향후 지급품 관리 권한 정책이 구체화되면 여기에 데이터 스코프를 적용해야 합니다.
+        // 예를 들어, 특정 부서의 관리자는 해당 부서원이 등록한 구매 내역만 조회할 수 있어야 합니다.
+        // $queryParts = $this->dataScopeService->applySomeScope($queryParts, 'sp');
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
         
-        return $this->db->query($sql);
+        $queryParts['sql'] .= " ORDER BY sp.purchase_date DESC, sp.created_at DESC";
+
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**

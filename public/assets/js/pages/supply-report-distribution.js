@@ -5,75 +5,72 @@
 class SupplyReportDistributionPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/reports'
+            API_URL: '/supply/reports'
         });
         
-        this.distributionTable = null;
+        this.dataTable = null;
     }
 
     setupEventListeners() {
-        // Filter form submission
-        const filterForm = document.getElementById('filter-form');
-        if (filterForm) {
-            filterForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.applyFilters();
-            });
-        }
+        $('#filter-form').on('submit', (e) => {
+            e.preventDefault();
+            this.loadReportData();
+        });
 
-        // Year selector change
-        const yearFilter = document.getElementById('year-filter');
-        if (yearFilter) {
-            yearFilter.addEventListener('change', () => {
-                const form = document.getElementById('filter-form');
-                if (form) {
-                    form.submit();
-                }
-            });
-        }
+        $('#year-filter').on('change', () => {
+            this.loadReportData();
+        });
 
-        // Export button
-        const exportBtn = document.getElementById('export-report-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => this.exportReport());
-        }
+        $('#export-report-btn').on('click', () => this.exportReport());
     }
 
     loadInitialData() {
-        this.initDataTable();
+        this.initializeDataTable();
+        this.loadReportData();
     }
 
-    initDataTable() {
-        const tableElement = document.getElementById('distribution-report-table');
-        if (tableElement && typeof DataTable !== 'undefined') {
-            this.distributionTable = new DataTable('#distribution-report-table', {
-                responsive: true,
-                pageLength: 25,
-                order: [[0, 'desc']],
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json'
-                }
-            });
+    async loadReportData() {
+        try {
+            const params = {
+                year: $('#year-filter').val(),
+                month: $('#month-filter').val(),
+                department_id: $('#department-filter').val(),
+                item_id: $('#item-filter').val()
+            };
+
+            const queryString = new URLSearchParams(params).toString();
+            const result = await this.apiCall(`${this.config.API_URL}/distribution?${queryString}`);
+
+            this.dataTable.clear().rows.add(result.data || []).draw();
+        } catch (error) {
+            console.error('Error loading report data:', error);
+            Toast.error('보고서 데이터를 불러오는 중 오류가 발생했습니다.');
         }
     }
 
-    applyFilters() {
-        const form = document.getElementById('filter-form');
-        const formData = new FormData(form);
-        const params = new URLSearchParams(formData);
-        
-        window.location.href = '/supply/reports/distribution?' + params.toString();
+    initializeDataTable() {
+        this.dataTable = new DataTable('#distribution-report-table', {
+            responsive: true,
+            pageLength: 25,
+            order: [[0, 'desc']],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
+            },
+            searching: false
+        });
     }
 
     exportReport() {
-        const form = document.getElementById('filter-form');
-        const formData = new FormData(form);
-        formData.append('report_type', 'distribution');
+        const params = new URLSearchParams({
+            report_type: 'distribution',
+            year: $('#year-filter').val(),
+            month: $('#month-filter').val(),
+            department_id: $('#department-filter').val(),
+            item_id: $('#item-filter').val()
+        });
         
-        const params = new URLSearchParams(formData);
-        window.location.href = this.config.apiBaseUrl + '/export?' + params.toString();
+        window.location.href = `${this.config.API_URL}/export?${params.toString()}`;
     }
 }
 
-// 전역 인스턴스 생성
 new SupplyReportDistributionPage();

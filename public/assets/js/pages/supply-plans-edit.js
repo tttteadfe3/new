@@ -5,7 +5,7 @@
 class SupplyPlansEditPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/plans'
+            API_URL: '/supply/plans'
         });
         
         this.planId = window.supplyPlanEditData?.planId || null;
@@ -45,7 +45,7 @@ class SupplyPlansEditPage extends BasePage {
         }
 
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}/${this.planId}`);
+            const data = await this.apiCall(`${this.config.API_URL}/${this.planId}`);
             this.originalData = data.data;
             this.renderPlanForm();
         } catch (error) {
@@ -67,6 +67,7 @@ class SupplyPlansEditPage extends BasePage {
         if (form) form.style.display = 'block';
 
         // 품목 정보 표시
+        document.getElementById('back-to-list-btn').href = `/supply/plans?year=${this.originalData.year}`;
         document.getElementById('plan-year').textContent = this.originalData.year;
         document.getElementById('item-code').textContent = this.originalData.item_code;
         document.getElementById('item-name').textContent = this.originalData.item_name;
@@ -181,7 +182,7 @@ class SupplyPlansEditPage extends BasePage {
         };
 
         try {
-            const result = await this.apiCall(`${this.config.apiBaseUrl}/${this.planId}`, {
+            const result = await this.apiCall(`${this.config.API_URL}/${this.planId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'

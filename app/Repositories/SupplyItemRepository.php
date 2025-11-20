@@ -4,14 +4,17 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\SupplyItem;
+use App\Services\DataScopeService;
 
 class SupplyItemRepository
 {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, DataScopeService $dataScopeService)
     {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
@@ -19,30 +22,38 @@ class SupplyItemRepository
      */
     public function findAll(array $filters = []): array
     {
-        $sql = "SELECT si.*, sc.category_name 
-                FROM supply_items si
-                LEFT JOIN supply_categories sc ON si.category_id = sc.id
-                WHERE 1=1";
-        $params = [];
+        $queryParts = [
+            'sql' => "SELECT si.*, sc.category_name
+                      FROM supply_items si
+                      LEFT JOIN supply_categories sc ON si.category_id = sc.id",
+            'params' => [],
+            'where' => []
+        ];
+
+        // supply_items 테이블은 전사 공통 데이터로 간주되므로 별도의 데이터 스코프를 적용하지 않습니다.
 
         if (!empty($filters['category_id'])) {
-            $sql .= " AND si.category_id = :category_id";
-            $params[':category_id'] = $filters['category_id'];
+            $queryParts['where'][] = "si.category_id = :category_id";
+            $queryParts['params'][':category_id'] = $filters['category_id'];
         }
 
         if (isset($filters['is_active'])) {
-            $sql .= " AND si.is_active = :is_active";
-            $params[':is_active'] = $filters['is_active'];
+            $queryParts['where'][] = "si.is_active = :is_active";
+            $queryParts['params'][':is_active'] = (int)$filters['is_active'];
         }
 
         if (!empty($filters['search'])) {
-            $sql .= " AND (si.item_name LIKE :search OR si.item_code LIKE :search)";
-            $params[':search'] = '%' . $filters['search'] . '%';
+            $queryParts['where'][] = "(si.item_name LIKE :search OR si.item_code LIKE :search)";
+            $queryParts['params'][':search'] = '%' . $filters['search'] . '%';
         }
 
-        $sql .= " ORDER BY si.item_code ASC";
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
 
-        return $this->db->fetchAll($sql, $params);
+        $queryParts['sql'] .= " ORDER BY si.item_code ASC";
+
+        return $this->db->fetchAll($queryParts['sql'], $queryParts['params']);
     }
 
     /**

@@ -87,8 +87,6 @@ $router->get('/supply', [SupplyController::class, 'index'])->name('supply.dashbo
 
 // 분류 관리
 $router->get('/supply/categories', [SupplyCategoryController::class, 'index'])->name('supply.categories.index')->middleware('auth')->middleware('permission', 'supply.category.manage');
-$router->get('/supply/categories/create', [SupplyCategoryController::class, 'create'])->name('supply.categories.create')->middleware('auth')->middleware('permission', 'supply.category.manage');
-$router->get('/supply/categories/edit', [SupplyCategoryController::class, 'edit'])->name('supply.categories.edit')->middleware('auth')->middleware('permission', 'supply.category.manage');
 
 // 품목 관리
 $router->get('/supply/items', [SupplyItemController::class, 'index'])->name('supply.items.index')->middleware('auth')->middleware('permission', 'supply.item.view');
@@ -98,22 +96,16 @@ $router->get('/supply/items/show', [SupplyItemController::class, 'show'])->name(
 
 // 연간 계획 관리
 $router->get('/supply/plans', [SupplyPlanController::class, 'index'])->name('supply.plans.index')->middleware('auth')->middleware('permission', 'supply.plan.view');
-$router->get('/supply/plans/create', [SupplyPlanController::class, 'create'])->name('supply.plans.create')->middleware('auth')->middleware('permission', 'supply.plan.manage');
-$router->get('/supply/plans/edit', [SupplyPlanController::class, 'edit'])->name('supply.plans.edit')->middleware('auth')->middleware('permission', 'supply.plan.manage');
 $router->get('/supply/plans/import', [SupplyPlanController::class, 'import'])->name('supply.plans.import')->middleware('auth')->middleware('permission', 'supply.plan.manage');
 $router->get('/supply/plans/budget-summary', [SupplyPlanController::class, 'budgetSummary'])->name('supply.plans.budget-summary')->middleware('auth')->middleware('permission', 'supply.plan.view');
 $router->get('/supply/plans/copy', [SupplyPlanController::class, 'copy'])->name('supply.plans.copy')->middleware('auth')->middleware('permission', 'supply.plan.manage');
 
 // 구매 관리
 $router->get('/supply/purchases', [SupplyPurchaseController::class, 'index'])->name('supply.purchases.index')->middleware('auth')->middleware('permission', 'supply.purchase.view');
-$router->get('/supply/purchases/create', [SupplyPurchaseController::class, 'create'])->name('supply.purchases.create')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
-$router->get('/supply/purchases/edit', [SupplyPurchaseController::class, 'edit'])->name('supply.purchases.edit')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
 $router->get('/supply/purchases/receive', [SupplyPurchaseController::class, 'receive'])->name('supply.purchases.receive')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
 
 // 지급 관리
 $router->get('/supply/distributions', [SupplyDistributionController::class, 'index'])->name('supply.distributions.index')->middleware('auth')->middleware('permission', 'supply.distribution.view');
-$router->get('/supply/distributions/create', [SupplyDistributionController::class, 'create'])->name('supply.distributions.create')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
-$router->get('/supply/distributions/edit', [SupplyDistributionController::class, 'edit'])->name('supply.distributions.edit')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
 
 // 재고 관리
 $router->get('/supply/stocks', [SupplyItemController::class, 'stocks'])->name('supply.stocks')->middleware('auth')->middleware('permission', 'supply.item.view');

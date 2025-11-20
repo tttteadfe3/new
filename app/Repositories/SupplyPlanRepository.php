@@ -4,14 +4,17 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\SupplyPlan;
+use App\Services\DataScopeService;
 
 class SupplyPlanRepository
 {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, DataScopeService $dataScopeService)
     {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
@@ -210,14 +213,25 @@ class SupplyPlanRepository
      */
     public function findWithItems(int $year): array
     {
-        $sql = "SELECT sp.*, si.item_name, si.item_code, si.unit, sc.category_name
-                FROM supply_plans sp
-                JOIN supply_items si ON sp.item_id = si.id
-                LEFT JOIN supply_categories sc ON si.category_id = sc.id
-                WHERE sp.year = :year
-                ORDER BY sc.category_name ASC, si.item_name ASC";
+        $queryParts = [
+            'sql' => "SELECT sp.*, si.item_name, si.item_code, si.unit, sc.category_name
+                      FROM supply_plans sp
+                      JOIN supply_items si ON sp.item_id = si.id
+                      LEFT JOIN supply_categories sc ON si.category_id = sc.id",
+            'params' => [':year' => $year],
+            'where' => ["sp.year = :year"]
+        ];
         
-        return $this->db->query($sql, [':year' => $year]);
+        // supply_plans 테이블은 현재 HR 관련 정보와 직접 조인되지 않아 부서/직원 스코프 적용이 어렵습니다.
+        // 향후 권한 정책이 확장되면 이 부분에 스코프 적용이 필요할 수 있습니다.
+
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        }
+
+        $queryParts['sql'] .= " ORDER BY sc.category_name ASC, si.item_name ASC";
+
+        return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
 
     /**

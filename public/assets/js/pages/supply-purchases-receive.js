@@ -5,7 +5,7 @@
 class SupplyPurchasesReceivePage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/purchases'
+            API_URL: '/supply/purchases'
         });
         
         this.pendingPurchases = [];
@@ -33,8 +33,8 @@ class SupplyPurchasesReceivePage extends BasePage {
 
     async loadPendingPurchases() {
         try {
-            const data = await this.apiCall(`${this.config.apiBaseUrl}?status=pending`);
-            this.pendingPurchases = data.data || [];
+            const data = await this.apiCall(`${this.config.API_URL}?is_received=0`);
+            this.pendingPurchases = data.data.purchases || [];
             this.renderPendingPurchases();
         } catch (error) {
             console.error('Error loading pending purchases:', error);
@@ -222,7 +222,7 @@ class SupplyPurchasesReceivePage extends BasePage {
         try {
             if (this.isBulkReceive) {
                 // 일괄 입고 처리
-                const result = await this.apiCall(`${this.config.apiBaseUrl}/bulk-receive`, {
+                const result = await this.apiCall(`${this.config.API_URL}/bulk-receive`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -245,7 +245,7 @@ class SupplyPurchasesReceivePage extends BasePage {
                 }
             } else {
                 // 개별 입고 처리
-                const result = await this.apiCall(`${this.config.apiBaseUrl}/${this.currentPurchaseIds[0]}/mark-received`, {
+                const result = await this.apiCall(`${this.config.API_URL}/${this.currentPurchaseIds[0]}/mark-received`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json'

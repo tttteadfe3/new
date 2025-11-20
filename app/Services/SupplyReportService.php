@@ -8,6 +8,7 @@ use App\Repositories\SupplyPlanRepository;
 use App\Repositories\SupplyPurchaseRepository;
 use App\Repositories\SupplyItemRepository;
 use App\Repositories\DepartmentRepository;
+use App\Core\Database;
 
 class SupplyReportService
 {
@@ -17,6 +18,8 @@ class SupplyReportService
     private SupplyPurchaseRepository $purchaseRepository;
     private SupplyItemRepository $itemRepository;
     private DepartmentRepository $departmentRepository;
+    private Database $db;
+    private ActivityLogger $activityLogger;
 
     public function __construct(
         SupplyDistributionRepository $distributionRepository,
@@ -24,7 +27,9 @@ class SupplyReportService
         SupplyPlanRepository $planRepository,
         SupplyPurchaseRepository $purchaseRepository,
         SupplyItemRepository $itemRepository,
-        DepartmentRepository $departmentRepository
+        DepartmentRepository $departmentRepository,
+        Database $db,
+        ActivityLogger $activityLogger
     ) {
         $this->distributionRepository = $distributionRepository;
         $this->stockRepository = $stockRepository;
@@ -32,6 +37,8 @@ class SupplyReportService
         $this->purchaseRepository = $purchaseRepository;
         $this->itemRepository = $itemRepository;
         $this->departmentRepository = $departmentRepository;
+        $this->db = $db;
+        $this->activityLogger = $activityLogger;
     }
 
     /**
@@ -99,7 +106,11 @@ class SupplyReportService
         $result = $this->db->query($sql, $params);
         
         // 활동 로그 기록
-        $this->activityLogger->logSupplyReportView('distribution', $filters);
+        $this->activityLogger->log(
+            'supply_report_view',
+            "지급 현황 보고서 조회",
+            ['report_type' => 'distribution', 'filters' => $filters]
+        );
         
         return $result;
     }
@@ -303,7 +314,11 @@ class SupplyReportService
         fclose($handle);
 
         // 활동 로그 기록
-        $this->activityLogger->logSupplyReportExport($reportType, $filters ?? []);
+        $this->activityLogger->log(
+            'supply_report_export',
+            "{$reportType} 보고서 내보내기",
+            ['report_type' => $reportType, 'row_count' => count($data)]
+        );
 
         return $filepath;
     }

@@ -18,6 +18,7 @@ class SupplyDistributionService
     private EmployeeRepository $employeeRepository;
     private DepartmentRepository $departmentRepository;
     private ActivityLogger $activityLogger;
+    private Database $db;
 
     public function __construct(
         SupplyDistributionRepository $distributionRepository,
@@ -25,7 +26,8 @@ class SupplyDistributionService
         SupplyStockService $stockService,
         EmployeeRepository $employeeRepository,
         DepartmentRepository $departmentRepository,
-        ActivityLogger $activityLogger
+        ActivityLogger $activityLogger,
+        Database $db
     ) {
         $this->distributionRepository = $distributionRepository;
         $this->itemRepository = $itemRepository;
@@ -33,6 +35,7 @@ class SupplyDistributionService
         $this->employeeRepository = $employeeRepository;
         $this->departmentRepository = $departmentRepository;
         $this->activityLogger = $activityLogger;
+        $this->db = $db;
     }
 
     /**
@@ -76,7 +79,11 @@ class SupplyDistributionService
                 'distribution_date' => $distributionDate,
                 'distributed_by' => $distributedBy
             ];
-            $this->activityLogger->logSupplyDistributionCreate($distributionId, $distributionData);
+            $this->activityLogger->log(
+                'supply_distribution_create',
+                "신규 지급 등록 (ID: {$distributionId})",
+                $distributionData
+            );
 
             $this->db->commit();
 
@@ -184,7 +191,11 @@ class SupplyDistributionService
             $this->stockService->updateStockFromCancelDistribution($itemId, $quantity);
 
             // 감사 로그 기록
-            $this->activityLogger->logSupplyDistributionCancel($distributionId, $distribution->toArray(), $reason);
+            $this->activityLogger->log(
+                'supply_distribution_cancel',
+                "지급 취소 (ID: {$distributionId})",
+                ['distribution' => $distribution->toArray(), 'reason' => $reason]
+            );
 
             $this->db->commit();
 
@@ -251,8 +262,12 @@ class SupplyDistributionService
 
             // 감사 로그 기록
             $oldData = $distribution->toArray();
-            $newData = array_merge($oldData, $updateData);
-            $this->activityLogger->logSupplyDistributionUpdate($distributionId, $oldData, $newData);
+            $newData = array_merge($oldData, $data);
+            $this->activityLogger->log(
+                'supply_distribution_update',
+                "지급 정보 수정 (ID: {$distributionId})",
+                ['old' => $oldData, 'new' => $newData]
+            );
 
             $this->db->commit();
 
@@ -276,25 +291,13 @@ class SupplyDistributionService
                 'id' => $item['id'],
                 'item_code' => $item['item_code'],
                 'item_name' => $item['item_name'],
-                'category_name' => $item['category_name'],
+                'category_name' => $item['category_name'] ?? null,
                 'unit' => $item['unit'],
                 'current_stock' => $item['current_stock']
             ];
         }, $items);
     }
 
-    /**
-     * 부서별 직원 목록을 조회합니다.
-     */
-    public function getEmployeesByDepartment(int $departmentId): array
-    {
-        $sql = "SELECT id, name, position, email 
-                FROM hr_employees 
-                WHERE department_id = :department_id AND is_active = 1
-                ORDER BY name";
-        
-        return $this->db->query($sql, [':department_id' => $departmentId]);
-    }
 
     /**
      * 지급 내역을 조회합니다.
@@ -416,12 +419,4 @@ class SupplyDistributionService
         return $this->distributionRepository->findById($id);
     }
 
-    /**
-     * 모든 부서 목록을 조회합니다.
-     */
-    public function getAllDepartments(): array
-    {
-        $sql = "SELECT id, name, code FROM hr_departments WHERE is_active = 1 ORDER BY name";
-        return $this->db->query($sql);
-    }
 }

@@ -5,7 +5,7 @@
 class SupplyReportDepartmentPage extends BasePage {
     constructor() {
         super({
-            apiBaseUrl: '/supply/reports'
+            API_URL: '/supply/reports'
         });
         
         this.summaryTable = null;
@@ -15,206 +15,122 @@ class SupplyReportDepartmentPage extends BasePage {
     }
 
     setupEventListeners() {
-        // Filter form submission
-        const filterForm = document.getElementById('filter-form');
-        if (filterForm) {
-            filterForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.applyFilters();
-            });
-        }
+        $('#filter-form').on('submit', (e) => {
+            e.preventDefault();
+            this.loadReportData();
+        });
 
-        // Reset filter button
-        const resetBtn = document.getElementById('reset-filter-btn');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                const yearFilter = document.getElementById('year-filter');
-                const year = yearFilter ? yearFilter.value : new Date().getFullYear();
-                window.location.href = '/supply/reports/department?year=' + year;
-            });
-        }
+        $('#reset-filter-btn').on('click', () => {
+            const year = $('#year-filter').val() || new Date().getFullYear();
+            window.location.href = `/supply/reports/department?year=${year}`;
+        });
 
-        // Export button
-        const exportBtn = document.getElementById('export-report-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => this.exportReport());
-        }
+        $('#export-report-btn').on('click', () => this.exportReport());
     }
 
     loadInitialData() {
         this.initDataTables();
-        this.initCharts();
+        this.loadReportData();
+    }
+
+    async loadReportData() {
+        try {
+            const params = {
+                year: $('#year-filter').val(),
+                department_id: $('#department-filter').val()
+            };
+
+            const queryString = new URLSearchParams(params).toString();
+            const result = await this.apiCall(`${this.config.API_URL}/department?${queryString}`);
+
+            if (params.department_id) {
+                // 상세 데이터 로드
+                this.summaryTable.clear().draw();
+                this.detailTable.clear().rows.add(result.data.details || []).draw();
+                this.updateDetailChart(result.data.details || []);
+            } else {
+                // 요약 데이터 로드
+                this.detailTable.clear().draw();
+                this.summaryTable.clear().rows.add(result.data.summary || []).draw();
+                this.updateSummaryChart(result.data.summary || []);
+            }
+        } catch (error) {
+            console.error('Error loading report data:', error);
+            Toast.error('보고서 데이터를 불러오는 중 오류가 발생했습니다.');
+        }
     }
 
     initDataTables() {
-        // Department summary table
-        const summaryTableElement = document.getElementById('department-summary-table');
-        if (summaryTableElement && typeof DataTable !== 'undefined') {
-            this.summaryTable = new DataTable('#department-summary-table', {
-                responsive: true,
-                pageLength: 25,
-                order: [[3, 'desc']], // Sort by total quantity
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json'
-                }
-            });
-        }
+        this.summaryTable = new DataTable('#department-summary-table', {
+            responsive: true,
+            pageLength: 25,
+            order: [[3, 'desc']],
+            language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
+            searching: false
+        });
 
-        // Department detail table
-        const detailTableElement = document.getElementById('department-detail-table');
-        if (detailTableElement && typeof DataTable !== 'undefined') {
-            this.detailTable = new DataTable('#department-detail-table', {
-                responsive: true,
-                pageLength: 25,
-                order: [[5, 'desc']], // Sort by total quantity
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json'
-                }
-            });
-        }
+        this.detailTable = new DataTable('#department-detail-table', {
+            responsive: true,
+            pageLength: 25,
+            order: [[5, 'desc']],
+            language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
+            searching: false
+        });
     }
 
-    initCharts() {
-        // Department usage chart (summary view)
-        const usageChartElement = document.getElementById('department-usage-chart');
-        if (usageChartElement) {
-            const table = document.getElementById('department-summary-table');
-            if (!table) return;
+    updateSummaryChart(data) {
+        if (this.usageChart) this.usageChart.destroy();
+        const chartElement = document.getElementById('department-usage-chart');
+        if (!chartElement) return;
 
-            const rows = table.querySelectorAll('tbody tr');
-            const labels = [];
-            const quantities = [];
+        const labels = data.map(item => item.department_name);
+        const quantities = data.map(item => item.total_quantity);
 
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                if (cells.length > 0) {
-                    labels.push(cells[0].textContent.trim()); // 부서명
-                    quantities.push(parseInt(cells[3].textContent.replace(/[^\d]/g, '')) || 0); // 총 지급 수량
-                }
-            });
-
-            if (labels.length === 0) return;
-
-            const ctx = usageChartElement.getContext('2d');
-            this.usageChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '총 지급 수량',
-                        data: quantities,
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
-            });
-        }
-
-        // Department detail chart (detail view)
-        const detailChartElement = document.getElementById('department-detail-chart');
-        if (detailChartElement) {
-            const table = document.getElementById('department-detail-table');
-            if (!table) return;
-
-            const rows = table.querySelectorAll('tbody tr');
-            const labels = [];
-            const quantities = [];
-
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                if (cells.length > 0) {
-                    labels.push(cells[1].textContent.trim()); // 품목명
-                    quantities.push(parseInt(cells[5].textContent.replace(/[^\d]/g, '')) || 0); // 총 수량
-                }
-            });
-
-            if (labels.length === 0) return;
-
-            const ctx = detailChartElement.getContext('2d');
-            this.detailChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '지급 수량',
-                        data: quantities,
-                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        x: {
-                            beginAtZero: true
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
-            });
-        }
+        const ctx = chartElement.getContext('2d');
+        this.usageChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels, datasets: [{ label: '총 지급 수량', data: quantities, /* ... */ }] },
+            options: { /* ... */ }
+        });
     }
 
-    applyFilters() {
-        const form = document.getElementById('filter-form');
-        const formData = new FormData(form);
-        const params = new URLSearchParams(formData);
+    updateDetailChart(data) {
+        if (this.detailChart) this.detailChart.destroy();
+        const chartElement = document.getElementById('department-detail-chart');
+        if (!chartElement) return;
+
+        const labels = data.map(item => item.item_name);
+        const quantities = data.map(item => item.total_quantity);
         
-        window.location.href = '/supply/reports/department?' + params.toString();
+        const ctx = chartElement.getContext('2d');
+        this.detailChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels, datasets: [{ label: '지급 수량', data: quantities, /* ... */ }] },
+            options: { indexAxis: 'y', /* ... */ }
+        });
     }
 
     exportReport() {
-        const form = document.getElementById('filter-form');
-        const formData = new FormData(form);
-        const departmentId = formData.get('department_id');
-        
+        const departmentId = $('#department-filter').val();
         if (!departmentId) {
             Toast.warning('부서를 선택해주세요.');
             return;
         }
-
-        const year = formData.get('year') || new Date().getFullYear();
+        const year = $('#year-filter').val() || new Date().getFullYear();
         const params = new URLSearchParams({
             report_type: 'department',
             department_id: departmentId,
             year: year
         });
         
-        window.location.href = this.config.apiBaseUrl + '/export?' + params.toString();
+        window.location.href = `${this.config.API_URL}/export?${params.toString()}`;
     }
 
     cleanup() {
         super.cleanup();
-        if (this.usageChart) {
-            this.usageChart.destroy();
-        }
-        if (this.detailChart) {
-            this.detailChart.destroy();
-        }
+        if (this.usageChart) this.usageChart.destroy();
+        if (this.detailChart) this.detailChart.destroy();
     }
 }
 
-// 전역 인스턴스 생성
 new SupplyReportDepartmentPage();

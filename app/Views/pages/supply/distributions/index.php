@@ -2,7 +2,7 @@
 <div class="row">
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-            <h4 class="mb-sm-0"><?= e($pageTitle) ?></h4>
+            <h4 class="mb-sm-0"><?= e($pageTitle ?? '지급품 지급 관리') ?></h4>
             <div class="page-title-right">
                 <ol class="breadcrumb m-0">
                     <li class="breadcrumb-item"><a href="/">홈</a></li>
@@ -19,105 +19,26 @@
         <!-- Statistics Cards -->
         <div class="card">
             <div class="card-body">
-                <div class="row">
-                    <div class="col-xl-3 col-md-6">
+                <div class="row" id="stats-container">
+                    <!-- Stats will be loaded here by JS -->
+                     <div class="col-xl-3 col-md-6">
                         <div class="card card-animate">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-grow-1 overflow-hidden">
-                                        <p class="text-uppercase fw-medium text-muted text-truncate mb-0">총 지급 건수</p>
-                                        <div class="d-flex align-items-end justify-content-between">
-                                            <div>
-                                                <h4 class="fs-22 fw-semibold ff-secondary mb-4">
-                                                    <span class="counter-value" data-target="<?= $stats['total_distributions'] ?>">0</span>건
-                                                </h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex-shrink-0">
-                                        <div class="avatar-sm flex-shrink-0">
-                                            <span class="avatar-title bg-success-subtle rounded fs-3">
-                                                <i class="bx bx-package text-success"></i>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 지급 건수</p></div><div class="flex-shrink-0"><span class="avatar-title bg-success-subtle rounded fs-3"><i class="bx bx-package text-success"></i></span></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">...</span>건</h4></div></div></div>
+                        </div>
+                    </div>
+                     <div class="col-xl-3 col-md-6">
+                        <div class="card card-animate">
+                            <div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">총 지급 수량</p></div><div class="flex-shrink-0"><span class="avatar-title bg-info-subtle rounded fs-3"><i class="bx bx-cube text-info"></i></span></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">...</span>개</h4></div></div></div>
                         </div>
                     </div>
                     <div class="col-xl-3 col-md-6">
                         <div class="card card-animate">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-grow-1 overflow-hidden">
-                                        <p class="text-uppercase fw-medium text-muted text-truncate mb-0">총 지급 수량</p>
-                                        <div class="d-flex align-items-end justify-content-between">
-                                            <div>
-                                                <h4 class="fs-22 fw-semibold ff-secondary mb-4">
-                                                    <span class="counter-value" data-target="<?= $stats['total_quantity'] ?>">0</span>개
-                                                </h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex-shrink-0">
-                                        <div class="avatar-sm flex-shrink-0">
-                                            <span class="avatar-title bg-info-subtle rounded fs-3">
-                                                <i class="bx bx-cube text-info"></i>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">지급 직원 수</p></div><div class="flex-shrink-0"><span class="avatar-title bg-warning-subtle rounded fs-3"><i class="bx bx-user text-warning"></i></span></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">...</span>명</h4></div></div></div>
                         </div>
                     </div>
-                    <div class="col-xl-3 col-md-6">
+                   <div class="col-xl-3 col-md-6">
                         <div class="card card-animate">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-grow-1 overflow-hidden">
-                                        <p class="text-uppercase fw-medium text-muted text-truncate mb-0">지급 직원 수</p>
-                                        <div class="d-flex align-items-end justify-content-between">
-                                            <div>
-                                                <h4 class="fs-22 fw-semibold ff-secondary mb-4">
-                                                    <span class="counter-value" data-target="<?= $stats['unique_employees'] ?>">0</span>명
-                                                </h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex-shrink-0">
-                                        <div class="avatar-sm flex-shrink-0">
-                                            <span class="avatar-title bg-warning-subtle rounded fs-3">
-                                                <i class="bx bx-user text-warning"></i>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card card-animate">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-grow-1 overflow-hidden">
-                                        <p class="text-uppercase fw-medium text-muted text-truncate mb-0">지급 부서 수</p>
-                                        <div class="d-flex align-items-end justify-content-between">
-                                            <div>
-                                                <h4 class="fs-22 fw-semibold ff-secondary mb-4">
-                                                    <span class="counter-value" data-target="<?= $stats['unique_departments'] ?>">0</span>개
-                                                </h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex-shrink-0">
-                                        <div class="avatar-sm flex-shrink-0">
-                                            <span class="avatar-title bg-primary-subtle rounded fs-3">
-                                                <i class="bx bx-buildings text-primary"></i>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="card-body"><div class="d-flex align-items-center"><div class="flex-grow-1"><p class="text-uppercase fw-medium text-muted mb-0">지급 부서 수</p></div><div class="flex-shrink-0"><span class="avatar-title bg-primary-subtle rounded fs-3"><i class="bx bx-buildings text-primary"></i></span></div></div><div class="d-flex align-items-end justify-content-between mt-4"><div><h4 class="fs-22 fw-semibold ff-secondary mb-0"><span class="counter-value">...</span>개</h4></div></div></div>
                         </div>
                     </div>
                 </div>
@@ -136,110 +57,114 @@
                         <h5 class="card-title mb-0">지급 목록</h5>
                     </div>
                     <div class="col-md-6 text-end">
-                        <a href="/supply/distributions/create" class="btn btn-success">
+                        <button type="button" class="btn btn-success" id="add-distribution-btn">
                             <i class="ri-add-line align-bottom me-1"></i> 지급 등록
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
             <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="search-box">
-                            <input type="text" class="form-control" id="search-distributions" placeholder="품목명, 직원명, 부서명 검색...">
-                            <i class="ri-search-line search-icon"></i>
+                <div class="table-responsive">
+                    <table class="table table-nowrap table-striped-columns mb-0" id="distributions-table" style="width:100%">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">지급일</th>
+                                <th scope="col">품목</th>
+                                <th scope="col">수량</th>
+                                <th scope="col">직원</th>
+                                <th scope="col">부서</th>
+                                <th scope="col">상태</th>
+                                <th scope="col">작업</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by DataTables -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Distribution Modal -->
+<div class="modal fade" id="distributionModal" tabindex="-1" aria-labelledby="distributionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="distributionModalLabel">지급 등록/수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="distribution-form" class="needs-validation" novalidate>
+                    <input type="hidden" id="distribution-id" name="id">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modal-item-id" class="form-label">지급 품목 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="modal-item-id" name="item_id" required>
+                                    <option value="">불러오는 중...</option>
+                                </select>
+                                <div class="form-text">재고가 있는 품목만 표시됩니다.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modal-quantity" class="form-label">지급 수량 <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="modal-quantity" name="quantity" min="1" required>
+                                    <span class="input-group-text" id="modal-unit-display">개</span>
+                                </div>
+                                <div class="form-text">
+                                    <span id="modal-stock-info">품목을 선택하면 재고 정보가 표시됩니다.</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <input type="date" class="form-control" id="filter-start-date" placeholder="시작일">
-                    </div>
-                    <div class="col-md-3">
-                        <input type="date" class="form-control" id="filter-end-date" placeholder="종료일">
-                    </div>
-                </div>
 
-                <?php if (empty($distributions)): ?>
-                    <div class="text-center py-5">
-                        <i class="ri-gift-line fs-1 text-muted"></i>
-                        <p class="mt-3 text-muted">등록된 지급이 없습니다.</p>
-                        <a href="/supply/distributions/create" class="btn btn-success">
-                            <i class="ri-add-line me-1"></i> 첫 번째 지급 등록하기
-                        </a>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modal-department-id" class="form-label">부서 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="modal-department-id" name="department_id" required>
+                                    <option value="">불러오는 중...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modal-employee-id" class="form-label">직원 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="modal-employee-id" name="employee_id" required disabled>
+                                    <option value="">먼저 부서를 선택하세요</option>
+                                </select>
+                                <div class="form-text">부서를 선택하면 해당 부서의 직원 목록이 표시됩니다.</div>
+                            </div>
+                        </div>
                     </div>
-                <?php else: ?>
-                    <div class="table-responsive">
-                        <table class="table table-nowrap table-striped-columns mb-0" id="distributions-table">
-                            <thead class="table-light">
-                                <tr>
-                                    <th scope="col">지급일</th>
-                                    <th scope="col">품목</th>
-                                    <th scope="col">수량</th>
-                                    <th scope="col">직원</th>
-                                    <th scope="col">부서</th>
-                                    <th scope="col">상태</th>
-                                    <th scope="col">작업</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($distributions as $distribution): ?>
-                                    <tr>
-                                        <td><?= date('Y-m-d', strtotime($distribution['distribution_date'])) ?></td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="flex-grow-1">
-                                                    <h6 class="fs-14 mb-0"><?= e($distribution['item_name']) ?></h6>
-                                                    <p class="text-muted mb-0 fs-12"><?= e($distribution['item_code']) ?></p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="text-end"><?= number_format($distribution['quantity']) ?></td>
-                                        <td><?= e($distribution['employee_name']) ?></td>
-                                        <td><?= e($distribution['department_name']) ?></td>
-                                        <td>
-                                            <?php if ($distribution['is_cancelled']): ?>
-                                                <span class="badge badge-soft-danger">
-                                                    <i class="ri-close-circle-line me-1"></i>취소됨
-                                                </span>
-                                                <br>
-                                                <small class="text-muted"><?= date('Y-m-d', strtotime($distribution['cancelled_at'])) ?></small>
-                                            <?php else: ?>
-                                                <span class="badge badge-soft-success">
-                                                    <i class="ri-checkbox-circle-line me-1"></i>지급 완료
-                                                </span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <div class="dropdown">
-                                                <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="ri-more-fill align-middle"></i>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end">
-                                                    <li>
-                                                        <a class="dropdown-item" href="/supply/distributions/show?id=<?= $distribution['id'] ?>">
-                                                            <i class="ri-eye-fill align-bottom me-2 text-muted"></i> 상세보기
-                                                        </a>
-                                                    </li>
-                                                    <?php if (!$distribution['is_cancelled']): ?>
-                                                        <li>
-                                                            <a class="dropdown-item" href="/supply/distributions/edit?id=<?= $distribution['id'] ?>">
-                                                                <i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 수정
-                                                            </a>
-                                                        </li>
-                                                        <li>
-                                                            <button class="dropdown-item cancel-distribution-btn" data-id="<?= $distribution['id'] ?>" data-name="<?= e($distribution['item_name']) ?>" data-employee="<?= e($distribution['employee_name']) ?>">
-                                                                <i class="ri-close-circle-fill align-bottom me-2 text-muted"></i> 취소
-                                                            </button>
-                                                        </li>
-                                                    <?php endif; ?>
-                                                </ul>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="modal-notes" class="form-label">비고</label>
+                                <textarea class="form-control" id="modal-notes" name="notes" rows="3" placeholder="추가 정보를 입력하세요"></textarea>
+                            </div>
+                        </div>
                     </div>
-                <?php endif; ?>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modal-distribution-date" class="form-label">지급일 <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="modal-distribution-date" name="distribution_date" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="save-distribution-btn">저장</button>
             </div>
         </div>
     </div>
