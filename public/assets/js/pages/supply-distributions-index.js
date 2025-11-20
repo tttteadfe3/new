@@ -1,7 +1,7 @@
 class SupplyDistributionsIndexPage extends BasePage {
     constructor() {
         super({
-            API_URL: '/supply/distributions'
+            API_URL: '/api/supply/distributions'
         });
         
         this.dataTable = null;
@@ -18,12 +18,8 @@ class SupplyDistributionsIndexPage extends BasePage {
         this.loadStatistics();
     }
 
-    initializeDataTable() {
+    async initializeDataTable() {
         this.dataTable = $('#distributions-table').DataTable({
-            ajax: {
-                url: this.config.API_URL,
-                dataSrc: 'distributions'
-            },
             columns: [
                 { data: 'distribution_date' },
                 { data: 'item_name' },
@@ -43,6 +39,17 @@ class SupplyDistributionsIndexPage extends BasePage {
                 url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
             }
         });
+        await this.reloadTable();
+    }
+
+    async reloadTable() {
+        try {
+            const response = await this.apiCall(this.config.API_URL);
+            const distributions = response.data.distributions;
+            this.dataTable.clear().rows.add(distributions).draw();
+        } catch (error) {
+            Toast.error('데이터를 불러오는 데 실패했습니다.');
+        }
     }
 
     initializeModals() {
@@ -160,8 +167,8 @@ class SupplyDistributionsIndexPage extends BasePage {
 
     async populateDepartments() {
         try {
-            const response = await this.apiCall(`${this.config.API_URL}/departments`);
-            const departments = response.data.departments;
+            const response = await this.apiCall('/api/organization');
+            const departments = response.data;
             const $select = $('#modal-department-id');
             $select.empty().append('<option value="">선택하세요</option>');
             departments.forEach(dept => {
@@ -180,8 +187,8 @@ class SupplyDistributionsIndexPage extends BasePage {
         }
 
         try {
-            const response = await this.apiCall(`${this.config.API_URL}/employees-by-department/${departmentId}`);
-            const employees = response.data.employees;
+            const response = await this.apiCall(`/api/employees?department_id=${departmentId}`);
+            const employees = response.data;
             employees.forEach(emp => {
                 $select.append(`<option value="${emp.id}">${emp.name}</option>`);
             });
@@ -208,7 +215,7 @@ class SupplyDistributionsIndexPage extends BasePage {
             await this.apiCall(url, { method, body: JSON.stringify(data) });
             Toast.success(`지급이 성공적으로 ${id ? '수정' : '등록'}되었습니다.`);
             this.distributionModal.hide();
-            this.dataTable.ajax.reload();
+            await this.reloadTable();
         } catch (error) {
             Toast.error(error.message || '저장에 실패했습니다.');
         }
@@ -233,7 +240,7 @@ class SupplyDistributionsIndexPage extends BasePage {
             });
             Toast.success('지급이 성공적으로 취소되었습니다.');
             this.cancelModal.hide();
-            this.dataTable.ajax.reload();
+            await this.reloadTable();
         } catch (error) {
             Toast.error(error.message || '취소에 실패했습니다.');
         }
