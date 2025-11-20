@@ -41,7 +41,6 @@ class SupplyDistributionsPage extends BasePage {
             const documentsData = await this.apiCall(`/api/supply-distributions/documents?${queryString}`);
 
             this.dataTable.clear().rows.add(documentsData.data || []).draw();
-            this.rebindEventListeners();
         } catch (error) {
             console.error('Error loading documents data:', error);
             Toast.error('문서 데이터를 불러오는 중 오류가 발생했습니다.');
@@ -50,7 +49,10 @@ class SupplyDistributionsPage extends BasePage {
 
     initializeDataTable() {
         const self = this;
-        this.dataTable = $('#documents-table').DataTable({
+        const table = document.getElementById('documents-table');
+        if (!table) return;
+
+        this.dataTable = new DataTable(table, {
             responsive: true,
             language: {
                 url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
@@ -91,18 +93,18 @@ class SupplyDistributionsPage extends BasePage {
                     `
                 }
             ],
-            drawCallback: () => {
-                this.rebindEventListeners();
             }
         });
-    }
 
-    rebindEventListeners() {
-        $('.cancel-distribution-btn').off('click').on('click', (e) => {
-            const btn = e.currentTarget;
-            const id = btn.dataset.id;
-            const itemName = btn.dataset.name;
-            this.showCancelModal(id, itemName);
+        table.addEventListener('click', (e) => {
+            const target = e.target;
+            const cancelButton = target.closest('.cancel-distribution-btn');
+
+            if (cancelButton) {
+                const id = cancelButton.dataset.id;
+                const itemName = cancelButton.dataset.name;
+                this.showCancelModal(id, itemName);
+            }
         });
     }
 
@@ -168,7 +170,7 @@ class SupplyDistributionsPage extends BasePage {
     async loadDepartments() {
         const deptSelect = document.getElementById('department-select');
         try {
-            const response = await this.apiCall('/api/supply-distributions/departments');
+            const response = await this.apiCall('/api/organization/managable-departments');
             this.departments = response.data || [];
             this.renderOptions(deptSelect, this.departments, {
                 value: 'id',
@@ -178,6 +180,35 @@ class SupplyDistributionsPage extends BasePage {
         } catch (error) {
             this.handleApiError(error, deptSelect, '부서 목록을 불러오는 중 오류가 발생했습니다.');
         }
+
+        // Document Create Modal
+        const addItemBtn = document.getElementById('add-item-btn');
+        const addEmployeeBtn = document.getElementById('add-employee-btn');
+        const saveDocumentBtn = document.getElementById('save-document-btn');
+        const itemList = document.getElementById('item-list');
+        const employeeList = document.getElementById('employee-list');
+        const departmentSelect = document.getElementById('department-select');
+
+        departmentSelect?.addEventListener('change', (e) => this.loadEmployeesByDepartment(e.target.value));
+        addItemBtn?.addEventListener('click', () => this.addItem());
+        addEmployeeBtn?.addEventListener('click', () => this.addEmployee());
+        saveDocumentBtn?.addEventListener('click', () => this.handleSaveDocument());
+
+        itemList?.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.remove-item-btn');
+            if (removeBtn) {
+                const itemId = removeBtn.dataset.id;
+                this.removeItem(itemId);
+            }
+        });
+
+        employeeList?.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.remove-employee-btn');
+            if (removeBtn) {
+                const employeeId = removeBtn.dataset.id;
+                this.removeEmployee(employeeId);
+            }
+        });
     }
 
     async loadEmployeesByDepartment(departmentId) {
@@ -194,6 +225,8 @@ class SupplyDistributionsPage extends BasePage {
         employeeSelect.innerHTML = '<option value="">불러오는 중...</option>';
         employeeSelect.disabled = false;
 
+    async loadDepartments() {
+        const deptSelect = document.getElementById('department-select');
         try {
             const response = await this.apiCall(`/api/supply-distributions/employees-by-department/${departmentId}`);
             this.employeesByDept = response.data || [];

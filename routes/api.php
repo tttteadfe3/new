@@ -278,7 +278,6 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     // 지급 관리 API
     $router->post('/supply/distributions/documents', [SupplyDistributionApiController::class, 'storeDocument'])->name('api.supply.distributions.documents.store')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
     $router->get('/supply/distributions/available-items', [SupplyDistributionApiController::class, 'getAvailableItems'])->name('api.supply.distributions.available-items')->middleware('auth')->middleware('permission', 'supply.distribution.view');
-    $router->get('/supply/distributions/departments', [SupplyDistributionApiController::class, 'getDepartments'])->name('api.supply.distributions.departments')->middleware('auth')->middleware('permission', 'supply.distribution.view');
     $router->get('/supply/distributions/employees-by-department/{deptId}', [SupplyDistributionApiController::class, 'getEmployeesByDepartment'])->name('api.supply.distributions.employees')->middleware('auth')->middleware('permission', 'supply.distribution.view');
     $router->get('/supply/distributions', [SupplyDistributionApiController::class, 'index'])->name('api.supply.distributions.index')->middleware('auth')->middleware('permission', 'supply.distribution.view');
     $router->get('/supply/distributions/{id}', [SupplyDistributionApiController::class, 'show'])->name('api.supply.distributions.show')->middleware('auth')->middleware('permission', 'supply.distribution.view');
