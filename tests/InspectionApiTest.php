@@ -16,10 +16,16 @@ class InspectionApiTest extends TestCase
         $pdo = $db->getConnection();
         $pdo->exec('DELETE FROM vm_vehicle_inspections');
         $pdo->exec('DELETE FROM vm_vehicles');
+        $pdo->exec('DELETE FROM hr_departments');
 
-        // Create a vehicle to associate with the inspection record
+        // Create a department to associate with the vehicle
+        $stmt = $pdo->prepare("INSERT INTO hr_departments (name) VALUES (?)");
+        $stmt->execute(['Test Department']);
+        $departmentId = $pdo->lastInsertId();
+
+        // Create a vehicle to associate with the inspection
         $stmt = $pdo->prepare("INSERT INTO vm_vehicles (vehicle_number, model, year, department_id, status_code) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute(['333가3333', 'K9', 2025, 1, 'NORMAL']);
+        $stmt->execute(['123가4567', 'Sonata', 2022, $departmentId, 'NORMAL']);
         self::$createdVehicleId = $pdo->lastInsertId();
     }
 
@@ -33,11 +39,11 @@ class InspectionApiTest extends TestCase
         $response = $this->http->post('inspections', [
             'json' => [
                 'vehicle_id' => self::$createdVehicleId,
-                'inspection_date' => '2025-01-01',
-                'expiry_date' => '2026-01-01',
-                'inspector_name' => 'Test Inspector',
-                'result' => 'Pass',
-                'cost' => 50000
+                'inspection_date' => '2023-10-01',
+                'expiry_date' => '2025-09-30',
+                'inspector_name' => 'Korea Transportation Safety Authority',
+                'result' => '합격',
+                'cost' => 55000,
             ]
         ]);
 
@@ -67,13 +73,13 @@ class InspectionApiTest extends TestCase
     {
         $response = $this->http->put('inspections/' . self::$createdInspectionId, [
             'json' => [
-                'cost' => 55000
+                'cost' => 60000
             ]
         ]);
 
         $this->assertEquals(200, $response->getStatusCode());
         $data = json_decode($response->getBody(), true);
-        $this->assertEquals(55000, $data['data']['cost']);
+        $this->assertEquals(60000, $data['data']['cost']);
     }
 
     public function testDeleteInspection()

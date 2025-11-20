@@ -16,16 +16,22 @@ class BreakdownApiTest extends TestCase
         $pdo = $db->getConnection();
         $pdo->exec('DELETE FROM vm_vehicle_breakdowns');
         $pdo->exec('DELETE FROM vm_vehicles');
+        $pdo->exec('DELETE FROM hr_departments');
+
+        // Create a department to associate with the vehicle
+        $stmt = $pdo->prepare("INSERT INTO hr_departments (name) VALUES (?)");
+        $stmt->execute(['Test Department']);
+        $departmentId = $pdo->lastInsertId();
 
         // Create a vehicle to associate with the breakdown
         $stmt = $pdo->prepare("INSERT INTO vm_vehicles (vehicle_number, model, year, department_id, status_code) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute(['987하6543', 'K3', 2021, 1, 'NORMAL']);
+        $stmt->execute(['987하6543', 'K3', 2021, $departmentId, 'NORMAL']);
         self::$createdVehicleId = $pdo->lastInsertId();
     }
 
     protected function setUp(): void
     {
-        $this->http = new Client(['base_uri' => 'http://localhost/api/', 'http_errors' => false]);
+        $this->http = new Client(['base_uri' => 'http://localhost:8080/api/', 'http_errors' => false]);
     }
 
     public function testCreateBreakdown()

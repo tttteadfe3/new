@@ -16,10 +16,16 @@ class MaintenanceApiTest extends TestCase
         $pdo = $db->getConnection();
         $pdo->exec('DELETE FROM vm_vehicle_maintenances');
         $pdo->exec('DELETE FROM vm_vehicles');
+        $pdo->exec('DELETE FROM hr_departments');
 
-        // Create a vehicle to associate with the maintenance record
+        // Create a department to associate with the vehicle
+        $stmt = $pdo->prepare("INSERT INTO hr_departments (name) VALUES (?)");
+        $stmt->execute(['Test Department']);
+        $departmentId = $pdo->lastInsertId();
+
+        // Create a vehicle to associate with the maintenance
         $stmt = $pdo->prepare("INSERT INTO vm_vehicles (vehicle_number, model, year, department_id, status_code) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute(['111가1111', 'K7', 2023, 1, 'NORMAL']);
+        $stmt->execute(['123가4567', 'Sonata', 2022, $departmentId, 'NORMAL']);
         self::$createdVehicleId = $pdo->lastInsertId();
     }
 
