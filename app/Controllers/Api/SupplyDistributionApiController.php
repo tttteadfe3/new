@@ -478,19 +478,21 @@ class SupplyDistributionApiController extends BaseApiController
         }
     }
 
-    /**
-     * 모든 부서 목록을 조회합니다.
-     */
-    public function getDepartments(): void
+    public function storeDocument(): void
     {
         try {
-            $departments = $this->supplyDistributionService->getAllDepartments();
+            $data = $this->getJsonInput();
             
-            $this->apiSuccess([
-                'departments' => $departments,
-                'total' => count($departments)
-            ]);
-        } catch (Exception $e) {
+            // Basic validation
+            if (empty($data['title']) || empty($data['items']) || empty($data['employees'])) {
+                $this->apiBadRequest('문서 제목, 품목, 직원은 필수입니다.');
+                return;
+            }
+
+            $documentId = $this->distributionDocumentService->createDocument($data, $this->getCurrentUserId());
+
+            $this->apiSuccess(['document_id' => $documentId], '지급 문서가 성공적으로 생성되었습니다.');
+        } catch (\Exception $e) {
             $this->handleException($e);
         }
     }

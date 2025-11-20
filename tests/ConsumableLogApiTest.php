@@ -7,43 +7,49 @@ use PHPUnit\Framework\TestCase;
 class ConsumableLogApiTest extends TestCase
 {
     private Client $http;
+    private static int $createdVehicleId;
+    private static int $createdConsumableId;
     private static int $createdConsumableLogId;
-    private static int $vehicleId;
-    private static int $consumableId;
 
     public static function setUpBeforeClass(): void
     {
         $db = new Database();
         $pdo = $db->getConnection();
         $pdo->exec('DELETE FROM vm_consumable_logs');
-        $pdo->exec('DELETE FROM vm_vehicles');
         $pdo->exec('DELETE FROM vm_vehicle_consumables');
+        $pdo->exec('DELETE FROM vm_vehicles');
+        $pdo->exec('DELETE FROM hr_departments');
 
-        // Create a vehicle and a consumable for testing
-        $stmt = $pdo->prepare("INSERT INTO vm_vehicles (vehicle_number, model, year, status_code, department_id) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute(['123가4567', 'K5', 2022, 'NORMAL', 1]);
-        self::$vehicleId = $pdo->lastInsertId();
+        // Create a department to associate with the vehicle
+        $stmt = $pdo->prepare("INSERT INTO hr_departments (name) VALUES (?)");
+        $stmt->execute(['Test Department']);
+        $departmentId = $pdo->lastInsertId();
 
-        $stmt = $pdo->prepare("INSERT INTO vm_vehicle_consumables (name, unit, unit_price) VALUES (?, ?, ?)");
-        $stmt->execute(['Engine Oil', 'L', 15000]);
-        self::$consumableId = $pdo->lastInsertId();
+        // Create a vehicle to associate with the log
+        $stmt = $pdo->prepare("INSERT INTO vm_vehicles (vehicle_number, model, year, department_id, status_code) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute(['123가4567', 'Sonata', 2022, $departmentId, 'NORMAL']);
+        self::$createdVehicleId = $pdo->lastInsertId();
+
+        // Create a consumable to associate with the log
+        $stmt = $pdo->prepare("INSERT INTO vm_vehicle_consumables (name, unit_price, unit) VALUES (?, ?, ?)");
+        $stmt->execute(['Engine Oil', 25000, 'L']);
+        self::$createdConsumableId = $pdo->lastInsertId();
     }
 
     protected function setUp(): void
     {
-        $this->http = new Client(['base_uri' => 'http://localhost/api/', 'http_errors' => false]);
+        $this->http = new Client(['base_uri' => 'http://localhost:8080/api/', 'http_errors' => false]);
     }
 
     public function testCreateConsumableLog()
     {
         $response = $this->http->post('consumable-logs', [
             'json' => [
-                'vehicle_id' => self::$vehicleId,
-                'consumable_id' => self::$consumableId,
-                'replacement_date' => date('Y-m-d'),
-                'quantity' => 4,
-                'total_cost' => 60000,
-                'notes' => 'Regular engine oil change'
+                'vehicle_id' => self::$createdVehicleId,
+                'consumable_id' => self::$createdConsumableId,
+                'quantity' => 5,
+                'total_cost' => 125000,
+                'replacement_date' => '2023-10-15',
             ]
         ]);
 
@@ -73,15 +79,13 @@ class ConsumableLogApiTest extends TestCase
     {
         $response = $this->http->put('consumable-logs/' . self::$createdConsumableLogId, [
             'json' => [
-                'quantity' => 5,
-                'total_cost' => 75000,
-                'notes' => 'Updated notes'
+                'total_cost' => 130000
             ]
         ]);
 
         $this->assertEquals(200, $response->getStatusCode());
         $data = json_decode($response->getBody(), true);
-        $this->assertEquals(5, $data['data']['quantity']);
+        $this->assertEquals(130000, $data['data']['total_cost']);
     }
 
     public function testDeleteConsumableLog()

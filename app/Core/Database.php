@@ -76,4 +76,8 @@ class Database {
     public function rollBack() {
         $this->pdo->rollBack();
     }
+
+    public function getConnection(): PDO {
+        return $this->pdo;
+    }
 }
