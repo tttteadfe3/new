@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\Vehicle;
 use App\Repositories\VehicleRepository;
-use InvalidArgumentException;
+use Exception;
 
 class VehicleService
 {
@@ -15,45 +15,60 @@ class VehicleService
         $this->vehicleRepository = $vehicleRepository;
     }
 
-    public function getVehicles(array $filters = []): array
+    public function getVehicleById(int $id): ?Vehicle
     {
-        return $this->vehicleRepository->findAll($filters);
+        return $this->vehicleRepository->find($id);
     }
 
-    public function getVehicleById(int $id): ?array
+    public function getAllVehicles(): array
     {
-        return $this->vehicleRepository->findById($id);
+        return $this->vehicleRepository->findAll();
     }
 
-    public function createVehicle(array $data): int
+    public function createVehicle(array $data): Vehicle
     {
-        $vehicle = Vehicle::make($data);
+        $vehicle = new Vehicle($data);
         if (!$vehicle->validate()) {
-            throw new InvalidArgumentException('Invalid vehicle data: ' . implode(', ', $vehicle->getErrors()));
+            throw new Exception("Validation failed: " . implode(", ", $vehicle->getErrors()));
         }
-
-        return $this->vehicleRepository->save($vehicle->getAttributes());
+        return $this->vehicleRepository->create($vehicle);
     }
 
-    public function updateVehicle(int $id, array $data): int
+    public function updateVehicle(int $id, array $data): bool
     {
-        $existingVehicle = $this->getVehicleById($id);
-        if (!$existingVehicle) {
-            throw new InvalidArgumentException('Vehicle not found');
+        $vehicle = $this->vehicleRepository->find($id);
+        if (!$vehicle) {
+            return false;
         }
-
-        // Use a different validation scenario for updates
-        $vehicle = Vehicle::make($data);
-        if (!$vehicle->validate(true)) {
-            throw new InvalidArgumentException('Invalid vehicle data: ' . implode(', ', $vehicle->getErrors()));
+        $vehicle->fill($data);
+        if (!$vehicle->validate()) {
+            throw new Exception("Validation failed: " . implode(", ", $vehicle->getErrors()));
         }
-
-        $data['id'] = $id;
-        return $this->vehicleRepository->save($data);
+        return $this->vehicleRepository->update($vehicle);
     }
 
     public function deleteVehicle(int $id): bool
     {
         return $this->vehicleRepository->delete($id);
+    }
+
+    public function changeVehicleStatus(int $id, string $status): bool
+    {
+        $vehicle = $this->vehicleRepository->find($id);
+        if (!$vehicle) {
+            return false;
+        }
+        $vehicle->status = $status;
+        return $this->vehicleRepository->update($vehicle);
+    }
+
+    public function assignToDepartment(int $id, int $departmentId): bool
+    {
+        $vehicle = $this->vehicleRepository->find($id);
+        if (!$vehicle) {
+            return false;
+        }
+        $vehicle->department_id = $departmentId;
+        return $this->vehicleRepository->update($vehicle);
     }
 }
