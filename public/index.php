@@ -66,6 +66,18 @@ $container->register(\App\Repositories\SupplyPurchaseRepository::class, fn($c) =
 $container->register(\App\Repositories\SupplyDistributionRepository::class, fn($c) => new \App\Repositories\SupplyDistributionRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 $container->register(\App\Repositories\SupplyStockRepository::class, fn($c) => new \App\Repositories\SupplyStockRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 
+// Vehicle Management Repositories
+$container->register(\App\Repositories\VehicleRepository::class, fn($c) => new \App\Repositories\VehicleRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\VehicleBreakdownRepository::class, fn($c) => new \App\Repositories\VehicleBreakdownRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\VehicleRepairRepository::class, fn($c) => new \App\Repositories\VehicleRepairRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\VehicleSelfMaintenanceRepository::class, fn($c) => new \App\Repositories\VehicleSelfMaintenanceRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\VehicleConsumableRepository::class, fn($c) => new \App\Repositories\VehicleConsumableRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\VehicleConsumableLogRepository::class, fn($c) => new \App\Repositories\VehicleConsumableLogRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\VehicleInsuranceRepository::class, fn($c) => new \App\Repositories\VehicleInsuranceRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\VehicleTaxRepository::class, fn($c) => new \App\Repositories\VehicleTaxRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\VehicleInspectionRepository::class, fn($c) => new \App\Repositories\VehicleInspectionRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\VehicleDocumentRepository::class, fn($c) => new \App\Repositories\VehicleDocumentRepository($c->resolve(Database::class)));
+
 
 // 3. Application services that depend on repositories and other services.
 $container->register(\App\Services\AuthService::class, fn($c) => new \App\Services\AuthService(
@@ -178,6 +190,28 @@ $container->register(\App\Services\SupplyReportService::class, fn($c) => new \Ap
     $c->resolve(Database::class),
     $c->resolve(\App\Services\ActivityLogger::class)
 ));
+
+// Vehicle Management Services
+$container->register(\App\Services\VehicleService::class, fn($c) => new \App\Services\VehicleService($c->resolve(\App\Repositories\VehicleRepository::class)));
+$container->register(\App\Services\VehicleBreakdownService::class, fn($c) => new \App\Services\VehicleBreakdownService(
+    $c->resolve(\App\Repositories\VehicleBreakdownRepository::class),
+    $c->resolve(\App\Repositories\VehicleRepository::class)
+));
+$container->register(\App\Services\VehicleMaintenanceService::class, fn($c) => new \App\Services\VehicleMaintenanceService(
+    $c->resolve(\App\Repositories\VehicleRepairRepository::class),
+    $c->resolve(\App\Repositories\VehicleSelfMaintenanceRepository::class)
+));
+$container->register(\App\Services\VehicleConsumableService::class, fn($c) => new \App\Services\VehicleConsumableService(
+    $c->resolve(\App\Repositories\VehicleConsumableRepository::class),
+    $c->resolve(\App\Repositories\VehicleConsumableLogRepository::class)
+));
+$container->register(\App\Services\VehicleAdminService::class, fn($c) => new \App\Services\VehicleAdminService(
+    $c->resolve(\App\Repositories\VehicleInsuranceRepository::class),
+    $c->resolve(\App\Repositories\VehicleTaxRepository::class),
+    $c->resolve(\App\Repositories\VehicleInspectionRepository::class),
+    $c->resolve(\App\Repositories\VehicleDocumentRepository::class)
+));
+
 
 // 4. Controllers (Web and API)
 $container->register(\App\Controllers\Web\LeaveController::class, fn($c) => new \App\Controllers\Web\LeaveController(

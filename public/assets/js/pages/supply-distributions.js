@@ -15,7 +15,8 @@ class SupplyDistributionsPage extends BasePage {
         this.documentItems = [];
         this.documentEmployees = [];
         this.availableItems = [];
-        this.allEmployees = [];
+        this.departments = [];
+        this.employeesByDept = [];
     }
 
     setupEventListeners() {
@@ -118,7 +119,9 @@ class SupplyDistributionsPage extends BasePage {
         const saveDocumentBtn = document.getElementById('save-document-btn');
         const itemList = document.getElementById('item-list');
         const employeeList = document.getElementById('employee-list');
+        const departmentSelect = document.getElementById('department-select');
 
+        departmentSelect?.addEventListener('change', (e) => this.loadEmployeesByDepartment(e.target.value));
         addItemBtn?.addEventListener('click', () => this.addItem());
         addEmployeeBtn?.addEventListener('click', () => this.addEmployee());
         saveDocumentBtn?.addEventListener('click', () => this.handleSaveDocument());
@@ -143,7 +146,7 @@ class SupplyDistributionsPage extends BasePage {
     async loadDocumentModalData() {
         await Promise.all([
             this.loadAvailableItems(),
-            this.loadAllEmployees()
+            this.loadDepartments()
         ]);
     }
 
@@ -162,12 +165,39 @@ class SupplyDistributionsPage extends BasePage {
         }
     }
 
-    async loadAllEmployees() {
-        const employeeSelect = document.getElementById('employee-select');
+    async loadDepartments() {
+        const deptSelect = document.getElementById('department-select');
         try {
-            const response = await this.apiCall(`/api/employees`);
-            this.allEmployees = response.data || [];
-            this.renderOptions(employeeSelect, this.allEmployees, {
+            const response = await this.apiCall('/api/supply-distributions/departments');
+            this.departments = response.data || [];
+            this.renderOptions(deptSelect, this.departments, {
+                value: 'id',
+                text: 'name',
+                placeholder: '부서를 선택하세요'
+            });
+        } catch (error) {
+            this.handleApiError(error, deptSelect, '부서 목록을 불러오는 중 오류가 발생했습니다.');
+        }
+    }
+
+    async loadEmployeesByDepartment(departmentId) {
+        const employeeSelect = document.getElementById('employee-select');
+        if (!employeeSelect) return;
+
+        if (!departmentId) {
+            employeeSelect.innerHTML = '<option value="">부서를 먼저 선택하세요</option>';
+            employeeSelect.disabled = true;
+            this.employeesByDept = [];
+            return;
+        }
+
+        employeeSelect.innerHTML = '<option value="">불러오는 중...</option>';
+        employeeSelect.disabled = false;
+
+        try {
+            const response = await this.apiCall(`/api/supply-distributions/employees-by-department/${departmentId}`);
+            this.employeesByDept = response.data || [];
+            this.renderOptions(employeeSelect, this.employeesByDept, {
                 value: 'id',
                 text: item => `${item.name} (${item.employee_number || '번호 없음'})`,
                 placeholder: '직원을 선택하세요'
@@ -215,7 +245,7 @@ class SupplyDistributionsPage extends BasePage {
             return;
         }
 
-        const employee = this.allEmployees.find(e => e.id == selectedEmployeeId);
+        const employee = this.employeesByDept.find(e => e.id == selectedEmployeeId);
         if (!employee) return;
         
         const existingEmployee = this.documentEmployees.find(e => e.id == selectedEmployeeId);

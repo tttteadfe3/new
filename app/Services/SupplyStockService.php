@@ -219,6 +219,14 @@ class SupplyStockService
     }
 
     /**
+     * 재고 목록을 조회합니다.
+     */
+    public function getStockList(array $filters = []): array
+    {
+        return $this->stockRepository->getStockList($filters);
+    }
+
+    /**
      * 품목별 재고를 초기화합니다.
      */
     public function initializeStock(int $itemId): bool
@@ -230,5 +238,13 @@ class SupplyStockService
         }
 
         return $this->stockRepository->initializeStock($itemId);
+    }
+
+    /**
+     * 재고 상세 정보를 조회합니다.
+     */
+    public function getStockDetails(int $stockId): ?array
+    {
+        return $this->stockRepository->getStockDetails($stockId);
     }
 }

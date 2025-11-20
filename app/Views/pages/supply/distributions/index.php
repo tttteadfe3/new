@@ -44,15 +44,21 @@
                             </div>
                         </div>
                         <div class="col-md-6">
+                             <div class="mb-3">
+                                <label for="department-select" class="form-label">부서 선택</label>
+                                <select class="form-select" id="department-select">
+                                    <option value="">불러오는 중...</option>
+                                </select>
+                            </div>
                             <div class="mb-3">
                                 <label class="form-label">직원 선택</label>
                                  <div class="input-group">
-                                    <select class="form-select" id="employee-select">
-                                        <option value="">불러오는 중...</option>
+                                    <select class="form-select" id="employee-select" disabled>
+                                        <option value="">부서를 먼저 선택하세요</option>
                                     </select>
                                     <button class="btn btn-outline-primary" type="button" id="add-employee-btn">추가</button>
                                 </div>
-                                <div class="form-text">지급받을 직원을 선택하고 추가 버튼을 누르세요.</div>
+                                <div class="form-text">부서를 선택하면 해당 부서의 직원이 표시됩니다.</div>
                             </div>
                         </div>
                     </div>
@@ -109,6 +115,89 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Distribution Modal -->
+<div class="modal fade" id="distributionModal" tabindex="-1" aria-labelledby="distributionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="distributionModalLabel">지급 등록/수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="distribution-form" class="needs-validation" novalidate>
+                    <input type="hidden" id="distribution-id" name="id">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modal-item-id" class="form-label">지급 품목 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="modal-item-id" name="item_id" required>
+                                    <option value="">불러오는 중...</option>
+                                </select>
+                                <div class="form-text">재고가 있는 품목만 표시됩니다.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modal-quantity" class="form-label">지급 수량 <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="modal-quantity" name="quantity" min="1" required>
+                                    <span class="input-group-text" id="modal-unit-display">개</span>
+                                </div>
+                                <div class="form-text">
+                                    <span id="modal-stock-info">품목을 선택하면 재고 정보가 표시됩니다.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modal-department-id" class="form-label">부서 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="modal-department-id" name="department_id" required>
+                                    <option value="">불러오는 중...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modal-employee-id" class="form-label">직원 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="modal-employee-id" name="employee_id" required disabled>
+                                    <option value="">먼저 부서를 선택하세요</option>
+                                </select>
+                                <div class="form-text">부서를 선택하면 해당 부서의 직원 목록이 표시됩니다.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="modal-notes" class="form-label">비고</label>
+                                <textarea class="form-control" id="modal-notes" name="notes" rows="3" placeholder="추가 정보를 입력하세요"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modal-distribution-date" class="form-label">지급일 <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="modal-distribution-date" name="distribution_date" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="save-distribution-btn">저장</button>
             </div>
         </div>
     </div>
