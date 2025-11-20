@@ -63,4 +63,21 @@ class SupplyStockApiController extends BaseApiController
             $this->apiError('서버 오류가 발생했습니다: ' . $e->getMessage());
         }
     }
+
+    /**
+     * 재고 상세 정보를 조회합니다.
+     */
+    public function show(int $id): void
+    {
+        try {
+            $stockDetails = $this->supplyStockService->getStockDetails($id);
+            if (!$stockDetails) {
+                $this->apiNotFound('재고 정보를 찾을 수 없습니다.');
+                return;
+            }
+            $this->apiSuccess($stockDetails);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
 }

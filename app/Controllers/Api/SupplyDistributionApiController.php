@@ -215,23 +215,6 @@ class SupplyDistributionApiController extends BaseApiController
         }
     }
 
-    /**
-     * 부서별 직원 목록을 조회합니다.
-     */
-    public function getEmployeesByDepartment(int $departmentId): void
-    {
-        try {
-            $employees = $this->supplyDistributionService->getEmployeesByDepartment($departmentId);
-            
-            $this->apiSuccess([
-                'department_id' => $departmentId,
-                'employees' => $employees,
-                'total' => count($employees)
-            ]);
-        } catch (Exception $e) {
-            $this->handleException($e);
-        }
-    }
 
     /**
      * 부서 전체 직원에게 지급합니다.
@@ -483,6 +466,25 @@ class SupplyDistributionApiController extends BaseApiController
         try {
             $data = $this->getJsonInput();
             
+            // Basic validation
+            if (empty($data['title']) || empty($data['items']) || empty($data['employees'])) {
+                $this->apiBadRequest('문서 제목, 품목, 직원은 필수입니다.');
+                return;
+            }
+
+            $documentId = $this->distributionDocumentService->createDocument($data, $this->getCurrentUserId());
+
+            $this->apiSuccess(['document_id' => $documentId], '지급 문서가 성공적으로 생성되었습니다.');
+        } catch (\Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    public function storeDocument(): void
+    {
+        try {
+            $data = $this->getJsonInput();
+
             // Basic validation
             if (empty($data['title']) || empty($data['items']) || empty($data['employees'])) {
                 $this->apiBadRequest('문서 제목, 품목, 직원은 필수입니다.');

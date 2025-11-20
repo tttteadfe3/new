@@ -180,6 +180,35 @@ class SupplyDistributionsPage extends BasePage {
         } catch (error) {
             this.handleApiError(error, deptSelect, '부서 목록을 불러오는 중 오류가 발생했습니다.');
         }
+
+        // Document Create Modal
+        const addItemBtn = document.getElementById('add-item-btn');
+        const addEmployeeBtn = document.getElementById('add-employee-btn');
+        const saveDocumentBtn = document.getElementById('save-document-btn');
+        const itemList = document.getElementById('item-list');
+        const employeeList = document.getElementById('employee-list');
+        const departmentSelect = document.getElementById('department-select');
+
+        departmentSelect?.addEventListener('change', (e) => this.loadEmployeesByDepartment(e.target.value));
+        addItemBtn?.addEventListener('click', () => this.addItem());
+        addEmployeeBtn?.addEventListener('click', () => this.addEmployee());
+        saveDocumentBtn?.addEventListener('click', () => this.handleSaveDocument());
+
+        itemList?.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.remove-item-btn');
+            if (removeBtn) {
+                const itemId = removeBtn.dataset.id;
+                this.removeItem(itemId);
+            }
+        });
+
+        employeeList?.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.remove-employee-btn');
+            if (removeBtn) {
+                const employeeId = removeBtn.dataset.id;
+                this.removeEmployee(employeeId);
+            }
+        });
     }
 
     async loadEmployeesByDepartment(departmentId) {
@@ -196,6 +225,8 @@ class SupplyDistributionsPage extends BasePage {
         employeeSelect.innerHTML = '<option value="">불러오는 중...</option>';
         employeeSelect.disabled = false;
 
+    async loadDepartments() {
+        const deptSelect = document.getElementById('department-select');
         try {
             const response = await this.apiCall(`/api/supply-distributions/employees-by-department/${departmentId}`);
             this.employeesByDept = response.data || [];
