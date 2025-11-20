@@ -321,7 +321,7 @@ class SupplyStockRepository
      */
     public function getStockDetails(int $stockId): ?array
     {
-        $stockSql = "SELECT ss.id, ss.current_stock, si.item_name, si.item_code, sc.category_name, si.unit
+        $stockSql = "SELECT ss.id, ss.item_id, ss.current_stock, si.item_name, si.item_code, sc.category_name, si.unit
                      FROM supply_stocks ss
                      JOIN supply_items si ON ss.item_id = si.id
                      LEFT JOIN supply_categories sc ON si.category_id = sc.id
