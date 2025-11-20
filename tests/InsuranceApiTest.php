@@ -16,10 +16,16 @@ class InsuranceApiTest extends TestCase
         $pdo = $db->getConnection();
         $pdo->exec('DELETE FROM vm_vehicle_insurance');
         $pdo->exec('DELETE FROM vm_vehicles');
+        $pdo->exec('DELETE FROM hr_departments');
 
-        // Create a vehicle to associate with the insurance record
+        // Create a department to associate with the vehicle
+        $stmt = $pdo->prepare("INSERT INTO hr_departments (name) VALUES (?)");
+        $stmt->execute(['Test Department']);
+        $departmentId = $pdo->lastInsertId();
+
+        // Create a vehicle to associate with the insurance
         $stmt = $pdo->prepare("INSERT INTO vm_vehicles (vehicle_number, model, year, department_id, status_code) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute(['222가2222', 'K8', 2024, 1, 'NORMAL']);
+        $stmt->execute(['123가4567', 'Sonata', 2022, $departmentId, 'NORMAL']);
         self::$createdVehicleId = $pdo->lastInsertId();
     }
 
@@ -30,14 +36,14 @@ class InsuranceApiTest extends TestCase
 
     public function testCreateInsurance()
     {
-        $response = $this->http->post('insurances', [
+        $response = $this->http->post('insurance', [
             'json' => [
                 'vehicle_id' => self::$createdVehicleId,
-                'insurer_name' => 'Test Insurance Co.',
-                'policy_number' => 'POL-12345',
-                'start_date' => '2024-01-01',
-                'end_date' => '2025-01-01',
-                'premium' => 1000000
+                'insurer_name' => 'ABC Insurance',
+                'policy_number' => 'POL123456',
+                'start_date' => '2023-01-01',
+                'end_date' => '2024-01-01',
+                'premium' => 1200000,
             ]
         ]);
 
@@ -49,7 +55,7 @@ class InsuranceApiTest extends TestCase
 
     public function testGetInsurances()
     {
-        $response = $this->http->get('insurances');
+        $response = $this->http->get('insurance');
         $this->assertEquals(200, $response->getStatusCode());
         $data = json_decode($response->getBody(), true);
         $this->assertIsArray($data['data']);
@@ -57,7 +63,7 @@ class InsuranceApiTest extends TestCase
 
     public function testGetInsuranceById()
     {
-        $response = $this->http->get('insurances/' . self::$createdInsuranceId);
+        $response = $this->http->get('insurance/' . self::$createdInsuranceId);
         $this->assertEquals(200, $response->getStatusCode());
         $data = json_decode($response->getBody(), true);
         $this->assertEquals(self::$createdInsuranceId, $data['data']['id']);
@@ -65,20 +71,20 @@ class InsuranceApiTest extends TestCase
 
     public function testUpdateInsurance()
     {
-        $response = $this->http->put('insurances/' . self::$createdInsuranceId, [
+        $response = $this->http->put('insurance/' . self::$createdInsuranceId, [
             'json' => [
-                'premium' => 1100000
+                'premium' => 1250000
             ]
         ]);
 
         $this->assertEquals(200, $response->getStatusCode());
         $data = json_decode($response->getBody(), true);
-        $this->assertEquals(1100000, $data['data']['premium']);
+        $this->assertEquals(1250000, $data['data']['premium']);
     }
 
     public function testDeleteInsurance()
     {
-        $response = $this->http->delete('insurances/' . self::$createdInsuranceId);
+        $response = $this->http->delete('insurance/' . self::$createdInsuranceId);
         $this->assertEquals(204, $response->getStatusCode());
     }
 }

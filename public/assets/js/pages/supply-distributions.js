@@ -10,120 +10,66 @@ class SupplyDistributionsPage extends BasePage {
         
         this.dataTable = null;
         this.currentDistributionId = null;
+
+        // For document creation modal
+        this.documentItems = [];
+        this.documentEmployees = [];
+        this.availableItems = [];
+        this.allEmployees = [];
     }
 
     setupEventListeners() {
-        this.initializeFormHandlers();
         this.initializeModalHandlers();
         this.initializeSearchAndFilter();
     }
 
     loadInitialData() {
-        if (document.getElementById('distributions-table')) {
+        if (document.getElementById('documents-table')) {
             this.initializeDataTable();
-            this.loadDistributionsData();
+            this.loadDocumentsData();
         }
-        if (document.getElementById('distribution-form')) {
-            this.loadCreateFormData();
-        }
+        this.loadDocumentModalData();
     }
 
-    async loadDistributionsData() {
+    async loadDocumentsData() {
         try {
-            const currentYear = new Date().getFullYear();
-            const statsData = await this.apiCall(`${this.config.API_URL}/statistics?start_date=${currentYear}-01-01&end_date=${currentYear}-12-31`);
-            this.renderStats(statsData.data.statistics);
-
             const params = {
-                search: document.getElementById('search-distributions')?.value || ''
+                search: document.getElementById('search-documents')?.value || ''
             };
             const queryString = new URLSearchParams(params).toString();
-            const distributionsData = await this.apiCall(`${this.config.API_URL}?${queryString}`);
+            const documentsData = await this.apiCall(`/api/supply-distributions/documents?${queryString}`);
 
-            this.dataTable.clear().rows.add(distributionsData.data.distributions || []).draw();
+            this.dataTable.clear().rows.add(documentsData.data || []).draw();
             this.rebindEventListeners();
         } catch (error) {
-            console.error('Error loading distributions data:', error);
-            Toast.error('데이터를 불러오는 중 오류가 발생했습니다.');
+            console.error('Error loading documents data:', error);
+            Toast.error('문서 데이터를 불러오는 중 오류가 발생했습니다.');
         }
-    }
-
-    renderStats(stats) {
-        const statsContainer = document.getElementById('stats-container');
-        if (!statsContainer) return;
-
-        statsContainer.innerHTML = `
-            <div class="col-xl-3 col-md-6">
-                <div class="card card-animate">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1 overflow-hidden">
-                                <p class="text-uppercase fw-medium text-muted text-truncate mb-0">총 지급 건수</p>
-                                <h4 class="fs-22 fw-semibold ff-secondary mb-4">
-                                    <span class="counter-value">${stats.total_distributions || 0}</span>건
-                                </h4>
-                            </div>
-                            <div class="flex-shrink-0">
-                                <div class="avatar-sm flex-shrink-0">
-                                    <span class="avatar-title bg-success-subtle rounded fs-3">
-                                        <i class="bx bx-package text-success"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="card card-animate">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1 overflow-hidden">
-                                <p class="text-uppercase fw-medium text-muted text-truncate mb-0">총 지급 수량</p>
-                                <h4 class="fs-22 fw-semibold ff-secondary mb-4">
-                                    <span class="counter-value">${stats.total_quantity || 0}</span>개
-                                </h4>
-                            </div>
-                            <div class="flex-shrink-0">
-                                <div class="avatar-sm flex-shrink-0">
-                                    <span class="avatar-title bg-info-subtle rounded fs-3">
-                                        <i class="bx bx-cube text-info"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
     }
 
     initializeDataTable() {
         const self = this;
-        this.dataTable = $('#distributions-table').DataTable({
+        this.dataTable = $('#documents-table').DataTable({
             responsive: true,
             language: {
                 url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
             },
-            order: [[0, 'desc']],
+            order: [[2, 'desc']],
             searching: false,
             columns: [
-                { data: 'distribution_date', render: data => new Date(data).toLocaleDateString('ko-KR') },
+                { data: 'title', render: data => self.escapeHtml(data) },
+                { data: 'author_name', render: data => self.escapeHtml(data) },
+                { data: 'created_at', render: data => new Date(data).toLocaleDateString('ko-KR') },
                 {
-                    data: null,
-                    render: (data, type, row) => `
-                        <h6 class="fs-14 mb-0">${self.escapeHtml(row.item_name)}</h6>
-                        <p class="text-muted mb-0 fs-12">${self.escapeHtml(row.item_code)}</p>
-                    `
-                },
-                { data: 'quantity', className: 'text-end', render: data => parseInt(data).toLocaleString() },
-                { data: 'employee_name', render: data => self.escapeHtml(data) },
-                { data: 'department_name', render: data => self.escapeHtml(data) },
-                {
-                    data: 'is_cancelled',
-                    render: data => data
-                        ? `<span class="badge badge-soft-danger"><i class="ri-close-circle-line me-1"></i>취소됨</span>`
-                        : `<span class="badge badge-soft-success"><i class="ri-checkbox-circle-line me-1"></i>지급 완료</span>`
+                    data: 'status',
+                    render: status => {
+                        switch (status) {
+                            case 'draft': return `<span class="badge badge-soft-secondary">초안</span>`;
+                            case 'completed': return `<span class="badge badge-soft-success">완료</span>`;
+                            case 'cancelled': return `<span class="badge badge-soft-danger">취소</span>`;
+                            default: return `<span class="badge badge-soft-info">${self.escapeHtml(status)}</span>`;
+                        }
+                    }
                 },
                 {
                     data: null,
@@ -134,10 +80,10 @@ class SupplyDistributionsPage extends BasePage {
                                 <i class="ri-more-fill align-middle"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                ${!row.is_cancelled ? `
-                                    <li><button class="dropdown-item cancel-distribution-btn" data-id="${row.id}" data-name="${self.escapeHtml(row.item_name)}">
-                                        <i class="ri-close-circle-fill align-bottom me-2"></i> 취소
-                                    </button></li>
+                                <li><a class="dropdown-item" href="/supply/distributions/show?id=${row.id}"><i class="ri-eye-fill align-bottom me-2"></i>상세보기</a></li>
+                                ${row.status === 'draft' ? `
+                                    <li><a class="dropdown-item" href="/supply/distributions/edit?id=${row.id}"><i class="ri-pencil-fill align-bottom me-2"></i>편집</a></li>
+                                    <li><button class="dropdown-item delete-document-btn" data-id="${row.id}"><i class="ri-delete-bin-fill align-bottom me-2"></i>삭제</button></li>
                                 ` : ''}
                             </ul>
                         </div>
@@ -151,7 +97,6 @@ class SupplyDistributionsPage extends BasePage {
     }
 
     rebindEventListeners() {
-        // 기존 이벤트 리스너 제거 후 다시 바인딩 (중복 방지)
         $('.cancel-distribution-btn').off('click').on('click', (e) => {
             const btn = e.currentTarget;
             const id = btn.dataset.id;
@@ -160,59 +105,233 @@ class SupplyDistributionsPage extends BasePage {
         });
     }
 
-    initializeFormHandlers() {
-        const createForm = document.getElementById('distribution-form');
-        if (createForm) {
-            createForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleCreateSubmit(createForm);
-            });
-        }
-    }
-
-    async handleCreateSubmit(form) {
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-
-        this.setButtonLoading('#submit-btn', '처리 중...');
-
-        try {
-            await this.apiCall(this.config.API_URL, {
-                method: 'POST',
-                body: data
-            });
-
-            Toast.success('지급이 성공적으로 등록되었습니다.');
-            setTimeout(() => {
-                window.location.href = '/supply/distributions';
-            }, 1500);
-        } catch (error) {
-            console.error('Error creating distribution:', error);
-            Toast.error(error.message || '지급 등록에 실패했습니다.');
-            this.resetButtonLoading('#submit-btn', '<i class="ri-save-line me-1"></i> 지급 등록');
-        }
-    }
-
     initializeModalHandlers() {
+        // Cancel Modal
         const confirmCancelBtn = document.getElementById('confirm-cancel-distribution-btn');
         if (confirmCancelBtn) {
             confirmCancelBtn.addEventListener('click', () => this.handleCancelDistribution());
+        }
+
+        // Document Create Modal
+        const addItemBtn = document.getElementById('add-item-btn');
+        const addEmployeeBtn = document.getElementById('add-employee-btn');
+        const saveDocumentBtn = document.getElementById('save-document-btn');
+        const itemList = document.getElementById('item-list');
+        const employeeList = document.getElementById('employee-list');
+
+        addItemBtn?.addEventListener('click', () => this.addItem());
+        addEmployeeBtn?.addEventListener('click', () => this.addEmployee());
+        saveDocumentBtn?.addEventListener('click', () => this.handleSaveDocument());
+
+        itemList?.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.remove-item-btn');
+            if (removeBtn) {
+                const itemId = removeBtn.dataset.id;
+                this.removeItem(itemId);
+            }
+        });
+
+        employeeList?.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.remove-employee-btn');
+            if (removeBtn) {
+                const employeeId = removeBtn.dataset.id;
+                this.removeEmployee(employeeId);
+            }
+        });
+    }
+
+    async loadDocumentModalData() {
+        await Promise.all([
+            this.loadAvailableItems(),
+            this.loadAllEmployees()
+        ]);
+    }
+
+    async loadAvailableItems() {
+        const itemSelect = document.getElementById('item-select');
+        try {
+            const response = await this.apiCall(`/api/supply-distributions/available-items`);
+            this.availableItems = response.data || [];
+            this.renderOptions(itemSelect, this.availableItems, {
+                value: 'id',
+                text: item => `${item.item_name} (재고: ${this.formatNumber(item.current_stock)} ${item.unit})`,
+                placeholder: '품목을 선택하세요'
+            });
+        } catch (error) {
+            this.handleApiError(error, itemSelect, '품목 목록을 불러오는 중 오류가 발생했습니다.');
+        }
+    }
+
+    async loadAllEmployees() {
+        const employeeSelect = document.getElementById('employee-select');
+        try {
+            const response = await this.apiCall(`/api/employees`);
+            this.allEmployees = response.data || [];
+            this.renderOptions(employeeSelect, this.allEmployees, {
+                value: 'id',
+                text: item => `${item.name} (${item.employee_number || '번호 없음'})`,
+                placeholder: '직원을 선택하세요'
+            });
+        } catch (error) {
+            this.handleApiError(error, employeeSelect, '직원 목록을 불러오는 중 오류가 발생했습니다.');
+        }
+    }
+
+    addItem() {
+        const itemSelect = document.getElementById('item-select');
+        const quantityInput = document.getElementById('item-quantity');
+        const selectedItemId = itemSelect.value;
+        const quantity = parseInt(quantityInput.value, 10);
+
+        if (!selectedItemId || isNaN(quantity) || quantity <= 0) {
+            Toast.warning('품목을 선택하고 유효한 수량을 입력하세요.');
+            return;
+        }
+
+        const item = this.availableItems.find(i => i.id == selectedItemId);
+        if (!item) return;
+
+        if (quantity > item.current_stock) {
+            Toast.error('선택한 수량이 재고보다 많습니다.');
+            return;
+        }
+
+        const existingItem = this.documentItems.find(i => i.id == selectedItemId);
+        if (existingItem) {
+            Toast.info('이미 추가된 품목입니다.');
+            return;
+        }
+
+        this.documentItems.push({ ...item, quantity });
+        this.renderDocumentLists();
+    }
+
+    addEmployee() {
+        const employeeSelect = document.getElementById('employee-select');
+        const selectedEmployeeId = employeeSelect.value;
+
+        if (!selectedEmployeeId) {
+            Toast.warning('직원을 선택하세요.');
+            return;
+        }
+
+        const employee = this.allEmployees.find(e => e.id == selectedEmployeeId);
+        if (!employee) return;
+        
+        const existingEmployee = this.documentEmployees.find(e => e.id == selectedEmployeeId);
+        if (existingEmployee) {
+            Toast.info('이미 추가된 직원입니다.');
+            return;
+        }
+
+        this.documentEmployees.push(employee);
+        this.renderDocumentLists();
+    }
+
+    removeItem(itemId) {
+        this.documentItems = this.documentItems.filter(i => i.id != itemId);
+        this.renderDocumentLists();
+    }
+
+    removeEmployee(employeeId) {
+        this.documentEmployees = this.documentEmployees.filter(e => e.id != employeeId);
+        this.renderDocumentLists();
+    }
+
+    renderDocumentLists() {
+        const itemList = document.getElementById('item-list');
+        const employeeList = document.getElementById('employee-list');
+
+        if(itemList) {
+            itemList.innerHTML = this.documentItems.map(item => `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    ${this.escapeHtml(item.item_name)}
+                    <span class="badge bg-primary rounded-pill">${item.quantity} ${item.unit}</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-item-btn" data-id="${item.id}">&times;</button>
+                </li>
+            `).join('');
+        }
+
+        if(employeeList) {
+            employeeList.innerHTML = this.documentEmployees.map(employee => `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    ${this.escapeHtml(employee.name)} (${this.escapeHtml(employee.employee_number)})
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-employee-btn" data-id="${employee.id}">&times;</button>
+                </li>
+            `).join('');
+        }
+    }
+
+    async handleSaveDocument() {
+        const title = document.getElementById('document-title').value.trim();
+        
+        if (!title) {
+            Toast.error('문서 제목을 입력해주세요.');
+            return;
+        }
+        if (this.documentItems.length === 0) {
+            Toast.error('지급할 품목을 하나 이상 추가해주세요.');
+            return;
+        }
+        if (this.documentEmployees.length === 0) {
+            Toast.error('지급받을 직원을 하나 이상 추가해주세요.');
+            return;
+        }
+
+        const data = {
+            title: title,
+            items: this.documentItems.map(item => ({ id: item.id, quantity: item.quantity })),
+            employees: this.documentEmployees.map(employee => ({ id: employee.id }))
+        };
+
+        this.setButtonLoading('#save-document-btn', '저장 중...');
+
+        try {
+            await this.apiCall('/api/supply-distributions/documents', {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            Toast.success('지급 문서가 성공적으로 저장되었습니다.');
+
+            const modalEl = document.getElementById('createDocumentModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
+
+            // Reset form
+            const form = document.getElementById('create-document-form');
+            if (form) form.reset();
+            this.documentItems = [];
+            this.documentEmployees = [];
+            this.renderDocumentLists();
+
+            this.loadDistributionsData(); // Refresh table
+        } catch (error) {
+            this.handleApiError(error, null, '문서 저장 중 오류가 발생했습니다.');
+        } finally {
+            this.resetButtonLoading('#save-document-btn', '문서 저장');
         }
     }
 
     showCancelModal(id, itemName) {
         this.currentDistributionId = id;
-        const modal = new bootstrap.Modal(document.getElementById('cancelDistributionModal'));
-        const infoDiv = document.getElementById('cancel-distribution-info');
-        
-        infoDiv.innerHTML = `
-            <div class="alert alert-info">
-                <p class="mb-0"><strong>품목:</strong> ${itemName}</p>
-            </div>
-        `;
-        
-        document.getElementById('cancel-reason').value = '';
-        modal.show();
+        const modalEl = document.getElementById('cancelDistributionModal');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            const infoDiv = document.getElementById('cancel-distribution-info');
+
+            infoDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <p class="mb-0"><strong>품목:</strong> ${itemName}</p>
+                </div>
+            `;
+
+            document.getElementById('cancel-reason').value = '';
+            modal.show();
+        }
     }
 
     async handleCancelDistribution() {
@@ -226,7 +345,7 @@ class SupplyDistributionsPage extends BasePage {
         this.setButtonLoading('#confirm-cancel-distribution-btn', '처리 중...');
 
         try {
-            await this.apiCall(`${this.config.API_URL}/${this.currentDistributionId}/cancel`, {
+            await this.apiCall(`/api${this.config.API_URL}/${this.currentDistributionId}/cancel`, {
                 method: 'POST',
                 body: { cancel_reason: cancelReason }
             });
@@ -234,8 +353,11 @@ class SupplyDistributionsPage extends BasePage {
             Toast.success('지급이 성공적으로 취소되었습니다.');
             this.loadDistributionsData();
 
-            const modal = bootstrap.Modal.getInstance(document.getElementById('cancelDistributionModal'));
-            modal.hide();
+            const modalEl = document.getElementById('cancelDistributionModal');
+            if(modalEl) {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if(modal) modal.hide();
+            }
 
         } catch (error) {
             console.error('Error canceling distribution:', error);
