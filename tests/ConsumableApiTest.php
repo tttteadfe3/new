@@ -18,7 +18,7 @@ class ConsumableApiTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->http = new Client(['base_uri' => 'http://localhost/api/', 'http_errors' => false]);
+        $this->http = new Client(['base_uri' => 'http://localhost:8080/api/', 'http_errors' => false]);
     }
 
     public function testCreateConsumable()
@@ -26,8 +26,8 @@ class ConsumableApiTest extends TestCase
         $response = $this->http->post('consumables', [
             'json' => [
                 'name' => 'Engine Oil',
-                'unit_price' => 15000,
-                'unit' => 'L'
+                'unit_price' => 25000,
+                'unit' => 'L',
             ]
         ]);
 
@@ -57,13 +57,13 @@ class ConsumableApiTest extends TestCase
     {
         $response = $this->http->put('consumables/' . self::$createdConsumableId, [
             'json' => [
-                'unit_price' => 16000
+                'unit_price' => 26000
             ]
         ]);
 
         $this->assertEquals(200, $response->getStatusCode());
         $data = json_decode($response->getBody(), true);
-        $this->assertEquals(16000, $data['data']['unit_price']);
+        $this->assertEquals(26000, $data['data']['unit_price']);
     }
 
     public function testDeleteConsumable()

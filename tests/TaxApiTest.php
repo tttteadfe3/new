@@ -16,10 +16,16 @@ class TaxApiTest extends TestCase
         $pdo = $db->getConnection();
         $pdo->exec('DELETE FROM vm_vehicle_taxes');
         $pdo->exec('DELETE FROM vm_vehicles');
+        $pdo->exec('DELETE FROM hr_departments');
 
-        // Create a vehicle to associate with the tax record
+        // Create a department to associate with the vehicle
+        $stmt = $pdo->prepare("INSERT INTO hr_departments (name) VALUES (?)");
+        $stmt->execute(['Test Department']);
+        $departmentId = $pdo->lastInsertId();
+
+        // Create a vehicle to associate with the tax
         $stmt = $pdo->prepare("INSERT INTO vm_vehicles (vehicle_number, model, year, department_id, status_code) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute(['444가4444', 'GV80', 2023, 1, 'NORMAL']);
+        $stmt->execute(['123가4567', 'Sonata', 2022, $departmentId, 'NORMAL']);
         self::$createdVehicleId = $pdo->lastInsertId();
     }
 
@@ -33,9 +39,9 @@ class TaxApiTest extends TestCase
         $response = $this->http->post('taxes', [
             'json' => [
                 'vehicle_id' => self::$createdVehicleId,
-                'payment_date' => '2024-06-01',
-                'amount' => 500000,
-                'tax_type' => 'Automobile Tax'
+                'payment_date' => '2023-06-30',
+                'amount' => 250000,
+                'tax_type' => 'Automobile Tax',
             ]
         ]);
 
@@ -65,13 +71,13 @@ class TaxApiTest extends TestCase
     {
         $response = $this->http->put('taxes/' . self::$createdTaxId, [
             'json' => [
-                'amount' => 510000
+                'amount' => 260000
             ]
         ]);
 
         $this->assertEquals(200, $response->getStatusCode());
         $data = json_decode($response->getBody(), true);
-        $this->assertEquals(510000, $data['data']['amount']);
+        $this->assertEquals(260000, $data['data']['amount']);
     }
 
     public function testDeleteTax()
