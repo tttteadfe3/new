@@ -38,7 +38,7 @@ class SupplyDistributionsPage extends BasePage {
                 search: document.getElementById('search-documents')?.value || ''
             };
             const queryString = new URLSearchParams(params).toString();
-            const documentsData = await this.apiCall(`/api/supply-distributions/documents?${queryString}`);
+            const documentsData = await this.apiCall(`/supply/distributions?${queryString}`);
 
             this.dataTable.clear().rows.add(documentsData.data || []).draw();
         } catch (error) {
@@ -127,7 +127,7 @@ class SupplyDistributionsPage extends BasePage {
     async loadAvailableItems() {
         const itemSelect = document.getElementById('item-select');
         try {
-            const response = await this.apiCall(`/api/supply-distributions/available-items`);
+            const response = await this.apiCall(`/supply/distributions/available-items`);
             this.availableItems = response.data || [];
             this.renderOptions(itemSelect, this.availableItems, {
                 value: 'id',
@@ -142,7 +142,7 @@ class SupplyDistributionsPage extends BasePage {
     async loadDepartments() {
         const deptSelect = document.getElementById('department-select');
         try {
-            const response = await this.apiCall('/api/organization/managable-departments');
+            const response = await this.apiCall('/organization/managable-departments');
             this.departments = response.data || [];
             this.renderOptions(deptSelect, this.departments, {
                 value: 'id',
@@ -196,7 +196,7 @@ class SupplyDistributionsPage extends BasePage {
         employeeContainer.innerHTML = '<p class="text-muted small mb-0">불러오는 중...</p>';
 
         try {
-            const response = await this.apiCall(`/api/supply-distributions/employees-by-department/${departmentId}`);
+            const response = await this.apiCall(`/supply/distributions/employees-by-department/${departmentId}`);
             this.employeesByDept = response.data || [];
 
             if (this.employeesByDept.length === 0) {
@@ -338,7 +338,7 @@ class SupplyDistributionsPage extends BasePage {
         this.setButtonLoading('#save-document-btn', '저장 중...');
 
         try {
-            await this.apiCall('/api/supply-distributions/documents', {
+            await this.apiCall('/supply/distributions/documents', {
                 method: 'POST',
                 body: JSON.stringify(data),
                 headers: { 'Content-Type': 'application/json' }
@@ -396,7 +396,7 @@ class SupplyDistributionsPage extends BasePage {
         this.setButtonLoading('#confirm-cancel-distribution-btn', '처리 중...');
 
         try {
-            await this.apiCall(`/api${this.config.API_URL}/${this.currentDistributionId}/cancel`, {
+            await this.apiCall(`${this.config.API_URL}/${this.currentDistributionId}/cancel`, {
                 method: 'POST',
                 body: { cancel_reason: cancelReason }
             });
@@ -419,7 +419,7 @@ class SupplyDistributionsPage extends BasePage {
     }
 
     initializeSearchAndFilter() {
-        const searchInput = document.getElementById('search-distributions');
+        const searchInput = document.getElementById('search-documents');
         if (searchInput) {
             searchInput.addEventListener('input', this.debounce(() => this.loadDocumentsData(), 300));
         }
