@@ -24,72 +24,8 @@ use App\Controllers\Api\WasteCollectionApiController;
     use App\Controllers\Api\SupplyDistributionApiController;
     use App\Controllers\Api\SupplyStockApiController;
     use App\Controllers\Api\SupplyReportApiController;
-    use App\Controllers\Api\VehicleController;
-    use App\Controllers\Api\BreakdownController;
-    use App\Controllers\Api\MaintenanceController;
-    use App\Controllers\Api\ConsumableController;
-    use App\Controllers\Api\InsuranceController;
-    use App\Controllers\Api\InspectionController;
-    use App\Controllers\Api\TaxController;
-use App\Controllers\Api\ConsumableLogController;
 
 $router->group('/api', function($router) {
-    // Vehicle Management API routes
-    $router->get('/vehicles', [VehicleController::class, 'index'])->name('api.vehicles.index')->middleware('auth')->middleware('permission', 'vehicle.view');
-    $router->get('/vehicles/{id}', [VehicleController::class, 'show'])->name('api.vehicles.show')->middleware('auth')->middleware('permission', 'vehicle.view');
-    $router->post('/vehicles', [VehicleController::class, 'store'])->name('api.vehicles.store')->middleware('auth')->middleware('permission', 'vehicle.create');
-    $router->put('/vehicles/{id}', [VehicleController::class, 'update'])->name('api.vehicles.update')->middleware('auth')->middleware('permission', 'vehicle.update');
-    $router->delete('/vehicles/{id}', [VehicleController::class, 'destroy'])->name('api.vehicles.destroy')->middleware('auth')->middleware('permission', 'vehicle.delete');
-
-    // Breakdown Management API routes
-    $router->get('/breakdowns', [BreakdownController::class, 'index'])->name('api.breakdowns.index')->middleware('auth')->middleware('permission', 'breakdown.view');
-    $router->get('/breakdowns/{id}', [BreakdownController::class, 'show'])->name('api.breakdowns.show')->middleware('auth')->middleware('permission', 'breakdown.view');
-    $router->post('/breakdowns', [BreakdownController::class, 'store'])->name('api.breakdowns.store')->middleware('auth')->middleware('permission', 'breakdown.create');
-    $router->put('/breakdowns/{id}', [BreakdownController::class, 'update'])->name('api.breakdowns.update')->middleware('auth')->middleware('permission', 'breakdown.update');
-    $router->delete('/breakdowns/{id}', [BreakdownController::class, 'destroy'])->name('api.breakdowns.destroy')->middleware('auth')->middleware('permission', 'breakdown.delete');
-
-    // Maintenance Management API routes
-    $router->get('/maintenances', [MaintenanceController::class, 'index'])->name('api.maintenances.index')->middleware('auth')->middleware('permission', 'maintenance.view');
-    $router->get('/maintenances/{id}', [MaintenanceController::class, 'show'])->name('api.maintenances.show')->middleware('auth')->middleware('permission', 'maintenance.view');
-    $router->post('/maintenances', [MaintenanceController::class, 'store'])->name('api.maintenances.store')->middleware('auth')->middleware('permission', 'maintenance.create');
-    $router->put('/maintenances/{id}', [MaintenanceController::class, 'update'])->name('api.maintenances.update')->middleware('auth')->middleware('permission', 'maintenance.update');
-    $router->delete('/maintenances/{id}', [MaintenanceController::class, 'destroy'])->name('api.maintenances.destroy')->middleware('auth')->middleware('permission', 'maintenance.delete');
-
-    // Consumables Management API routes
-    $router->get('/consumables', [ConsumableController::class, 'index'])->name('api.consumables.index')->middleware('auth')->middleware('permission', 'consumable.view');
-    $router->get('/consumables/{id}', [ConsumableController::class, 'show'])->name('api.consumables.show')->middleware('auth')->middleware('permission', 'consumable.view');
-    $router->post('/consumables', [ConsumableController::class, 'store'])->name('api.consumables.store')->middleware('auth')->middleware('permission', 'consumable.create');
-    $router->put('/consumables/{id}', [ConsumableController::class, 'update'])->name('api.consumables.update')->middleware('auth')->middleware('permission', 'consumable.update');
-    $router->delete('/consumables/{id}', [ConsumableController::class, 'destroy'])->name('api.consumables.destroy')->middleware('auth')->middleware('permission', 'consumable.delete');
-
-    // Consumable Log Management API routes
-    $router->get('/consumable-logs', [ConsumableLogController::class, 'index'])->name('api.consumable-logs.index')->middleware('auth')->middleware('permission', 'consumable.view');
-    $router->get('/consumable-logs/{id}', [ConsumableLogController::class, 'show'])->name('api.consumable-logs.show')->middleware('auth')->middleware('permission', 'consumable.view');
-    $router->post('/consumable-logs', [ConsumableLogController::class, 'store'])->name('api.consumable-logs.store')->middleware('auth')->middleware('permission', 'consumable.create');
-    $router->put('/consumable-logs/{id}', [ConsumableLogController::class, 'update'])->name('api.consumable-logs.update')->middleware('auth')->middleware('permission', 'consumable.update');
-    $router->delete('/consumable-logs/{id}', [ConsumableLogController::class, 'destroy'])->name('api.consumable-logs.destroy')->middleware('auth')->middleware('permission', 'consumable.delete');
-
-    // Insurance Management API routes
-    $router->get('/insurances', [InsuranceController::class, 'index'])->name('api.insurances.index')->middleware('auth')->middleware('permission', 'insurance.view');
-    $router->get('/insurances/{id}', [InsuranceController::class, 'show'])->name('api.insurances.show')->middleware('auth')->middleware('permission', 'insurance.view');
-    $router->post('/insurances', [InsuranceController::class, 'store'])->name('api.insurances.store')->middleware('auth')->middleware('permission', 'insurance.create');
-    $router->put('/insurances/{id}', [InsuranceController::class, 'update'])->name('api.insurances.update')->middleware('auth')->middleware('permission', 'insurance.update');
-    $router->delete('/insurances/{id}', [InsuranceController::class, 'destroy'])->name('api.insurances.destroy')->middleware('auth')->middleware('permission', 'insurance.delete');
-
-    // Inspection Management API routes
-    $router->get('/inspections', [InspectionController::class, 'index'])->name('api.inspections.index')->middleware('auth')->middleware('permission', 'inspection.view');
-    $router->get('/inspections/{id}', [InspectionController::class, 'show'])->name('api.inspections.show')->middleware('auth')->middleware('permission', 'inspection.view');
-    $router->post('/inspections', [InspectionController::class, 'store'])->name('api.inspections.store')->middleware('auth')->middleware('permission', 'inspection.create');
-    $router->put('/inspections/{id}', [InspectionController::class, 'update'])->name('api.inspections.update')->middleware('auth')->middleware('permission', 'inspection.update');
-    $router->delete('/inspections/{id}', [InspectionController::class, 'destroy'])->name('api.inspections.destroy')->middleware('auth')->middleware('permission', 'inspection.delete');
-
-    // Tax Management API routes
-    $router->get('/taxes', [TaxController::class, 'index'])->name('api.taxes.index')->middleware('auth')->middleware('permission', 'tax.view');
-    $router->get('/taxes/{id}', [TaxController::class, 'show'])->name('api.taxes.show')->middleware('auth')->middleware('permission', 'tax.view');
-    $router->post('/taxes', [TaxController::class, 'store'])->name('api.taxes.store')->middleware('auth')->middleware('permission', 'tax.create');
-    $router->put('/taxes/{id}', [TaxController::class, 'update'])->name('api.taxes.update')->middleware('auth')->middleware('permission', 'tax.update');
-    $router->delete('/taxes/{id}', [TaxController::class, 'destroy'])->name('api.taxes.destroy')->middleware('auth')->middleware('permission', 'tax.delete');
-
     // Employee API routes
     $router->get('/employees', [EmployeeApiController::class, 'index'])->name('api.employees.index')->middleware('auth')->middleware('permission', 'employee.view');
     $router->post('/employees', [EmployeeApiController::class, 'store'])->name('api.employees.store')->middleware('auth')->middleware('permission', 'employee.create');
@@ -295,42 +231,4 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->get('/supply/reports/budget/{year}', [SupplyReportApiController::class, 'getBudgetExecutionReport'])->name('api.supply.reports.budget')->middleware('auth')->middleware('permission', 'supply.report.view');
     $router->get('/supply/reports/department/{deptId}/{year}', [SupplyReportApiController::class, 'getDepartmentUsageReport'])->name('api.supply.reports.department')->middleware('auth')->middleware('permission', 'supply.report.view');
     $router->post('/supply/reports/export', [SupplyReportApiController::class, 'exportReport'])->name('api.supply.reports.export')->middleware('auth')->middleware('permission', 'supply.report.view');
-
-    // Vehicle Management API routes
-    $router->group('/vehicles', function($router) {
-        // Vehicle Base Info
-        $router->get('/', [App\Controllers\Api\VehicleBaseController::class, 'index'])->name('api.vehicles.index');
-        $router->post('/', [App\Controllers\Api\VehicleBaseController::class, 'store'])->name('api.vehicles.store');
-        $router->get('/{id}', [App\Controllers\Api\VehicleBaseController::class, 'show'])->name('api.vehicles.show');
-        $router->put('/{id}', [App\Controllers\Api\VehicleBaseController::class, 'update'])->name('api.vehicles.update');
-        $router->delete('/{id}', [App\Controllers\Api\VehicleBaseController::class, 'destroy'])->name('api.vehicles.destroy');
-
-        // Breakdowns
-        $router->get('/breakdowns', [App\Controllers\Api\VehicleBreakdownController::class, 'index'])->name('api.vehicles.breakdowns.index');
-        $router->post('/breakdowns', [App\Controllers\Api\VehicleBreakdownController::class, 'store'])->name('api.vehicles.breakdowns.store');
-        $router->get('/breakdowns/{id}', [App\Controllers\Api\VehicleBreakdownController::class, 'show'])->name('api.vehicles.breakdowns.show');
-        $router->put('/breakdowns/{id}/status', [App\Controllers\Api\VehicleBreakdownController::class, 'updateStatus'])->name('api.vehicles.breakdowns.updateStatus');
-
-        // Maintenance (Repairs & Self-Maintenances)
-        $router->get('/breakdowns/{breakdownId}/repairs', [App\Controllers\Api\VehicleMaintenanceController::class, 'getRepairsForBreakdown'])->name('api.vehicles.repairs.index');
-        $router->post('/repairs', [App\Controllers\Api\VehicleMaintenanceController::class, 'storeRepair'])->name('api.vehicles.repairs.store');
-        $router->get('/{vehicleId}/self-maintenances', [App\Controllers\Api\VehicleMaintenanceController::class, 'getSelfMaintenancesForVehicle'])->name('api.vehicles.self_maintenances.index');
-        $router->post('/self-maintenances', [App\Controllers\Api\VehicleMaintenanceController::class, 'storeSelfMaintenance'])->name('api.vehicles.self_maintenances.store');
-
-        // Consumables
-        $router->get('/consumables', [App\Controllers\Api\VehicleConsumableController::class, 'index'])->name('api.vehicles.consumables.index');
-        $router->post('/consumables', [App\Controllers\Api\VehicleConsumableController::class, 'store'])->name('api.vehicles.consumables.store');
-        $router->get('/{vehicleId}/consumable-logs', [App\Controllers\Api\VehicleConsumableController::class, 'getLogsForVehicle'])->name('api.vehicles.consumable_logs.index');
-        $router->post('/consumable-logs', [App\Controllers\Api\VehicleConsumableController::class, 'storeLog'])->name('api.vehicles.consumable_logs.store');
-
-        // Admin (Insurance, Taxes, Inspections, Documents)
-        $router->get('/{vehicleId}/insurances', [App\Controllers\Api\VehicleAdminController::class, 'getInsurances'])->name('api.vehicles.insurances.index');
-        $router->post('/insurances', [App\Controllers\Api\VehicleAdminController::class, 'addInsurance'])->name('api.vehicles.insurances.store');
-        $router->get('/{vehicleId}/taxes', [App\Controllers\Api\VehicleAdminController::class, 'getTaxes'])->name('api.vehicles.taxes.index');
-        $router->post('/taxes', [App\Controllers\Api\VehicleAdminController::class, 'addTax'])->name('api.vehicles.taxes.store');
-        $router->get('/{vehicleId}/inspections', [App\Controllers\Api\VehicleAdminController::class, 'getInspections'])->name('api.vehicles.inspections.index');
-        $router->post('/inspections', [App\Controllers\Api\VehicleAdminController::class, 'addInspection'])->name('api.vehicles.inspections.store');
-        $router->get('/{vehicleId}/documents', [App\Controllers\Api\VehicleAdminController::class, 'getDocuments'])->name('api.vehicles.documents.index');
-        $router->post('/documents', [App\Controllers\Api\VehicleAdminController::class, 'addDocument'])->name('api.vehicles.documents.store');
-    });
 });
