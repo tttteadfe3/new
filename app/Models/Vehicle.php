@@ -12,6 +12,7 @@ class Vehicle extends BaseModel
         'year',
         'department_id',
         'status',
+        'driver_id',
     ];
 
     protected array $rules = [
