@@ -10,3 +10,4 @@
 
 # Temporary files
 jules-scratch/
+.phpunit.result.cache
