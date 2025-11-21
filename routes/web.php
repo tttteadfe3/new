@@ -20,7 +20,6 @@ use App\Controllers\Web\SupplyPlanController;
 use App\Controllers\Web\SupplyPurchaseController;
 use App\Controllers\Web\SupplyDistributionController;
 use App\Controllers\Web\SupplyReportController;
-use App\Controllers\Web\VehicleController;
 
 // --- 공용 및 인증 ---
 $router->get('/', [AuthController::class, 'login'])->name('home');
@@ -117,6 +116,3 @@ $router->get('/supply/reports/distribution', [SupplyReportController::class, 'di
 $router->get('/supply/reports/stock', [SupplyReportController::class, 'stockStatus'])->name('supply.reports.stock')->middleware('auth')->middleware('permission', 'supply.report.view');
 $router->get('/supply/reports/budget', [SupplyReportController::class, 'budgetExecution'])->name('supply.reports.budget')->middleware('auth')->middleware('permission', 'supply.report.view');
 $router->get('/supply/reports/department', [SupplyReportController::class, 'departmentUsage'])->name('supply.reports.department')->middleware('auth')->middleware('permission', 'supply.report.view');
-
-// --- 차량 관리 (Vehicle Management) ---
-$router->get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index')->middleware('auth')->middleware('permission', 'vehicle.view');
