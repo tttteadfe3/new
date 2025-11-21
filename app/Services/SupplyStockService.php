@@ -190,9 +190,52 @@ class SupplyStockService
     }
 
     /**
-     * 지급 가능한 품목인지 검증합니다.
+     * 특정 날짜 기준 재고를 계산합니다.
      */
-    public function validateDistribution(int $itemId, int $quantity): void
+    public function getStockAsOfDate(int $itemId, string $date): int
+    {
+        // 해당 날짜까지의 입고량 계산
+        $purchasedSql = "SELECT COALESCE(SUM(quantity), 0) as total
+                         FROM supply_purchases
+                         WHERE item_id = :item_id 
+                           AND is_received = 1
+                           AND purchase_date <= :date";
+        
+        $purchasedResult = $this->stockRepository->db->fetchOne($purchasedSql, [
+            ':item_id' => $itemId,
+            ':date' => $date
+        ]);
+        $totalPurchased = (int) ($purchasedResult['total'] ?? 0);
+
+        // 해당 날짜까지의 지급량 계산 (취소되지 않은 문서만)
+        $distributedSql = "SELECT COALESCE(SUM(di.quantity * (
+                                SELECT COUNT(*) 
+                                FROM supply_distribution_document_employees de 
+                                WHERE de.document_id = d.id
+                            )), 0) as total
+                           FROM supply_distribution_documents d
+                           JOIN supply_distribution_document_items di ON d.id = di.document_id
+                           WHERE di.item_id = :item_id
+                             AND d.distribution_date <= :date
+                             AND (d.status IS NULL OR d.status != '취소')";
+        
+        $distributedResult = $this->stockRepository->db->fetchOne($distributedSql, [
+            ':item_id' => $itemId,
+            ':date' => $date
+        ]);
+        $totalDistributed = (int) ($distributedResult['total'] ?? 0);
+
+        return $totalPurchased - $totalDistributed;
+    }
+
+    /**
+     * 지급 가능한 품목인지 검증합니다.
+     * 
+     * @param int $itemId 품목 ID
+     * @param int $quantity 요청 수량
+     * @param string|null $distributionDate 지급일자 (YYYY-MM-DD). null이면 현재 재고 기준으로 확인
+     */
+    public function validateDistribution(int $itemId, int $quantity, ?string $distributionDate = null): void
     {
         // 품목 존재 여부 확인
         $item = $this->itemRepository->findById($itemId);
@@ -211,12 +254,22 @@ class SupplyStockService
             throw new \InvalidArgumentException('수량은 양수여야 합니다.');
         }
 
-        // 재고 확인
-        if (!$this->hasAvailableStock($itemId, $quantity)) {
-            $currentStock = $this->getCurrentStock($itemId);
-            throw new \InvalidArgumentException(
-                "재고가 부족합니다. 현재 재고: {$currentStock}, 요청 수량: {$quantity}"
-            );
+        // 재고 확인 - 날짜 기준 또는 현재 재고
+        if ($distributionDate) {
+            $availableStock = $this->getStockAsOfDate($itemId, $distributionDate);
+            if ($availableStock < $quantity) {
+                $itemName = is_array($item) ? $item['item_name'] : $item->getAttribute('item_name');
+                throw new \InvalidArgumentException(
+                    "재고가 부족합니다. {$distributionDate} 기준 '{$itemName}' 재고: {$availableStock}, 요청 수량: {$quantity}"
+                );
+            }
+        } else {
+            if (!$this->hasAvailableStock($itemId, $quantity)) {
+                $currentStock = $this->getCurrentStock($itemId);
+                throw new \InvalidArgumentException(
+                    "재고가 부족합니다. 현재 재고: {$currentStock}, 요청 수량: {$quantity}"
+                );
+            }
         }
     }
 

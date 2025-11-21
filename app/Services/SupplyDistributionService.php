@@ -50,8 +50,8 @@ class SupplyDistributionService
                 $quantityPerEmployee = $item['quantity']; // 직원 1인당 수량
                 $totalQuantity = $quantityPerEmployee * $employeeCount; // 총 차감 수량
                 
-                // 재고 검증 (총 수량 기준)
-                $this->stockService->validateDistribution($item['id'], $totalQuantity);
+                // 재고 검증 (총 수량 기준, 지급일자 기준)
+                $this->stockService->validateDistribution($item['id'], $totalQuantity, $data['distribution_date']);
                 
                 // 문서에 품목 저장 (1인당 수량 저장)
                 $this->distributionRepository->addItem($documentId, $item['id'], $quantityPerEmployee);
@@ -141,18 +141,18 @@ class SupplyDistributionService
             ]);
 
             // 4. 새 아이템 및 직원 추가, 재고 차감
-            $employeeIds = $data['employee_ids'];
+            $employeeIds = $data['employees'];
             $items = $data['items'];
             $newEmployeeCount = count($employeeIds);
 
             foreach ($items as $item) {
                 $totalQuantity = $item['quantity'] * $newEmployeeCount;
                 
-                // 재고 확인 및 차감
-                $this->stockService->validateDistribution($item['item_id'], $totalQuantity);
-                $this->stockService->updateStockFromDistribution($item['item_id'], $totalQuantity);
+                // 재고 확인 및 차감 (지급일자 기준)
+                $this->stockService->validateDistribution($item['id'], $totalQuantity, $data['distribution_date']);
+                $this->stockService->updateStockFromDistribution($item['id'], $totalQuantity);
 
-                $this->distributionRepository->addItem($id, $item['item_id'], $item['quantity']);
+                $this->distributionRepository->addItem($id, $item['id'], $item['quantity']);
             }
 
             foreach ($employeeIds as $empId) {

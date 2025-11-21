@@ -56,8 +56,124 @@ class SupplyDistributionsPage extends BasePage {
 
     initializeDataTable() {
         const self = this;
+        const table = document.getElementById('documents-table');
+        if (!table) return;
+
+        this.dataTable = new DataTable(table, {
+            responsive: true,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json'
+            },
+            order: [[3, 'desc']],
+            searching: false,
+            columns: [
+                { data: 'title', render: data => self.escapeHtml(data || '') },
+                { data: 'distribution_date', render: data => data ? new Date(data).toLocaleDateString('ko-KR') : '-' },
+                { data: 'created_by_name', defaultContent: '알 수 없음', render: data => self.escapeHtml(data || '알 수 없음') },
+                { data: 'created_at', render: data => data ? new Date(data).toLocaleDateString('ko-KR') : '-' },
+                {
+                    data: null,
+                    orderable: false,
+                    render: (data, type, row) => {
+                        const itemsSummary = row.items && row.items.length > 0
+                            ? row.items.map(i => i.item_name).join(', ')
+                            : '-';
+                        const employeeCount = row.employee_count ? `(${row.employee_count}명)` : '';
+
+                        return `
+                            <div class="d-flex flex-column">
+                                <span class="text-truncate" style="max-width: 200px;" title="${itemsSummary}">${itemsSummary} ${employeeCount}</span>
+                            </div>
+                        `;
+                    }
+                },
+                {
+                    data: 'status',
+                    defaultContent: '완료',
+                    render: status => {
+                        switch (status) {
+                            case '임시저장': return `<span class="badge badge-soft-secondary">임시저장</span>`;
+                            case '완료': return `<span class="badge badge-soft-success">완료</span>`;
+                            case '취소': return `<span class="badge badge-soft-danger">취소</span>`;
+                            default: return `<span class="badge badge-soft-success">완료</span>`;
+                        }
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    render: (data, type, row) => `
+                        <div class="dropdown">
+                            <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="ri-more-fill align-middle"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item view-detail-btn" href="#" data-id="${row.id}"><i class="ri-eye-fill align-bottom me-2"></i>상세보기</a></li>
+                                ${row.status !== '취소' ? `
+                                    <li><a class="dropdown-item edit-document-btn" href="#" data-id="${row.id}"><i class="ri-pencil-fill align-bottom me-2"></i>수정</a></li>
+                                    <li><a class="dropdown-item cancel-document-btn" href="#" data-id="${row.id}"><i class="ri-close-circle-fill align-bottom me-2"></i>취소</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger delete-document-btn" href="#" data-id="${row.id}"><i class="ri-delete-bin-fill align-bottom me-2"></i>삭제</a></li>
+                                ` : ''}
+                            </ul>
+                        </div>
+                    `
+                }
+            ],
+        });
+
+        table.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = e.target.closest('a');
+            if (!target) return;
+
+            const id = parseInt(target.dataset.id);
+            if (!id) return;
+
+            if (target.classList.contains('view-detail-btn')) {
+                this.showDetailModal(id);
+            } else if (target.classList.contains('edit-document-btn')) {
+                this.showEditModal(id);
+            } else if (target.classList.contains('cancel-document-btn')) {
+                this.showCancelModal(id);
+            } else if (target.classList.contains('delete-document-btn')) {
+                this.confirmDeleteDocument(id);
+            }
+        });
+    }
+
+    initializeModalHandlers() {
+        // Cancel Modal
+        const confirmCancelBtn = document.getElementById('confirm-cancel-distribution-btn');
         if (confirmCancelBtn) {
             confirmCancelBtn.addEventListener('click', () => this.handleCancelDistribution());
+        }
+
+        // Create Document Modal - Reset on show
+        const createDocumentModal = document.getElementById('createDocumentModal');
+        if (createDocumentModal) {
+            createDocumentModal.addEventListener('show.bs.modal', () => {
+                // Reset form
+                const form = document.getElementById('create-document-form');
+                if (form) form.reset();
+
+                // Clear items and employees
+                this.documentItems = [];
+                this.documentEmployees = [];
+
+                // Clear lists
+                this.renderDocumentLists();
+
+                // Reset employee select container
+                const employeeContainer = document.getElementById('employee-select');
+                if (employeeContainer) {
+                    employeeContainer.innerHTML = '<p class="text-muted small mb-0">부서를 먼저 선택하세요</p>';
+                }
+
+                // Reset quantity input
+                const quantityInput = document.getElementById('item-quantity');
+                if (quantityInput) quantityInput.value = 1;
+            });
         }
     }
 
@@ -353,7 +469,14 @@ class SupplyDistributionsPage extends BasePage {
 
             this.loadDocumentsData(); // Refresh table
         } catch (error) {
-            this.handleApiError(error, null, '문서 저장 중 오류가 발생했습니다.');
+            console.error('Error saving document:', error);
+            let message = '문서 저장 중 오류가 발생했습니다.';
+            if (error.response && error.response.data && error.response.data.message) {
+                message = error.response.data.message;
+            } else if (error.message) {
+                message = error.message;
+            }
+            Toast.error(message);
         } finally {
             this.resetButtonLoading('#save-document-btn', '문서 저장');
         }

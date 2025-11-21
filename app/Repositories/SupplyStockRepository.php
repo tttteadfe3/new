@@ -8,7 +8,7 @@ use App\Services\DataScopeService;
 
 class SupplyStockRepository
 {
-    private Database $db;
+    public Database $db;
     private DataScopeService $dataScopeService;
 
     public function __construct(Database $db, DataScopeService $dataScopeService)
@@ -65,7 +65,7 @@ class SupplyStockRepository
      */
     public function findItemsWithStock(): array
     {
-        $sql = "SELECT ss.*, si.item_name, si.item_code, si.unit
+        $sql = "SELECT ss.current_stock, ss.item_id as id, si.item_name, si.item_code, si.unit
                 FROM supply_stocks ss
                 JOIN supply_items si ON ss.item_id = si.id
                 WHERE ss.current_stock > 0
@@ -261,7 +261,7 @@ class SupplyStockRepository
     public function getStockList(array $filters = []): array
     {
         $queryParts = [
-            'sql' => "SELECT ss.id, si.item_code, si.item_name, COALESCE(sc.category_name, '미분류') as category_name, si.unit, ss.current_stock
+            'sql' => "SELECT ss.item_id, ss.item_id as id, si.item_code, si.item_name, COALESCE(sc.category_name, '미분류') as category_name, si.unit, ss.current_stock
                       FROM supply_stocks ss
                       JOIN supply_items si ON ss.item_id = si.id
                       LEFT JOIN supply_categories sc ON si.category_id = sc.id",

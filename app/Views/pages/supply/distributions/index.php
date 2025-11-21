@@ -113,6 +113,7 @@
                                 <th scope="col">지급일자</th>
                                 <th scope="col">작성자</th>
                                 <th scope="col">생성일</th>
+                                <th scope="col">지급 내역</th>
                                 <th scope="col">상태</th>
                                 <th scope="col">작업</th>
                             </tr>
