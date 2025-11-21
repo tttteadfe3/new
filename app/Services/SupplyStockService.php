@@ -102,7 +102,8 @@ class SupplyStockService
         $success = $this->stockRepository->updateStock($itemId, $quantity, 'cancel_distribution');
         
         if (!$success) {
-            throw new \RuntimeException('재고 복원에 실패했습니다.');
+            // 재고 복원에 실패했더라도(이미 0이거나 등등) 프로세스는 계속 진행
+            error_log("Failed to restore stock for item {$itemId}, quantity {$quantity}");
         }
     }
 
@@ -200,7 +201,8 @@ class SupplyStockService
         }
 
         // 품목 활성화 여부 확인
-        if (!$item->getAttribute('is_active')) {
+        $isActive = is_array($item) ? ($item['is_active'] ?? false) : $item->getAttribute('is_active');
+        if (!$isActive) {
             throw new \InvalidArgumentException('비활성화된 품목은 지급할 수 없습니다.');
         }
 
@@ -246,5 +248,12 @@ class SupplyStockService
     public function getStockDetails(int $stockId): ?array
     {
         return $this->stockRepository->getStockDetails($stockId);
+    }
+    /**
+     * 재고가 있는 품목을 조회합니다.
+     */
+    public function findItemsWithStock(): array
+    {
+        return $this->stockRepository->findItemsWithStock();
     }
 }

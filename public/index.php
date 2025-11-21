@@ -173,10 +173,7 @@ $container->register(\App\Services\SupplyPurchaseService::class, fn($c) => new \
 ));
 $container->register(\App\Services\SupplyDistributionService::class, fn($c) => new \App\Services\SupplyDistributionService(
     $c->resolve(\App\Repositories\SupplyDistributionRepository::class),
-    $c->resolve(\App\Repositories\SupplyItemRepository::class),
     $c->resolve(\App\Services\SupplyStockService::class),
-    $c->resolve(\App\Repositories\EmployeeRepository::class),
-    $c->resolve(\App\Repositories\DepartmentRepository::class),
     $c->resolve(\App\Services\ActivityLogger::class),
     $c->resolve(Database::class)
 ));

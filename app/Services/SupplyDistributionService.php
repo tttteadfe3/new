@@ -4,419 +4,246 @@ namespace App\Services;
 
 use App\Core\Database;
 use App\Repositories\SupplyDistributionRepository;
-use App\Repositories\SupplyItemRepository;
-use App\Repositories\EmployeeRepository;
-use App\Repositories\DepartmentRepository;
-use App\Models\SupplyDistribution;
+use App\Services\SupplyStockService;
 use App\Services\ActivityLogger;
 
 class SupplyDistributionService
 {
     private SupplyDistributionRepository $distributionRepository;
-    private SupplyItemRepository $itemRepository;
     private SupplyStockService $stockService;
-    private EmployeeRepository $employeeRepository;
-    private DepartmentRepository $departmentRepository;
     private ActivityLogger $activityLogger;
     private Database $db;
 
     public function __construct(
         SupplyDistributionRepository $distributionRepository,
-        SupplyItemRepository $itemRepository,
         SupplyStockService $stockService,
-        EmployeeRepository $employeeRepository,
-        DepartmentRepository $departmentRepository,
         ActivityLogger $activityLogger,
         Database $db
     ) {
         $this->distributionRepository = $distributionRepository;
-        $this->itemRepository = $itemRepository;
         $this->stockService = $stockService;
-        $this->employeeRepository = $employeeRepository;
-        $this->departmentRepository = $departmentRepository;
         $this->activityLogger = $activityLogger;
         $this->db = $db;
     }
 
-    /**
-     * 개별 직원에게 지급품을 지급합니다.
-     */
-    public function distributeToEmployee(int $itemId, int $employeeId, int $departmentId, int $quantity, int $distributedBy, ?string $notes = null): int
+    public function createDocument(array $data, int $employeeId): int
     {
-        // 지급 데이터 검증
-        $this->validateDistribution($itemId, $quantity);
-
-        // 직원 존재 여부 확인
-        $this->validateEmployee($employeeId);
-
-        // 부서 존재 여부 확인
-        $this->validateDepartment($departmentId);
-
-        // 트랜잭션 시작
         $this->db->beginTransaction();
 
         try {
-            // 지급 기록 생성
-            $distributionId = $this->distributionRepository->create([
-                'item_id' => $itemId,
-                'employee_id' => $employeeId,
-                'department_id' => $departmentId,
-                'distribution_date' => date('Y-m-d'),
-                'quantity' => $quantity,
-                'notes' => $notes,
-                'distributed_by' => $distributedBy
+            // 직원 수 계산
+            $employeeCount = count($data['employees']);
+            
+            if ($employeeCount === 0) {
+                throw new \InvalidArgumentException('지급받을 직원을 선택해주세요.');
+            }
+
+            $documentId = $this->distributionRepository->create([
+                'title' => $data['title'],
+                'distribution_date' => $data['distribution_date'] ?? date('Y-m-d'),
+                'created_by' => $employeeId,
+                'status' => '완료'
             ]);
 
-            // 재고 차감
-            $this->stockService->updateStockFromDistribution($itemId, $quantity);
+            // 품목별 처리: 각 품목의 수량 × 직원 수 = 실제 차감 수량
+            foreach ($data['items'] as $item) {
+                $quantityPerEmployee = $item['quantity']; // 직원 1인당 수량
+                $totalQuantity = $quantityPerEmployee * $employeeCount; // 총 차감 수량
+                
+                // 재고 검증 (총 수량 기준)
+                $this->stockService->validateDistribution($item['id'], $totalQuantity);
+                
+                // 문서에 품목 저장 (1인당 수량 저장)
+                $this->distributionRepository->addItem($documentId, $item['id'], $quantityPerEmployee);
+                
+                // 재고 차감 (총 수량 차감)
+                $this->stockService->updateStockFromDistribution($item['id'], $totalQuantity);
+            }
 
-            // 감사 로그 기록
-            $distributionData = [
-                'item_id' => $itemId,
-                'employee_id' => $employeeId,
-                'department_id' => $departmentId,
-                'quantity' => $quantity,
-                'distribution_date' => $distributionDate,
-                'distributed_by' => $distributedBy
-            ];
-            $this->activityLogger->log(
-                'supply_distribution_create',
-                "신규 지급 등록 (ID: {$distributionId})",
-                $distributionData
-            );
+            // 직원별 지급 정보 저장
+            foreach ($data['employees'] as $empId) {
+                $this->distributionRepository->addEmployee($documentId, $empId);
+            }
 
             $this->db->commit();
 
-            return $distributionId;
+            return $documentId;
         } catch (\Exception $e) {
             $this->db->rollback();
-            throw new \RuntimeException('지급 처리 중 오류가 발생했습니다: ' . $e->getMessage());
+            throw $e;
         }
     }
 
-    /**
-     * 부서 전체 직원에게 지급품을 지급합니다.
-     */
-    public function distributeToDepartment(int $itemId, int $departmentId, array $employees, int $distributedBy, ?string $notes = null): array
+    public function getDocuments(array $filters = []): array
     {
-        if (empty($employees)) {
-            throw new \InvalidArgumentException('지급할 직원을 선택해주세요.');
+        $documents = $this->distributionRepository->getAll($filters);
+
+        foreach ($documents as &$doc) {
+            $doc['items'] = $this->distributionRepository->getDocumentItems($doc['id']);
+            $doc['employee_count'] = count($this->distributionRepository->getDocumentEmployees($doc['id']));
         }
 
-        $results = [];
-        $errors = [];
+        return $documents;
+    }
 
-        // 트랜잭션 시작
+    public function getDocumentById(int $id): ?array
+    {
+        $document = $this->distributionRepository->getById($id);
+        
+        if ($document) {
+            $document['items'] = $this->distributionRepository->getDocumentItems($id);
+            $document['employees'] = $this->distributionRepository->getDocumentEmployees($id);
+        }
+        
+        return $document;
+    }
+
+    public function getAvailableItems(): array
+    {
+        // Get items with available stock from SupplyStockService
+        return $this->stockService->findItemsWithStock();
+    }
+
+    public function updateDocument(int $id, array $data, int $employeeId): void
+    {
         $this->db->beginTransaction();
 
         try {
-            foreach ($employees as $employeeData) {
-                $employeeId = $employeeData['employee_id'];
-                $quantity = $employeeData['quantity'];
+            // 기존 문서 조회
+            $document = $this->distributionRepository->getById($id);
+            if (!$document) {
+                throw new \InvalidArgumentException('존재하지 않는 문서입니다.');
+            }
 
-                try {
-                    // 개별 지급 처리 (트랜잭션 내에서)
-                    $distributionId = $this->createDistributionRecord(
-                        $itemId,
-                        $employeeId,
-                        $departmentId,
-                        $quantity,
-                        $distributedBy,
-                        $notes
-                    );
+            // 이미 취소된 문서인지 확인
+            if (($document['status'] ?? '완료') === '취소') {
+                throw new \InvalidArgumentException('이미 취소된 문서는 수정할 수 없습니다.');
+            }
 
-                    $results[] = [
-                        'employee_id' => $employeeId,
-                        'distribution_id' => $distributionId,
-                        'success' => true
-                    ];
-                } catch (\Exception $e) {
-                    $errors[] = [
-                        'employee_id' => $employeeId,
-                        'error' => $e->getMessage()
-                    ];
+            // 1. 기존 재고 복원 (기존 아이템 수량 * 기존 직원 수)
+            $oldItems = $this->distributionRepository->getDocumentItems($id);
+            $oldEmployees = $this->distributionRepository->getDocumentEmployees($id);
+            $oldEmployeeCount = count($oldEmployees);
+
+            foreach ($oldItems as $item) {
+                $totalQuantity = $item['quantity'] * $oldEmployeeCount;
+                $this->stockService->updateStockFromCancelDistribution($item['item_id'], $totalQuantity);
+            }
+
+            // 2. 기존 아이템 및 직원 삭제
+            $this->distributionRepository->deleteDocumentItems($id);
+            $this->distributionRepository->deleteDocumentEmployees($id);
+
+            // 3. 문서 정보 업데이트
+            $this->distributionRepository->update($id, [
+                'title' => $data['title'],
+                'distribution_date' => $data['distribution_date']
+            ]);
+
+            // 4. 새 아이템 및 직원 추가, 재고 차감
+            $employeeIds = $data['employee_ids'];
+            $items = $data['items'];
+            $newEmployeeCount = count($employeeIds);
+
+            foreach ($items as $item) {
+                $totalQuantity = $item['quantity'] * $newEmployeeCount;
+                
+                // 재고 확인 및 차감
+                $this->stockService->validateDistribution($item['item_id'], $totalQuantity);
+                $this->stockService->updateStockFromDistribution($item['item_id'], $totalQuantity);
+
+                $this->distributionRepository->addItem($id, $item['item_id'], $item['quantity']);
+            }
+
+            foreach ($employeeIds as $empId) {
+                $this->distributionRepository->addEmployee($id, $empId);
+            }
+
+            $this->db->commit();
+            
+            // 로그 기록
+            $this->activityLogger->log('supply_distribution_update', "지급 문서 수정: {$data['title']} (ID: {$id})");
+
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function deleteDocument(int $id): void
+    {
+        $this->db->beginTransaction();
+
+        try {
+            $document = $this->distributionRepository->getById($id);
+            if (!$document) {
+                throw new \InvalidArgumentException('존재하지 않는 문서입니다.');
+            }
+
+            // 이미 취소된 문서는 삭제 불가 (정책에 따라 다를 수 있음, 여기서는 허용하되 재고 복원은 취소 여부에 따라 다르게 처리)
+            // 하지만 취소된 문서는 이미 재고가 복원되었으므로, 삭제 시 중복 복원을 막아야 함.
+            $isCancelled = ($document['status'] ?? '완료') === '취소';
+
+            if (!$isCancelled) {
+                // 취소되지 않은 문서만 재고 복원 수행
+                $items = $this->distributionRepository->getDocumentItems($id);
+                $employees = $this->distributionRepository->getDocumentEmployees($id);
+                $employeeCount = count($employees);
+
+                foreach ($items as $item) {
+                    $totalQuantity = $item['quantity'] * $employeeCount;
+                    $this->stockService->updateStockFromCancelDistribution($item['item_id'], $totalQuantity);
                 }
             }
 
-            // 오류가 있으면 롤백
-            if (!empty($errors)) {
-                $this->db->rollback();
-                throw new \RuntimeException('일부 직원에 대한 지급 처리가 실패했습니다.');
-            }
+            $this->distributionRepository->deleteDocumentItems($id);
+            $this->distributionRepository->deleteDocumentEmployees($id);
+            $this->distributionRepository->delete($id);
 
             $this->db->commit();
+            
+            $this->activityLogger->log('supply_distribution_delete', "지급 문서 삭제: ID {$id}");
 
-            return $results;
         } catch (\Exception $e) {
-            $this->db->rollback();
-            throw new \RuntimeException('부서 지급 처리 중 오류가 발생했습니다: ' . $e->getMessage());
+            $this->db->rollBack();
+            throw $e;
         }
     }
 
-    /**
-     * 지급을 취소합니다.
-     */
-    public function cancelDistribution(int $distributionId, int $cancelledBy, string $reason): bool
+    public function cancelDocument(int $id, string $cancelReason): void
     {
-        // 지급 기록 조회
-        $distribution = $this->distributionRepository->findById($distributionId);
-        if (!$distribution) {
-            throw new \InvalidArgumentException('존재하지 않는 지급 기록입니다.');
-        }
-
-        // 이미 취소된 지급인지 확인
-        if ($distribution->isCancelled()) {
-            throw new \InvalidArgumentException('이미 취소된 지급입니다.');
-        }
-
-        // 취소 사유 검증
-        if (empty(trim($reason))) {
-            throw new \InvalidArgumentException('취소 사유를 입력해주세요.');
-        }
-
-        // 트랜잭션 시작
         $this->db->beginTransaction();
 
         try {
-            // 지급 취소 처리
-            $success = $this->distributionRepository->cancel($distributionId, $cancelledBy, $reason);
+            $document = $this->distributionRepository->getById($id);
+            if (!$document) {
+                throw new \InvalidArgumentException('존재하지 않는 문서입니다.');
+            }
 
-            if (!$success) {
-                throw new \RuntimeException('지급 취소 처리에 실패했습니다.');
+            if (($document['status'] ?? '완료') === '취소') {
+                throw new \InvalidArgumentException('이미 취소된 문서입니다.');
             }
 
             // 재고 복원
-            $itemId = $distribution->getAttribute('item_id');
-            $quantity = $distribution->getQuantity();
-            $this->stockService->updateStockFromCancelDistribution($itemId, $quantity);
+            $items = $this->distributionRepository->getDocumentItems($id);
+            $employees = $this->distributionRepository->getDocumentEmployees($id);
+            $employeeCount = count($employees);
 
-            // 감사 로그 기록
-            $this->activityLogger->log(
-                'supply_distribution_cancel',
-                "지급 취소 (ID: {$distributionId})",
-                ['distribution' => $distribution->toArray(), 'reason' => $reason]
-            );
+            foreach ($items as $item) {
+                $totalQuantity = $item['quantity'] * $employeeCount;
+                $this->stockService->updateStockFromCancelDistribution($item['item_id'], $totalQuantity);
+            }
+
+            // 상태 업데이트
+            $this->distributionRepository->updateStatus($id, '취소', $cancelReason);
 
             $this->db->commit();
-
-            return true;
-        } catch (\Exception $e) {
-            $this->db->rollback();
-            throw new \RuntimeException('지급 취소 중 오류가 발생했습니다: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * 지급 정보를 수정합니다.
-     */
-    public function updateDistribution(int $distributionId, array $data, int $updatedBy): bool
-    {
-        // 지급 기록 조회
-        $distribution = $this->distributionRepository->findById($distributionId);
-        if (!$distribution) {
-            throw new \InvalidArgumentException('존재하지 않는 지급 기록입니다.');
-        }
-
-        // 취소된 지급은 수정 불가
-        if ($distribution->isCancelled()) {
-            throw new \InvalidArgumentException('취소된 지급은 수정할 수 없습니다.');
-        }
-
-        $oldQuantity = $distribution->getQuantity();
-        $newQuantity = $data['quantity'] ?? $oldQuantity;
-        $itemId = $distribution->getAttribute('item_id');
-
-        // 수량이 변경된 경우 재고 검증
-        if ($newQuantity != $oldQuantity) {
-            $quantityDiff = $newQuantity - $oldQuantity;
             
-            // 수량이 증가한 경우 재고 확인
-            if ($quantityDiff > 0) {
-                $this->stockService->validateDistribution($itemId, $quantityDiff);
-            }
-        }
+            $this->activityLogger->log('supply_distribution_cancel', "지급 문서 취소: ID {$id}");
 
-        // 트랜잭션 시작
-        $this->db->beginTransaction();
-
-        try {
-            // 지급 정보 수정
-            $success = $this->distributionRepository->update($distributionId, $data);
-
-            if (!$success) {
-                throw new \RuntimeException('지급 정보 수정에 실패했습니다.');
-            }
-
-            // 수량이 변경된 경우 재고 조정
-            if ($newQuantity != $oldQuantity) {
-                $quantityDiff = $newQuantity - $oldQuantity;
-                
-                if ($quantityDiff > 0) {
-                    // 수량 증가: 재고 차감
-                    $this->stockService->updateStockFromDistribution($itemId, $quantityDiff);
-                } else {
-                    // 수량 감소: 재고 복원
-                    $this->stockService->updateStockFromCancelDistribution($itemId, abs($quantityDiff));
-                }
-            }
-
-            // 감사 로그 기록
-            $oldData = $distribution->toArray();
-            $newData = array_merge($oldData, $data);
-            $this->activityLogger->log(
-                'supply_distribution_update',
-                "지급 정보 수정 (ID: {$distributionId})",
-                ['old' => $oldData, 'new' => $newData]
-            );
-
-            $this->db->commit();
-
-            return true;
         } catch (\Exception $e) {
-            $this->db->rollback();
-            throw new \RuntimeException('지급 정보 수정 중 오류가 발생했습니다: ' . $e->getMessage());
+            $this->db->rollBack();
+            throw $e;
         }
     }
-
-    /**
-     * 지급 가능한 품목 목록을 조회합니다.
-     */
-    public function getAvailableItems(): array
-    {
-        // 재고가 있는 활성 품목만 조회
-        $items = $this->stockService->getItemsWithStock();
-        
-        return array_map(function($item) {
-            return [
-                'id' => $item['id'],
-                'item_code' => $item['item_code'],
-                'item_name' => $item['item_name'],
-                'category_name' => $item['category_name'] ?? null,
-                'unit' => $item['unit'],
-                'current_stock' => $item['current_stock']
-            ];
-        }, $items);
-    }
-
-
-    /**
-     * 지급 내역을 조회합니다.
-     */
-    public function getDistributions(array $filters = []): array
-    {
-        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
-            return $this->distributionRepository->findByDateRange($filters['start_date'], $filters['end_date']);
-        }
-
-        if (!empty($filters['employee_id'])) {
-            return $this->distributionRepository->findByEmployee($filters['employee_id']);
-        }
-
-        if (!empty($filters['department_id'])) {
-            return $this->distributionRepository->findByDepartment($filters['department_id']);
-        }
-
-        return $this->distributionRepository->findWithRelations();
-    }
-
-    /**
-     * 지급 통계를 조회합니다.
-     */
-    public function getDistributionStats(array $filters = []): array
-    {
-        return $this->distributionRepository->getDistributionStats($filters);
-    }
-
-    /**
-     * 지급 데이터를 검증합니다.
-     */
-    public function validateDistribution(int $itemId, int $quantity): void
-    {
-        // 품목 존재 및 재고 확인
-        $this->stockService->validateDistribution($itemId, $quantity);
-    }
-
-    /**
-     * 직원 존재 여부를 확인합니다.
-     */
-    private function validateEmployee(int $employeeId): void
-    {
-        $sql = "SELECT id FROM hr_employees WHERE id = :id AND is_active = 1";
-        $result = $this->db->fetchOne($sql, [':id' => $employeeId]);
-        
-        if (!$result) {
-            throw new \InvalidArgumentException('존재하지 않거나 비활성화된 직원입니다.');
-        }
-    }
-
-    /**
-     * 부서 존재 여부를 확인합니다.
-     */
-    private function validateDepartment(int $departmentId): void
-    {
-        $sql = "SELECT id FROM hr_departments WHERE id = :id AND is_active = 1";
-        $result = $this->db->fetchOne($sql, [':id' => $departmentId]);
-        
-        if (!$result) {
-            throw new \InvalidArgumentException('존재하지 않거나 비활성화된 부서입니다.');
-        }
-    }
-
-    /**
-     * 지급 기록을 생성합니다 (내부용).
-     */
-    private function createDistributionRecord(int $itemId, int $employeeId, int $departmentId, int $quantity, int $distributedBy, ?string $notes): int
-    {
-        // 지급 데이터 검증
-        $this->validateDistribution($itemId, $quantity);
-
-        // 지급 기록 생성
-        $distributionId = $this->distributionRepository->create([
-            'item_id' => $itemId,
-            'employee_id' => $employeeId,
-            'department_id' => $departmentId,
-            'distribution_date' => date('Y-m-d'),
-            'quantity' => $quantity,
-            'notes' => $notes,
-            'distributed_by' => $distributedBy
-        ]);
-
-        // 재고 차감
-        $this->stockService->updateStockFromDistribution($itemId, $quantity);
-
-        return $distributionId;
-    }
-
-    /**
-     * 활동 로그를 기록합니다.
-     */
-    private function logActivity(string $action, int $distributionId, int $userId, array $details = []): void
-    {
-        // ActivityLogger는 AuthService를 통해 자동으로 현재 사용자 정보를 가져옵니다
-    }
-
-    /**
-     * 부서별 지급 현황을 조회합니다.
-     */
-    public function getDepartmentDistributionStats(int $departmentId, int $year): array
-    {
-        return $this->distributionRepository->getDepartmentDistributionStats($departmentId, $year);
-    }
-
-    /**
-     * 직원별 지급 현황을 조회합니다.
-     */
-    public function getEmployeeDistributionStats(int $employeeId, int $year): array
-    {
-        return $this->distributionRepository->getEmployeeDistributionStats($employeeId, $year);
-    }
-
-    /**
-     * 지급 상세 정보를 조회합니다.
-     */
-    public function getDistributionById(int $id): ?SupplyDistribution
-    {
-        return $this->distributionRepository->findById($id);
-    }
-
 }

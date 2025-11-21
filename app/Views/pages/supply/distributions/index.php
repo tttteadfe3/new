@@ -29,6 +29,12 @@
                         <input type="text" class="form-control" id="document-title" placeholder="예: 2023년 4분기 사무용품 지급" required>
                     </div>
 
+                    <div class="mb-3">
+                        <label for="distribution-date" class="form-label">지급일자 <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="distribution-date" required>
+                        <div class="form-text">지급 문서의 지급일을 선택하세요.</div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -104,6 +110,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th scope="col">문서 제목</th>
+                                <th scope="col">지급일자</th>
                                 <th scope="col">작성자</th>
                                 <th scope="col">생성일</th>
                                 <th scope="col">상태</th>
@@ -199,6 +206,131 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
                 <button type="button" class="btn btn-primary" id="save-distribution-btn">저장</button>
             </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detail View Modal -->
+<div class="modal fade" id="detailViewModal" tabindex="-1" aria-labelledby="detailViewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailViewModalLabel">지급 문서 상세</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detail-content">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">문서 제목</label>
+                            <p id="detail-title" class="form-control-plaintext"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">지급일자</label>
+                            <p id="detail-distribution-date" class="form-control-plaintext"></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">작성자</label>
+                            <p id="detail-created-by" class="form-control-plaintext"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">생성일</label>
+                            <p id="detail-created-at" class="form-control-plaintext"></p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">지급 품목</h6>
+                            <ul class="list-group" id="detail-items-list"></ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">지급 대상 직원</h6>
+                            <ul class="list-group" id="detail-employees-list"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                <button type="button" class="btn btn-warning" id="edit-from-detail-btn">수정</button>
+                <button type="button" class="btn btn-danger" id="cancel-from-detail-btn">취소</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Document Modal -->
+<div class="modal fade" id="editDocumentModal" tabindex="-1" aria-labelledby="editDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editDocumentModalLabel">지급 문서 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-document-form">
+                    <input type="hidden" id="edit-document-id">
+                    <div class="mb-3">
+                        <label for="edit-document-title" class="form-label">문서 제목 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit-document-title" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit-distribution-date" class="form-label">지급일자 <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="edit-distribution-date" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">품목 선택</label>
+                                <div class="input-group">
+                                    <select class="form-select" id="edit-item-select">
+                                        <option value="">불러오는 중...</option>
+                                    </select>
+                                    <input type="number" class="form-control" id="edit-item-quantity" min="1" value="1" style="max-width: 80px;">
+                                    <button class="btn btn-outline-primary" type="button" id="edit-add-item-btn">추가</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit-department-select" class="form-label">부서 선택</label>
+                                <select class="form-select" id="edit-department-select">
+                                    <option value="">불러오는 중...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">직원 선택</label>
+                                <div id="edit-employee-select" class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                    <p class="text-muted small mb-0">부서를 먼저 선택하세요</p>
+                                </div>
+                                <div class="mt-2">
+                                    <button class="btn btn-primary w-100" type="button" id="edit-add-employee-btn">선택 직원 추가</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>지급 품목 목록</h6>
+                            <ul class="list-group" id="edit-item-list"></ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>지급 대상 직원</h6>
+                            <ul class="list-group" id="edit-employee-list"></ul>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="update-document-btn">저장</button>
+            </div>
         </div>
     </div>
 </div>
@@ -208,7 +340,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="cancelDistributionModalLabel">지급 취소</h5>
+                <h5 class="modal-title" id="cancelDistributionModalLabel">지급 문서 취소</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -219,7 +351,7 @@
                 </div>
                 <div class="alert alert-warning" role="alert">
                     <i class="ri-alert-line me-2"></i>
-                    지급을 취소하면 재고가 복원됩니다.
+                    문서를 취소하면 재고가 복원됩니다.
                 </div>
             </div>
             <div class="modal-footer">

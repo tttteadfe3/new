@@ -176,13 +176,16 @@ class SupplyStockRepository
                          ORDER BY purchase_date DESC";
 
         // 지급 이력
-        $distributionsSql = "SELECT 'distribution' as type, distribution_date as date, quantity, 
-                            CONCAT('지급 - ', he.name, ' (', hd.name, ')') as description
-                            FROM supply_distributions sd
-                            JOIN hr_employees he ON sd.employee_id = he.id
-                            JOIN hr_departments hd ON sd.department_id = hd.id
-                            WHERE sd.item_id = :item_id AND sd.is_cancelled = 0
-                            ORDER BY distribution_date DESC";
+        $distributionsSql = "SELECT 
+                                'distribution' as type, 
+                                d.distribution_date as date, 
+                                (di.quantity * (SELECT COUNT(*) FROM supply_distribution_document_employees de WHERE de.document_id = d.id)) as quantity,
+                                CONCAT('지급 - ', d.title) as description
+                            FROM supply_distribution_documents d
+                            JOIN supply_distribution_document_items di ON d.id = di.document_id
+                            WHERE di.item_id = :item_id 
+                              AND (d.status IS NULL OR d.status != '취소')
+                            ORDER BY d.distribution_date DESC";
 
         $purchases = $this->db->query($purchasesSql, [':item_id' => $itemId]);
         $distributions = $this->db->query($distributionsSql, [':item_id' => $itemId]);

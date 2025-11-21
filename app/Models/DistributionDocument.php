@@ -6,5 +6,5 @@ use App\Core\Model;
 
 class DistributionDocument extends Model
 {
-    protected static string $table = 'distribution_documents';
+    protected static string $table = 'supply_distribution_documents';
 }

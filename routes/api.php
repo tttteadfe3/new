@@ -276,14 +276,14 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->post('/supply/purchases/bulk-receive', [SupplyPurchaseApiController::class, 'bulkReceive'])->name('api.supply.purchases.bulk-receive')->middleware('auth')->middleware('permission', 'supply.purchase.manage');
 
     // 지급 관리 API
-    $router->post('/supply/distributions/documents', [SupplyDistributionApiController::class, 'storeDocument'])->name('api.supply.distributions.documents.store')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
-    $router->get('/supply/distributions/available-items', [SupplyDistributionApiController::class, 'getAvailableItems'])->name('api.supply.distributions.available-items')->middleware('auth')->middleware('permission', 'supply.distribution.view');
-    $router->get('/supply/distributions/employees-by-department/{deptId}', [SupplyDistributionApiController::class, 'getEmployeesByDepartment'])->name('api.supply.distributions.employees')->middleware('auth')->middleware('permission', 'supply.distribution.view');
     $router->get('/supply/distributions', [SupplyDistributionApiController::class, 'index'])->name('api.supply.distributions.index')->middleware('auth')->middleware('permission', 'supply.distribution.view');
+    $router->get('/supply/distributions/available-items', [SupplyDistributionApiController::class, 'getAvailableItems'])->name('api.supply.distributions.available-items')->middleware('auth')->middleware('permission', 'supply.distribution.view');
     $router->get('/supply/distributions/{id}', [SupplyDistributionApiController::class, 'show'])->name('api.supply.distributions.show')->middleware('auth')->middleware('permission', 'supply.distribution.view');
-    $router->post('/supply/distributions', [SupplyDistributionApiController::class, 'store'])->name('api.supply.distributions.store')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
-    $router->put('/supply/distributions/{id}', [SupplyDistributionApiController::class, 'update'])->name('api.supply.distributions.update')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
-    $router->post('/supply/distributions/{id}/cancel', [SupplyDistributionApiController::class, 'cancel'])->name('api.supply.distributions.cancel')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
+    $router->post('/supply/distributions/documents', [SupplyDistributionApiController::class, 'storeDocument'])->name('api.supply.distributions.documents.store')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
+    $router->get('/supply/distributions/employees-by-department/{deptId}', [SupplyDistributionApiController::class, 'getEmployeesByDepartment'])->name('api.supply.distributions.employees')->middleware('auth')->middleware('permission', 'supply.distribution.view');
+    $router->put('/supply/distributions/documents/{id}', [SupplyDistributionApiController::class, 'updateDocument'])->name('api.supply.distributions.documents.update')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
+    $router->delete('/supply/distributions/documents/{id}', [SupplyDistributionApiController::class, 'deleteDocument'])->name('api.supply.distributions.documents.destroy')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
+    $router->post('/supply/distributions/documents/{id}/cancel', [SupplyDistributionApiController::class, 'cancelDocument'])->name('api.supply.distributions.documents.cancel')->middleware('auth')->middleware('permission', 'supply.distribution.manage');
 
     // 재고 현황 API
     $router->get('/supply/stocks', [SupplyStockApiController::class, 'index'])->name('api.supply.stocks.index')->middleware('auth')->middleware('permission', 'supply.stock.view');

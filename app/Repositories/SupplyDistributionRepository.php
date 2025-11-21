@@ -3,306 +3,166 @@
 namespace App\Repositories;
 
 use App\Core\Database;
-use App\Models\SupplyDistribution;
-use App\Services\DataScopeService;
+
 
 class SupplyDistributionRepository
 {
     private Database $db;
-    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db, DataScopeService $dataScopeService)
+    public function __construct(Database $db)
     {
         $this->db = $db;
-        $this->dataScopeService = $dataScopeService;
     }
 
-    /**
-     * 모든 지급을 조회합니다.
-     */
-    public function findAll(): array
-    {
-        $sql = "SELECT * FROM supply_distributions ORDER BY distribution_date DESC, created_at DESC";
-        return $this->db->fetchAllAs(SupplyDistribution::class, $sql);
-    }
-
-    /**
-     * ID로 지급을 조회합니다.
-     */
-    public function findById(int $id): ?SupplyDistribution
-    {
-        $sql = "SELECT * FROM supply_distributions WHERE id = :id";
-        $result = $this->db->fetchOneAs(SupplyDistribution::class, $sql, [':id' => $id]);
-        return $result ?: null;
-    }
-
-    /**
-     * 직원별 지급을 조회합니다.
-     */
-    public function findByEmployee(int $employeeId): array
-    {
-        $sql = "SELECT * FROM supply_distributions WHERE employee_id = :employee_id ORDER BY distribution_date DESC";
-        return $this->db->fetchAllAs(SupplyDistribution::class, $sql, [':employee_id' => $employeeId]);
-    }
-
-    /**
-     * 부서별 지급을 조회합니다.
-     */
-    public function findByDepartment(int $departmentId): array
-    {
-        $sql = "SELECT * FROM supply_distributions WHERE department_id = :department_id ORDER BY distribution_date DESC";
-        return $this->db->fetchAllAs(SupplyDistribution::class, $sql, [':department_id' => $departmentId]);
-    }
-
-    /**
-     * 품목별 지급을 조회합니다.
-     */
-    public function findByItemId(int $itemId): array
-    {
-        $sql = "SELECT * FROM supply_distributions WHERE item_id = :item_id ORDER BY distribution_date DESC";
-        return $this->db->fetchAllAs(SupplyDistribution::class, $sql, [':item_id' => $itemId]);
-    }
-
-    /**
-     * 날짜 범위별 지급을 조회합니다.
-     */
-    public function findByDateRange(string $startDate, string $endDate): array
-    {
-        $sql = "SELECT * FROM supply_distributions 
-                WHERE distribution_date BETWEEN :start_date AND :end_date 
-                ORDER BY distribution_date DESC";
-        
-        return $this->db->fetchAllAs(SupplyDistribution::class, $sql, [
-            ':start_date' => $startDate,
-            ':end_date' => $endDate
-        ]);
-    }
-
-    /**
-     * 취소되지 않은 지급을 조회합니다.
-     */
-    public function findActive(): array
-    {
-        $sql = "SELECT * FROM supply_distributions WHERE is_cancelled = 0 ORDER BY distribution_date DESC";
-        return $this->db->fetchAllAs(SupplyDistribution::class, $sql);
-    }
-
-    /**
-     * 취소된 지급을 조회합니다.
-     */
-    public function findCancelled(): array
-    {
-        $sql = "SELECT * FROM supply_distributions WHERE is_cancelled = 1 ORDER BY cancelled_at DESC";
-        return $this->db->fetchAllAs(SupplyDistribution::class, $sql);
-    }
-
-    /**
-     * 지급을 생성합니다.
-     */
     public function create(array $data): int
     {
-        $sql = "INSERT INTO supply_distributions (item_id, employee_id, department_id, distribution_date, quantity, notes, distributed_by) 
-                VALUES (:item_id, :employee_id, :department_id, :distribution_date, :quantity, :notes, :distributed_by)";
-        
-        $params = [
-            ':item_id' => $data['item_id'],
-            ':employee_id' => $data['employee_id'],
-            ':department_id' => $data['department_id'],
-            ':distribution_date' => $data['distribution_date'],
-            ':quantity' => $data['quantity'],
-            ':notes' => $data['notes'] ?? null,
-            ':distributed_by' => $data['distributed_by']
-        ];
-
-        $this->db->execute($sql, $params);
+        $sql = "INSERT INTO supply_distribution_documents (title, distribution_date, created_by) VALUES (:title, :distribution_date, :created_by)";
+        $this->db->execute($sql, [
+            ':title' => $data['title'],
+            ':distribution_date' => $data['distribution_date'] ?? date('Y-m-d'),
+            ':created_by' => $data['created_by']
+        ]);
         return (int) $this->db->lastInsertId();
     }
 
-    /**
-     * 지급을 수정합니다.
-     */
+    public function addItem(int $documentId, int $itemId, int $quantity): void
+    {
+        $sql = "INSERT INTO supply_distribution_document_items (document_id, item_id, quantity) VALUES (:document_id, :item_id, :quantity)";
+        $this->db->execute($sql, [
+            ':document_id' => $documentId,
+            ':item_id' => $itemId,
+            ':quantity' => $quantity
+        ]);
+    }
+
+    public function addEmployee(int $documentId, int $employeeId): void
+    {
+        $sql = "INSERT INTO supply_distribution_document_employees (document_id, employee_id) VALUES (:document_id, :employee_id)";
+        $this->db->execute($sql, [
+            ':document_id' => $documentId,
+            ':employee_id' => $employeeId
+        ]);
+    }
+
+    public function getAll(array $filters = []): array
+    {
+        $sql = "SELECT 
+                    d.id,
+                    d.title,
+                    d.distribution_date,
+                    d.status,
+                    d.created_at,
+                    d.created_by,
+                    e.name as created_by_name
+                FROM supply_distribution_documents d
+                LEFT JOIN hr_employees e ON d.created_by = e.id
+                WHERE 1=1";
+        
+        $params = [];
+        
+        if (!empty($filters['search'])) {
+            $sql .= " AND d.title LIKE :search";
+            $params[':search'] = '%' . $filters['search'] . '%';
+        }
+        
+        $sql .= " ORDER BY d.created_at DESC";
+        
+        return $this->db->fetchAll($sql, $params);
+    }
+
+    public function getById(int $id): ?array
+    {
+        $sql = "SELECT 
+                    d.id,
+                    d.title,
+                    d.distribution_date,
+                    d.status,
+                    d.cancel_reason,
+                    d.created_at,
+                    d.created_by,
+                    e.name as created_by_name
+                FROM supply_distribution_documents d
+                LEFT JOIN hr_employees e ON d.created_by = e.id
+                WHERE d.id = :id";
+        
+        return $this->db->fetchOne($sql, [':id' => $id]);
+    }
+
+    public function getDocumentItems(int $documentId): array
+    {
+        $sql = "SELECT 
+                    di.id,
+                    di.item_id,
+                    di.quantity,
+                    si.item_name,
+                    si.item_code
+                FROM supply_distribution_document_items di
+                LEFT JOIN supply_items si ON di.item_id = si.id
+                WHERE di.document_id = :document_id";
+        
+        return $this->db->fetchAll($sql, [':document_id' => $documentId]);
+    }
+
+    public function getDocumentEmployees(int $documentId): array
+    {
+        $sql = "SELECT 
+                    de.id,
+                    de.employee_id,
+                    e.name as employee_name,
+                    e.department_id,
+                    d.name as department_name
+                FROM supply_distribution_document_employees de
+                LEFT JOIN hr_employees e ON de.employee_id = e.id
+                LEFT JOIN hr_departments d ON e.department_id = d.id
+                WHERE de.document_id = :document_id";
+        
+        return $this->db->fetchAll($sql, [':document_id' => $documentId]);
+    }
+
     public function update(int $id, array $data): bool
     {
-        $sql = "UPDATE supply_distributions 
-                SET distribution_date = :distribution_date, quantity = :quantity, notes = :notes 
-                WHERE id = :id AND is_cancelled = 0";
-        
-        $params = [
-            ':id' => $id,
-            ':distribution_date' => $data['distribution_date'],
-            ':quantity' => $data['quantity'],
-            ':notes' => $data['notes'] ?? null
-        ];
-
-        return $this->db->execute($sql, $params) > 0;
-    }
-
-    /**
-     * 지급을 삭제합니다.
-     */
-    public function delete(int $id): bool
-    {
-        $sql = "DELETE FROM supply_distributions WHERE id = :id";
-        return $this->db->execute($sql, [':id' => $id]) > 0;
-    }
-
-    /**
-     * 지급을 취소합니다.
-     */
-    public function cancel(int $id, int $cancelledBy, string $reason): bool
-    {
-        $sql = "UPDATE supply_distributions 
-                SET is_cancelled = 1, cancelled_at = NOW(), cancelled_by = :cancelled_by, cancel_reason = :cancel_reason 
+        $sql = "UPDATE supply_distribution_documents 
+                SET title = :title, 
+                    distribution_date = :distribution_date 
                 WHERE id = :id";
         
         return $this->db->execute($sql, [
             ':id' => $id,
-            ':cancelled_by' => $cancelledBy,
-            ':cancel_reason' => $reason
+            ':title' => $data['title'],
+            ':distribution_date' => $data['distribution_date']
         ]) > 0;
     }
 
-    /**
-     * 지급 통계를 조회합니다.
-     */
-    public function getDistributionStats(array $filters): array
+    public function delete(int $id): bool
     {
-        $sql = "SELECT 
-                    COUNT(*) as total_distributions,
-                    COALESCE(SUM(quantity), 0) as total_quantity,
-                    COUNT(DISTINCT employee_id) as unique_employees,
-                    COUNT(DISTINCT department_id) as unique_departments
-                FROM supply_distributions 
-                WHERE is_cancelled = 0";
-        
-        $params = [];
-
-        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
-            $sql .= " AND distribution_date BETWEEN :start_date AND :end_date";
-            $params[':start_date'] = $filters['start_date'];
-            $params[':end_date'] = $filters['end_date'];
-        }
-
-        if (!empty($filters['item_id'])) {
-            $sql .= " AND item_id = :item_id";
-            $params[':item_id'] = $filters['item_id'];
-        }
-
-        if (!empty($filters['department_id'])) {
-            $sql .= " AND department_id = :department_id";
-            $params[':department_id'] = $filters['department_id'];
-        }
-
-        return $this->db->fetchOne($sql, $params);
+        $sql = "DELETE FROM supply_distribution_documents WHERE id = :id";
+        return $this->db->execute($sql, [':id' => $id]) > 0;
     }
 
-    /**
-     * 품목별 총 지급량을 조회합니다.
-     */
-    public function getTotalDistributedQuantity(int $itemId): int
+    public function deleteDocumentItems(int $documentId): bool
     {
-        $sql = "SELECT COALESCE(SUM(quantity), 0) as total FROM supply_distributions WHERE item_id = :item_id AND is_cancelled = 0";
-        $result = $this->db->fetchOne($sql, [':item_id' => $itemId]);
-        return (int) $result['total'];
+        $sql = "DELETE FROM supply_distribution_document_items WHERE document_id = :document_id";
+        return $this->db->execute($sql, [':document_id' => $documentId]) > 0;
     }
 
-    /**
-     * 부서별 지급 현황을 조회합니다.
-     */
-    public function getDepartmentDistributionStats(int $departmentId, int $year): array
+    public function deleteDocumentEmployees(int $documentId): bool
     {
-        $sql = "SELECT 
-                    si.item_name,
-                    SUM(sd.quantity) as total_quantity,
-                    COUNT(sd.id) as distribution_count,
-                    COUNT(DISTINCT sd.employee_id) as employee_count
-                FROM supply_distributions sd
-                JOIN supply_items si ON sd.item_id = si.id
-                WHERE sd.department_id = :department_id 
-                AND YEAR(sd.distribution_date) = :year 
-                AND sd.is_cancelled = 0
-                GROUP BY sd.item_id, si.item_name
-                ORDER BY total_quantity DESC";
-        
-        return $this->db->query($sql, [
-            ':department_id' => $departmentId,
-            ':year' => $year
-        ]);
+        $sql = "DELETE FROM supply_distribution_document_employees WHERE document_id = :document_id";
+        return $this->db->execute($sql, [':document_id' => $documentId]) > 0;
     }
 
-    /**
-     * 직원별 지급 현황을 조회합니다.
-     */
-    public function getEmployeeDistributionStats(int $employeeId, int $year): array
+    public function updateStatus(int $id, string $status, string $cancelReason = null): bool
     {
-        $sql = "SELECT 
-                    si.item_name,
-                    SUM(sd.quantity) as total_quantity,
-                    COUNT(sd.id) as distribution_count,
-                    MAX(sd.distribution_date) as last_distribution_date
-                FROM supply_distributions sd
-                JOIN supply_items si ON sd.item_id = si.id
-                WHERE sd.employee_id = :employee_id 
-                AND YEAR(sd.distribution_date) = :year 
-                AND sd.is_cancelled = 0
-                GROUP BY sd.item_id, si.item_name
-                ORDER BY last_distribution_date DESC";
+        $sql = "UPDATE supply_distribution_documents 
+                SET status = :status, 
+                    cancel_reason = :cancel_reason,
+                    cancelled_at = " . ($status === '취소' ? 'NOW()' : 'NULL') . "
+                WHERE id = :id";
         
-        return $this->db->query($sql, [
-            ':employee_id' => $employeeId,
-            ':year' => $year
-        ]);
-    }
-
-    /**
-     * 품목, 직원, 부서 정보와 함께 지급을 조회합니다.
-     */
-    public function findWithRelations(array $filters = []): array
-    {
-        $queryParts = [
-            'sql' => "SELECT sd.*, si.item_name, si.item_code, he.name as employee_name, hd.name as department_name
-                      FROM supply_distributions sd
-                      JOIN supply_items si ON sd.item_id = si.id
-                      JOIN hr_employees he ON sd.employee_id = he.id
-                      JOIN hr_departments hd ON sd.department_id = hd.id",
-            'params' => [],
-            'where' => []
-        ];
-
-        // 데이터 스코프 적용
-        $queryParts = $this->dataScopeService->applyDepartmentScope($queryParts, 'hd');
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'he');
-
-        // 추가 필터
-        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
-            $queryParts['where'][] = "sd.distribution_date BETWEEN :start_date AND :end_date";
-            $queryParts['params'][':start_date'] = $filters['start_date'];
-            $queryParts['params'][':end_date'] = $filters['end_date'];
-        }
-
-        if (!empty($queryParts['where'])) {
-            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
-        }
-
-        $queryParts['sql'] .= " ORDER BY sd.distribution_date DESC, sd.created_at DESC";
-        
-        return $this->db->query($queryParts['sql'], $queryParts['params']);
-    }
-
-    /**
-     * 연도별 지급 통계를 조회합니다.
-     */
-    public function getDistributionStatsByYear(int $year): array
-    {
-        $sql = "SELECT 
-                    COUNT(*) as total_distributions,
-                    SUM(quantity) as total_quantity,
-                    COUNT(DISTINCT employee_id) as unique_employees,
-                    COUNT(DISTINCT department_id) as unique_departments,
-                    COUNT(DISTINCT item_id) as unique_items
-                FROM supply_distributions 
-                WHERE YEAR(distribution_date) = :year AND is_cancelled = 0";
-        
-        return $this->db->fetchOne($sql, [':year' => $year]);
+        return $this->db->execute($sql, [
+            ':id' => $id,
+            ':status' => $status,
+            ':cancel_reason' => $cancelReason
+        ]) > 0;
     }
 }
