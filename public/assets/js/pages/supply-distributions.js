@@ -163,7 +163,7 @@ class SupplyDistributionsPage extends BasePage {
 
         departmentSelect?.addEventListener('change', (e) => this.loadEmployeesByDepartment(e.target.value));
         addItemBtn?.addEventListener('click', () => this.addItem());
-        addEmployeeBtn?.addEventListener('click', () => this.addEmployee());
+        addEmployeeBtn?.addEventListener('click', () => this.addSelectedEmployees());
         saveDocumentBtn?.addEventListener('click', () => this.handleSaveDocument());
 
         itemList?.addEventListener('click', (e) => {
@@ -184,29 +184,36 @@ class SupplyDistributionsPage extends BasePage {
     }
 
     async loadEmployeesByDepartment(departmentId) {
-        const employeeSelect = document.getElementById('employee-select');
-        if (!employeeSelect) return;
+        const employeeContainer = document.getElementById('employee-select');
+        if (!employeeContainer) return;
 
         if (!departmentId) {
-            employeeSelect.innerHTML = '<option value="">부서를 먼저 선택하세요</option>';
-            employeeSelect.disabled = true;
+            employeeContainer.innerHTML = '<p class="text-muted small mb-0">부서를 먼저 선택하세요</p>';
             this.employeesByDept = [];
             return;
         }
 
-        employeeSelect.innerHTML = '<option value="">불러오는 중...</option>';
-        employeeSelect.disabled = false;
+        employeeContainer.innerHTML = '<p class="text-muted small mb-0">불러오는 중...</p>';
 
         try {
             const response = await this.apiCall(`/api/supply-distributions/employees-by-department/${departmentId}`);
             this.employeesByDept = response.data || [];
-            this.renderOptions(employeeSelect, this.employeesByDept, {
-                value: 'id',
-                text: item => `${item.name} (${item.employee_number || '번호 없음'})`,
-                placeholder: '직원을 선택하세요'
-            });
+
+            if (this.employeesByDept.length === 0) {
+                employeeContainer.innerHTML = '<p class="text-muted small mb-0">해당 부서에 직원이 없습니다.</p>';
+                return;
+            }
+
+            employeeContainer.innerHTML = this.employeesByDept.map(employee => `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="${employee.id}" id="employee-${employee.id}">
+                    <label class="form-check-label" for="employee-${employee.id}">
+                        ${this.escapeHtml(employee.name)} (${this.escapeHtml(employee.employee_number) || '번호 없음'})
+                    </label>
+                </div>
+            `).join('');
         } catch (error) {
-            this.handleApiError(error, employeeSelect, '직원 목록을 불러오는 중 오류가 발생했습니다.');
+            this.handleApiError(error, employeeContainer, '직원 목록을 불러오는 중 오류가 발생했습니다.');
         }
     }
 
@@ -239,26 +246,37 @@ class SupplyDistributionsPage extends BasePage {
         this.renderDocumentLists();
     }
 
-    addEmployee() {
-        const employeeSelect = document.getElementById('employee-select');
-        const selectedEmployeeId = employeeSelect.value;
+    addSelectedEmployees() {
+        const selectedCheckboxes = document.querySelectorAll('#employee-select .form-check-input:checked');
 
-        if (!selectedEmployeeId) {
+        if (selectedCheckboxes.length === 0) {
             Toast.warning('직원을 선택하세요.');
             return;
         }
 
-        const employee = this.employeesByDept.find(e => e.id == selectedEmployeeId);
-        if (!employee) return;
-        
-        const existingEmployee = this.documentEmployees.find(e => e.id == selectedEmployeeId);
-        if (existingEmployee) {
-            Toast.info('이미 추가된 직원입니다.');
-            return;
+        let addedCount = 0;
+        selectedCheckboxes.forEach(checkbox => {
+            const employeeId = checkbox.value;
+            const employee = this.employeesByDept.find(e => e.id == employeeId);
+
+            if (employee) {
+                const isAlreadyAdded = this.documentEmployees.some(e => e.id == employeeId);
+                if (!isAlreadyAdded) {
+                    this.documentEmployees.push(employee);
+                    addedCount++;
+                }
+            }
+        });
+
+        if (addedCount > 0) {
+            Toast.success(`${addedCount}명의 직원을 추가했습니다.`);
+            this.renderDocumentLists();
+        } else {
+            Toast.info('이미 추가된 직원이거나, 선택된 직원이 없습니다.');
         }
 
-        this.documentEmployees.push(employee);
-        this.renderDocumentLists();
+        // Uncheck all checkboxes
+        selectedCheckboxes.forEach(checkbox => checkbox.checked = false);
     }
 
     removeItem(itemId) {

@@ -52,11 +52,11 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">직원 선택</label>
-                                 <div class="input-group">
-                                    <select class="form-select" id="employee-select" disabled>
-                                        <option value="">부서를 먼저 선택하세요</option>
-                                    </select>
-                                    <button class="btn btn-outline-primary" type="button" id="add-employee-btn">추가</button>
+                                <div id="employee-select" class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                    <p class="text-muted small mb-0">부서를 먼저 선택하세요</p>
+                                </div>
+                                <div class="mt-2">
+                                    <button class="btn btn-primary w-100" type="button" id="add-employee-btn">선택 직원 추가</button>
                                 </div>
                                 <div class="form-text">부서를 선택하면 해당 부서의 직원이 표시됩니다.</div>
                             </div>
