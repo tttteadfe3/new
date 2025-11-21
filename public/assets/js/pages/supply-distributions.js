@@ -115,34 +115,6 @@ class SupplyDistributionsPage extends BasePage {
             confirmCancelBtn.addEventListener('click', () => this.handleCancelDistribution());
         }
 
-        // Document Create Modal
-        const addItemBtn = document.getElementById('add-item-btn');
-        const addEmployeeBtn = document.getElementById('add-employee-btn');
-        const saveDocumentBtn = document.getElementById('save-document-btn');
-        const itemList = document.getElementById('item-list');
-        const employeeList = document.getElementById('employee-list');
-        const departmentSelect = document.getElementById('department-select');
-
-        departmentSelect?.addEventListener('change', (e) => this.loadEmployeesByDepartment(e.target.value));
-        addItemBtn?.addEventListener('click', () => this.addItem());
-        addEmployeeBtn?.addEventListener('click', () => this.addEmployee());
-        saveDocumentBtn?.addEventListener('click', () => this.handleSaveDocument());
-
-        itemList?.addEventListener('click', (e) => {
-            const removeBtn = e.target.closest('.remove-item-btn');
-            if (removeBtn) {
-                const itemId = removeBtn.dataset.id;
-                this.removeItem(itemId);
-            }
-        });
-
-        employeeList?.addEventListener('click', (e) => {
-            const removeBtn = e.target.closest('.remove-employee-btn');
-            if (removeBtn) {
-                const employeeId = removeBtn.dataset.id;
-                this.removeEmployee(employeeId);
-            }
-        });
     }
 
     async loadDocumentModalData() {
@@ -225,8 +197,6 @@ class SupplyDistributionsPage extends BasePage {
         employeeSelect.innerHTML = '<option value="">불러오는 중...</option>';
         employeeSelect.disabled = false;
 
-    async loadDepartments() {
-        const deptSelect = document.getElementById('department-select');
         try {
             const response = await this.apiCall(`/api/supply-distributions/employees-by-department/${departmentId}`);
             this.employeesByDept = response.data || [];
@@ -371,7 +341,7 @@ class SupplyDistributionsPage extends BasePage {
             this.documentEmployees = [];
             this.renderDocumentLists();
 
-            this.loadDistributionsData(); // Refresh table
+            this.loadDocumentsData(); // Refresh table
         } catch (error) {
             this.handleApiError(error, null, '문서 저장 중 오류가 발생했습니다.');
         } finally {
@@ -414,7 +384,7 @@ class SupplyDistributionsPage extends BasePage {
             });
 
             Toast.success('지급이 성공적으로 취소되었습니다.');
-            this.loadDistributionsData();
+            this.loadDocumentsData();
 
             const modalEl = document.getElementById('cancelDistributionModal');
             if(modalEl) {
@@ -433,7 +403,7 @@ class SupplyDistributionsPage extends BasePage {
     initializeSearchAndFilter() {
         const searchInput = document.getElementById('search-distributions');
         if (searchInput) {
-            searchInput.addEventListener('input', this.debounce(() => this.loadDistributionsData(), 300));
+            searchInput.addEventListener('input', this.debounce(() => this.loadDocumentsData(), 300));
         }
     }
 
