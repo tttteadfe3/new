@@ -116,3 +116,22 @@ $router->get('/supply/reports/distribution', [SupplyReportController::class, 'di
 $router->get('/supply/reports/stock', [SupplyReportController::class, 'stockStatus'])->name('supply.reports.stock')->middleware('auth')->middleware('permission', 'supply.report.view');
 $router->get('/supply/reports/budget', [SupplyReportController::class, 'budgetExecution'])->name('supply.reports.budget')->middleware('auth')->middleware('permission', 'supply.report.view');
 $router->get('/supply/reports/department', [SupplyReportController::class, 'departmentUsage'])->name('supply.reports.department')->middleware('auth')->middleware('permission', 'supply.report.view');
+
+// --- 차량 관리 (Vehicle Management) ---
+use App\Controllers\Web\VehicleController;
+use App\Controllers\Web\VehicleDriverController;
+use App\Controllers\Web\VehicleManagerController;
+use App\Controllers\Pages\VehicleConsumableController;
+
+// 차량 목록 (공통)
+$router->get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index')->middleware('auth')->middleware('permission', 'vehicle.view');
+
+// 운전원 작업 페이지
+$router->get('/vehicles/my-work', [VehicleDriverController::class, 'index'])->name('vehicles.my-work')->middleware('auth')->middleware('permission', 'vehicle.work.report');
+
+// Manager 작업 처리 페이지
+$router->get('/vehicles/manager/work', [VehicleManagerController::class, 'index'])->name('vehicles.manager.work')->middleware('auth')->middleware('permission', 'vehicle.work.manage');
+
+// 소모품 관리
+$router->get('/vehicles/consumables', [VehicleConsumableController::class, 'index'])->name('vehicles.consumables')->middleware('auth')->middleware('permission', 'vehicle.consumable.view');
+

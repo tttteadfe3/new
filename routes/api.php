@@ -24,6 +24,10 @@ use App\Controllers\Api\WasteCollectionApiController;
     use App\Controllers\Api\SupplyDistributionApiController;
     use App\Controllers\Api\SupplyStockApiController;
     use App\Controllers\Api\SupplyReportApiController;
+    use App\Controllers\Api\VehicleApiController;
+    use App\Controllers\Api\VehicleWorkApiController;
+    use App\Controllers\Api\VehicleInspectionApiController;
+    use App\Controllers\Api\VehicleConsumableApiController;
 
 $router->group('/api', function($router) {
     // Employee API routes
@@ -231,4 +235,37 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->get('/supply/reports/budget/{year}', [SupplyReportApiController::class, 'getBudgetExecutionReport'])->name('api.supply.reports.budget')->middleware('auth')->middleware('permission', 'supply.report.view');
     $router->get('/supply/reports/department/{deptId}/{year}', [SupplyReportApiController::class, 'getDepartmentUsageReport'])->name('api.supply.reports.department')->middleware('auth')->middleware('permission', 'supply.report.view');
     $router->post('/supply/reports/export', [SupplyReportApiController::class, 'exportReport'])->name('api.supply.reports.export')->middleware('auth')->middleware('permission', 'supply.report.view');
+
+    // Vehicle Management API routes
+    // Vehicle Works (순서 중요: vehicles/{id} 보다 위에 있어야 함)
+    $router->get('/vehicles/works', [VehicleWorkApiController::class, 'index'])->name('api.vehicles.works.index')->middleware('auth');
+    $router->post('/vehicles/works', [VehicleWorkApiController::class, 'store'])->name('api.vehicles.works.store')->middleware('auth');
+    $router->get('/vehicles/works/{id}', [VehicleWorkApiController::class, 'show'])->name('api.vehicles.works.show')->middleware('auth');
+    $router->put('/vehicles/works/{id}', [VehicleWorkApiController::class, 'update'])->name('api.vehicles.works.update')->middleware('auth');
+    $router->delete('/vehicles/works/{id}', [VehicleWorkApiController::class, 'destroy'])->name('api.vehicles.works.destroy')->middleware('auth');
+
+    // Vehicles
+    $router->get('/vehicles', [VehicleApiController::class, 'index'])->name('api.vehicles.index')->middleware('auth')->middleware('permission', 'vehicle.view');
+    $router->get('/vehicles/{id}', [VehicleApiController::class, 'show'])->name('api.vehicles.show')->middleware('auth')->middleware('permission', 'vehicle.view');
+    $router->post('/vehicles', [VehicleApiController::class, 'store'])->name('api.vehicles.store')->middleware('auth')->middleware('permission', 'vehicle.manage');
+    $router->put('/vehicles/{id}', [VehicleApiController::class, 'update'])->name('api.vehicles.update')->middleware('auth')->middleware('permission', 'vehicle.manage');
+    $router->delete('/vehicles/{id}', [VehicleApiController::class, 'destroy'])->name('api.vehicles.destroy')->middleware('auth')->middleware('permission', 'vehicle.manage');
+
+
+
+    // Vehicle Inspections
+    $router->get('/vehicles/inspections', [VehicleInspectionApiController::class, 'index'])->name('api.vehicles.inspections.index')->middleware('auth')->middleware('permission', 'vehicle.inspection.view');
+    $router->post('/vehicles/inspections', [VehicleInspectionApiController::class, 'store'])->name('api.vehicles.inspections.store')->middleware('auth')->middleware('permission', 'vehicle.inspection.manage');
+
+    // Vehicle Consumables
+    $router->get('/vehicles/consumables', [VehicleConsumableApiController::class, 'index'])->name('api.vehicles.consumables.index')->middleware('auth')->middleware('permission', 'vehicle.consumable.view');
+    $router->get('/vehicles/consumables/categories', [VehicleConsumableApiController::class, 'categories'])->name('api.vehicles.consumables.categories')->middleware('auth')->middleware('permission', 'vehicle.consumable.view');
+    $router->get('/vehicles/consumables/{id}', [VehicleConsumableApiController::class, 'show'])->name('api.vehicles.consumables.show')->middleware('auth')->middleware('permission', 'vehicle.consumable.view');
+    $router->post('/vehicles/consumables', [VehicleConsumableApiController::class, 'store'])->name('api.vehicles.consumables.store')->middleware('auth')->middleware('permission', 'vehicle.consumable.manage');
+    $router->put('/vehicles/consumables/{id}', [VehicleConsumableApiController::class, 'update'])->name('api.vehicles.consumables.update')->middleware('auth')->middleware('permission', 'vehicle.consumable.manage');
+    $router->delete('/vehicles/consumables/{id}', [VehicleConsumableApiController::class, 'destroy'])->name('api.vehicles.consumables.destroy')->middleware('auth')->middleware('permission', 'vehicle.consumable.manage');
+    $router->post('/vehicles/consumables/{id}/stock-in', [VehicleConsumableApiController::class, 'stockIn'])->name('api.vehicles.consumables.stock-in')->middleware('auth')->middleware('permission', 'vehicle.consumable.stock');
+    $router->post('/vehicles/consumables/{id}/use', [VehicleConsumableApiController::class, 'use'])->name('api.vehicles.consumables.use')->middleware('auth')->middleware('permission', 'vehicle.consumable.stock');
+    $router->get('/vehicles/consumables/{id}/usage-history', [VehicleConsumableApiController::class, 'usageHistory'])->name('api.vehicles.consumables.usage-history')->middleware('auth')->middleware('permission', 'vehicle.consumable.view');
+    $router->get('/vehicles/consumables/{id}/stock-in-history', [VehicleConsumableApiController::class, 'stockInHistory'])->name('api.vehicles.consumables.stock-in-history')->middleware('auth')->middleware('permission', 'vehicle.consumable.view');
 });

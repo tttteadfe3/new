@@ -20,7 +20,7 @@ class Request
         $this->data = $_GET;
 
         // POST 데이터 구문 분석
-        if ($this->method() === 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
             
             if (strpos($contentType, 'application/json') !== false) {
@@ -37,7 +37,7 @@ class Request
         }
 
         // 다른 HTTP 메서드(PUT, PATCH, DELETE) 처리
-        if (in_array($this->method(), ['PUT', 'PATCH', 'DELETE'])) {
+        if (in_array($_SERVER['REQUEST_METHOD'], ['PUT', 'PATCH', 'DELETE'])) {
             $input = file_get_contents('php://input');
             $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
             
@@ -70,7 +70,10 @@ class Request
      */
     public static function method(): string
     {
-        return $_SERVER['REQUEST_METHOD'];
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['_method'])) {
+            return strtoupper($_POST['_method']);
+        }
+        return $_SERVER['REQUEST_METHOD'] ?? 'GET';
     }
 
     /**

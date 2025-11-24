@@ -15,6 +15,14 @@ INSERT INTO `sys_menus` (`id`, `parent_id`, `name`, `url`, `icon`, `permission_k
 (402, 400, '검토 및 승인', '/littering/manage', 'ri-user-shared-line', 'littering.confirm', 20),
 (403, 400, '처리 완료 내역', '/littering/history', 'ri-history-line', 'littering.view', 30),
 (404, 400, '삭제된 항목', '/littering/deleted', 'ri-delete-bin-line', 'littering.restore', 40),
+
+-- Vehicle Management (500)
+(500, NULL, '차량 관리', '#', 'ri-car-line', 'vehicle.view', 50),
+(501, 500, '차량 목록', '/vehicles', 'ri-roadster-line', 'vehicle.view', 10),
+(502, 500, '수리/정비 요청', '/vehicles/my-work', 'ri-tools-line', 'vehicle.work.report', 20),
+(503, 500, '작업 접수/승인', '/vehicles/manager/work', 'ri-service-line', 'vehicle.work.manage', 30),
+(504, 500, '차량 검사', '/vehicles/inspections', 'ri-file-list-3-line', 'vehicle.inspection.view', 40),
+
 (900, NULL, '시스템 관리', '/employees', 'ri-settings-3-line', 'employee.view', 90),
 (910, 900, '사용자/조직', '#', 'ri-team-line', '', 10),
 (911, 910, '직원 관리', '/employees', 'ri-user-star-line', 'employee.view', 10),

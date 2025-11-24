@@ -69,4 +69,13 @@ INSERT INTO `sys_permissions` (`id`, `key`, `description`) VALUES
 (121, 'supply.purchase.manage', '지급품 구매 관리'),
 (130, 'supply.distribution.view', '지급품 지급 조회'),
 (131, 'supply.distribution.manage', '지급품 지급 관리'),
-(140, 'supply.report.view', '지급품 보고서 조회');
+(140, 'supply.report.view', '지급품 보고서 조회'),
+
+-- Vehicle Management (7)
+(150, 'vehicle.view', '차량 목록 조회'),
+(151, 'vehicle.manage', '차량 정보 관리'),
+(152, 'vehicle.work.view', '차량 작업 조회'),
+(153, 'vehicle.work.report', '차량 작업 신고 (고장/정비)'),
+(154, 'vehicle.work.manage', '차량 작업 처리 및 승인'),
+(155, 'vehicle.inspection.view', '차량 검사 조회'),
+(156, 'vehicle.inspection.manage', '차량 검사 관리');

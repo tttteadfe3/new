@@ -56,7 +56,6 @@ $container->register(\App\Repositories\MenuRepository::class, fn($c) => new \App
 $container->register(\App\Repositories\PositionRepository::class, fn($c) => new \App\Repositories\PositionRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\RoleRepository::class, fn($c) => new \App\Repositories\RoleRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\WasteCollectionRepository::class, fn($c) => new \App\Repositories\WasteCollectionRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\VehicleRepository::class, fn($c) => new \App\Repositories\VehicleRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 
 // Supply Management Repositories
 $container->register(\App\Repositories\SupplyCategoryRepository::class, fn($c) => new \App\Repositories\SupplyCategoryRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
@@ -199,8 +198,7 @@ $container->register(\App\Services\VehicleMaintenanceService::class, fn($c) => n
     $c->resolve(\App\Repositories\VehicleSelfMaintenanceRepository::class)
 ));
 $container->register(\App\Services\VehicleConsumableService::class, fn($c) => new \App\Services\VehicleConsumableService(
-    $c->resolve(\App\Repositories\VehicleConsumableRepository::class),
-    $c->resolve(\App\Repositories\VehicleConsumableLogRepository::class)
+    $c->resolve(\App\Repositories\VehicleConsumableRepository::class)
 ));
 $container->register(\App\Services\VehicleAdminService::class, fn($c) => new \App\Services\VehicleAdminService(
     $c->resolve(\App\Repositories\VehicleInsuranceRepository::class),
@@ -271,14 +269,51 @@ $container->register(\App\Controllers\Api\LeaveController::class, fn($c) => new 
     $c->resolve(JsonResponse::class),
     $c->resolve(\App\Services\LeaveService::class)
 ));
-$container->register(\App\Controllers\Api\VehicleController::class, fn($c) => new \App\Controllers\Api\VehicleController($c->resolve(\App\Services\VehicleService::class), $c->resolve(Request::class)));
-$container->register(\App\Controllers\Api\BreakdownController::class, fn($c) => new \App\Controllers\Api\BreakdownController($c->resolve(\App\Services\BreakdownService::class), $c->resolve(Request::class)));
-$container->register(\App\Controllers\Api\MaintenanceController::class, fn($c) => new \App\Controllers\Api\MaintenanceController($c->resolve(\App\Services\MaintenanceService::class), $c->resolve(Request::class)));
-$container->register(\App\Controllers\Api\ConsumableController::class, fn($c) => new \App\Controllers\Api\ConsumableController($c->resolve(\App\Services\ConsumableService::class), $c->resolve(Request::class)));
-$container->register(\App\Controllers\Api\ConsumableLogController::class, fn($c) => new \App\Controllers\Api\ConsumableLogController($c->resolve(\App\Services\ConsumableLogService::class), $c->resolve(Request::class)));
-$container->register(\App\Controllers\Api\InsuranceController::class, fn($c) => new \App\Controllers\Api\InsuranceController($c->resolve(\App\Services\InsuranceService::class), $c->resolve(Request::class)));
-$container->register(\App\Controllers\Api\InspectionController::class, fn($c) => new \App\Controllers\Api\InspectionController($c->resolve(\App\Services\InspectionService::class), $c->resolve(Request::class)));
-$container->register(\App\Controllers\Api\TaxController::class, fn($c) => new \App\Controllers\Api\TaxController($c->resolve(\App\Services\TaxService::class), $c->resolve(Request::class)));
+$container->register(\App\Controllers\Api\VehicleApiController::class, fn($c) => new \App\Controllers\Api\VehicleApiController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(JsonResponse::class),
+    $c->resolve(\App\Services\VehicleService::class),
+    $c->resolve(\App\Services\DataScopeService::class)
+));
+$container->register(\App\Controllers\Api\VehicleWorkApiController::class, fn($c) => new \App\Controllers\Api\VehicleWorkApiController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(JsonResponse::class),
+    $c->resolve(\App\Services\VehicleWorkService::class),
+    $c->resolve(\App\Services\DataScopeService::class)
+));
+$container->register(\App\Controllers\Api\VehicleInspectionApiController::class, fn($c) => new \App\Controllers\Api\VehicleInspectionApiController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(JsonResponse::class),
+    $c->resolve(\App\Services\VehicleInspectionService::class)
+));
+$container->register(\App\Controllers\Api\VehicleConsumableApiController::class, fn($c) => new \App\Controllers\Api\VehicleConsumableApiController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(JsonResponse::class),
+    $c->resolve(\App\Services\VehicleConsumableService::class)
+));
+$container->register(\App\Controllers\Pages\VehicleConsumableController::class, fn($c) => new \App\Controllers\Pages\VehicleConsumableController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class)
+));
 
 // Start session (temporarily disable regeneration for debugging)
 $sessionManager = $container->resolve(SessionManager::class);
