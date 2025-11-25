@@ -244,18 +244,19 @@ $router->post('/littering_admin/reports/{id}/approve', [LitteringAdminApiControl
     $router->put('/vehicles/works/{id}', [VehicleWorkApiController::class, 'update'])->name('api.vehicles.works.update')->middleware('auth');
     $router->delete('/vehicles/works/{id}', [VehicleWorkApiController::class, 'destroy'])->name('api.vehicles.works.destroy')->middleware('auth');
 
+    // Vehicle Inspections (순서 중요: vehicles/{id} 보다 위에 있어야 함)
+    $router->get('/vehicles/inspections', [VehicleInspectionApiController::class, 'index'])->name('api.vehicles.inspections.index')->middleware('auth')->middleware('permission', 'vehicle.inspection.view');
+    $router->post('/vehicles/inspections', [VehicleInspectionApiController::class, 'store'])->name('api.vehicles.inspections.store')->middleware('auth')->middleware('permission', 'vehicle.inspection.manage');
+    $router->get('/vehicles/inspections/{id}', [VehicleInspectionApiController::class, 'show'])->name('api.vehicles.inspections.show')->middleware('auth')->middleware('permission', 'vehicle.inspection.view');
+    $router->put('/vehicles/inspections/{id}', [VehicleInspectionApiController::class, 'update'])->name('api.vehicles.inspections.update')->middleware('auth')->middleware('permission', 'vehicle.inspection.manage');
+    $router->delete('/vehicles/inspections/{id}', [VehicleInspectionApiController::class, 'destroy'])->name('api.vehicles.inspections.destroy')->middleware('auth')->middleware('permission', 'vehicle.inspection.manage');
+
     // Vehicles
     $router->get('/vehicles', [VehicleApiController::class, 'index'])->name('api.vehicles.index')->middleware('auth')->middleware('permission', 'vehicle.view');
     $router->get('/vehicles/{id}', [VehicleApiController::class, 'show'])->name('api.vehicles.show')->middleware('auth')->middleware('permission', 'vehicle.view');
     $router->post('/vehicles', [VehicleApiController::class, 'store'])->name('api.vehicles.store')->middleware('auth')->middleware('permission', 'vehicle.manage');
     $router->put('/vehicles/{id}', [VehicleApiController::class, 'update'])->name('api.vehicles.update')->middleware('auth')->middleware('permission', 'vehicle.manage');
     $router->delete('/vehicles/{id}', [VehicleApiController::class, 'destroy'])->name('api.vehicles.destroy')->middleware('auth')->middleware('permission', 'vehicle.manage');
-
-
-
-    // Vehicle Inspections
-    $router->get('/vehicles/inspections', [VehicleInspectionApiController::class, 'index'])->name('api.vehicles.inspections.index')->middleware('auth')->middleware('permission', 'vehicle.inspection.view');
-    $router->post('/vehicles/inspections', [VehicleInspectionApiController::class, 'store'])->name('api.vehicles.inspections.store')->middleware('auth')->middleware('permission', 'vehicle.inspection.manage');
 
     // Vehicle Consumables
     $router->get('/vehicles/consumables', [VehicleConsumableApiController::class, 'index'])->name('api.vehicles.consumables.index')->middleware('auth')->middleware('permission', 'vehicle.consumable.view');

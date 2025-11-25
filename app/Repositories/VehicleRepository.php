@@ -4,72 +4,57 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\Vehicle;
+use App\Services\DataScopeService;
 
 class VehicleRepository
 {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, DataScopeService $dataScopeService)
     {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     public function findAll(array $filters = []): array
     {
-        $sql = "SELECT v.*, d.name as department_name, e.name as driver_name
-                FROM vehicles v
-                LEFT JOIN hr_departments d ON v.department_id = d.id
-                LEFT JOIN hr_employees e ON v.driver_employee_id = e.id";
-        
-        $where = [];
-        $params = [];
+        $queryParts = [
+            'sql' => "SELECT v.*, d.name as department_name, e.name as driver_name
+                      FROM vehicles v
+                      LEFT JOIN hr_departments d ON v.department_id = d.id
+                      LEFT JOIN hr_employees e ON v.driver_employee_id = e.id",
+            'params' => [],
+            'where' => []
+        ];
 
-        // Complex filtering logic for visibility
-        $visibilityConditions = [];
+        // 데이터 스코프 적용 (부서 권한 + 운전자 본인 차량)
+        $queryParts = $this->dataScopeService->applyVehicleScope($queryParts, 'v');
 
-        if (!empty($filters['visible_department_ids'])) {
-            $deptIds = $filters['visible_department_ids'];
-            $placeholders = [];
-            foreach ($deptIds as $i => $id) {
-                $key = ":vis_dept_$i";
-                $placeholders[] = $key;
-                $params[$key] = $id;
-            }
-            $visibilityConditions[] = "v.department_id IN (" . implode(',', $placeholders) . ")";
-        }
-
-        if (!empty($filters['current_user_driver_id'])) {
-            $visibilityConditions[] = "v.driver_employee_id = :current_user_driver_id";
-            $params[':current_user_driver_id'] = $filters['current_user_driver_id'];
-        }
-
-        if (!empty($visibilityConditions)) {
-            $where[] = "(" . implode(" OR ", $visibilityConditions) . ")";
-        }
-
-        // Standard filters (AND)
+        // 추가 필터 적용
         if (!empty($filters['department_id'])) {
-            $where[] = "v.department_id = :department_id";
-            $params[':department_id'] = $filters['department_id'];
+            $queryParts['where'][] = "v.department_id = :department_id";
+            $queryParts['params'][':department_id'] = $filters['department_id'];
         }
 
         if (!empty($filters['status_code'])) {
-            $where[] = "v.status_code = :status_code";
-            $params[':status_code'] = $filters['status_code'];
+            $queryParts['where'][] = "v.status_code = :status_code";
+            $queryParts['params'][':status_code'] = $filters['status_code'];
         }
 
         if (!empty($filters['search'])) {
-            $where[] = "(v.vehicle_number LIKE :search OR v.model LIKE :search)";
-            $params[':search'] = '%' . $filters['search'] . '%';
+            $queryParts['where'][] = "(v.vehicle_number LIKE :search OR v.model LIKE :search)";
+            $queryParts['params'][':search'] = '%' . $filters['search'] . '%';
         }
 
-        if (!empty($where)) {
-            $sql .= " WHERE " . implode(" AND ", $where);
+        // WHERE 절 조립
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
         }
 
-        $sql .= " ORDER BY v.created_at DESC";
+        $queryParts['sql'] .= " ORDER BY v.created_at DESC";
 
-        return $this->db->fetchAll($sql, $params);
+        return $this->db->fetchAll($queryParts['sql'], $queryParts['params']);
     }
 
     public function findById(int $id): ?array

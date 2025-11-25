@@ -5,8 +5,7 @@
 class VehicleDriverWorkPage extends BasePage {
     constructor() {
         super({ API_URL: '/vehicles/works' });
-        this.breakdownTable = null;
-        this.maintenanceTable = null;
+        this.workTable = null;
         this.currentType = null;
     }
 
@@ -16,9 +15,6 @@ class VehicleDriverWorkPage extends BasePage {
         document.getElementById('btn-save-work')?.addEventListener('click', () => this.saveWork());
         document.getElementById('btn-save-repair')?.addEventListener('click', () => this.saveRepair());
 
-        document.querySelector('a[href="#tab-breakdown"]')?.addEventListener('shown.bs.tab', () => this.loadWorks('고장'));
-        document.querySelector('a[href="#tab-maintenance"]')?.addEventListener('shown.bs.tab', () => this.loadWorks('정비'));
-
         // 사진 압축 처리
         document.querySelectorAll('#photo, #photo2, #photo3, #repair_photo, #repair_photo2').forEach(input => {
             input.addEventListener('change', (e) => this.handlePhotoUpload(e));
@@ -27,8 +23,8 @@ class VehicleDriverWorkPage extends BasePage {
 
     loadInitialData() {
         this.loadMyVehicles();
-        this.initializeDataTables();
-        this.loadWorks('고장');
+        this.initializeDataTable();
+        this.loadWorks();
     }
 
     async loadMyVehicles() {
@@ -58,10 +54,18 @@ class VehicleDriverWorkPage extends BasePage {
         };
         return colors[status] || 'secondary';
     }
-    initializeDataTables() {
-        this.breakdownTable = $('#breakdown-table').DataTable({
+
+    initializeDataTable() {
+        this.workTable = $('#work-table').DataTable({
             columns: [
                 { data: 'vehicle_number' },
+                {
+                    data: 'type',
+                    render: (data) => {
+                        const badge = data === '고장' ? 'bg-danger' : 'bg-success';
+                        return `<span class="badge ${badge}">${data}</span>`;
+                    }
+                },
                 { data: 'work_item' },
                 {
                     data: 'repair_type',
@@ -76,7 +80,7 @@ class VehicleDriverWorkPage extends BasePage {
                 {
                     data: null,
                     render: (data, type, row) => {
-                        if (row.status === '처리결정') {
+                        if (row.type === '고장' && row.status === '처리결정') {
                             return `<button class="btn btn-sm btn-success repair-btn" data-id="${row.id}" data-repair-type="${row.repair_type}">수리 등록</button>`;
                         } else if (row.status === '신고') {
                             return `
@@ -89,58 +93,33 @@ class VehicleDriverWorkPage extends BasePage {
                 }
             ],
             language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
-            order: [[3, 'desc']]
+            order: [[5, 'desc']]
         });
 
-        $('#breakdown-table').on('click', '.repair-btn', (e) => {
+        $('#work-table').on('click', '.repair-btn', (e) => {
             const btn = $(e.currentTarget);
             this.showRepairModal(btn.data('id'), btn.data('repair-type'));
         });
 
-        $('#breakdown-table').on('click', '.edit-btn', (e) => {
+        $('#work-table').on('click', '.edit-btn', (e) => {
             this.showEditModal($(e.target).data('id'));
         });
 
-        $('#breakdown-table').on('click', '.delete-btn', (e) => {
+        $('#work-table').on('click', '.delete-btn', (e) => {
             if (confirm('정말 삭제하시겠습니까?')) {
                 this.deleteWork($(e.target).data('id'));
             }
         });
 
-        $('#breakdown-table').on('click', '.view-btn', (e) => {
-            this.showDetailModal($(e.target).data('id'));
-        });
-
-        this.maintenanceTable = $('#maintenance-table').DataTable({
-            columns: [
-                { data: 'vehicle_number' },
-                { data: 'work_item' },
-                {
-                    data: 'status',
-                    render: (data) => `<span class="badge bg-${this.getStatusBadgeColor(data)}">${data}</span>`
-                },
-                { data: 'created_at' },
-                {
-                    data: null,
-                    render: (data, type, row) => `
-                        <button class="btn btn-sm btn-info view-btn" data-id="${row.id}">상세</button>
-                    `
-                }
-            ],
-            language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
-            order: [[3, 'desc']]
-        });
-
-        $('#maintenance-table').on('click', '.view-btn', (e) => {
+        $('#work-table').on('click', '.view-btn', (e) => {
             this.showDetailModal($(e.target).data('id'));
         });
     }
 
-    async loadWorks(type) {
+    async loadWorks() {
         try {
-            const data = await this.apiCall(`${this.config.API_URL}?type=${type}`);
-            const table = type === '고장' ? this.breakdownTable : this.maintenanceTable;
-            table.clear().rows.add(data.data || []).draw();
+            const data = await this.apiCall(this.config.API_URL);
+            this.workTable.clear().rows.add(data.data || []).draw();
         } catch (error) {
             Toast.error('작업 목록을 불러오는 중 오류가 발생했습니다.');
         }
@@ -299,7 +278,7 @@ class VehicleDriverWorkPage extends BasePage {
                 method: 'DELETE'
             });
             Toast.success('삭제되었습니다.');
-            this.loadWorks('고장');
+            this.loadWorks();
         } catch (error) {
             Toast.error('삭제 중 오류가 발생했습니다.');
         }
@@ -377,7 +356,7 @@ class VehicleDriverWorkPage extends BasePage {
                 Toast.success(`${type}이 신고되었습니다.`);
             }
 
-            this.loadWorks(type);
+            this.loadWorks();
             bootstrap.Modal.getInstance(document.getElementById('workModal')).hide();
         } catch (error) {
             Toast.error('저장 중 오류가 발생했습니다.');
@@ -420,7 +399,7 @@ class VehicleDriverWorkPage extends BasePage {
                 body: formData
             });
             Toast.success('수리 내역이 등록되었습니다.');
-            this.loadWorks('고장');
+            this.loadWorks();
             bootstrap.Modal.getInstance(document.getElementById('repairModal')).hide();
         } catch (error) {
             Toast.error('수리 등록 중 오류가 발생했습니다.');

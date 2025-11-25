@@ -40,6 +40,7 @@ $container->register(\App\Repositories\EmployeeRepository::class, fn($c) => new 
 $container->register(\App\Repositories\HolidayRepository::class, fn($c) => new \App\Repositories\HolidayRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 $container->register(\App\Repositories\LeaveRepository::class, fn($c) => new \App\Repositories\LeaveRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 $container->register(\App\Repositories\UserRepository::class, fn($c) => new \App\Repositories\UserRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\VehicleRepository::class, fn($c) => new \App\Repositories\VehicleRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 
 // Repositories with no DataScopeService dependency
 $container->register(\App\Repositories\BreakdownRepository::class, fn($c) => new \App\Repositories\BreakdownRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
@@ -56,25 +57,12 @@ $container->register(\App\Repositories\MenuRepository::class, fn($c) => new \App
 $container->register(\App\Repositories\PositionRepository::class, fn($c) => new \App\Repositories\PositionRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\RoleRepository::class, fn($c) => new \App\Repositories\RoleRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\WasteCollectionRepository::class, fn($c) => new \App\Repositories\WasteCollectionRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\VehicleInspectionRepository::class, fn($c) => new \App\Repositories\VehicleInspectionRepository($c->resolve(Database::class)));
 
 // Supply Management Repositories
 $container->register(\App\Repositories\SupplyCategoryRepository::class, fn($c) => new \App\Repositories\SupplyCategoryRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 $container->register(\App\Repositories\SupplyItemRepository::class, fn($c) => new \App\Repositories\SupplyItemRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
 $container->register(\App\Repositories\SupplyPlanRepository::class, fn($c) => new \App\Repositories\SupplyPlanRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\SupplyPurchaseRepository::class, fn($c) => new \App\Repositories\SupplyPurchaseRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\SupplyDistributionRepository::class, fn($c) => new \App\Repositories\SupplyDistributionRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\SupplyStockRepository::class, fn($c) => new \App\Repositories\SupplyStockRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-
-// Vehicle Management Repositories
-$container->register(\App\Repositories\VehicleRepository::class, fn($c) => new \App\Repositories\VehicleRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\VehicleBreakdownRepository::class, fn($c) => new \App\Repositories\VehicleBreakdownRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\VehicleRepairRepository::class, fn($c) => new \App\Repositories\VehicleRepairRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\VehicleSelfMaintenanceRepository::class, fn($c) => new \App\Repositories\VehicleSelfMaintenanceRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\VehicleConsumableRepository::class, fn($c) => new \App\Repositories\VehicleConsumableRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\VehicleConsumableLogRepository::class, fn($c) => new \App\Repositories\VehicleConsumableLogRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\VehicleInsuranceRepository::class, fn($c) => new \App\Repositories\VehicleInsuranceRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\VehicleTaxRepository::class, fn($c) => new \App\Repositories\VehicleTaxRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\VehicleInspectionRepository::class, fn($c) => new \App\Repositories\VehicleInspectionRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\VehicleDocumentRepository::class, fn($c) => new \App\Repositories\VehicleDocumentRepository($c->resolve(Database::class)));
 
 
@@ -206,6 +194,9 @@ $container->register(\App\Services\VehicleAdminService::class, fn($c) => new \Ap
     $c->resolve(\App\Repositories\VehicleInspectionRepository::class),
     $c->resolve(\App\Repositories\VehicleDocumentRepository::class)
 ));
+$container->register(\App\Services\VehicleInspectionService::class, fn($c) => new \App\Services\VehicleInspectionService(
+    $c->resolve(\App\Repositories\VehicleInspectionRepository::class)
+));
 
 
 // 4. Controllers (Web and API)
@@ -276,8 +267,7 @@ $container->register(\App\Controllers\Api\VehicleApiController::class, fn($c) =>
     $c->resolve(\App\Services\ActivityLogger::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class),
     $c->resolve(JsonResponse::class),
-    $c->resolve(\App\Services\VehicleService::class),
-    $c->resolve(\App\Services\DataScopeService::class)
+    $c->resolve(\App\Services\VehicleService::class)
 ));
 $container->register(\App\Controllers\Api\VehicleWorkApiController::class, fn($c) => new \App\Controllers\Api\VehicleWorkApiController(
     $c->resolve(Request::class),
@@ -313,6 +303,12 @@ $container->register(\App\Controllers\Pages\VehicleConsumableController::class, 
     $c->resolve(\App\Services\ViewDataService::class),
     $c->resolve(\App\Services\ActivityLogger::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class)
+));
+$container->register(\App\Controllers\Web\VehicleInspectionController::class, fn($c) => new \App\Controllers\Web\VehicleInspectionController(
+    $c->resolve(Request::class),
+    $c->resolve(\App\Services\AuthService::class),
+    $c->resolve(\App\Services\ViewDataService::class),
+    $c->resolve(\App\Services\ActivityLogger::class)
 ));
 
 // Start session (temporarily disable regeneration for debugging)

@@ -96,6 +96,7 @@ class DataScopeService
 
     /**
      * 차량 테이블에 대한 데이터 스코프를 적용합니다.
+     * 운전자는 본인이 운전자로 지정된 차량을 항상 조회할 수 있습니다.
      * @param array $queryParts
      * @param string $vehicleTableAlias
      * @return array
@@ -108,11 +109,26 @@ class DataScopeService
             return $queryParts;
         }
 
-        if (empty($visibleDepartmentIds)) {
+        $user = $this->sessionManager->get('user');
+        $employeeId = $user['employee_id'] ?? null;
+
+        $conditions = [];
+
+        // 부서 기반 조회 권한
+        if (!empty($visibleDepartmentIds)) {
+            $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
+            $conditions[] = "{$vehicleTableAlias}.department_id IN ($inClause)";
+        }
+
+        // 운전자 본인 차량은 항상 조회 가능
+        if ($employeeId) {
+            $conditions[] = "{$vehicleTableAlias}.driver_employee_id = " . intval($employeeId);
+        }
+
+        if (empty($conditions)) {
             $queryParts['where'][] = "1=0";
         } else {
-            $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
-            $queryParts['where'][] = "{$vehicleTableAlias}.department_id IN ($inClause)";
+            $queryParts['where'][] = "(" . implode(" OR ", $conditions) . ")";
         }
 
         return $queryParts;

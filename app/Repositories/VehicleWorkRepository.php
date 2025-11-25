@@ -3,80 +3,68 @@
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\DataScopeService;
 use PDO;
 
 class VehicleWorkRepository
 {
     private Database $db;
+    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db)
+    public function __construct(Database $db, DataScopeService $dataScopeService)
     {
         $this->db = $db;
+        $this->dataScopeService = $dataScopeService;
     }
 
     /**
      * 작업 목록 조회 (필터링 지원)
      */
-    /**
-     * 작업 목록 조회 (필터링 지원)
-     */
     public function findAll(array $filters = []): array
     {
-        $sql = "
-            SELECT 
-                vw.*,
-                v.vehicle_number,
-                v.model,
-                v.department_id,
-                e.name as reporter_name
-            FROM vehicle_works vw
-            LEFT JOIN vehicles v ON vw.vehicle_id = v.id
-            LEFT JOIN hr_employees e ON vw.reporter_id = e.id
-            WHERE 1=1
-        ";
+        $queryParts = [
+            'sql' => "SELECT 
+                        vw.*,
+                        v.vehicle_number,
+                        v.model,
+                        v.department_id,
+                        e.name as reporter_name
+                      FROM vehicle_works vw
+                      LEFT JOIN vehicles v ON vw.vehicle_id = v.id
+                      LEFT JOIN hr_employees e ON vw.reporter_id = e.id",
+            'params' => [],
+            'where' => []
+        ];
         
-        $params = [];
+        // DataScope 적용 (부서 권한 + 운전자 본인 차량)
+        $queryParts = $this->dataScopeService->applyVehicleScope($queryParts, 'v');
         
         // type 필터
         if (!empty($filters['type'])) {
-            $sql .= " AND vw.type = :type";
-            $params[':type'] = $filters['type'];
+            $queryParts['where'][] = "vw.type = :type";
+            $queryParts['params'][':type'] = $filters['type'];
         }
         
         // status 필터
         if (!empty($filters['status'])) {
-            $sql .= " AND vw.status = :status";
-            $params[':status'] = $filters['status'];
+            $queryParts['where'][] = "vw.status = :status";
+            $queryParts['params'][':status'] = $filters['status'];
         }
         
         // vehicle_id 필터
         if (!empty($filters['vehicle_id'])) {
-            $sql .= " AND vw.vehicle_id = :vehicle_id";
-            $params[':vehicle_id'] = $filters['vehicle_id'];
+            $queryParts['where'][] = "vw.vehicle_id = :vehicle_id";
+            $queryParts['params'][':vehicle_id'] = $filters['vehicle_id'];
         }
         
-        // 부서 필터 (권한 관리)
-        if (isset($filters['visible_department_ids']) && is_array($filters['visible_department_ids'])) {
-            $placeholders = [];
-            foreach ($filters['visible_department_ids'] as $idx => $deptId) {
-                $key = ':dept_' . $idx;
-                $placeholders[] = $key;
-                $params[$key] = $deptId;
-            }
-            $sql .= " AND v.department_id IN (" . implode(',', $placeholders) . ")";
+        // WHERE 절 조립
+        if (!empty($queryParts['where'])) {
+            $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
         }
         
-        // 운전원 자신의 작업만 (담당 차량 기준 OR 본인 신고)
-        // 운전원 자신의 작업만 (담당 차량 기준 OR 본인 신고)
-        if (!empty($filters['driver_employee_id'])) {
-            $sql .= " AND (v.driver_employee_id = :driver_id OR vw.reporter_id = :reporter_id)";
-            $params[':driver_id'] = $filters['driver_employee_id'];
-            $params[':reporter_id'] = $filters['driver_employee_id'];
-        }
+        $queryParts['sql'] .= " ORDER BY vw.created_at DESC";
         
-        $sql .= " ORDER BY vw.created_at DESC";
-        
-        return $this->db->fetchAll($sql, $params);
+        return $this->db->fetchAll($queryParts['sql'], $queryParts['params']);
     }
 
     /**

@@ -119,19 +119,24 @@ $router->get('/supply/reports/department', [SupplyReportController::class, 'depa
 
 // --- 차량 관리 (Vehicle Management) ---
 use App\Controllers\Web\VehicleController;
-use App\Controllers\Web\VehicleDriverController;
-use App\Controllers\Web\VehicleManagerController;
+use App\Controllers\Web\VehicleMaintenanceReportController;
+use App\Controllers\Web\VehicleMaintenanceManageController;
 use App\Controllers\Pages\VehicleConsumableController;
 
-// 차량 목록 (공통)
-$router->get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index')->middleware('auth')->middleware('permission', 'vehicle.view');
+// 차량 정비 관리
+// 작업 신고 및 처리 (운전원용) - 순서 중요: vehicles보다 위에
+$router->get('/vehicles/maintenance/report', [VehicleMaintenanceReportController::class, 'index'])->name('vehicles.maintenance.report')->middleware('auth')->middleware('permission', 'vehicle.maintenance.report');
 
-// 운전원 작업 페이지
-$router->get('/vehicles/my-work', [VehicleDriverController::class, 'index'])->name('vehicles.my-work')->middleware('auth')->middleware('permission', 'vehicle.work.report');
-
-// Manager 작업 처리 페이지
-$router->get('/vehicles/manager/work', [VehicleManagerController::class, 'index'])->name('vehicles.manager.work')->middleware('auth')->middleware('permission', 'vehicle.work.manage');
+// 작업 관리 (관리자용)
+$router->get('/vehicles/maintenance/manage', [VehicleMaintenanceManageController::class, 'index'])->name('vehicles.maintenance.manage')->middleware('auth')->middleware('permission', 'vehicle.maintenance.manage');
 
 // 소모품 관리
 $router->get('/vehicles/consumables', [VehicleConsumableController::class, 'index'])->name('vehicles.consumables')->middleware('auth')->middleware('permission', 'vehicle.consumable.view');
+
+// 차량 검사 관리
+use App\Controllers\Web\VehicleInspectionController;
+$router->get('/vehicles/inspections', [VehicleInspectionController::class, 'index'])->name('vehicles.inspections')->middleware('auth')->middleware('permission', 'vehicle.inspection.view');
+
+// 차량 목록 (공통)
+$router->get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index')->middleware('auth')->middleware('permission', 'vehicle.view');
 

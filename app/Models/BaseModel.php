@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-abstract class BaseModel
+abstract class BaseModel implements \JsonSerializable
 {
     protected array $attributes = [];
     protected array $fillable = [];
@@ -49,9 +49,7 @@ abstract class BaseModel
      */
     public function setAttribute(string $key, mixed $value): void
     {
-        if (in_array($key, $this->fillable) || empty($this->fillable)) {
-            $this->attributes[$key] = $value;
-        }
+        $this->attributes[$key] = $value;
     }
 
     /**
@@ -218,5 +216,13 @@ abstract class BaseModel
     public function __isset(string $key): bool
     {
         return isset($this->attributes[$key]);
+    }
+
+    /**
+     * JSON 직렬화를 위한 데이터 준비
+     */
+    public function jsonSerialize(): mixed
+    {
+        return $this->toArray();
     }
 }

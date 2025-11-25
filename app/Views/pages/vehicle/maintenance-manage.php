@@ -2,55 +2,34 @@
 <div class="row">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">작업 처리 관리</h5>
+                <div class="d-flex gap-2">
+                    <select id="filter-vehicle" class="form-select form-select-sm" style="width: 200px;">
+                        <option value="">전체 차량</option>
+                    </select>
+                    <select id="filter-type" class="form-select form-select-sm" style="width: auto;">
+                        <option value="">전체 유형</option>
+                        <option value="고장">고장</option>
+                        <option value="정비">정비</option>
+                    </select>
+                </div>
             </div>
             <div class="card-body">
-                <!-- 탭 -->
-                <ul class="nav nav-tabs mb-3" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link active" data-bs-toggle="tab" href="#tab-breakdown">접수 대기</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="tab" href="#tab-maintenance">승인 대기</a>
-                    </li>
-                </ul>
-
-                <div class="tab-content">
-                    <!-- 접수 대기 탭 -->
-                    <div class="tab-pane fade show active" id="tab-breakdown">
-                        <table id="breakdown-table" class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>차량</th>
-                                    <th>작업항목</th>
-                                    <th>신고자</th>
-                                    <th>상태</th>
-                                    <th>신고일</th>
-                                    <th>작업</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-
-                    <!-- 승인 대기 탭 -->
-                    <div class="tab-pane fade" id="tab-maintenance">
-                        <table id="maintenance-table" class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>차량</th>
-                                    <th>작업항목</th>
-                                    <th>신고자</th>
-                                    <th>상태</th>
-                                    <th>등록일</th>
-                                    <th>작업</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
+                <table id="work-table" class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>차량</th>
+                            <th>작업유형</th>
+                            <th>작업항목</th>
+                            <th>신고자</th>
+                            <th>상태</th>
+                            <th>등록일</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
     </div>

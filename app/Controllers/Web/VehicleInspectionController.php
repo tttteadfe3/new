@@ -8,7 +8,7 @@ use App\Services\ViewDataService;
 use App\Services\ActivityLogger;
 use App\Core\View;
 
-class VehicleDriverController extends BaseController
+class VehicleInspectionController extends BaseController
 {
     public function __construct(
         Request $request,
@@ -20,19 +20,21 @@ class VehicleDriverController extends BaseController
     }
 
     /**
-     * 운전원 작업 페이지 (고장 신고 + 정비 등록)
+     * 차량 검사 관리 페이지
      */
     public function index(): void
     {
         View::getInstance()->addCss('https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css');
-        
+        View::getInstance()->addCss('https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css');
+
         View::getInstance()->addJs('https://code.jquery.com/jquery-3.7.1.min.js');
         View::getInstance()->addJs('https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js');
         View::getInstance()->addJs('https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js');
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/vehicle-driver-work.js');
+        View::getInstance()->addJs('https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js');
+        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/vehicle-inspection.js');
 
-        echo $this->render('pages/vehicle/driver-work', [
-            'pageTitle' => '내 작업 관리'
+        echo $this->render('pages/vehicle/inspection', [
+            'pageTitle' => '차량 검사 관리'
         ], 'layouts/app');
     }
 }

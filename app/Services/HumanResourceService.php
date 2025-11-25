@@ -82,8 +82,8 @@ class HumanResourceService
                 $employeeId,
                 $changerId,
                 '직급',
-                $oldPos ? $oldPos->name : $employee['position_id'],
-                $newPos ? $newPos->name : $newPositionId,
+                $oldPos ? $oldPos['name'] : $employee['position_id'],
+                $newPos ? $newPos['name'] : $newPositionId,
                 $orderDate
             );
         }

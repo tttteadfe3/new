@@ -37,20 +37,10 @@ class VehicleMaintenanceApiController extends BaseApiController
                 'status' => $this->request->input('status')
             ];
 
-            // Filter by department if applicable
-            $user = $this->authService->user();
-            if ($user && $user['employee_id']) {
-                $employee = $this->employeeRepository->findById($user['employee_id']);
-                if ($employee && $employee['department_id']) {
-                    // We need to pass department_id to the service/repository to filter vehicles by department
-                    // But the repository method currently only filters by vehicle_id.
-                    // We should add department_id to filters and handle it in repository.
-                    $filters['department_id'] = $employee['department_id'];
-                }
-            }
-
+            // 빈 값 제거
             $filters = array_filter($filters, fn($v) => $v !== null && $v !== '');
             
+            // DataScope는 Repository에서 자동 적용됨
             $breakdowns = $this->maintenanceService->getBreakdowns($filters);
             $this->apiSuccess($breakdowns);
         } catch (Exception $e) {
@@ -106,17 +96,10 @@ class VehicleMaintenanceApiController extends BaseApiController
                 'vehicle_id' => $this->request->input('vehicle_id')
             ];
 
-            // Filter by department if applicable
-            $user = $this->authService->user();
-            if ($user && $user['employee_id']) {
-                $employee = $this->employeeRepository->findById($user['employee_id']);
-                if ($employee && $employee['department_id']) {
-                    $filters['department_id'] = $employee['department_id'];
-                }
-            }
-
+            // 빈 값 제거
             $filters = array_filter($filters, fn($v) => $v !== null && $v !== '');
             
+            // DataScope는 Repository에서 자동 적용됨
             $maintenances = $this->maintenanceService->getSelfMaintenances($filters);
             $this->apiSuccess($maintenances);
         } catch (Exception $e) {

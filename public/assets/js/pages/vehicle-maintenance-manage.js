@@ -5,28 +5,34 @@
 class VehicleManagerWorkPage extends BasePage {
     constructor() {
         super({ API_URL: '/vehicles/works' });
-        this.breakdownTable = null;
-        this.maintenanceTable = null;
+        this.workTable = null;
     }
 
     setupEventListeners() {
-        document.querySelector('a[href="#tab-breakdown"]')?.addEventListener('shown.bs.tab', () => this.loadWorks('breakdown'));
-        document.querySelector('a[href="#tab-maintenance"]')?.addEventListener('shown.bs.tab', () => this.loadWorks('maintenance'));
-
         document.getElementById('btn-confirm-accept')?.addEventListener('click', () => this.acceptWork());
+        document.getElementById('filter-type')?.addEventListener('change', () => this.loadWorks());
+        document.getElementById('filter-vehicle')?.addEventListener('change', () => this.loadWorks());
     }
 
     loadInitialData() {
-        this.initializeDataTables();
-        this.loadWorks('breakdown');
+        this.loadVehicles();
+        this.initializeDataTable();
+        this.loadWorks();
     }
 
-    initializeDataTables() {
+    initializeDataTable() {
         const self = this;
 
-        this.breakdownTable = $('#breakdown-table').DataTable({
+        this.workTable = $('#work-table').DataTable({
             columns: [
                 { data: 'vehicle_number' },
+                {
+                    data: 'type',
+                    render: (data) => {
+                        const badge = data === '고장' ? 'bg-danger' : 'bg-success';
+                        return `<span class="badge ${badge}">${data}</span>`;
+                    }
+                },
                 { data: 'work_item' },
                 { data: 'reporter_name' },
                 {
@@ -36,52 +42,33 @@ class VehicleManagerWorkPage extends BasePage {
                 { data: 'created_at' },
                 {
                     data: null,
-                    render: (data, type, row) => `
-                        <button class="btn btn-sm btn-info view-btn me-1" data-id="${row.id}">상세</button>
-                        <button class="btn btn-sm btn-primary accept-btn" data-id="${row.id}">접수</button>
-                    `
+                    render: (data, type, row) => {
+                        let buttons = `<button class="btn btn-sm btn-info view-btn me-1" data-id="${row.id}">상세</button>`;
+
+                        if (row.status === '신고' && row.type === '고장') {
+                            buttons += `<button class="btn btn-sm btn-primary accept-btn" data-id="${row.id}">접수</button>`;
+                        } else if (row.status === '완료') {
+                            buttons += `<button class="btn btn-sm btn-success approve-btn" data-id="${row.id}">승인</button>`;
+                        }
+
+                        return buttons;
+                    }
                 }
             ],
             language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
-            order: [[4, 'desc']]
+            order: [[5, 'desc']]
         });
 
-        this.maintenanceTable = $('#maintenance-table').DataTable({
-            columns: [
-                { data: 'vehicle_number' },
-                { data: 'work_item' },
-                { data: 'reporter_name' },
-                {
-                    data: 'status',
-                    render: (data) => `<span class="badge bg-primary">${data}</span>`
-                },
-                { data: 'created_at' },
-                {
-                    data: null,
-                    render: (data, type, row) => `
-                        <button class="btn btn-sm btn-info view-btn me-1" data-id="${row.id}">상세</button>
-                        <button class="btn btn-sm btn-success approve-btn" data-id="${row.id}">승인</button>
-                    `
-                }
-            ],
-            language: { url: '//cdn.datatables.net/plug-ins/2.3.5/i18n/ko.json' },
-            order: [[4, 'desc']]
-        });
-
-        $('#breakdown-table').on('click', '.accept-btn', function () {
+        $('#work-table').on('click', '.accept-btn', function () {
             self.showAcceptModal($(this).data('id'));
         });
 
-        $('#breakdown-table').on('click', '.view-btn', function () {
+        $('#work-table').on('click', '.view-btn', function () {
             self.showWorkDetail($(this).data('id'));
         });
 
-        $('#maintenance-table').on('click', '.approve-btn', function () {
+        $('#work-table').on('click', '.approve-btn', function () {
             self.approveWork($(this).data('id'));
-        });
-
-        $('#maintenance-table').on('click', '.view-btn', function () {
-            self.showWorkDetail($(this).data('id'));
         });
     }
 
@@ -93,6 +80,7 @@ class VehicleManagerWorkPage extends BasePage {
             let html = `
                 <table class="table table-bordered">
                     <tr><th style="width: 120px;">차량</th><td>${work.vehicle_number} (${work.model})</td></tr>
+                    <tr><th>작업유형</th><td>${work.type}</td></tr>
                     <tr><th>작업항목</th><td>${work.work_item}</td></tr>
                     <tr><th>신고자</th><td>${work.reporter_name}</td></tr>
                     <tr><th>상태</th><td>${work.status}</td></tr>
@@ -126,20 +114,36 @@ class VehicleManagerWorkPage extends BasePage {
         }
     }
 
-    async loadWorks(tab) {
+    async loadVehicles() {
         try {
-            let data = [];
-            if (tab === 'breakdown') {
-                const response = await this.apiCall(`${this.config.API_URL}?status=신고`);
-                data = response.data || [];
-            } else {
-                // 승인 대기는 '완료' 상태인 항목들
-                const response = await this.apiCall(`${this.config.API_URL}?status=완료`);
-                data = response.data || [];
+            const data = await this.apiCall('/vehicles');
+            const select = document.getElementById('filter-vehicle');
+            if (select && data.data) {
+                data.data.forEach(vehicle => {
+                    const option = document.createElement('option');
+                    option.value = vehicle.id;
+                    option.textContent = `${vehicle.vehicle_number} (${vehicle.model})`;
+                    select.appendChild(option);
+                });
             }
+        } catch (error) {
+            console.error('Error loading vehicles:', error);
+        }
+    }
 
-            const table = tab === 'breakdown' ? this.breakdownTable : this.maintenanceTable;
-            table.clear().rows.add(data).draw();
+    async loadWorks() {
+        try {
+            const typeFilter = document.getElementById('filter-type')?.value || '';
+            const vehicleFilter = document.getElementById('filter-vehicle')?.value || '';
+
+            let url = this.config.API_URL;
+            const params = [];
+            if (typeFilter) params.push(`type=${typeFilter}`);
+            if (vehicleFilter) params.push(`vehicle_id=${vehicleFilter}`);
+            if (params.length > 0) url += '?' + params.join('&');
+
+            const response = await this.apiCall(url);
+            this.workTable.clear().rows.add(response.data || []).draw();
         } catch (error) {
             Toast.error('작업 목록을 불러오는 중 오류가 발생했습니다.');
         }
@@ -163,7 +167,7 @@ class VehicleManagerWorkPage extends BasePage {
                 body: JSON.stringify({ status: '처리결정', repair_type: repairType })
             });
             Toast.success('접수되었습니다.');
-            this.loadWorks('breakdown');
+            this.loadWorks();
             bootstrap.Modal.getInstance(document.getElementById('acceptModal')).hide();
         } catch (error) {
             Toast.error('접수 중 오류가 발생했습니다.');
@@ -180,7 +184,7 @@ class VehicleManagerWorkPage extends BasePage {
                 body: JSON.stringify({ status: '승인' })
             });
             Toast.success('승인되었습니다.');
-            this.loadWorks('maintenance');
+            this.loadWorks();
         } catch (error) {
             Toast.error('승인 중 오류가 발생했습니다.');
         }

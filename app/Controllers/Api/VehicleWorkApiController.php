@@ -45,24 +45,12 @@ class VehicleWorkApiController extends BaseApiController
                 'vehicle_id' => $this->request->input('vehicle_id')
             ];
 
-            $user = $this->authService->user();
-            
-            // 부서 기반 필터링
-            $visibleDeptIds = $this->dataScopeService->getVisibleDepartmentIdsForCurrentUser();
-            
-            if ($visibleDeptIds !== null) {
-                $filters['visible_department_ids'] = $visibleDeptIds;
-                
-                // 운전원인 경우 본인 담당 차량만
-                if ($user && $user['employee_id']) {
-                    $filters['driver_employee_id'] = $user['employee_id'];
-                }
-            }
-
+            // 빈 값 제거
             $filters = array_filter($filters, function($value) {
                 return $value !== null && $value !== '';
             });
 
+            // DataScope는 Repository에서 자동 적용됨
             $works = $this->workService->getAllWorks($filters);
             $this->apiSuccess($works);
         } catch (Exception $e) {
