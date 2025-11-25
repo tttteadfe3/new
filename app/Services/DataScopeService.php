@@ -114,10 +114,13 @@ class DataScopeService
 
         $conditions = [];
 
-        // 부서 기반 조회 권한
+        // 부서 기반 조회 권한 + 부서 미지정 차량 포함
         if (!empty($visibleDepartmentIds)) {
             $inClause = implode(',', array_map('intval', $visibleDepartmentIds));
-            $conditions[] = "{$vehicleTableAlias}.department_id IN ($inClause)";
+            $conditions[] = "({$vehicleTableAlias}.department_id IN ($inClause) OR {$vehicleTableAlias}.department_id IS NULL)";
+        } else {
+            // 조회 가능한 부서가 없으면, 부서 미지정 차량만 조회하도록 허용
+            $conditions[] = "{$vehicleTableAlias}.department_id IS NULL";
         }
 
         // 운전자 본인 차량은 항상 조회 가능

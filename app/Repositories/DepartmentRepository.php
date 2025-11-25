@@ -32,7 +32,11 @@ class DepartmentRepository {
 
         $queryParts['sql'] .= " ORDER BY d.name";
 
-        return $this->db->fetchAllAs(Department::class, $queryParts['sql'], $queryParts['params']);
+        $results = $this->db->fetchAllAs(Department::class, $queryParts['sql'], $queryParts['params']);
+
+        return array_map(function($department) {
+            return (array)$department;
+        }, $results);
     }
 
     /**
