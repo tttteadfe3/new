@@ -65,4 +65,14 @@ class VehicleInspectionRepository
 
         return (int) $this->db->lastInsertId();
     }
+
+    public function findById(int $id): ?VehicleInspection
+    {
+        $sql = "SELECT vi.*, v.vehicle_number, v.model
+                FROM vehicle_inspections vi
+                JOIN vehicles v ON vi.vehicle_id = v.id
+                WHERE vi.id = :id";
+
+        return $this->db->fetchAs(VehicleInspection::class, $sql, [':id' => $id]) ?: null;
+    }
 }
