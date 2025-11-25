@@ -13,51 +13,108 @@ class VehicleConsumableRepository
         $this->db = $db;
     }
 
+    // ============ 카테고리 관리 ============
+    
     /**
-     * 모든 소모품 조회
+     * 모든 카테고리 조회 (트리 구조)
      */
-    public function findAll(array $filters = []): array
+    public function findAllCategories(array $filters = []): array
     {
         $sql = "
             SELECT 
                 vc.*,
-                CASE 
-                    WHEN vc.current_stock <= vc.minimum_stock THEN 1
-                    ELSE 0
-                END as is_low_stock
-            FROM vehicle_consumables vc
+                COALESCE(
+                    (SELECT SUM(quantity) FROM vehicle_consumable_stock WHERE category_id = vc.id),
+                    0
+                ) - COALESCE(
+                    (SELECT SUM(quantity) FROM vehicle_consumable_usage WHERE category_id = vc.id),
+                    0
+                ) as current_stock
+            FROM vehicle_consumables_categories vc
             WHERE 1=1
         ";
         
         $params = [];
         
-        if (!empty($filters['category'])) {
-            $sql .= " AND vc.category = :category";
-            $params[':category'] = $filters['category'];
+        if (!empty($filters['parent_id'])) {
+            $sql .= " AND vc.parent_id = :parent_id";
+            $params[':parent_id'] = $filters['parent_id'];
+        }
+        
+        if (isset($filters['level'])) {
+            $sql .= " AND vc.level = :level";
+            $params[':level'] = $filters['level'];
         }
         
         if (!empty($filters['search'])) {
-            $sql .= " AND (vc.name LIKE :search OR vc.part_number LIKE :search)";
+            $sql .= " AND vc.name LIKE :search";
             $params[':search'] = '%' . $filters['search'] . '%';
         }
         
-        if (isset($filters['low_stock']) && $filters['low_stock']) {
-            $sql .= " AND vc.current_stock <= vc.minimum_stock";
-        }
-        
-        $sql .= " ORDER BY vc.name ASC";
+        $sql .= " ORDER BY vc.path ASC, vc.sort_order ASC, vc.name ASC";
         
         return $this->db->fetchAll($sql, $params);
     }
 
     /**
-     * ID로 소모품 조회
+     * 카테고리 트리 구조로 조회
+     */
+    public function getCategoryTree(): array
+    {
+        $sql = "
+            SELECT 
+                id,
+                name,
+                parent_id,
+                level,
+                path,
+                unit,
+                sort_order
+            FROM vehicle_consumables_categories
+            ORDER BY path ASC, sort_order ASC
+        ";
+        
+        $categories = $this->db->fetchAll($sql);
+        return $this->buildTree($categories);
+    }
+
+    /**
+     * 배열을 트리 구조로 변환
+     */
+    private function buildTree(array $elements, $parentId = null): array
+    {
+        $branch = [];
+        
+        foreach ($elements as $element) {
+            if ($element['parent_id'] == $parentId) {
+                $children = $this->buildTree($elements, $element['id']);
+                if ($children) {
+                    $element['children'] = $children;
+                }
+                $branch[] = $element;
+            }
+        }
+        
+        return $branch;
+    }
+
+    /**
+     * ID로 카테고리 조회
      */
     public function findById(int $id): ?array
     {
         $sql = "
-            SELECT vc.*
-            FROM vehicle_consumables vc
+            SELECT 
+                vc.*,
+                COALESCE(
+                    (SELECT SUM(quantity) FROM vehicle_consumable_stock WHERE category_id = vc.id),
+                    0
+                ) - COALESCE(
+                    (SELECT SUM(quantity) FROM vehicle_consumable_usage WHERE category_id = vc.id),
+                    0
+                ) as current_stock,
+                (SELECT COUNT(*) FROM vehicle_consumables_categories WHERE parent_id = vc.id) as children_count
+            FROM vehicle_consumables_categories vc
             WHERE vc.id = :id
         ";
         
@@ -66,201 +123,287 @@ class VehicleConsumableRepository
     }
 
     /**
-     * 소모품 등록
+     * 카테고리 등록
      */
     public function create(array $data): int
     {
+        // path 계산
+        if (!empty($data['parent_id'])) {
+            $parent = $this->findById($data['parent_id']);
+            $data['level'] = $parent['level'] + 1;
+        } else {
+            $data['level'] = 1;
+        }
+        
         $sql = "
-            INSERT INTO vehicle_consumables (
-                name, category, part_number, unit, unit_price,
-                current_stock, minimum_stock, location, note
+            INSERT INTO vehicle_consumables_categories (
+                name, parent_id, level, sort_order, unit, note
             ) VALUES (
-                :name, :category, :part_number, :unit, :unit_price,
-                :current_stock, :minimum_stock, :location, :note
+                :name, :parent_id, :level, :sort_order, :unit, :note
+            )
+        ";
+        
+        $id = $this->db->insert($sql, [
+            ':name' => $data['name'],
+            ':parent_id' => $data['parent_id'] ?? null,
+            ':level' => $data['level'],
+            ':sort_order' => $data['sort_order'] ?? 0,
+            ':unit' => $data['unit'] ?? '',
+            ':note' => $data['note'] ?? null
+        ]);
+        
+        // path 업데이트
+        $this->updatePath($id);
+        
+        return $id;
+    }
+
+    /**
+     * path 필드 업데이트
+     */
+    private function updatePath(int $id): bool
+    {
+        $category = $this->findById($id);
+        
+        if (empty($category['parent_id'])) {
+            $path = (string)$id;
+        } else {
+            $parent = $this->findById($category['parent_id']);
+            $path = $parent['path'] . '/' . $id;
+        }
+        
+        $sql = "UPDATE vehicle_consumables_categories SET path = :path WHERE id = :id";
+        return (bool)$this->db->execute($sql, [':path' => $path, ':id' => $id]);
+    }
+
+    /**
+     * 카테고리 수정
+     */
+    public function update(int $id, array $data): bool
+    {
+        $allowedFields = ['name', 'parent_id', 'sort_order', 'unit', 'note'];
+        $setClauses = [];
+        $params = [':id' => $id];
+        
+        foreach ($data as $key => $value) {
+            if (in_array($key, $allowedFields)) {
+                $setClauses[] = "$key = :$key";
+                $params[":$key"] = $value;
+            }
+        }
+        
+        if (empty($setClauses)) {
+            return false;
+        }
+        
+        $sql = "
+            UPDATE vehicle_consumables_categories 
+            SET " . implode(', ', $setClauses) . "
+            WHERE id = :id
+        ";
+        
+        $result = (bool)$this->db->execute($sql, $params);
+        
+        // parent_id가 변경되면 path와 level 재계산
+        if (isset($data['parent_id'])) {
+            $this->updatePath($id);
+        }
+        
+        return $result;
+    }
+
+    /**
+     * 카테고리 삭제
+     */
+    public function delete(int $id): bool
+    {
+        $sql = "DELETE FROM vehicle_consumables_categories WHERE id = :id";
+        return (bool)$this->db->execute($sql, [':id' => $id]);
+    }
+
+    /**
+     * 자식 카테고리 존재 여부
+     */
+    public function hasChildren(int $id): bool
+    {
+        $sql = "SELECT COUNT(*) as count FROM vehicle_consumables_categories WHERE parent_id = :id";
+        $result = $this->db->fetchOne($sql, [':id' => $id]);
+        return $result && $result['count'] > 0;
+    }
+
+    // ============ 입고 관리 ============
+
+    /**
+     * 입고 기록
+     */
+    public function recordStockIn(array $data): int
+    {
+        $sql = "
+            INSERT INTO vehicle_consumable_stock (
+                category_id, item_name, quantity, unit_price, 
+                purchase_date, registered_by, note
+            ) VALUES (
+                :category_id, :item_name, :quantity, :unit_price,
+                :purchase_date, :registered_by, :note
             )
         ";
         
         return $this->db->insert($sql, [
-            ':name' => $data['name'],
-            ':category' => $data['category'] ?? null,
-            ':part_number' => $data['part_number'] ?? null,
-            ':unit' => $data['unit'] ?? '개',
-            ':unit_price' => $data['unit_price'] ?? 0,
-            ':current_stock' => $data['current_stock'] ?? 0,
-            ':minimum_stock' => $data['minimum_stock'] ?? 0,
-            ':location' => $data['location'] ?? null,
+            ':category_id' => $data['category_id'],
+            ':item_name' => $data['item_name'],
+            ':quantity' => $data['quantity'],
+            ':unit_price' => $data['unit_price'] ?? null,
+            ':purchase_date' => $data['purchase_date'] ?? date('Y-m-d'),
+            ':registered_by' => $data['registered_by'] ?? null,
             ':note' => $data['note'] ?? null
-        ]);
-    }
-
-    /**
-     * 소모품 수정
-     */
-    public function update(int $id, array $data): bool
-    {
-        $fields = [];
-        $params = [':id' => $id];
-        
-        $allowedFields = [
-            'name', 'category', 'part_number', 'unit', 'unit_price',
-            'current_stock', 'minimum_stock', 'location', 'note'
-        ];
-        
-        foreach ($allowedFields as $field) {
-            if (array_key_exists($field, $data)) {
-                $fields[] = "`{$field}` = :{$field}";
-                $params[":{$field}"] = $data[$field];
-            }
-        }
-        
-        if (empty($fields)) {
-            return false;
-        }
-        
-        $sql = "UPDATE vehicle_consumables SET " . implode(', ', $fields) . " WHERE id = :id";
-        
-        return (bool) $this->db->execute($sql, $params);
-    }
-
-    /**
-     * 소모품 삭제
-     */
-    public function delete(int $id): bool
-    {
-        $sql = "DELETE FROM vehicle_consumables WHERE id = :id";
-        return (bool) $this->db->execute($sql, [':id' => $id]);
-    }
-
-    /**
-     * 재고 조정
-     */
-    public function adjustStock(int $id, int $quantity): bool
-    {
-        $sql = "
-            UPDATE vehicle_consumables 
-            SET current_stock = current_stock + :quantity
-            WHERE id = :id
-        ";
-        
-        return (bool) $this->db->execute($sql, [
-            ':id' => $id,
-            ':quantity' => $quantity
-        ]);
-    }
-
-    /**
-     * 카테고리 목록 조회
-     */
-    public function getCategories(): array
-    {
-        $sql = "
-            SELECT DISTINCT category
-            FROM vehicle_consumables
-            WHERE category IS NOT NULL
-            ORDER BY category ASC
-        ";
-        
-        $results = $this->db->fetchAll($sql);
-        return array_column($results, 'category');
-    }
-
-    /**
-     * 사용 이력 조회
-     */
-    public function getUsageHistory(int $consumableId, int $limit = 50): array
-    {
-        $sql = "
-            SELECT 
-                vcu.*,
-                v.vehicle_number,
-                e.name as used_by_name,
-                vw.work_item
-            FROM vehicle_consumable_usage vcu
-            LEFT JOIN vehicles v ON vcu.vehicle_id = v.id
-            LEFT JOIN hr_employees e ON vcu.used_by = e.id
-            LEFT JOIN vehicle_works vw ON vcu.work_id = vw.id
-            WHERE vcu.consumable_id = :consumable_id
-            ORDER BY vcu.used_at DESC
-            LIMIT :limit
-        ";
-        
-        return $this->db->fetchAll($sql, [
-            ':consumable_id' => $consumableId,
-            ':limit' => $limit
         ]);
     }
 
     /**
      * 입고 이력 조회
      */
-    public function getStockInHistory(int $consumableId, int $limit = 50): array
+    public function getStockInHistory(int $categoryId): array
     {
         $sql = "
             SELECT 
-                vcsi.*,
+                vcs.*,
                 e.name as registered_by_name
-            FROM vehicle_consumable_stock_in vcsi
-            LEFT JOIN hr_employees e ON vcsi.registered_by = e.id
-            WHERE vcsi.consumable_id = :consumable_id
-            ORDER BY vcsi.purchase_date DESC, vcsi.created_at DESC
-            LIMIT :limit
+            FROM vehicle_consumable_stock vcs
+            LEFT JOIN employees e ON vcs.registered_by = e.id
+            WHERE vcs.category_id = :category_id
+            ORDER BY vcs.purchase_date DESC, vcs.created_at DESC
         ";
         
-        return $this->db->fetchAll($sql, [
-            ':consumable_id' => $consumableId,
-            ':limit' => $limit
-        ]);
+        return $this->db->fetchAll($sql, [':category_id' => $categoryId]);
     }
 
+    // ============ 사용 관리 ============
+
     /**
-     * 사용 기록 등록
+     * 사용 기록
      */
     public function recordUsage(array $data): int
     {
         $sql = "
             INSERT INTO vehicle_consumable_usage (
-                consumable_id, work_id, vehicle_id, quantity,
-                used_by, used_at, note
+                category_id, item_name, maintenance_id, vehicle_id, 
+                quantity, used_by, note
             ) VALUES (
-                :consumable_id, :work_id, :vehicle_id, :quantity,
-                :used_by, :used_at, :note
+                :category_id, :item_name, :maintenance_id, :vehicle_id,
+                :quantity, :used_by, :note
             )
         ";
         
         return $this->db->insert($sql, [
-            ':consumable_id' => $data['consumable_id'],
-            ':work_id' => $data['work_id'] ?? null,
+            ':category_id' => $data['category_id'],
+            ':item_name' => $data['item_name'] ?? null,
+            ':maintenance_id' => $data['maintenance_id'] ?? null,
             ':vehicle_id' => $data['vehicle_id'] ?? null,
             ':quantity' => $data['quantity'],
             ':used_by' => $data['used_by'] ?? null,
-            ':used_at' => $data['used_at'] ?? date('Y-m-d H:i:s'),
             ':note' => $data['note'] ?? null
         ]);
     }
 
     /**
-     * 입고 기록 등록
+     * 사용 이력 조회
      */
-    public function recordStockIn(array $data): int
+    public function getUsageHistory(int $categoryId): array
     {
         $sql = "
-            INSERT INTO vehicle_consumable_stock_in (
-                consumable_id, quantity, unit_price, supplier,
-                purchase_date, registered_by, note
+            SELECT 
+                vcu.*,
+                v.vehicle_number,
+                e.name as used_by_name,
+                vm.work_item
+            FROM vehicle_consumable_usage vcu
+            LEFT JOIN vehicles v ON vcu.vehicle_id = v.id
+            LEFT JOIN employees e ON vcu.used_by = e.id
+            LEFT JOIN vehicle_maintenance vm ON vcu.maintenance_id = vm.id
+            WHERE vcu.category_id = :category_id
+            ORDER BY vcu.used_at DESC
+        ";
+        
+        return $this->db->fetchAll($sql, [':category_id' => $categoryId]);
+    }
+
+    // ============ 재고 조회 ============
+
+    /**
+     * 카테고리별 재고 조회
+     */
+    public function getStockByCategory(int $categoryId): array
+    {
+        $sql = "
+            SELECT 
+                c.id,
+                c.name as category_name,
+                c.unit,
+                COALESCE(SUM(s.quantity), 0) as total_stock_in,
+                COALESCE(SUM(u.quantity), 0) as total_usage,
+                COALESCE(SUM(s.quantity), 0) - COALESCE(SUM(u.quantity), 0) as current_stock
+            FROM vehicle_consumables_categories c
+            LEFT JOIN vehicle_consumable_stock s ON c.id = s.category_id
+            LEFT JOIN vehicle_consumable_usage u ON c.id = u.category_id
+            WHERE c.id = :category_id
+            GROUP BY c.id
+        ";
+        
+        $result = $this->db->fetchOne($sql, [':category_id' => $categoryId]);
+        return $result ?: [];
+    }
+
+    /**
+     * 품명별 재고 조회
+     */
+    public function getStockByItem(int $categoryId): array
+    {
+        $sql = "
+            SELECT 
+                c.name as category_name,
+                c.unit,
+                s.item_name,
+                SUM(s.quantity) as stock_in,
+                COALESCE((
+                    SELECT SUM(quantity)
+                    FROM vehicle_consumable_usage
+                    WHERE category_id = c.id AND item_name = s.item_name
+                ), 0) as used,
+                SUM(s.quantity) - COALESCE((
+                    SELECT SUM(quantity)
+                    FROM vehicle_consumable_usage
+                    WHERE category_id = c.id AND item_name = s.item_name
+                ), 0) as current_stock
+            FROM vehicle_consumable_stock s
+            INNER JOIN vehicle_consumables_categories c ON s.category_id = c.id
+            WHERE c.id = :category_id
+            GROUP BY s.item_name
+            ORDER BY s.item_name
+        ";
+        
+        return $this->db->fetchAll($sql, [':category_id' => $categoryId]);
+    }
+
+    /**
+     * 재고 조정 (입고 테이블에 직접 기록)
+     */
+    public function adjustStock(int $categoryId, int $quantity, string $itemName = '재고조정'): bool
+    {
+        $sql = "
+            INSERT INTO vehicle_consumable_stock (
+                category_id, item_name, quantity, purchase_date, note
             ) VALUES (
-                :consumable_id, :quantity, :unit_price, :supplier,
-                :purchase_date, :registered_by, :note
+                :category_id, :item_name, :quantity, :purchase_date, '재고 조정'
             )
         ";
         
-        return $this->db->insert($sql, [
-            ':consumable_id' => $data['consumable_id'],
-            ':quantity' => $data['quantity'],
-            ':unit_price' => $data['unit_price'] ?? null,
-            ':supplier' => $data['supplier'] ?? null,
-            ':purchase_date' => $data['purchase_date'] ?? date('Y-m-d'),
-            ':registered_by' => $data['registered_by'] ?? null,
-            ':note' => $data['note'] ?? null
+        $this->db->insert($sql, [
+            ':category_id' => $categoryId,
+            ':item_name' => $itemName,
+            ':quantity' => $quantity,
+            ':purchase_date' => date('Y-m-d')
         ]);
+        
+        return true;
     }
 }

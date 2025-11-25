@@ -121,7 +121,7 @@ $router->get('/supply/reports/department', [SupplyReportController::class, 'depa
 use App\Controllers\Web\VehicleController;
 use App\Controllers\Web\VehicleMaintenanceReportController;
 use App\Controllers\Web\VehicleMaintenanceManageController;
-use App\Controllers\Pages\VehicleConsumableController;
+use App\Controllers\Web\VehicleConsumableController;
 
 // 차량 정비 관리
 // 작업 신고 및 처리 (운전원용) - 순서 중요: vehicles보다 위에

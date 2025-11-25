@@ -4,27 +4,20 @@ namespace App\Models;
 
 class VehicleConsumable extends BaseModel
 {
-    protected string $table = 'vehicle_consumables';
+    protected string $table = 'vehicle_consumables_categories';
     
     protected array $fillable = [
         'name',
-        'category',
-        'part_number',
+        'parent_id',
+        'level',
+        'path',
+        'sort_order',
         'unit',
-        'unit_price',
-        'current_stock',
-        'minimum_stock',
-        'location',
         'note'
     ];
     
     protected array $rules = [
-        'name' => 'required|string',
-        'category' => 'string',
-        'unit' => 'required|string',
-        'unit_price' => 'numeric',
-        'current_stock' => 'integer',
-        'minimum_stock' => 'integer'
+        'name' => 'required|string'
     ];
     
     public function getTable(): string

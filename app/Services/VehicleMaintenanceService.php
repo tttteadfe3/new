@@ -3,92 +3,150 @@
 namespace App\Services;
 
 use App\Repositories\VehicleMaintenanceRepository;
+use App\Repositories\VehicleRepository;
+use InvalidArgumentException;
 
 class VehicleMaintenanceService
 {
-    private VehicleMaintenanceRepository $maintenanceRepository;
+    private VehicleMaintenanceRepository $workRepository;
+    private VehicleRepository $vehicleRepository;
 
-    public function __construct(VehicleMaintenanceRepository $maintenanceRepository)
-    {
-        $this->maintenanceRepository = $maintenanceRepository;
+    public function __construct(
+        VehicleMaintenanceRepository $workRepository,
+        VehicleRepository $vehicleRepository
+    ) {
+        $this->workRepository = $workRepository;
+        $this->vehicleRepository = $vehicleRepository;
     }
 
-    // Breakdowns
-    public function reportBreakdown(array $data): int
+    /**
+     * 작업 목록 조회
+     */
+    public function getAllWorks(array $filters = []): array
     {
-        return $this->maintenanceRepository->createBreakdown($data);
+        return $this->workRepository->findAll($filters);
     }
 
-    public function getBreakdowns(array $filters = []): array
+    /**
+     * 작업 상세 조회
+     */
+    public function getWork(int $id): ?array
     {
-        return $this->maintenanceRepository->findAllBreakdowns($filters);
+        return $this->workRepository->findById($id);
     }
 
-    public function getBreakdown(int $id): ?object
+    /**
+     * 작업 신고 (고장 또는 정비)
+     */
+    public function reportWork(array $data): int
     {
-        return $this->maintenanceRepository->findBreakdownById($id);
+        if (empty($data['vehicle_id'])) {
+            throw new InvalidArgumentException('차량을 선택해주세요.');
+        }
+
+        $vehicle = $this->vehicleRepository->findById($data['vehicle_id']);
+        if (!$vehicle) {
+            throw new InvalidArgumentException('유효하지 않은 차량입니다.');
+        }
+
+        // type: '고장' or '정비'
+        // status: 기본값 '신고'
+        if ($data['type'] === '정비') {
+            $data['status'] = '완료';
+            $data['completed_at'] = date('Y-m-d H:i:s');
+        }
+        
+        return $this->workRepository->create($data);
     }
 
-    public function updateBreakdownStatus(int $id, string $status): bool
+    /**
+     * 고장 워크플로우: 수리 방법 결정
+     * 신고 -> 처리결정
+     */
+    public function decideRepairType(int $id, string $repairType): bool
     {
-        return $this->maintenanceRepository->updateBreakdown($id, ['status' => $status]);
+        return $this->workRepository->update($id, [
+            'status' => '처리결정',
+            'repair_type' => $repairType, // '자체수리' or '외부수리'
+            'decided_at' => date('Y-m-d H:i:s'),
+            'decided_by' => null // TODO: 현재 사용자 ID
+        ]);
     }
 
-    // Breakdown Workflow
-    public function decideRepairType(int $breakdownId, string $type): bool
+    /**
+     * 작업 시작
+     * 처리결정 -> 작업중 (고장)
+     * 신고 -> 작업중 (정비)
+     */
+    public function startWork(int $id, array $data = []): bool
     {
-        // $type could be '자체수리' or '외부수리'
-        // Update status to 처리결정 and potentially store the decision type if needed
-        // For now, we just update status to 처리결정. 
-        return $this->maintenanceRepository->updateBreakdown($breakdownId, ['status' => '처리결정']);
+        $updateData = [
+            'status' => '작업중'
+        ];
+        
+        // 작업자 정보
+        if (!empty($data['worker_id'])) {
+            $updateData['worker_id'] = $data['worker_id'];
+        }
+        
+        // 외부 수리업체
+        if (!empty($data['repair_shop'])) {
+            $updateData['repair_shop'] = $data['repair_shop'];
+        }
+        
+        return $this->workRepository->update($id, $updateData);
     }
 
-    public function completeRepair(int $breakdownId, array $repairData): int
+    /**
+     * 작업 완료
+     * 작업중 -> 완료
+     */
+    public function completeWork(int $id, array $data = []): bool
     {
-        // 1. Create Repair Record
-        $repairData['breakdown_id'] = $breakdownId;
-        $repairId = $this->maintenanceRepository->createRepair($repairData);
-
-        // 2. Update Breakdown Status to 완료
-        $this->maintenanceRepository->updateBreakdown($breakdownId, ['status' => '완료']);
-
-        return $repairId;
+        $updateData = [
+            'status' => '완료',
+            'completed_at' => date('Y-m-d H:i:s')
+        ];
+        
+        // 사용 부품
+        if (!empty($data['parts_used'])) {
+            $updateData['parts_used'] = $data['parts_used'];
+        }
+        
+        // 비용
+        if (isset($data['cost'])) {
+            $updateData['cost'] = $data['cost'];
+        }
+        
+        return $this->workRepository->update($id, $updateData);
     }
 
-    public function confirmRepair(int $breakdownId): bool
+    /**
+     * 작업 확인 (Manager)
+     * 완료 -> (확인 완료 플래그)
+     */
+    public function confirmWork(int $id): bool
     {
-        // Update Breakdown Status to 승인완료
-        return $this->maintenanceRepository->updateBreakdown($breakdownId, ['status' => '승인완료']);
+        return $this->workRepository->update($id, [
+            'status' => '승인',
+            'confirmed_at' => date('Y-m-d H:i:s'),
+            'confirmed_by' => null // TODO: 현재 사용자 ID
+        ]);
     }
 
-    // Repairs
-    public function registerRepair(array $data): int
+    /**
+     * 작업 삭제
+     */
+    public function deleteWork(int $id): bool
     {
-        // Ensure breakdown exists and is in correct state if needed
-        // For now, just create repair
-        return $this->maintenanceRepository->createRepair($data);
+        return $this->workRepository->delete($id);
     }
 
-    public function getRepairByBreakdown(int $breakdownId): ?object
+    /**
+     * 작업 정보 수정 (통합)
+     */
+    public function updateWork(int $id, array $data): bool
     {
-        return $this->maintenanceRepository->findRepairByBreakdownId($breakdownId);
-    }
-
-    // Self Maintenance
-    public function recordSelfMaintenance(array $data): int
-    {
-        return $this->maintenanceRepository->createMaintenance($data);
-    }
-
-    public function getSelfMaintenances(array $filters = []): array
-    {
-        return $this->maintenanceRepository->findAllMaintenances($filters);
-    }
-
-    // Self Maintenance Workflow
-    public function confirmSelfMaintenance(int $maintenanceId): bool
-    {
-        // Update Maintenance Status to 승인완료
-        return $this->maintenanceRepository->updateMaintenance($maintenanceId, ['status' => '승인완료']);
+        return $this->workRepository->update($id, $data);
     }
 }

@@ -4,20 +4,50 @@ namespace App\Models;
 
 class VehicleMaintenance extends BaseModel
 {
+    protected string $table = 'vehicle_maintenance';
+    
     protected array $fillable = [
         'vehicle_id',
-        'driver_employee_id',
-        'maintenance_item',
+        'type',
+        'status',
+        'reporter_id',
+        'work_item',
         'description',
-        'used_parts',
+        'mileage',
         'photo_path',
-        'status'
+        'photo2_path',
+        'photo3_path',
+        'repair_type',
+        'decided_at',
+        'decided_by',
+        'parts_used',
+        'cost',
+        'worker_id',
+        'repair_shop',
+        'completed_at',
+        'confirmed_at',
+        'confirmed_by'
     ];
-
+    
     protected array $rules = [
         'vehicle_id' => 'required|integer',
-        'driver_employee_id' => 'required|integer',
-        'maintenance_item' => 'required|string',
-        'status' => 'required|string'
+        'type' => 'required|string',
+        'reporter_id' => 'required|integer',
+        'work_item' => 'required|string'
     ];
+    
+    public function getTable(): string
+    {
+        return $this->table;
+    }
+    
+    public function getFillable(): array
+    {
+        return $this->fillable;
+    }
+    
+    public function getRules(): array
+    {
+        return $this->rules;
+    }
 }

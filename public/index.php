@@ -182,8 +182,8 @@ $container->register(\App\Services\VehicleBreakdownService::class, fn($c) => new
     $c->resolve(\App\Repositories\VehicleRepository::class)
 ));
 $container->register(\App\Services\VehicleMaintenanceService::class, fn($c) => new \App\Services\VehicleMaintenanceService(
-    $c->resolve(\App\Repositories\VehicleRepairRepository::class),
-    $c->resolve(\App\Repositories\VehicleSelfMaintenanceRepository::class)
+    $c->resolve(\App\Repositories\VehicleMaintenanceRepository::class),
+    $c->resolve(\App\Repositories\VehicleRepository::class)
 ));
 $container->register(\App\Services\VehicleConsumableService::class, fn($c) => new \App\Services\VehicleConsumableService(
     $c->resolve(\App\Repositories\VehicleConsumableRepository::class)
@@ -269,14 +269,14 @@ $container->register(\App\Controllers\Api\VehicleApiController::class, fn($c) =>
     $c->resolve(JsonResponse::class),
     $c->resolve(\App\Services\VehicleService::class)
 ));
-$container->register(\App\Controllers\Api\VehicleWorkApiController::class, fn($c) => new \App\Controllers\Api\VehicleWorkApiController(
+$container->register(\App\Controllers\Api\VehicleMaintenanceApiController::class, fn($c) => new \App\Controllers\Api\VehicleMaintenanceApiController(
     $c->resolve(Request::class),
     $c->resolve(\App\Services\AuthService::class),
     $c->resolve(\App\Services\ViewDataService::class),
     $c->resolve(\App\Services\ActivityLogger::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class),
     $c->resolve(JsonResponse::class),
-    $c->resolve(\App\Services\VehicleWorkService::class),
+    $c->resolve(\App\Services\VehicleMaintenanceService::class),
     $c->resolve(\App\Services\DataScopeService::class)
 ));
 $container->register(\App\Controllers\Api\VehicleInspectionApiController::class, fn($c) => new \App\Controllers\Api\VehicleInspectionApiController(
@@ -297,12 +297,11 @@ $container->register(\App\Controllers\Api\VehicleConsumableApiController::class,
     $c->resolve(JsonResponse::class),
     $c->resolve(\App\Services\VehicleConsumableService::class)
 ));
-$container->register(\App\Controllers\Pages\VehicleConsumableController::class, fn($c) => new \App\Controllers\Pages\VehicleConsumableController(
+$container->register(\App\Controllers\Web\VehicleConsumableController::class, fn($c) => new \App\Controllers\Web\VehicleConsumableController(
     $c->resolve(Request::class),
     $c->resolve(\App\Services\AuthService::class),
     $c->resolve(\App\Services\ViewDataService::class),
-    $c->resolve(\App\Services\ActivityLogger::class),
-    $c->resolve(\App\Repositories\EmployeeRepository::class)
+    $c->resolve(\App\Services\ActivityLogger::class)
 ));
 $container->register(\App\Controllers\Web\VehicleInspectionController::class, fn($c) => new \App\Controllers\Web\VehicleInspectionController(
     $c->resolve(Request::class),

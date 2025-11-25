@@ -14,129 +14,176 @@ class VehicleConsumableService
         $this->repository = $repository;
     }
 
+    // ============ 카테고리 관리 ============
+
     /**
-     * 모든 소모품 조회
+     * 모든 카테고리 조회
      */
-    public function getAllConsumables(array $filters = []): array
+    public function getAllCategories(array $filters = []): array
     {
-        return $this->repository->findAll($filters);
+        return $this->repository->findAllCategories($filters);
     }
 
     /**
-     * 소모품 상세 조회
+     * 카테고리 트리 조회
      */
-    public function getConsumable(int $id): ?array
+    public function getCategoryTree(): array
+    {
+        return $this->repository->getCategoryTree();
+    }
+
+    /**
+     * 카테고리 상세 조회
+     */
+    public function getCategory(int $id): ?array
     {
         return $this->repository->findById($id);
     }
 
     /**
-     * 소모품 등록
+     * 카테고리 등록
      */
-    public function createConsumable(array $data): int
+    public function createCategory(array $data): int
     {
         if (empty($data['name'])) {
-            throw new InvalidArgumentException('소모품명을 입력해주세요.');
+            throw new InvalidArgumentException('카테고리명을 입력해주세요.');
         }
 
         return $this->repository->create($data);
     }
 
     /**
-     * 소모품 수정
+     * 카테고리 수정
      */
-    public function updateConsumable(int $id, array $data): bool
+    public function updateCategory(int $id, array $data): bool
     {
-        $consumable = $this->repository->findById($id);
-        if (!$consumable) {
-            throw new InvalidArgumentException('존재하지 않는 소모품입니다.');
+        $category = $this->repository->findById($id);
+        if (!$category) {
+            throw new InvalidArgumentException('존재하지 않는 카테고리입니다.');
         }
 
         return $this->repository->update($id, $data);
     }
 
     /**
-     * 소모품 삭제
+     * 카테고리 삭제
      */
-    public function deleteConsumable(int $id): bool
+    public function deleteCategory(int $id): bool
     {
-        $consumable = $this->repository->findById($id);
-        if (!$consumable) {
-            throw new InvalidArgumentException('존재하지 않는 소모품입니다.');
+        $category = $this->repository->findById($id);
+        if (!$category) {
+            throw new InvalidArgumentException('존재하지 않는 카테고리입니다.');
+        }
+
+        // 자식 카테고리가 있으면 삭제 불가
+        if ($this->repository->hasChildren($id)) {
+            throw new InvalidArgumentException('하위 카테고리가 있어 삭제할 수 없습니다.');
+        }
+
+        // 재고가 있으면 삭제 불가
+        if ($category['current_stock'] > 0) {
+            throw new InvalidArgumentException('재고가 있어 삭제할 수 없습니다.');
         }
 
         return $this->repository->delete($id);
     }
 
+    // ============ 입고 관리 ============
+
     /**
      * 입고 처리
      */
-    public function stockIn(int $consumableId, array $data): bool
+    public function stockIn(array $data): int
     {
-        $consumable = $this->repository->findById($consumableId);
-        if (!$consumable) {
-            throw new InvalidArgumentException('존재하지 않는 소모품입니다.');
+        if (empty($data['category_id'])) {
+            throw new InvalidArgumentException('카테고리를 선택해주세요.');
+        }
+
+        if (empty($data['item_name'])) {
+            throw new InvalidArgumentException('품명을 입력해주세요.');
         }
 
         if (empty($data['quantity']) || $data['quantity'] <= 0) {
-            throw new InvalidArgumentException('입고 수량은 0보다 커야 합니다.');
+            throw new InvalidArgumentException('수량은 0보다 커야 합니다.');
         }
 
-        // 입고 이력 기록
-        $data['consumable_id'] = $consumableId;
-        $this->repository->recordStockIn($data);
+        // 카테고리 존재 확인
+        $category = $this->repository->findById($data['category_id']);
+        if (!$category) {
+            throw new InvalidArgumentException('존재하지 않는 카테고리입니다.');
+        }
 
-        // 재고 증가
-        return $this->repository->adjustStock($consumableId, $data['quantity']);
+        return $this->repository->recordStockIn($data);
     }
 
     /**
-     * 출고/사용 처리
+     * 입고 이력 조회
      */
-    public function useConsumable(int $consumableId, array $data): bool
+    public function getStockInHistory(int $categoryId): array
     {
-        $consumable = $this->repository->findById($consumableId);
-        if (!$consumable) {
-            throw new InvalidArgumentException('존재하지 않는 소모품입니다.');
+        return $this->repository->getStockInHistory($categoryId);
+    }
+
+    // ============ 사용 관리 ============
+
+    /**
+     * 사용 처리
+     */
+    public function useConsumable(array $data): int
+    {
+        if (empty($data['category_id'])) {
+            throw new InvalidArgumentException('카테고리를 선택해주세요.');
         }
 
         if (empty($data['quantity']) || $data['quantity'] <= 0) {
             throw new InvalidArgumentException('사용 수량은 0보다 커야 합니다.');
         }
 
-        if ($consumable['current_stock'] < $data['quantity']) {
-            throw new InvalidArgumentException('재고가 부족합니다.');
+        // 카테고리 존재 확인
+        $category = $this->repository->findById($data['category_id']);
+        if (!$category) {
+            throw new InvalidArgumentException('존재하지 않는 카테고리입니다.');
         }
 
-        // 사용 이력 기록
-        $data['consumable_id'] = $consumableId;
-        $this->repository->recordUsage($data);
-
-        // 재고 감소
-        return $this->repository->adjustStock($consumableId, -$data['quantity']);
-    }
-
-    /**
-     * 카테고리 목록
-     */
-    public function getCategories(): array
-    {
-        return $this->repository->getCategories();
+        return $this->repository->recordUsage($data);
     }
 
     /**
      * 사용 이력 조회
      */
-    public function getUsageHistory(int $consumableId, int $limit = 50): array
+    public function getUsageHistory(int $categoryId): array
     {
-        return $this->repository->getUsageHistory($consumableId, $limit);
+        return $this->repository->getUsageHistory($categoryId);
+    }
+
+    // ============ 재고 조회 ============
+
+    /**
+     * 카테고리별 재고 조회
+     */
+    public function getStockByCategory(int $categoryId): array
+    {
+        return $this->repository->getStockByCategory($categoryId);
     }
 
     /**
-     * 입고 이력 조회
+     * 품명별 재고 조회
      */
-    public function getStockInHistory(int $consumableId, int $limit = 50): array
+    public function getStockByItem(int $categoryId): array
     {
-        return $this->repository->getStockInHistory($consumableId, $limit);
+        return $this->repository->getStockByItem($categoryId);
+    }
+
+    /**
+     * 재고 조정
+     */
+    public function adjustStock(int $categoryId, int $quantity, string $itemName = '재고조정'): bool
+    {
+        $category = $this->repository->findById($categoryId);
+        if (!$category) {
+            throw new InvalidArgumentException('존재하지 않는 카테고리입니다.');
+        }
+
+        return $this->repository->adjustStock($categoryId, $quantity, $itemName);
     }
 }
