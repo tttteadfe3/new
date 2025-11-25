@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\VehicleInspectionRepository;
+use App\Models\VehicleInspection;
 
 class VehicleInspectionService
 {
@@ -26,5 +27,10 @@ class VehicleInspectionService
     public function getUpcomingInspections(int $days = 30): array
     {
         return $this->inspectionRepository->findAll(['upcoming_expiry' => $days]);
+    }
+
+    public function getInspectionById(int $id): ?VehicleInspection
+    {
+        return $this->inspectionRepository->findById($id);
     }
 }

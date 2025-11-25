@@ -29,9 +29,15 @@ class VehicleInspectionPage extends BasePage {
 
         $('#inspectionTable').on('click', '.delete-btn', (e) => {
             const id = $(e.currentTarget).data('id');
-            if (confirm('정말 삭제하시겠습니까?')) {
-                this.deleteInspection(id);
-            }
+            Confirm.fire({
+                title: '삭제 확인',
+                text: '정말 삭제하시겠습니까?',
+                icon: 'warning'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.deleteInspection(id);
+                }
+            });
         });
     }
 
@@ -90,7 +96,7 @@ class VehicleInspectionPage extends BasePage {
             this.dataTable.clear().rows.add(response.data || []).draw();
         } catch (error) {
             console.error('Error loading inspections:', error);
-            alert('데이터를 불러오는 중 오류가 발생했습니다.');
+            Toast.error('데이터를 불러오는 중 오류가 발생했습니다.');
         }
     }
 
@@ -143,7 +149,7 @@ class VehicleInspectionPage extends BasePage {
             new bootstrap.Modal(document.getElementById('addInspectionModal')).show();
         } catch (error) {
             console.error('Error loading inspection details:', error);
-            alert('데이터를 불러오는 중 오류가 발생했습니다.');
+            Toast.error('데이터를 불러오는 중 오류가 발생했습니다.');
         }
     }
 
@@ -159,7 +165,7 @@ class VehicleInspectionPage extends BasePage {
         };
 
         if (!formData.vehicle_id || !formData.inspection_date || !formData.expiry_date || !formData.result) {
-            alert('필수 항목을 모두 입력해주세요.');
+            Toast.warning('필수 항목을 모두 입력해주세요.');
             return;
         }
 
@@ -173,13 +179,13 @@ class VehicleInspectionPage extends BasePage {
                 body: JSON.stringify(formData)
             });
 
-            alert(id ? '수정되었습니다.' : '검사 내역이 등록되었습니다.');
+            Toast.success(id ? '수정되었습니다.' : '검사 내역이 등록되었습니다.');
             bootstrap.Modal.getInstance(document.getElementById('addInspectionModal')).hide();
             document.getElementById('addInspectionForm').reset();
             this.loadInspections();
         } catch (error) {
             console.error('Error saving inspection:', error);
-            alert(error.message || '등록 중 오류가 발생했습니다.');
+            Toast.error(error.message || '등록 중 오류가 발생했습니다.');
         }
     }
 
@@ -188,11 +194,11 @@ class VehicleInspectionPage extends BasePage {
             await this.apiCall(`${this.config.API_URL}/${id}`, {
                 method: 'DELETE'
             });
-            alert('삭제되었습니다.');
+            Toast.success('삭제되었습니다.');
             this.loadInspections();
         } catch (error) {
             console.error('Error deleting inspection:', error);
-            alert('삭제 중 오류가 발생했습니다.');
+            Toast.error('삭제 중 오류가 발생했습니다.');
         }
     }
 }
