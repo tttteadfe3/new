@@ -65,6 +65,20 @@ class VehicleInspectionApiController extends BaseApiController
         }
     }
 
+    public function show(int $id): void
+    {
+        try {
+            $inspection = $this->inspectionService->getInspectionById($id);
+            if (!$inspection) {
+                $this->apiNotFound('검사 내역을 찾을 수 없습니다.');
+                return;
+            }
+            $this->apiSuccess($inspection);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
     protected function handleException(Exception $e): void
     {
         if ($e instanceof \InvalidArgumentException) {
