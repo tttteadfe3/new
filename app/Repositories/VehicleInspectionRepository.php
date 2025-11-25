@@ -73,6 +73,6 @@ class VehicleInspectionRepository
                 JOIN vehicles v ON vi.vehicle_id = v.id
                 WHERE vi.id = :id";
 
-        return $this->db->fetchAs(VehicleInspection::class, $sql, [':id' => $id]) ?: null;
+        return $this->db->fetchOneAs(VehicleInspection::class, $sql, [':id' => $id]) ?: null;
     }
 }
