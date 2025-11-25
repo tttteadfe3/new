@@ -79,6 +79,27 @@ class VehicleInspectionApiController extends BaseApiController
         }
     }
 
+    public function update(int $id): void
+    {
+        try {
+            $data = $this->request->all();
+            $this->inspectionService->updateInspection($id, $data);
+            $this->apiSuccess(['message' => '검사 내역이 수정되었습니다.']);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    public function destroy(int $id): void
+    {
+        try {
+            $this->inspectionService->deleteInspection($id);
+            $this->apiSuccess(['message' => '검사 내역이 삭제되었습니다.']);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
     protected function handleException(Exception $e): void
     {
         if ($e instanceof \InvalidArgumentException) {

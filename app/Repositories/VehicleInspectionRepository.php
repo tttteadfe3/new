@@ -75,4 +75,31 @@ class VehicleInspectionRepository
 
         return $this->db->fetchOneAs(VehicleInspection::class, $sql, [':id' => $id]) ?: null;
     }
+
+    public function update(int $id, array $data): bool
+    {
+        $fields = [];
+        $params = [':id' => $id];
+
+        foreach ($data as $key => $value) {
+            if (in_array($key, ['vehicle_id', 'inspection_date', 'expiry_date', 'inspector_name', 'result', 'cost', 'document_path'])) {
+                $fields[] = "{$key} = :{$key}";
+                $params[":{$key}"] = $value;
+            }
+        }
+
+        if (empty($fields)) {
+            return false;
+        }
+
+        $sql = "UPDATE vehicle_inspections SET " . implode(', ', $fields) . " WHERE id = :id";
+
+        return $this->db->execute($sql, $params) > 0;
+    }
+
+    public function delete(int $id): bool
+    {
+        $sql = "DELETE FROM vehicle_inspections WHERE id = :id";
+        return $this->db->execute($sql, [':id' => $id]) > 0;
+    }
 }

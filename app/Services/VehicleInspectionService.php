@@ -33,4 +33,14 @@ class VehicleInspectionService
     {
         return $this->inspectionRepository->findById($id);
     }
+
+    public function updateInspection(int $id, array $data): void
+    {
+        $this->inspectionRepository->update($id, $data);
+    }
+
+    public function deleteInspection(int $id): void
+    {
+        $this->inspectionRepository->delete($id);
+    }
 }
