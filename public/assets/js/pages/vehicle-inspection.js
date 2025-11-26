@@ -1,18 +1,43 @@
 /**
- * 차량 검사 관리 JavaScript
+ * Application for the Vehicle Inspection page.
+ * Manages vehicle inspection records and scheduling.
  */
-
 class VehicleInspectionPage extends BasePage {
     constructor() {
         super({ API_URL: '/vehicles/inspections' });
-        this.dataTable = null;
-        this.isEditing = false;
+
+        this.state = {
+            ...this.state,
+            dataTable: null,
+            isEditing: false,
+            modals: {}
+        };
     }
 
+    /**
+     * @override
+     */
+    async initializeApp() {
+        this.setupModals();
+        this.setupEventListeners();
+        await this.loadInitialData();
+    }
+
+    /**
+     * @override
+     */
+    async loadInitialData() {
+        this.initializeDataTable();
+        this.loadInspections();
+    }
+
+    /**
+     * @override
+     */
     setupEventListeners() {
         // 모달이 열릴 때 차량 목록 로드 (신규 등록일 때만 초기화)
         document.getElementById('addInspectionModal')?.addEventListener('show.bs.modal', (e) => {
-            if (!this.isEditing) {
+            if (!this.state.isEditing) {
                 this.resetForm();
                 this.loadVehicles();
             }
@@ -41,13 +66,17 @@ class VehicleInspectionPage extends BasePage {
         });
     }
 
-    loadInitialData() {
-        this.initializeDataTable();
-        this.loadInspections();
+    setupModals() {
+        const addInspectionModalEl = document.getElementById('addInspectionModal');
+        if (addInspectionModalEl) {
+            this.state.modals.addInspection = new bootstrap.Modal(addInspectionModalEl);
+        }
     }
 
+    // --- DataTable Initialization ---
+
     initializeDataTable() {
-        this.dataTable = $('#inspectionTable').DataTable({
+        this.state.dataTable = $('#inspectionTable').DataTable({
             processing: true,
             serverSide: false,
             columns: [
@@ -93,12 +122,14 @@ class VehicleInspectionPage extends BasePage {
     async loadInspections() {
         try {
             const response = await this.apiCall(this.config.API_URL);
-            this.dataTable.clear().rows.add(response.data || []).draw();
+            this.state.dataTable.clear().rows.add(response.data || []).draw();
         } catch (error) {
             console.error('Error loading inspections:', error);
             Toast.error('데이터를 불러오는 중 오류가 발생했습니다.');
         }
     }
+
+    // --- Helper Methods ---
 
     async loadVehicles(selectedId = null) {
         try {
@@ -124,18 +155,20 @@ class VehicleInspectionPage extends BasePage {
     }
 
     resetForm() {
-        this.isEditing = false;
+        this.state.isEditing = false;
         document.getElementById('addInspectionForm').reset();
         document.getElementById('inspection_id').value = '';
         document.getElementById('addInspectionModalLabel').textContent = '차량 검사 등록';
     }
+
+    // --- Modal Methods ---
 
     async showEditModal(id) {
         try {
             const response = await this.apiCall(`${this.config.API_URL}/${id}`);
             const data = response.data;
 
-            this.isEditing = true;
+            this.state.isEditing = true;
             document.getElementById('inspection_id').value = data.id;
             document.getElementById('inspection_date').value = data.inspection_date;
             document.getElementById('expiry_date').value = data.expiry_date;
@@ -146,12 +179,16 @@ class VehicleInspectionPage extends BasePage {
             await this.loadVehicles(data.vehicle_id);
 
             document.getElementById('addInspectionModalLabel').textContent = '차량 검사 수정';
-            new bootstrap.Modal(document.getElementById('addInspectionModal')).show();
+            if (this.state.modals.addInspection) {
+                this.state.modals.addInspection.show();
+            }
         } catch (error) {
             console.error('Error loading inspection details:', error);
             Toast.error('데이터를 불러오는 중 오류가 발생했습니다.');
         }
     }
+
+    // --- Data Submission Methods ---
 
     async saveInspection() {
         const id = document.getElementById('inspection_id').value;
@@ -180,7 +217,9 @@ class VehicleInspectionPage extends BasePage {
             });
 
             Toast.success(id ? '수정되었습니다.' : '검사 내역이 등록되었습니다.');
-            bootstrap.Modal.getInstance(document.getElementById('addInspectionModal')).hide();
+            if (this.state.modals.addInspection) {
+                this.state.modals.addInspection.hide();
+            }
             document.getElementById('addInspectionForm').reset();
             this.loadInspections();
         } catch (error) {
@@ -199,6 +238,17 @@ class VehicleInspectionPage extends BasePage {
         } catch (error) {
             console.error('Error deleting inspection:', error);
             Toast.error('삭제 중 오류가 발생했습니다.');
+        }
+    }
+
+    /**
+     * @override
+     */
+    cleanup() {
+        super.cleanup();
+        if (this.state.dataTable) {
+            this.state.dataTable.destroy();
+            this.state.dataTable = null;
         }
     }
 }

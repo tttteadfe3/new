@@ -62,11 +62,6 @@ class SupplyItemService
         // 데이터 검증
         $this->validateItemData($data);
 
-        // 품목 코드 중복 검사
-        if ($this->itemRepository->isDuplicateCode($data['item_code'])) {
-            throw new \InvalidArgumentException('이미 존재하는 품목 코드입니다.');
-        }
-
         // 분류 존재 여부 확인
         $category = $this->categoryRepository->findById($data['category_id']);
         if (!$category) {
@@ -77,9 +72,8 @@ class SupplyItemService
         $itemId = $this->itemRepository->create($data);
 
         // 활동 로그 기록
-        $this->activityLogger->log('supply_item_create', "품목 생성: {$data['item_name']} (코드: {$data['item_code']})", [
+        $this->activityLogger->log('supply_item_create', "품목 생성: {$data['item_name']}", [
             'item_id' => $itemId,
-            'item_code' => $data['item_code'],
             'item_name' => $data['item_name']
         ]);
 
@@ -96,11 +90,6 @@ class SupplyItemService
             throw new \InvalidArgumentException('존재하지 않는 품목입니다.');
         }
 
-        // 품목 코드 중복 검사 (자신 제외)
-        if (isset($data['item_code']) && $this->itemRepository->isDuplicateCode($data['item_code'], $id)) {
-            throw new \InvalidArgumentException('이미 존재하는 품목 코드입니다.');
-        }
-
         // 분류 존재 여부 확인
         if (isset($data['category_id'])) {
             $category = $this->categoryRepository->findById($data['category_id']);
@@ -110,7 +99,7 @@ class SupplyItemService
         }
 
         // 허용된 필드만 업데이트
-        $allowedFields = ['item_code', 'item_name', 'category_id', 'unit', 'description', 'is_active'];
+        $allowedFields = ['item_name', 'category_id', 'unit', 'description', 'is_active'];
         $updateData = array_intersect_key($data, array_flip($allowedFields));
 
         if (empty($updateData)) {
@@ -188,13 +177,7 @@ class SupplyItemService
         return $success;
     }
 
-    /**
-     * 다음 품목 코드를 생성합니다.
-     */
-    public function generateNextCode(): string
-    {
-        return $this->itemRepository->generateNextCode();
-    }
+
 
     /**
      * 품목에 연관된 데이터가 있는지 확인합니다.
@@ -212,16 +195,11 @@ class SupplyItemService
     private function validateItemData(array $data): void
     {
         // 필수 필드 검증
-        $requiredFields = ['item_code', 'item_name', 'category_id'];
+        $requiredFields = ['item_name', 'category_id'];
         foreach ($requiredFields as $field) {
             if (empty($data[$field])) {
                 throw new \InvalidArgumentException("{$field}은(는) 필수입니다.");
             }
-        }
-
-        // 품목 코드 형식 검증
-        if (!preg_match('/^[A-Z0-9]{3,30}$/', $data['item_code'])) {
-            throw new \InvalidArgumentException('품목 코드는 3-30자의 영문 대문자와 숫자만 사용할 수 있습니다.');
         }
 
         // 품목명 길이 검증

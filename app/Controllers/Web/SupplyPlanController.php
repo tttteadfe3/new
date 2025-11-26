@@ -61,40 +61,7 @@ class SupplyPlanController extends BaseController
         ], 'layouts/app');
     }
 
-    /**
-     * 새 계획 생성 폼 페이지를 표시합니다.
-     */
-    public function create(): void
-    {
-        $year = $this->request->input('year', date('Y'));
-        $year = (int) $year;
 
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-plans-create.js');
-
-        echo $this->render('pages/supply/plans/create', [
-            'year' => $year,
-            'pageTitle' => "연간 지급품 계획 생성 ({$year}년)"
-        ], 'layouts/app');
-    }
-
-    /**
-     * 계획 수정 폼 페이지를 표시합니다.
-     */
-    public function edit(): void
-    {
-        $id = $this->request->input('id');
-        if (!$id) {
-            $this->redirect('/supply/plans');
-            return;
-        }
-
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-plans-edit.js');
-
-        echo $this->render('pages/supply/plans/edit', [
-            'planId' => (int)$id,
-            'pageTitle' => '연간 지급품 계획 수정'
-        ], 'layouts/app');
-    }
 
     /**
      * 엑셀 업로드 페이지를 표시합니다.

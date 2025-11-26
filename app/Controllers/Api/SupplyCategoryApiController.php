@@ -107,7 +107,7 @@ if ($hierarchical) {
             $data = $this->getJsonInput();
             
             // 필수 필드 검증
-            $requiredFields = ['category_code', 'category_name', 'level'];
+            $requiredFields = ['category_name', 'level'];
             if (!$this->validateRequired($data, $requiredFields)) {
                 return;
             }
@@ -153,9 +153,14 @@ if ($hierarchical) {
             if ($success) {
                 $this->apiSuccess(null, '분류가 성공적으로 수정되었습니다.');
             } else {
-                $this->apiError('분류 수정에 실패했습니다.');
+                // 더 자세한 에러 로그
+                error_log("Update failed for category ID {$id}. Data: " . json_encode($data));
+                $this->apiError('분류 수정에 실패했습니다. 수정할 필드를 확인해주세요.');
             }
+        } catch (\InvalidArgumentException $e) {
+            $this->apiBadRequest($e->getMessage());
         } catch (Exception $e) {
+            error_log("Exception in update: " . $e->getMessage());
             $this->handleException($e);
         }
     }
@@ -238,32 +243,7 @@ if ($hierarchical) {
         }
     }
 
-    /**
-     * 분류 코드를 자동 생성합니다.
-     */
-    public function generateCode(): void
-    {
-        try {
-            $level = $this->request->input('level', 1);
-            $parentId = $this->request->input('parent_id');
 
-            if (!in_array($level, [1, 2])) {
-                $this->apiBadRequest('레벨은 1(대분류) 또는 2(소분류)만 가능합니다.');
-                return;
-            }
-
-            $generatedCode = $this->supplyCategoryService->generateCategoryCode(
-                (int)$level,
-                $parentId ? (int)$parentId : null
-            );
-
-            $this->apiSuccess([
-                'code' => $generatedCode
-            ]);
-        } catch (Exception $e) {
-            $this->handleException($e);
-        }
-    }
 
     /**
      * 분류 통계 정보를 조회합니다.
@@ -323,10 +303,8 @@ if ($hierarchical) {
             // 검색 필터링
             $filteredCategories = array_filter($categories, function($category) use ($query) {
                 $categoryName = $category->getAttribute('category_name');
-                $categoryCode = $category->getAttribute('category_code');
                 
-                return stripos($categoryName, $query) !== false || 
-                       stripos($categoryCode, $query) !== false;
+                return stripos($categoryName, $query) !== false;
             });
 
             // SupplyCategory 객체 배열을 배열로 변환
@@ -340,40 +318,7 @@ if ($hierarchical) {
         }
     }
 
-    /**
-     * 분류 유효성을 검증합니다.
-     */
-    public function validate(): void
-    {
-        try {
-            $data = $this->getJsonInput();
-            
-            // 필수 필드 검증
-            $requiredFields = ['category_code', 'category_name', 'level'];
-            if (!$this->validateRequired($data, $requiredFields)) {
-                return;
-            }
 
-            // 분류 코드 중복 검사
-            $excludeId = $data['id'] ?? null;
-            $isDuplicate = $this->supplyCategoryService->getCategoryRepository()->isDuplicateCategoryCode(
-                $data['category_code'], 
-                $excludeId
-            );
-
-            if ($isDuplicate) {
-                $this->apiError('이미 존재하는 분류 코드입니다.', 'DUPLICATE_CODE');
-                return;
-            }
-
-            $this->apiSuccess([
-                'valid' => true,
-                'message' => '유효한 분류 데이터입니다.'
-            ]);
-        } catch (Exception $e) {
-            $this->handleException($e);
-        }
-    }
 
     /**
      * 예외를 처리합니다.

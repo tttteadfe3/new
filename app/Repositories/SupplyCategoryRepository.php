@@ -72,12 +72,11 @@ class SupplyCategoryRepository
      */
     public function create(array $data): int
     {
-        $sql = "INSERT INTO supply_categories (parent_id, category_code, category_name, level, is_active, display_order) 
-                VALUES (:parent_id, :category_code, :category_name, :level, :is_active, :display_order)";
+        $sql = "INSERT INTO supply_categories (parent_id, category_name, level, is_active, display_order) 
+                VALUES (:parent_id, :category_name, :level, :is_active, :display_order)";
         
         $params = [
             ':parent_id' => $data['parent_id'] ?? null,
-            ':category_code' => $data['category_code'],
             ':category_name' => $data['category_name'],
             ':level' => $data['level'],
             ':is_active' => $data['is_active'] ?? 1,
@@ -146,22 +145,7 @@ class SupplyCategoryRepository
         return $result['count'] > 0;
     }
 
-    /**
-     * 분류 코드가 중복되는지 확인합니다.
-     */
-    public function isDuplicateCategoryCode(string $categoryCode, ?int $excludeId = null): bool
-    {
-        $sql = "SELECT COUNT(*) as count FROM supply_categories WHERE category_code = :category_code";
-        $params = [':category_code' => $categoryCode];
 
-        if ($excludeId) {
-            $sql .= " AND id != :exclude_id";
-            $params[':exclude_id'] = $excludeId;
-        }
-
-        $result = $this->db->fetchOne($sql, $params);
-        return $result['count'] > 0;
-    }
 
     /**
      * 계층적 분류 구조를 조회합니다.

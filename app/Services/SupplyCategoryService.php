@@ -81,186 +81,6 @@ class SupplyCategoryService
     }
 
     /**
-     * 새로운 분류를 생성합니다.
-     */
-    public function createCategory(array $data): int
-    {
-        // 데이터 검증
-        $this->validateCategoryData($data);
-
-        // 분류 코드 중복 검사
-        if ($this->categoryRepository->isDuplicateCategoryCode($data['category_code'])) {
-            throw new \InvalidArgumentException('이미 존재하는 분류 코드입니다.');
-        }
-
-        // 비즈니스 규칙 검증
-        $this->validateBusinessRules($data);
-
-        // 분류 생성
-        $categoryId = $this->categoryRepository->create($data);
-
-        // 활동 로그 기록
-        $details = "Created new supply category (ID: {$categoryId}): " . json_encode($data);
-        $this->activityLogger->logApiCall('SERVICE_ACTION', 'SupplyCategoryCreate', $details);
-
-        return $categoryId;
-    }
-
-    /**
-     * 분류를 수정합니다.
-     */
-    public function updateCategory(int $id, array $data): bool
-    {
-        $existingCategory = $this->categoryRepository->findById($id);
-        if (!$existingCategory) {
-            throw new \InvalidArgumentException('존재하지 않는 분류입니다.');
-        }
-
-        // 분류 코드는 수정할 수 없음 (비즈니스 규칙)
-        if (isset($data['category_code']) && $data['category_code'] !== $existingCategory->getAttribute('category_code')) {
-            throw new \InvalidArgumentException('분류 코드는 수정할 수 없습니다.');
-        }
-
-        // 레벨과 상위 분류는 수정할 수 없음 (비즈니스 규칙)
-        if (isset($data['level']) && $data['level'] !== $existingCategory->getAttribute('level')) {
-            throw new \InvalidArgumentException('분류 레벨은 수정할 수 없습니다.');
-        }
-
-        if (isset($data['parent_id']) && $data['parent_id'] !== $existingCategory->getAttribute('parent_id')) {
-            throw new \InvalidArgumentException('상위 분류는 수정할 수 없습니다.');
-        }
-
-        // 데이터 검증
-        $allowedFields = ['category_name', 'is_active', 'display_order'];
-        $updateData = array_intersect_key($data, array_flip($allowedFields));
-        
-        if (empty($updateData)) {
-            throw new \InvalidArgumentException('수정할 데이터가 없습니다.');
-        }
-
-        // 분류명 검증
-        if (isset($updateData['category_name'])) {
-            if (empty(trim($updateData['category_name']))) {
-                throw new \InvalidArgumentException('분류명은 필수입니다.');
-            }
-            if (strlen($updateData['category_name']) > 100) {
-                throw new \InvalidArgumentException('분류명은 100자를 초과할 수 없습니다.');
-            }
-        }
-
-        // 분류 수정
-        $success = $this->categoryRepository->update($id, $updateData);
-
-        if ($success) {
-            // 활동 로그 기록
-            $oldData = $existingCategory->toArray();
-            $newData = array_merge($oldData, $updateData);
-            $details = "Updated supply category (ID: {$id}). FROM: " . json_encode($oldData) . " TO: " . json_encode($newData);
-            $this->activityLogger->logApiCall('SERVICE_ACTION', 'SupplyCategoryUpdate', $details);
-        }
-
-        return $success;
-    }
-
-    /**
-     * 분류를 삭제합니다.
-     */
-    public function deleteCategory(int $id): bool
-    {
-        $category = $this->categoryRepository->findById($id);
-        if (!$category) {
-            throw new \InvalidArgumentException('존재하지 않는 분류입니다.');
-        }
-
-        // 연관 데이터 검증
-        if ($this->hasAssociatedData($id)) {
-            throw new \InvalidArgumentException('연관된 데이터가 있어 삭제할 수 없습니다.');
-        }
-
-        // 분류 삭제
-        $success = $this->categoryRepository->delete($id);
-
-        if ($success) {
-            // 활동 로그 기록
-            $details = "Deleted supply category (ID: {$id}): " . json_encode($category->toArray());
-            $this->activityLogger->logApiCall('SERVICE_ACTION', 'SupplyCategoryDelete', $details);
-        }
-
-        return $success;
-    }
-
-    /**
-     * 분류 상태를 변경합니다 (활성/비활성).
-     */
-    public function toggleCategoryStatus(int $id): bool
-    {
-        $category = $this->categoryRepository->findById($id);
-        if (!$category) {
-            throw new \InvalidArgumentException('존재하지 않는 분류입니다.');
-        }
-
-        $currentStatus = $category->getAttribute('is_active');
-        $newStatus = $currentStatus ? 0 : 1;
-        $statusText = $newStatus ? '활성' : '비활성';
-
-        $success = $this->categoryRepository->update($id, ['is_active' => $newStatus]);
-
-        if ($success) {
-            // 활동 로그 기록
-            $oldData = $category->toArray();
-            $newData = array_merge($oldData, ['is_active' => $newStatus]);
-            $details = "Toggled supply category status (ID: {$id}) to '{$statusText}'. FROM: " . json_encode($oldData) . " TO: " . json_encode($newData);
-            $this->activityLogger->logApiCall('SERVICE_ACTION', 'SupplyCategoryToggle', $details);
-        }
-
-        return $success;
-    }
-
-    /**
-     * 분류 코드를 자동 생성합니다.
-     */
-    public function generateCategoryCode(int $level, ?int $parentId = null): string
-    {
-        if ($level === 1) {
-            // 대분류 코드 생성 (MC001, MC002, ...)
-            $existingCodes = $this->categoryRepository->findByLevel(1);
-            $maxNumber = 0;
-            
-            foreach ($existingCodes as $category) {
-                $code = $category->getAttribute('category_code');
-                if (preg_match('/^MC(\d{3})$/', $code, $matches)) {
-                    $maxNumber = max($maxNumber, (int)$matches[1]);
-                }
-            }
-            
-            return 'MC' . str_pad($maxNumber + 1, 3, '0', STR_PAD_LEFT);
-        } else {
-            // 소분류 코드 생성 (상위분류코드 + SC001, SC002, ...)
-            if (!$parentId) {
-                throw new \InvalidArgumentException('소분류는 상위 분류가 필요합니다.');
-            }
-            
-            $parentCategory = $this->categoryRepository->findById($parentId);
-            if (!$parentCategory) {
-                throw new \InvalidArgumentException('유효하지 않은 상위 분류입니다.');
-            }
-            
-            $parentCode = $parentCategory->getAttribute('category_code');
-            $existingCodes = $this->categoryRepository->findByParentId($parentId);
-            $maxNumber = 0;
-            
-            foreach ($existingCodes as $category) {
-                $code = $category->getAttribute('category_code');
-                if (preg_match('/^' . preg_quote($parentCode) . 'SC(\d{3})$/', $code, $matches)) {
-                    $maxNumber = max($maxNumber, (int)$matches[1]);
-                }
-            }
-            
-            return $parentCode . 'SC' . str_pad($maxNumber + 1, 3, '0', STR_PAD_LEFT);
-        }
-    }
-
-    /**
      * 분류에 연관된 데이터가 있는지 확인합니다.
      */
     private function hasAssociatedData(int $categoryId): bool
@@ -331,5 +151,99 @@ class SupplyCategoryService
     {
         // ActivityLogger는 AuthService를 통해 자동으로 현재 사용자 정보를 가져옵니다
         // 여기서는 간단히 호출만 하면 됩니다
+    }
+
+    /**
+     * 분류를 생성합니다.
+     */
+    public function createCategory(array $data): int
+    {
+        $this->validateCategoryData($data);
+        $this->validateBusinessRules($data);
+
+        $id = $this->categoryRepository->create($data);
+        $this->logActivity('create', "분류 생성: {$data['category_name']} (ID: {$id})");
+
+        return $id;
+    }
+
+    /**
+     * 분류를 수정합니다.
+     */
+    public function updateCategory(int $id, array $data): bool
+    {
+        $category = $this->categoryRepository->findById($id);
+        if (!$category) {
+            throw new \InvalidArgumentException('존재하지 않는 분류입니다.');
+        }
+
+        // 상위 분류 변경 시 유효성 검사
+        if (isset($data['parent_id']) && $data['parent_id'] != $category->parent_id) {
+            $this->validateBusinessRules(array_merge($category->toArray(), $data));
+        }
+
+        $success = $this->categoryRepository->update($id, $data);
+        if ($success) {
+            $this->logActivity('update', "분류 수정: {$data['category_name']} (ID: {$id})");
+        }
+
+        return $success;
+    }
+
+    /**
+     * 분류 상태를 토글합니다.
+     */
+    public function toggleCategoryStatus(int $id): bool
+    {
+        $category = $this->categoryRepository->findById($id);
+        if (!$category) {
+            throw new \InvalidArgumentException('존재하지 않는 분류입니다.');
+        }
+
+        $newStatus = !$category->is_active;
+
+        // 소분류 활성화 시 상위 분류 확인
+        if ($newStatus && $category->level == 2) {
+            $parent = $this->categoryRepository->findById($category->parent_id);
+            if (!$parent || !$parent->is_active) {
+                throw new \InvalidArgumentException('상위 분류가 비활성 상태입니다.');
+            }
+        }
+
+        // 대분류 비활성화 시 하위 분류 확인
+        if (!$newStatus && $category->level == 1) {
+            $subCategories = $this->categoryRepository->findByParentId($id);
+            foreach ($subCategories as $sub) {
+                if ($sub->is_active) {
+                    throw new \InvalidArgumentException('활성 상태인 하위 분류가 있어 비활성화할 수 없습니다.');
+                }
+            }
+        }
+
+        $success = $this->categoryRepository->update($id, ['is_active' => $newStatus]);
+        if ($success) {
+            $statusStr = $newStatus ? '활성' : '비활성';
+            $this->logActivity('update', "분류 상태 변경: {$category->category_name} (ID: {$id}) -> {$statusStr}");
+        }
+
+        return $success;
+    }
+
+    /**
+     * 분류를 삭제합니다.
+     */
+    public function deleteCategory(int $id): bool
+    {
+        if ($this->hasAssociatedData($id)) {
+            throw new \InvalidArgumentException('하위 분류나 품목이 있는 분류는 삭제할 수 없습니다.');
+        }
+
+        $category = $this->categoryRepository->findById($id);
+        $success = $this->categoryRepository->delete($id);
+        if ($success) {
+            $this->logActivity('delete', "분류 삭제: {$category->category_name} (ID: {$id})");
+        }
+
+        return $success;
     }
 }

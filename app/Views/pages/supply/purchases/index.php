@@ -32,14 +32,9 @@
                         <h5 class="card-title mb-0">구매 목록</h5>
                     </div>
                     <div class="col-md-6 text-end">
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-success" id="add-purchase-btn" data-bs-toggle="modal" data-bs-target="#purchaseModal">
-                                <i class="ri-add-line align-bottom me-1"></i> 구매 등록
-                            </button>
-                            <a href="/supply/purchases/receive" class="btn btn-info">
-                                <i class="ri-inbox-line align-bottom me-1"></i> 입고 처리
-                            </a>
-                        </div>
+                        <button type="button" class="btn btn-success" id="add-purchase-btn" data-bs-toggle="modal" data-bs-target="#purchaseModal">
+                            <i class="ri-add-line align-bottom me-1"></i> 구매 등록
+                        </button>
                     </div>
                 </div>
             </div>

@@ -1,29 +1,64 @@
 /**
- * Manager 작업 처리 JavaScript
+ * Application for the Vehicle Manager Work page.
+ * Manages vehicle maintenance and repair work assignments for managers.
  */
-
 class VehicleManagerWorkPage extends BasePage {
     constructor() {
         super({ API_URL: '/vehicles/works' });
-        this.workTable = null;
+
+        this.state = {
+            ...this.state,
+            workTable: null,
+            modals: {}
+        };
     }
 
+    /**
+     * @override
+     */
+    async initializeApp() {
+        this.setupModals();
+        this.setupEventListeners();
+        this.initializeDataTable();
+        await this.loadInitialData();
+    }
+
+    /**
+     * @override
+     */
+    async loadInitialData() {
+        await this.loadVehicles();
+        this.loadWorks();
+    }
+
+    /**
+     * @override
+     */
     setupEventListeners() {
         document.getElementById('btn-confirm-accept')?.addEventListener('click', () => this.acceptWork());
         document.getElementById('filter-type')?.addEventListener('change', () => this.loadWorks());
         document.getElementById('filter-vehicle')?.addEventListener('change', () => this.loadWorks());
     }
 
-    loadInitialData() {
-        this.loadVehicles();
-        this.initializeDataTable();
-        this.loadWorks();
+    setupModals() {
+        // Initialize modals if needed
+        const acceptModalEl = document.getElementById('acceptModal');
+        if (acceptModalEl) {
+            this.state.modals.accept = new bootstrap.Modal(acceptModalEl);
+        }
+
+        const detailModalEl = document.getElementById('workDetailModal');
+        if (detailModalEl) {
+            this.state.modals.detail = new bootstrap.Modal(detailModalEl);
+        }
     }
+
+    // --- DataTable Initialization ---
 
     initializeDataTable() {
         const self = this;
 
-        this.workTable = $('#work-table').DataTable({
+        this.state.workTable = $('#work-table').DataTable({
             columns: [
                 { data: 'vehicle_number' },
                 {
@@ -107,7 +142,9 @@ class VehicleManagerWorkPage extends BasePage {
             `;
 
             document.getElementById('work-detail-content').innerHTML = html;
-            new bootstrap.Modal(document.getElementById('workDetailModal')).show();
+            if (this.state.modals.detail) {
+                this.state.modals.detail.show();
+            }
         } catch (error) {
             console.error(error);
             Toast.error('상세 정보를 불러오는 중 오류가 발생했습니다.');
@@ -143,7 +180,7 @@ class VehicleManagerWorkPage extends BasePage {
             if (params.length > 0) url += '?' + params.join('&');
 
             const response = await this.apiCall(url);
-            this.workTable.clear().rows.add(response.data || []).draw();
+            this.state.workTable.clear().rows.add(response.data || []).draw();
         } catch (error) {
             Toast.error('작업 목록을 불러오는 중 오류가 발생했습니다.');
         }
@@ -152,8 +189,9 @@ class VehicleManagerWorkPage extends BasePage {
     showAcceptModal(id) {
         document.getElementById('accept_work_id').value = id;
         document.getElementById('repair_internal').checked = true;
-        const modal = new bootstrap.Modal(document.getElementById('acceptModal'));
-        modal.show();
+        if (this.state.modals.accept) {
+            this.state.modals.accept.show();
+        }
     }
 
     async acceptWork() {
@@ -168,7 +206,9 @@ class VehicleManagerWorkPage extends BasePage {
             });
             Toast.success('접수되었습니다.');
             this.loadWorks();
-            bootstrap.Modal.getInstance(document.getElementById('acceptModal')).hide();
+            if (this.state.modals.accept) {
+                this.state.modals.accept.hide();
+            }
         } catch (error) {
             Toast.error('접수 중 오류가 발생했습니다.');
         }
@@ -187,6 +227,17 @@ class VehicleManagerWorkPage extends BasePage {
             this.loadWorks();
         } catch (error) {
             Toast.error('승인 중 오류가 발생했습니다.');
+        }
+    }
+
+    /**
+     * @override
+     */
+    cleanup() {
+        super.cleanup();
+        if (this.state.workTable) {
+            this.state.workTable.destroy();
+            this.state.workTable = null;
         }
     }
 }

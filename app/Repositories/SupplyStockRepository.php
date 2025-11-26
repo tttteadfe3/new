@@ -322,15 +322,15 @@ class SupplyStockRepository
     /**
      * 재고 상세 정보와 이력을 조회합니다.
      */
-    public function getStockDetails(int $stockId): ?array
+    public function getStockDetails(int $itemId): ?array
     {
         $stockSql = "SELECT ss.id, ss.item_id, ss.current_stock, si.item_name, si.item_code, sc.category_name, si.unit
                      FROM supply_stocks ss
                      JOIN supply_items si ON ss.item_id = si.id
                      LEFT JOIN supply_categories sc ON si.category_id = sc.id
-                     WHERE ss.id = :stock_id";
+                     WHERE ss.item_id = :item_id";
 
-        $stock = $this->db->fetchOne($stockSql, [':stock_id' => $stockId]);
+        $stock = $this->db->fetchOne($stockSql, [':item_id' => $itemId]);
 
         if (!$stock) {
             return null;

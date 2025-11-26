@@ -7,7 +7,7 @@ class SupplyCategoryPage extends BasePage {
         super({
             API_URL: '/supply/categories'
         });
-        
+
         this.categories = [];
         this.filteredCategories = [];
         this.selectedCategoryId = null;
@@ -26,10 +26,7 @@ class SupplyCategoryPage extends BasePage {
             this.saveCategoryForm();
         });
 
-        // 코드 자동 생성 버튼
-        document.getElementById('generate-code-btn')?.addEventListener('click', () => {
-            this.generateCategoryCode();
-        });
+
 
         // 레벨 변경 시 상위 분류 표시/숨김
         document.getElementById('category-level')?.addEventListener('change', (e) => {
@@ -75,7 +72,7 @@ class SupplyCategoryPage extends BasePage {
     renderCategoryList() {
         const container = document.getElementById('category-list-container');
         const noResultDiv = document.getElementById('no-category-result');
-        
+
         if (!container) return;
 
         if (this.filteredCategories.length === 0) {
@@ -85,16 +82,16 @@ class SupplyCategoryPage extends BasePage {
         }
 
         noResultDiv.style.display = 'none';
-        
+
         const html = this.filteredCategories.map(category => {
             const isActive = category.is_active;
-            const levelBadge = category.level === 1 ? 
-                '<span class="badge bg-primary">대분류</span>' : 
+            const levelBadge = category.level === 1 ?
+                '<span class="badge bg-primary">대분류</span>' :
                 '<span class="badge bg-info">소분류</span>';
-            const statusBadge = isActive ? 
-                '<span class="badge bg-success">활성</span>' : 
+            const statusBadge = isActive ?
+                '<span class="badge bg-success">활성</span>' :
                 '<span class="badge bg-secondary">비활성</span>';
-            
+
             return `
                 <div class="list-group-item list-group-item-action category-item" 
                      data-category-id="${category.id}" 
@@ -102,9 +99,7 @@ class SupplyCategoryPage extends BasePage {
                     <div class="d-flex w-100 justify-content-between align-items-start">
                         <div class="flex-grow-1">
                             <h6 class="mb-1">${this.escapeHtml(category.category_name)}</h6>
-                            <p class="mb-1 small text-muted">
-                                <code>${this.escapeHtml(category.category_code)}</code>
-                            </p>
+
                             <div class="d-flex gap-1">
                                 ${levelBadge}
                                 ${statusBadge}
@@ -142,7 +137,7 @@ class SupplyCategoryPage extends BasePage {
         document.querySelectorAll('.category-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 if (e.target.closest('.dropdown')) return;
-                
+
                 const categoryId = parseInt(item.dataset.categoryId);
                 this.selectCategory(categoryId);
             });
@@ -184,7 +179,7 @@ class SupplyCategoryPage extends BasePage {
         document.querySelectorAll('.category-item').forEach(item => {
             item.classList.remove('active');
         });
-        
+
         const selectedItem = document.querySelector(`[data-category-id="${categoryId}"]`);
         if (selectedItem) {
             selectedItem.classList.add('active');
@@ -221,7 +216,6 @@ class SupplyCategoryPage extends BasePage {
                     <label class="form-label fw-medium">상위 분류</label>
                     <div class="form-control-plaintext">
                         ${this.escapeHtml(category.parent_category.category_name)} 
-                        <small class="text-muted">(${this.escapeHtml(category.parent_category.category_code)})</small>
                     </div>
                 </div>
             `;
@@ -229,10 +223,10 @@ class SupplyCategoryPage extends BasePage {
 
         let subCategoriesInfo = '';
         if (category.sub_categories && category.sub_categories.length > 0) {
-            const subCategoriesList = category.sub_categories.map(sub => 
-                `<li>${this.escapeHtml(sub.category_name)} <small class="text-muted">(${this.escapeHtml(sub.category_code)})</small></li>`
+            const subCategoriesList = category.sub_categories.map(sub =>
+                `<li>${this.escapeHtml(sub.category_name)}</li>`
             ).join('');
-            
+
             subCategoriesInfo = `
                 <div class="col-12">
                     <label class="form-label fw-medium">하위 분류</label>
@@ -259,12 +253,7 @@ class SupplyCategoryPage extends BasePage {
             </div>
             
             <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-medium">분류 코드</label>
-                    <div class="form-control-plaintext">
-                        <code class="fs-6">${this.escapeHtml(category.category_code)}</code>
-                    </div>
-                </div>
+
                 <div class="col-md-6">
                     <label class="form-label fw-medium">분류 레벨</label>
                     <div class="form-control-plaintext">
@@ -321,20 +310,19 @@ class SupplyCategoryPage extends BasePage {
         this.clearFormErrors();
 
         if (this.isEditMode && category) {
-            // Edit mode
             document.getElementById('category-level').value = category.level;
-            document.getElementById('category-code').value = category.category_code;
             document.getElementById('category-name').value = category.category_name;
             document.getElementById('display-order').value = category.display_order;
             document.getElementById('is-active').value = category.is_active ? '1' : '0';
 
-            if (category.level === 2) {
+            // 레벨에 따라 상위 분류 필드 표시
+            this.toggleParentCategoryField(category.level.toString());
+
+            if (category.level === 2 && category.parent_id) {
                 document.getElementById('parent-category').value = category.parent_id;
             }
 
             document.getElementById('category-level').disabled = true;
-            document.getElementById('category-code').readOnly = true;
-            document.getElementById('generate-code-btn').disabled = true;
 
             helpContainer.innerHTML = `
                 <div class="alert alert-info">
@@ -348,7 +336,6 @@ class SupplyCategoryPage extends BasePage {
                 <div class="alert alert-warning">
                     <h6 class="alert-heading">수정 불가능한 항목</h6>
                     <ul class="mb-0 small">
-                        <li>분류 코드</li>
                         <li>분류 레벨</li>
                         <li>상위 분류</li>
                     </ul>
@@ -357,8 +344,6 @@ class SupplyCategoryPage extends BasePage {
         } else {
             // Create mode
             document.getElementById('category-level').disabled = false;
-            document.getElementById('category-code').readOnly = false;
-            document.getElementById('generate-code-btn').disabled = false;
             this.toggleParentCategoryField('');
 
             helpContainer.innerHTML = `
@@ -367,14 +352,14 @@ class SupplyCategoryPage extends BasePage {
                     <ul class="mb-0 small">
                         <li><strong>대분류:</strong> 최상위 분류입니다.</li>
                         <li><strong>소분류:</strong> 대분류 하위에 속합니다.</li>
-                        <li><strong>분류 코드:</strong> 자동 생성을 권장합니다.</li>
+                        <li><strong>소분류:</strong> 대분류 하위에 속합니다.</li>
                         <li><strong>표시 순서:</strong> 숫자가 작을수록 먼저 표시됩니다.</li>
                     </ul>
                 </div>
                 <div class="alert alert-warning">
                     <h6 class="alert-heading">주의사항</h6>
                     <ul class="mb-0 small">
-                        <li>분류 코드는 생성 후 수정할 수 없습니다.</li>
+
                         <li>소분류는 반드시 상위 분류를 선택해야 합니다.</li>
                     </ul>
                 </div>
@@ -389,15 +374,15 @@ class SupplyCategoryPage extends BasePage {
         try {
             const data = await this.apiCall(`${this.config.API_URL}/level/1`);
             const mainCategories = data.data || [];
-            
+
             const select = document.getElementById('parent-category');
             select.innerHTML = '<option value="">선택하세요</option>';
-            
+
             mainCategories.forEach(category => {
                 if (category.is_active) {
                     const option = document.createElement('option');
                     option.value = category.id;
-                    option.textContent = `${category.category_name} (${category.category_code})`;
+                    option.textContent = `${category.category_name}`;
                     select.appendChild(option);
                 }
             });
@@ -409,7 +394,7 @@ class SupplyCategoryPage extends BasePage {
     toggleParentCategoryField(level) {
         const container = document.getElementById('parent-category-container');
         const parentSelect = document.getElementById('parent-category');
-        
+
         if (level === '2') {
             container.style.display = 'block';
             parentSelect.required = true;
@@ -420,35 +405,19 @@ class SupplyCategoryPage extends BasePage {
         }
     }
 
-    async generateCategoryCode() {
-        const level = document.getElementById('category-level').value;
-        const parentId = document.getElementById('parent-category').value;
-        
-        if (!level) {
-            Toast.error('먼저 분류 레벨을 선택해주세요.');
-            return;
-        }
-        
-        if (level === '2' && !parentId) {
-            Toast.error('소분류는 상위 분류를 먼저 선택해주세요.');
-            return;
-        }
-        
-        try {
-            const url = `${this.config.API_URL}/generate-code?level=${level}${parentId ? `&parent_id=${parentId}` : ''}`;
-            const data = await this.apiCall(url);
-            document.getElementById('category-code').value = data.data.code;
-        } catch (error) {
-            console.error('Error generating category code:', error);
-            Toast.error('분류 코드 생성 중 오류가 발생했습니다.');
-        }
-    }
+
 
     async saveCategoryForm() {
         const form = document.getElementById('categoryForm');
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
-        
+
+        // 수정 모드에서 disabled된 level 값을 수동으로 추가
+        if (this.isEditMode) {
+            const levelSelect = document.getElementById('category-level');
+            data.level = levelSelect.value;
+        }
+
         // Ensure parent_id is null if not provided or invalid
         if (data.level !== '2' || !data.parent_id || data.parent_id === 'undefined') {
             data.parent_id = null;
@@ -457,14 +426,22 @@ class SupplyCategoryPage extends BasePage {
         if (!this.validateCategoryForm(data)) {
             return;
         }
-        
+
+        // 수정 모드에서는 level과 parent_id를 제거 (수정 불가능)
+        if (this.isEditMode) {
+            delete data.level;
+            delete data.parent_id;
+        }
+
+        console.log('Sending data:', data); // 디버깅용
+
         try {
-            const url = this.isEditMode ? 
+            const url = this.isEditMode ?
                 `${this.config.API_URL}/${this.selectedCategoryId}` :
                 this.config.API_URL;
-            
+
             const method = this.isEditMode ? 'PUT' : 'POST';
-            
+
             await this.apiCall(url, {
                 method: method,
                 headers: {
@@ -474,16 +451,16 @@ class SupplyCategoryPage extends BasePage {
             });
 
             Toast.success(this.isEditMode ? '분류가 수정되었습니다.' : '분류가 생성되었습니다.');
-            
+
             const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'));
             modal.hide();
-            
+
             await this.loadCategories();
-            
+
             if (this.isEditMode) {
                 this.selectCategory(this.selectedCategoryId);
             }
-            
+
         } catch (error) {
             console.error('Error saving category:', error);
             Toast.error(error.message);
@@ -493,27 +470,24 @@ class SupplyCategoryPage extends BasePage {
     validateCategoryForm(data) {
         this.clearFormErrors();
         let isValid = true;
-        
+
         if (!data.level) {
             this.showFieldError('category-level', '분류 레벨을 선택해주세요.');
             isValid = false;
         }
-        
-        if (!data.category_code) {
-            this.showFieldError('category-code', '분류 코드를 입력해주세요.');
-            isValid = false;
-        }
-        
+
+
+
         if (!data.category_name) {
             this.showFieldError('category-name', '분류명을 입력해주세요.');
             isValid = false;
         }
-        
+
         if (data.level === '2' && !data.parent_id) {
             this.showFieldError('parent-category', '소분류는 상위 분류를 선택해야 합니다.');
             isValid = false;
         }
-        
+
         return isValid;
     }
 
@@ -528,28 +502,28 @@ class SupplyCategoryPage extends BasePage {
     async toggleCategoryStatus(categoryId) {
         const category = this.categories.find(c => c.id === categoryId);
         if (!category) return;
-        
+
         const newStatus = category.is_active ? '비활성' : '활성';
-        
+
         const result = await Confirm.fire({
             title: '상태 변경 확인',
             text: `정말로 이 분류를 ${newStatus} 상태로 변경하시겠습니까?`
         });
-        
+
         if (!result.isConfirmed) return;
-        
+
         try {
             const response = await this.apiCall(`${this.config.API_URL}/${categoryId}/toggle-status`, {
                 method: 'PUT'
             });
-            
+
             Toast.success(response.data.message);
             await this.loadCategories();
-            
+
             if (this.selectedCategoryId === categoryId) {
                 this.selectCategory(categoryId);
             }
-            
+
         } catch (error) {
             console.error('Error toggling category status:', error);
             Toast.error(error.message);
@@ -559,40 +533,40 @@ class SupplyCategoryPage extends BasePage {
     showDeleteModal(categoryId) {
         const category = this.categories.find(c => c.id === categoryId);
         if (!category) return;
-        
+
         this.selectedCategoryId = categoryId;
-        
+
         const modal = new bootstrap.Modal(document.getElementById('deleteCategoryModal'));
         const infoDiv = document.getElementById('delete-category-info');
-        
+
         infoDiv.innerHTML = `
             <div class="alert alert-light">
                 <strong>${this.escapeHtml(category.category_name)}</strong><br>
-                <small class="text-muted">코드: ${this.escapeHtml(category.category_code)}</small>
+                <small class="text-muted">ID: ${category.id}</small>
             </div>
         `;
-        
+
         modal.show();
     }
 
     async deleteCategory() {
         if (!this.selectedCategoryId) return;
-        
+
         try {
             await this.apiCall(`${this.config.API_URL}/${this.selectedCategoryId}`, {
                 method: 'DELETE'
             });
 
             Toast.success('분류가 삭제되었습니다.');
-            
+
             const modal = bootstrap.Modal.getInstance(document.getElementById('deleteCategoryModal'));
             modal.hide();
-            
+
             await this.loadCategories();
-            
+
             this.clearCategoryDetails();
             this.selectedCategoryId = null;
-            
+
         } catch (error) {
             console.error('Error deleting category:', error);
             Toast.error(error.message);
@@ -606,19 +580,19 @@ class SupplyCategoryPage extends BasePage {
     applyFilters() {
         const levelFilter = document.getElementById('filter-level')?.value;
         const statusFilter = document.getElementById('filter-status')?.value;
-        
+
         this.filteredCategories = this.categories.filter(category => {
             if (levelFilter && category.level.toString() !== levelFilter) {
                 return false;
             }
-            
+
             if (statusFilter !== '' && category.is_active.toString() !== statusFilter) {
                 return false;
             }
-            
+
             return true;
         });
-        
+
         this.renderCategoryList();
     }
 
@@ -627,13 +601,12 @@ class SupplyCategoryPage extends BasePage {
             this.applyFilters();
             return;
         }
-        
+
         const searchTerm = query.toLowerCase();
         this.filteredCategories = this.categories.filter(category => {
-            return category.category_name.toLowerCase().includes(searchTerm) ||
-                   category.category_code.toLowerCase().includes(searchTerm);
+            return category.category_name.toLowerCase().includes(searchTerm);
         });
-        
+
         this.renderCategoryList();
     }
 

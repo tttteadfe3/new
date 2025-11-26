@@ -38,14 +38,36 @@ class SupplyDistributionApiController extends BaseApiController
     public function index(): void
     {
         try {
-            $search = $this->request->input('search', '');
+            $itemId = $this->request->input('item_id');
+            $limit = $this->request->input('limit');
             
+            // item_id가 있으면 품목별 지급 내역 조회
+            if ($itemId) {
+                $distributions = $this->supplyDistributionService->getDistributionsByItem(
+                    (int) $itemId,
+                    $limit ? (int) $limit : null
+                );
+                
+                $this->apiSuccess([
+                    'data' => $distributions,
+                    'total' => count($distributions)
+                ]);
+                return;
+            }
+            
+            // 일반 문서 목록 조회
+            $search = $this->request->input('search', '');
             $filters = [];
             if (!empty($search)) {
                 $filters['search'] = $search;
             }
             
             $documents = $this->supplyDistributionService->getDocuments($filters);
+            
+            // limit 적용
+            if ($limit) {
+                $documents = array_slice($documents, 0, (int) $limit);
+            }
             
             $this->apiSuccess([
                 'distributions' => $documents,

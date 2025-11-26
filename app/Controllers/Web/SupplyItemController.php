@@ -43,55 +43,7 @@ class SupplyItemController extends BaseController
         ], 'layouts/app');
     }
 
-    /**
-     * 새 품목 등록 폼 페이지를 표시합니다.
-     */
-    public function create(): void
-    {
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-items-create.js');
 
-        echo $this->render('pages/supply/items/create', [
-            'pageTitle' => '지급품 품목 등록'
-        ], 'layouts/app');
-    }
-
-    /**
-     * 품목 수정 폼 페이지를 표시합니다.
-     */
-    public function edit(): void
-    {
-        $id = $this->request->input('id');
-        if (!$id) {
-            $this->redirect('/supply/items');
-            return;
-        }
-
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-items-edit.js');
-
-        echo $this->render('pages/supply/items/edit', [
-            'itemId' => (int)$id,
-            'pageTitle' => '지급품 품목 수정'
-        ], 'layouts/app');
-    }
-
-    /**
-     * 품목 상세 페이지를 표시합니다.
-     */
-    public function show(): void
-    {
-        $id = $this->request->input('id');
-        if (!$id) {
-            $this->redirect('/supply/items');
-            return;
-        }
-
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-items-show.js');
-
-        echo $this->render('pages/supply/items/show', [
-            'itemId' => (int)$id,
-            'pageTitle' => '지급품 품목 상세'
-        ], 'layouts/app');
-    }
 
     /**
      * 재고 현황 페이지를 표시합니다.

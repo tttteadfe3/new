@@ -256,7 +256,6 @@ CREATE TABLE `illegal_disposal_cases2` (
 CREATE TABLE `supply_categories` (
   `id` int(11) NOT NULL COMMENT '고유 ID',
   `parent_id` int(11) DEFAULT NULL COMMENT '상위 분류 ID (대분류는 NULL)',
-  `category_code` varchar(20) NOT NULL COMMENT '분류 코드',
   `category_name` varchar(100) NOT NULL COMMENT '분류명',
   `level` tinyint(4) NOT NULL DEFAULT 1 COMMENT '분류 레벨 (1: 대분류, 2: 소분류)',
   `is_active` tinyint(1) DEFAULT 1 COMMENT '사용 여부',
@@ -338,7 +337,6 @@ CREATE TABLE `supply_distribution_document_items` (
 
 CREATE TABLE `supply_items` (
   `id` int(11) NOT NULL COMMENT '고유 ID',
-  `item_code` varchar(30) NOT NULL COMMENT '품목 코드',
   `item_name` varchar(200) NOT NULL COMMENT '품목명',
   `category_id` int(11) NOT NULL COMMENT '분류 ID',
   `unit` varchar(20) DEFAULT '개' COMMENT '단위',
@@ -739,7 +737,6 @@ ALTER TABLE `illegal_disposal_cases2`
 --
 ALTER TABLE `supply_categories`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `category_code` (`category_code`),
   ADD KEY `idx_level` (`level`),
   ADD KEY `idx_active` (`is_active`),
   ADD KEY `idx_parent_id` (`parent_id`);
@@ -786,10 +783,8 @@ ALTER TABLE `supply_distribution_document_items`
 --
 ALTER TABLE `supply_items`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `item_code` (`item_code`),
   ADD KEY `idx_category` (`category_id`),
-  ADD KEY `idx_active` (`is_active`),
-  ADD KEY `idx_item_code` (`item_code`);
+  ADD KEY `idx_active` (`is_active`);
 
 --
 -- 테이블의 인덱스 `supply_plans`

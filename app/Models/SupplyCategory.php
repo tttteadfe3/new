@@ -6,7 +6,6 @@ class SupplyCategory extends BaseModel
 {
     protected array $fillable = [
         'parent_id',
-        'category_code',
         'category_name',
         'level',
         'is_active',
@@ -14,7 +13,6 @@ class SupplyCategory extends BaseModel
     ];
 
     protected array $rules = [
-        'category_code' => 'required|string|max:20',
         'category_name' => 'required|string|max:100',
         'level' => 'required|integer|in:1,2',
         'parent_id' => 'integer',

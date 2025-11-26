@@ -29,7 +29,7 @@
                     </div>
                     <div class="col-12">
                         <div class="search-box">
-                            <input type="text" class="form-control" id="search-categories" placeholder="분류명 또는 코드 검색...">
+                            <input type="text" class="form-control" id="search-categories" placeholder="분류명 검색...">
                             <i class="ri-search-line search-icon"></i>
                         </div>
                     </div>
@@ -87,16 +87,6 @@
                                     <select class="form-select" id="parent-category" name="parent_id">
                                         <option value="">선택하세요</option>
                                     </select>
-                                </div>
-                                <div class="col-md-8">
-                                    <label for="category-code" class="form-label">분류 코드 <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="category-code" name="category_code" required maxlength="20">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">&nbsp;</label>
-                                    <button type="button" class="btn btn-outline-primary w-100" id="generate-code-btn">
-                                        <i class="ri-refresh-line me-1"></i> 자동 생성
-                                    </button>
                                 </div>
                                 <div class="col-12">
                                     <label for="category-name" class="form-label">분류명 <span class="text-danger">*</span></label>

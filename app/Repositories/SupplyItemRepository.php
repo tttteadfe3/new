@@ -43,7 +43,7 @@ class SupplyItemRepository
         }
 
         if (!empty($filters['search'])) {
-            $queryParts['where'][] = "(si.item_name LIKE :search OR si.item_code LIKE :search)";
+            $queryParts['where'][] = "si.item_name LIKE :search";
             $queryParts['params'][':search'] = '%' . $filters['search'] . '%';
         }
 
@@ -51,7 +51,7 @@ class SupplyItemRepository
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
         }
 
-        $queryParts['sql'] .= " ORDER BY si.item_code ASC";
+        $queryParts['sql'] .= " ORDER BY si.item_name ASC";
 
         return $this->db->fetchAll($queryParts['sql'], $queryParts['params']);
     }
@@ -69,15 +69,7 @@ class SupplyItemRepository
         return $result ?: null;
     }
 
-    /**
-     * 품목 코드로 조회합니다.
-     */
-    public function findByCode(string $code): ?array
-    {
-        $sql = "SELECT * FROM supply_items WHERE item_code = :code";
-        $result = $this->db->fetchOne($sql, [':code' => $code]);
-        return $result ?: null;
-    }
+
 
     /**
      * 활성 품목만 조회합니다.
@@ -88,7 +80,7 @@ class SupplyItemRepository
                 FROM supply_items si
                 LEFT JOIN supply_categories sc ON si.category_id = sc.id
                 WHERE si.is_active = 1
-                ORDER BY si.item_code ASC";
+                ORDER BY si.item_name ASC";
         return $this->db->fetchAll($sql);
     }
 
@@ -97,37 +89,21 @@ class SupplyItemRepository
      */
     public function findByCategoryId(int $categoryId): array
     {
-        $sql = "SELECT * FROM supply_items WHERE category_id = :category_id ORDER BY item_code ASC";
+        $sql = "SELECT * FROM supply_items WHERE category_id = :category_id ORDER BY item_name ASC";
         return $this->db->fetchAll($sql, [':category_id' => $categoryId]);
     }
 
-    /**
-     * 품목 코드 중복 검사
-     */
-    public function isDuplicateCode(string $code, ?int $excludeId = null): bool
-    {
-        $sql = "SELECT COUNT(*) as count FROM supply_items WHERE item_code = :code";
-        $params = [':code' => $code];
 
-        if ($excludeId !== null) {
-            $sql .= " AND id != :id";
-            $params[':id'] = $excludeId;
-        }
-
-        $result = $this->db->fetchOne($sql, $params);
-        return $result['count'] > 0;
-    }
 
     /**
      * 품목을 생성합니다.
      */
     public function create(array $data): int
     {
-        $sql = "INSERT INTO supply_items (item_code, item_name, category_id, unit, description, is_active, created_at, updated_at)
-                VALUES (:item_code, :item_name, :category_id, :unit, :description, :is_active, NOW(), NOW())";
+        $sql = "INSERT INTO supply_items (item_name, category_id, unit, description, is_active, created_at, updated_at)
+                VALUES (:item_name, :category_id, :unit, :description, :is_active, NOW(), NOW())";
 
         $params = [
-            ':item_code' => $data['item_code'],
             ':item_name' => $data['item_name'],
             ':category_id' => $data['category_id'],
             ':unit' => $data['unit'] ?? '개',
@@ -197,24 +173,5 @@ class SupplyItemRepository
         return $result['count'] > 0;
     }
 
-    /**
-     * 다음 품목 코드를 생성합니다.
-     */
-    public function generateNextCode(): string
-    {
-        $sql = "SELECT item_code FROM supply_items ORDER BY item_code DESC LIMIT 1";
-        $result = $this->db->fetchOne($sql);
 
-        if (!$result) {
-            return 'ITEM001';
-        }
-
-        $lastCode = $result['item_code'];
-        if (preg_match('/^ITEM(\d{3})$/', $lastCode, $matches)) {
-            $nextNumber = (int)$matches[1] + 1;
-            return 'ITEM' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-        }
-
-        return 'ITEM001';
-    }
 }

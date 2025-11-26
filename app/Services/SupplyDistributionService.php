@@ -246,4 +246,12 @@ class SupplyDistributionService
             throw $e;
         }
     }
+
+    /**
+     * 특정 품목의 지급 내역을 조회합니다.
+     */
+    public function getDistributionsByItem(int $itemId, ?int $limit = null): array
+    {
+        return $this->distributionRepository->getDistributionsByItem($itemId, $limit);
+    }
 }

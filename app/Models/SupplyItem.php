@@ -5,7 +5,6 @@ namespace App\Models;
 class SupplyItem extends BaseModel
 {
     protected array $fillable = [
-        'item_code',
         'item_name',
         'category_id',
         'unit',
@@ -14,7 +13,6 @@ class SupplyItem extends BaseModel
     ];
 
     protected array $rules = [
-        'item_code' => 'required|string|max:30',
         'item_name' => 'required|string|max:200',
         'category_id' => 'required|integer',
         'unit' => 'string|max:20',

@@ -1,14 +1,40 @@
 /**
- * 차량 관리 JavaScript
+ * Application for the Vehicle Index page.
+ * Manages vehicle CRUD operations and assignments.
  */
-
 class VehicleIndexPage extends BasePage {
     constructor() {
         super({ API_URL: '/vehicles' });
-        this.dataTable = null;
-        this.currentId = null;
+
+        this.state = {
+            ...this.state,
+            dataTable: null,
+            currentId: null,
+            modals: {}
+        };
     }
 
+    /**
+     * @override
+     */
+    async initializeApp() {
+        this.setupModals();
+        this.setupEventListeners();
+        await this.loadInitialData();
+    }
+
+    /**
+     * @override
+     */
+    async loadInitialData() {
+        await this.loadDepartments();
+        this.initializeDataTable();
+        this.loadVehicles();
+    }
+
+    /**
+     * @override
+     */
     setupEventListeners() {
         document.getElementById('btn-create-vehicle')?.addEventListener('click', () => this.showCreateModal());
         document.getElementById('btn-save-vehicle')?.addEventListener('click', () => this.saveVehicle());
@@ -21,10 +47,21 @@ class VehicleIndexPage extends BasePage {
         document.getElementById('department_id')?.addEventListener('change', (e) => this.loadDrivers(e.target.value));
     }
 
-    loadInitialData() {
-        this.loadDepartments();
-        this.initializeDataTable();
-        this.loadVehicles();
+    setupModals() {
+        const vehicleModalEl = document.getElementById('vehicleModal');
+        if (vehicleModalEl) {
+            this.state.modals.vehicle = new bootstrap.Modal(vehicleModalEl);
+        }
+
+        const deleteModalEl = document.getElementById('deleteModal');
+        if (deleteModalEl) {
+            this.state.modals.delete = new bootstrap.Modal(deleteModalEl);
+        }
+
+        const detailModalEl = document.getElementById('detailModal');
+        if (detailModalEl) {
+            this.state.modals.detail = new bootstrap.Modal(detailModalEl);
+        }
     }
 
     async loadDepartments() {
@@ -48,6 +85,8 @@ class VehicleIndexPage extends BasePage {
         }
     }
 
+    // --- Helper Methods ---
+
     getStatusBadgeColor(statusCode) {
         const badges = {
             '정상': 'success',
@@ -57,9 +96,11 @@ class VehicleIndexPage extends BasePage {
         return badges[statusCode] || 'secondary';
     }
 
+    // --- DataTable Initialization ---
+
     initializeDataTable() {
         const self = this;
-        this.dataTable = $('#vehicles-table').DataTable({
+        this.state.dataTable = $('#vehicles-table').DataTable({
             processing: true,
             serverSide: false,
             columns: [
@@ -147,19 +188,22 @@ class VehicleIndexPage extends BasePage {
 
             const queryString = new URLSearchParams(params).toString();
             const result = await this.apiCall(`${this.config.API_URL}?${queryString}`);
-            this.dataTable.clear().rows.add(result.data || []).draw();
+            this.state.dataTable.clear().rows.add(result.data || []).draw();
         } catch (error) {
             console.error('Error loading vehicles:', error);
             Toast.error('차량 목록을 불러오는 중 오류가 발생했습니다.');
         }
     }
 
+    // --- Modal Methods ---
+
     showCreateModal() {
         document.getElementById('vehicleForm').reset();
         document.getElementById('vehicle_id').value = '';
         document.querySelector('#vehicleModal .modal-title').textContent = '차량 등록';
-        const modal = new bootstrap.Modal(document.getElementById('vehicleModal'));
-        modal.show();
+        if (this.state.modals.vehicle) {
+            this.state.modals.vehicle.show();
+        }
     }
 
     async showEditModal(id) {
@@ -183,13 +227,16 @@ class VehicleIndexPage extends BasePage {
             document.getElementById('status_code').value = data.data.status_code;
 
             document.querySelector('#vehicleModal .modal-title').textContent = '차량 수정';
-            const modal = new bootstrap.Modal(document.getElementById('vehicleModal'));
-            modal.show();
+            if (this.state.modals.vehicle) {
+                this.state.modals.vehicle.show();
+            }
         } catch (error) {
             console.error('Error loading vehicle details:', error);
             Toast.error('차량 정보를 불러오는 중 오류가 발생했습니다.');
         }
     }
+
+    // --- Data Submission Methods ---
 
     async saveVehicle() {
         const form = document.getElementById('vehicleForm');
@@ -229,7 +276,9 @@ class VehicleIndexPage extends BasePage {
             }
 
             this.loadVehicles();
-            bootstrap.Modal.getInstance(document.getElementById('vehicleModal')).hide();
+            if (this.state.modals.vehicle) {
+                this.state.modals.vehicle.hide();
+            }
         } catch (error) {
             console.error('Error saving vehicle:', error);
             Toast.error(error.message || '차량 저장 중 오류가 발생했습니다.');
@@ -237,17 +286,20 @@ class VehicleIndexPage extends BasePage {
     }
 
     showDeleteModal(id) {
-        this.currentId = id;
-        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        modal.show();
+        this.state.currentId = id;
+        if (this.state.modals.delete) {
+            this.state.modals.delete.show();
+        }
     }
 
     async confirmDelete() {
         try {
-            await this.apiCall(`${this.config.API_URL}/${this.currentId}`, { method: 'DELETE' });
+            await this.apiCall(`${this.config.API_URL}/${this.state.currentId}`, { method: 'DELETE' });
             Toast.success('차량이 삭제되었습니다.');
             this.loadVehicles();
-            bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+            if (this.state.modals.delete) {
+                this.state.modals.delete.hide();
+            }
         } catch (error) {
             Toast.error('삭제 중 오류가 발생했습니다.');
         }
@@ -273,11 +325,23 @@ class VehicleIndexPage extends BasePage {
             `;
 
             document.getElementById('vehicle-detail-content').innerHTML = content;
-            const modal = new bootstrap.Modal(document.getElementById('detailModal'));
-            modal.show();
+            if (this.state.modals.detail) {
+                this.state.modals.detail.show();
+            }
         } catch (error) {
             console.error('Error loading vehicle details:', error);
             Toast.error('차량 정보를 불러오는 중 오류가 발생했습니다.');
+        }
+    }
+
+    /**
+     * @override
+     */
+    cleanup() {
+        super.cleanup();
+        if (this.state.dataTable) {
+            this.state.dataTable.destroy();
+            this.state.dataTable = null;
         }
     }
 }

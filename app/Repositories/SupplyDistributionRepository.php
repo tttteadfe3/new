@@ -165,4 +165,35 @@ class SupplyDistributionRepository
             ':cancel_reason' => $cancelReason
         ]) > 0;
     }
+
+    /**
+     * 특정 품목의 지급 내역을 조회합니다.
+     */
+    public function getDistributionsByItem(int $itemId, ?int $limit = null): array
+    {
+        $sql = "SELECT 
+                    d.id,
+                    d.title,
+                    d.distribution_date,
+                    d.status,
+                    d.created_at,
+                    d.created_by,
+                    e.name as created_by_name,
+                    di.quantity,
+                    si.item_name,
+                    si.item_code
+                FROM supply_distribution_documents d
+                INNER JOIN supply_distribution_document_items di ON d.id = di.document_id
+                INNER JOIN supply_items si ON di.item_id = si.id
+                LEFT JOIN hr_employees e ON d.created_by = e.id
+                WHERE di.item_id = :item_id
+                AND d.status != '취소'
+                ORDER BY d.distribution_date DESC, d.created_at DESC";
+        
+        if ($limit) {
+            $sql .= " LIMIT " . (int)$limit;
+        }
+        
+        return $this->db->fetchAll($sql, [':item_id' => $itemId]);
+    }
 }

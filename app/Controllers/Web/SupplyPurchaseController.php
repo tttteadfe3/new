@@ -27,7 +27,6 @@ class SupplyPurchaseController extends BaseController
         $this->supplyPurchaseService = $supplyPurchaseService;
         $this->supplyStockService = $supplyStockService;
     }
-
     /**
      * 구매 관리 목록 페이지를 표시합니다.
      */
@@ -49,38 +48,6 @@ class SupplyPurchaseController extends BaseController
 
         echo $this->render('pages/supply/purchases/index', [
             'pageTitle' => '지급품 구매 관리'
-        ], 'layouts/app');
-    }
-
-
-    /**
-     * 입고 처리 페이지를 표시합니다.
-     */
-    public function receive(): void
-    {
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-purchases-receive.js');
-        
-        echo $this->render('pages/supply/purchases/receive', [
-            'pageTitle' => '입고 처리'
-        ], 'layouts/app');
-    }
-
-    /**
-     * 구매 상세 페이지를 표시합니다.
-     */
-    public function show(): void
-    {
-        $id = $this->request->input('id');
-        if (!$id) {
-            $this->redirect('/supply/purchases');
-            return;
-        }
-
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-purchases-show.js');
-        
-        echo $this->render('pages/supply/purchases/show', [
-            'purchaseId' => (int)$id,
-            'pageTitle' => '구매 상세 정보'
         ], 'layouts/app');
     }
 }

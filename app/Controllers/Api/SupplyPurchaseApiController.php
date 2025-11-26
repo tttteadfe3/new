@@ -42,6 +42,7 @@ class SupplyPurchaseApiController extends BaseApiController
             $startDate = $this->request->input('start_date');
             $endDate = $this->request->input('end_date');
             $isReceived = $this->request->input('is_received');
+            $limit = $this->request->input('limit');
             
             // 필터링 조건에 따라 조회
             if ($itemId) {
@@ -54,9 +55,19 @@ class SupplyPurchaseApiController extends BaseApiController
                 $purchases = $this->supplyPurchaseService->getAllPurchases();
             }
             
+            // limit 적용
+            if ($limit) {
+                $purchases = array_slice($purchases, 0, (int) $limit);
+            }
+            
+            // Model 객체를 array로 변환
+            $purchasesArray = array_map(function($purchase) {
+                return is_array($purchase) ? $purchase : $purchase->toArray();
+            }, $purchases);
+            
             $this->apiSuccess([
-                'purchases' => array_map([$this, 'sanitizePurchaseOutput'], $purchases),
-                'total' => count($purchases)
+                'data' => array_map([$this, 'sanitizePurchaseOutput'], $purchasesArray),
+                'total' => count($purchasesArray)
             ]);
         } catch (Exception $e) {
             $this->handleException($e);

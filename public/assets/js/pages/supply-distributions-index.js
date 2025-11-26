@@ -3,7 +3,7 @@ class SupplyDistributionsIndexPage extends BasePage {
         super({
             API_URL: '/api/supply/distributions'
         });
-        
+
         this.dataTable = null;
         this.distributionModal = null;
         this.deleteModal = null;
@@ -45,9 +45,12 @@ class SupplyDistributionsIndexPage extends BasePage {
     async reloadTable() {
         try {
             const response = await this.apiCall(this.config.API_URL);
-            const distributions = response.data.distributions;
+            // API 응답 구조 처리: response.data.distributions 또는 response.data 또는 빈 배열
+            const distributions = response.data?.distributions || response.data?.data || response.data || [];
+            console.log('Loaded distributions:', distributions); // 디버깅용
             this.dataTable.clear().rows.add(distributions).draw();
         } catch (error) {
+            console.error('Failed to load distributions:', error);
             Toast.error('데이터를 불러오는 데 실패했습니다.');
         }
     }
@@ -77,7 +80,7 @@ class SupplyDistributionsIndexPage extends BasePage {
         try {
             const response = await this.apiCall(`${this.config.API_URL}/statistics`);
             const stats = response.data.statistics;
-            $('#stats-container .counter-value').each(function() {
+            $('#stats-container .counter-value').each(function () {
                 const key = $(this).closest('.card').find('p').text().trim();
                 let value = 0;
                 switch (key) {

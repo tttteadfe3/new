@@ -1,16 +1,44 @@
 /**
- * 차량 소모품 관리 JavaScript (Category Tree Structure)
+ * Application for the Vehicle Consumables page.
+ * Manages vehicle consumable items with category tree structure.
  */
-
 class VehicleConsumablesPage extends BasePage {
     constructor() {
         super({ API_URL: '/vehicles/consumables' });
-        this.consumablesTable = null;
-        this.categories = [];
-        this.vehicles = [];
-        this.currentEditingCategoryId = null;
+
+        this.state = {
+            ...this.state,
+            consumablesTable: null,
+            categories: [],
+            vehicles: [],
+            currentEditingCategoryId: null,
+            modals: {}
+        };
     }
 
+    /**
+     * @override
+     */
+    async initializeApp() {
+        this.setupModals();
+        this.setupEventListeners();
+        await this.loadInitialData();
+    }
+
+    /**
+     * @override
+     */
+    async loadInitialData() {
+        this.initializeDataTable();
+        await Promise.all([
+            this.loadCategories(),
+            this.loadVehicles()
+        ]);
+    }
+
+    /**
+     * @override
+     */
     setupEventListeners() {
         // 버튼 이벤트
         document.getElementById('btn-manage-category')?.addEventListener('click', () => this.showCategoryModal());
@@ -28,16 +56,32 @@ class VehicleConsumablesPage extends BasePage {
         document.getElementById('stock_in_purchase_date').value = new Date().toISOString().split('T')[0];
     }
 
-    loadInitialData() {
-        this.initializeDataTable();
-        this.loadCategories();
-        this.loadVehicles();
+    setupModals() {
+        const categoryModalEl = document.getElementById('categoryModal');
+        if (categoryModalEl) {
+            this.state.modals.category = new bootstrap.Modal(categoryModalEl);
+        }
+
+        const stockInModalEl = document.getElementById('stockInModal');
+        if (stockInModalEl) {
+            this.state.modals.stockIn = new bootstrap.Modal(stockInModalEl);
+        }
+
+        const useModalEl = document.getElementById('useModal');
+        if (useModalEl) {
+            this.state.modals.use = new bootstrap.Modal(useModalEl);
+        }
+
+        const historyModalEl = document.getElementById('historyModal');
+        if (historyModalEl) {
+            this.state.modals.history = new bootstrap.Modal(historyModalEl);
+        }
     }
 
-    // ============ DataTable ============
+    // --- DataTable Initialization ---
 
     initializeDataTable() {
-        this.consumablesTable = $('#consumables-table').DataTable({
+        this.state.consumablesTable = $('#consumables-table').DataTable({
             columns: [
                 {
                     data: 'name',
@@ -90,7 +134,7 @@ class VehicleConsumablesPage extends BasePage {
         });
     }
 
-    // ============ 카테고리 관리 ============
+    // --- Category Management ---
 
     async loadCategories() {
         try {
@@ -104,10 +148,10 @@ class VehicleConsumablesPage extends BasePage {
                 : `${this.config.API_URL}/categories`;
 
             const data = await this.apiCall(url);
-            this.categories = data.data || [];
+            this.state.categories = data.data || [];
 
             // 테이블 업데이트
-            this.consumablesTable.clear().rows.add(this.categories).draw();
+            this.state.consumablesTable.clear().rows.add(this.state.categories).draw();
 
             // 카테고리 선택 옵션 업데이트
             this.updateCategorySelects();
@@ -129,7 +173,7 @@ class VehicleConsumablesPage extends BasePage {
         const stockInSelect = document.getElementById('stock_in_category_id');
         stockInSelect.innerHTML = '<option value="">카테고리 선택</option>';
 
-        this.categories.forEach(cat => {
+        this.state.categories.forEach(cat => {
             const indent = '\u00A0\u00A0'.repeat((cat.level - 1) * 2);
             const text = `${indent}${cat.name}`;
 
@@ -138,7 +182,7 @@ class VehicleConsumablesPage extends BasePage {
             filterSelect.add(filterOption);
 
             // 부모 (자기 자신은 제외)
-            if (!this.currentEditingCategoryId || cat.id !== this.currentEditingCategoryId) {
+            if (!this.state.currentEditingCategoryId || cat.id !== this.state.currentEditingCategoryId) {
                 const parentOption = new Option(text, cat.id);
                 parentSelect.add(parentOption);
             }
@@ -154,8 +198,9 @@ class VehicleConsumablesPage extends BasePage {
     showCategoryModal() {
         this.loadCategoryTree();
         document.getElementById('categoryForm').reset();
-        const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
-        modal.show();
+        if (this.state.modals.category) {
+            this.state.modals.category.show();
+        }
     }
 
     async loadCategoryTree() {
@@ -266,7 +311,7 @@ class VehicleConsumablesPage extends BasePage {
             const data = await this.apiCall(`${this.config.API_URL}/categories/${id}`);
             const category = data.data;
 
-            this.currentEditingCategoryId = id;
+            this.state.currentEditingCategoryId = id;
             document.getElementById('category_name').value = category.name;
             document.getElementById('parent_category_id').value = category.parent_id || '';
             document.getElementById('category_unit').value = category.unit;
@@ -301,19 +346,6 @@ class VehicleConsumablesPage extends BasePage {
         };
 
         try {
-            await this.apiCall(`${this.config.API_URL}/categories/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            Toast.success('카테고리가 수정되었습니다.');
-            form.reset();
-            this.currentEditingCategoryId = null;
-
-            // 버튼 복원
-            const addBtn = document.getElementById('btn-add-category');
-            addBtn.innerHTML = '<i class="ri-add-line"></i> 카테고리 추가';
-            addBtn.onclick = () => this.addCategory();
 
             this.loadCategories();
             this.loadCategoryTree();
@@ -335,7 +367,7 @@ class VehicleConsumablesPage extends BasePage {
         }
     }
 
-    // ============ 입고 관리 ============
+    // --- Stock In Management ---
 
     showStockInModal(categoryId = null) {
         document.getElementById('stockInForm').reset();
@@ -345,8 +377,9 @@ class VehicleConsumablesPage extends BasePage {
             document.getElementById('stock_in_category_id').value = categoryId;
         }
 
-        const modal = new bootstrap.Modal(document.getElementById('stockInModal'));
-        modal.show();
+        if (this.state.modals.stockIn) {
+            this.state.modals.stockIn.show();
+        }
     }
 
     async saveStockIn() {
@@ -373,13 +406,15 @@ class VehicleConsumablesPage extends BasePage {
             });
             Toast.success('입고 처리되었습니다.');
             this.loadCategories();
-            bootstrap.Modal.getInstance(document.getElementById('stockInModal')).hide();
+            if (this.state.modals.stockIn) {
+                this.state.modals.stockIn.hide();
+            }
         } catch (error) {
             Toast.error('입고 처리 중 오류가 발생했습니다.');
         }
     }
 
-    // ============ 사용 관리 ============
+    // --- Usage Management ---
 
     async showUseModal(categoryId, categoryName, currentStock) {
         document.getElementById('useForm').reset();
@@ -402,8 +437,9 @@ class VehicleConsumablesPage extends BasePage {
             console.error('품명 목록 로드 실패:', error);
         }
 
-        const modal = new bootstrap.Modal(document.getElementById('useModal'));
-        modal.show();
+        if (this.state.modals.use) {
+            this.state.modals.use.show();
+        }
     }
 
     async saveUse() {
@@ -429,13 +465,15 @@ class VehicleConsumablesPage extends BasePage {
             });
             Toast.success('사용 처리되었습니다.');
             this.loadCategories();
-            bootstrap.Modal.getInstance(document.getElementById('useModal')).hide();
+            if (this.state.modals.use) {
+                this.state.modals.use.hide();
+            }
         } catch (error) {
             Toast.error('사용 처리 중 오류가 발생했습니다.');
         }
     }
 
-    // ============ 이력 조회 ============
+    // --- History Display ---
 
     async showHistoryModal(categoryId) {
         try {
@@ -511,24 +549,25 @@ class VehicleConsumablesPage extends BasePage {
             usageHtml += '</tbody></table>';
             document.getElementById('usage-history-content').innerHTML = usageHtml;
 
-            const modal = new bootstrap.Modal(document.getElementById('historyModal'));
-            modal.show();
+            if (this.state.modals.history) {
+                this.state.modals.history.show();
+            }
         } catch (error) {
             Toast.error('이력을 불러오는 중 오류가 발생했습니다.');
         }
     }
 
-    // ============ 기타 ============
+    // --- Helper Methods ---
 
     async loadVehicles() {
         try {
             const data = await this.apiCall('/vehicles');
-            this.vehicles = data.data || [];
+            this.state.vehicles = data.data || [];
 
             const select = document.getElementById('use_vehicle_id');
             select.innerHTML = '<option value="">선택</option>';
 
-            this.vehicles.forEach(vehicle => {
+            this.state.vehicles.forEach(vehicle => {
                 const option = document.createElement('option');
                 option.value = vehicle.id;
                 option.textContent = `${vehicle.vehicle_number} (${vehicle.model})`;
@@ -551,6 +590,17 @@ class VehicleConsumablesPage extends BasePage {
             clearTimeout(timeout);
             timeout = setTimeout(() => func.apply(this, args), wait);
         };
+    }
+
+    /**
+     * @override
+     */
+    cleanup() {
+        super.cleanup();
+        if (this.state.consumablesTable) {
+            this.state.consumablesTable.destroy();
+            this.state.consumablesTable = null;
+        }
     }
 }
 

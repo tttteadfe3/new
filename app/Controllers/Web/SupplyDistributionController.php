@@ -52,41 +52,4 @@ class SupplyDistributionController extends BaseController
         ], 'layouts/app');
     }
 
-    /**
-     * 지급 수정 폼 페이지를 표시합니다.
-     */
-    public function edit(): void
-    {
-        $id = $this->request->input('id');
-        if (!$id) {
-            $this->redirect('/supply/distributions');
-            return;
-        }
-
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-distributions-edit.js');
-        
-        echo $this->render('pages/supply/distributions/edit', [
-            'distributionId' => (int)$id,
-            'pageTitle' => '지급품 지급 수정'
-        ], 'layouts/app');
-    }
-
-    /**
-     * 지급 상세 페이지를 표시합니다.
-     */
-    public function show(): void
-    {
-        $id = $this->request->input('id');
-        if (!$id) {
-            $this->redirect('/supply/distributions');
-            return;
-        }
-
-        View::getInstance()->addJs(BASE_ASSETS_URL . '/assets/js/pages/supply-distributions-show.js');
-        
-        echo $this->render('pages/supply/distributions/show', [
-            'distributionId' => (int)$id,
-            'pageTitle' => '지급 상세 정보'
-        ], 'layouts/app');
-    }
 }

@@ -36,7 +36,7 @@ class SupplyPurchasesIndexPage extends BasePage {
         $('#quantity, #unit-price').on('input', () => this.calculateTotal());
 
         // 즉시 입고 처리 체크박스 이벤트
-        $('#is-received').on('change', function() {
+        $('#is-received').on('change', function () {
             if ($(this).is(':checked')) {
                 $('#received-date-group').show();
                 $('#received-date-modal').val(new Date().toISOString().slice(0, 10));
@@ -80,7 +80,9 @@ class SupplyPurchasesIndexPage extends BasePage {
             const queryString = new URLSearchParams(params).toString();
             const result = await this.apiCall(`${this.config.API_URL}?${queryString}`);
 
-            this.dataTable.clear().rows.add(result.data.purchases || []).draw();
+            const purchases = result.data?.purchases || result.data?.data || result.data || [];
+            console.log('Loaded purchases:', purchases);
+            this.dataTable.clear().rows.add(purchases).draw();
         } catch (error) {
             console.error('Error loading purchases:', error);
             Toast.error('구매 내역을 불러오는 중 오류가 발생했습니다.');
@@ -93,16 +95,19 @@ class SupplyPurchasesIndexPage extends BasePage {
             serverSide: false,
             columns: [
                 { data: 'purchase_date' },
-                { data: 'item_name', render: (d,t,r) => `${this.escapeHtml(d)}<br><small class="text-muted">${this.escapeHtml(r.item_code)}</small>` },
-                { data: 'quantity', className: 'text-end', render: (d,t,r) => `${Number(d).toLocaleString()} ${this.escapeHtml(r.unit)}` },
+                { data: 'item_name', render: (d, t, r) => `${this.escapeHtml(d)}<br><small class="text-muted">${this.escapeHtml(r.item_code)}</small>` },
+                { data: 'quantity', className: 'text-end', render: (d, t, r) => `${Number(d).toLocaleString()} ${this.escapeHtml(r.unit)}` },
                 { data: 'unit_price', className: 'text-end', render: d => `₩${Number(d).toLocaleString()}` },
                 { data: 'total_amount', className: 'text-end', render: d => `<strong>₩${Number(d).toLocaleString()}</strong>` },
                 { data: 'supplier', render: d => this.escapeHtml(d || '-') },
-                { data: 'is_received', render: (d,t,r) => {
-                    return d ? `<span class="badge badge-soft-success"><i class="ri-checkbox-circle-line me-1"></i>입고 완료</span><br><small class="text-muted">${new Date(r.received_date).toLocaleDateString()}</small>`
-                             : `<span class="badge badge-soft-warning"><i class="ri-time-line me-1"></i>입고 대기</span>`;
-                }},
-                { data: 'id', orderable: false, render: (d,t,r) => `
+                {
+                    data: 'is_received', render: (d, t, r) => {
+                        return d ? `<span class="badge badge-soft-success"><i class="ri-checkbox-circle-line me-1"></i>입고 완료</span><br><small class="text-muted">${new Date(r.received_date).toLocaleDateString()}</small>`
+                            : `<span class="badge badge-soft-warning"><i class="ri-time-line me-1"></i>입고 대기</span>`;
+                    }
+                },
+                {
+                    data: 'id', orderable: false, render: (d, t, r) => `
                     <div class="dropdown">
                         <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="ri-more-fill"></i></button>
                         <ul class="dropdown-menu dropdown-menu-end">

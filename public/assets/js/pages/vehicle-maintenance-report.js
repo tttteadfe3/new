@@ -1,14 +1,47 @@
 /**
- * 운전원 작업 관리 JavaScript
+ * Application for the Vehicle Driver Work page.
+ * Manages vehicle maintenance and repair reports for drivers.
  */
-
 class VehicleDriverWorkPage extends BasePage {
     constructor() {
-        super({ API_URL: '/vehicles/works' });
-        this.workTable = null;
-        this.currentType = null;
+        super({
+            API_URL: '/vehicles/works',
+            FILE: {
+                MAX_SIZE: 5 * 1024 * 1024,
+                ALLOWED_TYPES: ['image/jpeg', 'image/png'],
+                COMPRESS: { MAX_WIDTH: 1200, MAX_HEIGHT: 1200, QUALITY: 0.8 }
+            }
+        });
+
+        this.state = {
+            ...this.state,
+            workTable: null,
+            currentType: null,
+            modals: {}
+        };
     }
 
+    /**
+     * @override
+     */
+    async initializeApp() {
+        this.setupModals();
+        this.setupEventListeners();
+        this.initializeDataTable();
+        await this.loadInitialData();
+    }
+
+    /**
+     * @override
+     */
+    async loadInitialData() {
+        await this.loadMyVehicles();
+        this.loadWorks();
+    }
+
+    /**
+     * @override
+     */
     setupEventListeners() {
         document.getElementById('btn-report-breakdown')?.addEventListener('click', () => this.showReportModal('고장'));
         document.getElementById('btn-report-maintenance')?.addEventListener('click', () => this.showReportModal('정비'));
@@ -21,10 +54,21 @@ class VehicleDriverWorkPage extends BasePage {
         });
     }
 
-    loadInitialData() {
-        this.loadMyVehicles();
-        this.initializeDataTable();
-        this.loadWorks();
+    setupModals() {
+        const workModalEl = document.getElementById('workModal');
+        if (workModalEl) {
+            this.state.modals.work = new bootstrap.Modal(workModalEl);
+        }
+
+        const repairModalEl = document.getElementById('repairModal');
+        if (repairModalEl) {
+            this.state.modals.repair = new bootstrap.Modal(repairModalEl);
+        }
+
+        const detailModalEl = document.getElementById('detailModal');
+        if (detailModalEl) {
+            this.state.modals.detail = new bootstrap.Modal(detailModalEl);
+        }
     }
 
     async loadMyVehicles() {
@@ -44,6 +88,8 @@ class VehicleDriverWorkPage extends BasePage {
         }
     }
 
+    // --- Helper Methods ---
+
     getStatusBadgeColor(status) {
         const colors = {
             '신고': 'secondary',
@@ -55,8 +101,10 @@ class VehicleDriverWorkPage extends BasePage {
         return colors[status] || 'secondary';
     }
 
+    // --- DataTable Initialization ---
+
     initializeDataTable() {
-        this.workTable = $('#work-table').DataTable({
+        this.state.workTable = $('#work-table').DataTable({
             columns: [
                 { data: 'vehicle_number' },
                 {
@@ -119,11 +167,13 @@ class VehicleDriverWorkPage extends BasePage {
     async loadWorks() {
         try {
             const data = await this.apiCall(this.config.API_URL);
-            this.workTable.clear().rows.add(data.data || []).draw();
+            this.state.workTable.clear().rows.add(data.data || []).draw();
         } catch (error) {
             Toast.error('작업 목록을 불러오는 중 오류가 발생했습니다.');
         }
     }
+
+    // --- Modal Methods ---
 
     async showDetailModal(id) {
         try {
@@ -215,8 +265,9 @@ class VehicleDriverWorkPage extends BasePage {
             `;
 
             document.getElementById('detail-content').innerHTML = html;
-            const modal = new bootstrap.Modal(document.getElementById('detailModal'));
-            modal.show();
+            if (this.state.modals.detail) {
+                this.state.modals.detail.show();
+            }
         } catch (error) {
             console.error(error);
             Toast.error('상세 정보를 불러오는 중 오류가 발생했습니다.');
@@ -224,7 +275,7 @@ class VehicleDriverWorkPage extends BasePage {
     }
 
     showReportModal(type) {
-        this.currentType = type;
+        this.state.currentType = type;
         document.getElementById('workForm').reset();
         document.getElementById('work_id').value = '';
         document.getElementById('work_type').value = type;
@@ -237,8 +288,9 @@ class VehicleDriverWorkPage extends BasePage {
             photoExtras.forEach(el => el.classList.add('d-none'));
         }
 
-        const modal = new bootstrap.Modal(document.getElementById('workModal'));
-        modal.show();
+        if (this.state.modals.work) {
+            this.state.modals.work.show();
+        }
     }
 
     async showEditModal(id) {
@@ -254,7 +306,7 @@ class VehicleDriverWorkPage extends BasePage {
             document.getElementById('description').value = work.description || '';
             document.getElementById('mileage').value = work.mileage || '';
 
-            this.currentType = work.type;
+            this.state.currentType = work.type;
             document.querySelector('#workModal .modal-title').textContent = `${work.type} 수정`;
 
             const photoExtras = document.querySelectorAll('#workModal .photo-extra');
@@ -264,8 +316,9 @@ class VehicleDriverWorkPage extends BasePage {
                 photoExtras.forEach(el => el.classList.add('d-none'));
             }
 
-            const modal = new bootstrap.Modal(document.getElementById('workModal'));
-            modal.show();
+            if (this.state.modals.work) {
+                this.state.modals.work.show();
+            }
         } catch (error) {
             console.error(error);
             Toast.error('정보를 불러오는 중 오류가 발생했습니다.');
@@ -301,9 +354,12 @@ class VehicleDriverWorkPage extends BasePage {
             shopInput.value = '';
         }
 
-        const modal = new bootstrap.Modal(document.getElementById('repairModal'));
-        modal.show();
+        if (this.state.modals.repair) {
+            this.state.modals.repair.show();
+        }
     }
+
+    // --- Data Submission Methods ---
 
     async saveWork() {
         const form = document.getElementById('workForm');
@@ -357,7 +413,9 @@ class VehicleDriverWorkPage extends BasePage {
             }
 
             this.loadWorks();
-            bootstrap.Modal.getInstance(document.getElementById('workModal')).hide();
+            if (this.state.modals.work) {
+                this.state.modals.work.hide();
+            }
         } catch (error) {
             Toast.error('저장 중 오류가 발생했습니다.');
         }
@@ -400,19 +458,21 @@ class VehicleDriverWorkPage extends BasePage {
             });
             Toast.success('수리 내역이 등록되었습니다.');
             this.loadWorks();
-            bootstrap.Modal.getInstance(document.getElementById('repairModal')).hide();
+            if (this.state.modals.repair) {
+                this.state.modals.repair.hide();
+            }
         } catch (error) {
             Toast.error('수리 등록 중 오류가 발생했습니다.');
         }
     }
 
+    // --- Image Compression Methods ---
+
     /**
      * 이미지 파일 압축
      */
     async compressImageFile(file) {
-        const MAX_WIDTH = 1200;
-        const MAX_HEIGHT = 1200;
-        const QUALITY = 0.8;
+        const { MAX_WIDTH, MAX_HEIGHT, QUALITY } = this.config.FILE.COMPRESS;
 
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -462,6 +522,17 @@ class VehicleDriverWorkPage extends BasePage {
         } catch (error) {
             console.error('Image compression failed:', error);
             // 압축 실패 시 원본 사용
+        }
+    }
+
+    /**
+     * @override
+     */
+    cleanup() {
+        super.cleanup();
+        if (this.state.workTable) {
+            this.state.workTable.destroy();
+            this.state.workTable = null;
         }
     }
 }

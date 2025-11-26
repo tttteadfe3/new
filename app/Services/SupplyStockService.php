@@ -297,10 +297,11 @@ class SupplyStockService
 
     /**
      * 재고 상세 정보를 조회합니다.
+     * @param int $itemId 품목 ID
      */
-    public function getStockDetails(int $stockId): ?array
+    public function getStockDetails(int $itemId): ?array
     {
-        return $this->stockRepository->getStockDetails($stockId);
+        return $this->stockRepository->getStockDetails($itemId);
     }
     /**
      * 재고가 있는 품목을 조회합니다.

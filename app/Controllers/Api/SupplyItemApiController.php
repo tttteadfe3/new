@@ -131,18 +131,7 @@ class SupplyItemApiController extends BaseApiController
         }
     }
 
-    /**
-     * 다음 품목 코드 생성
-     */
-    public function generateCode(): void
-    {
-        try {
-            $code = $this->itemService->generateNextCode();
-            $this->apiSuccess(['code' => $code]);
-        } catch (Exception $e) {
-            $this->handleException($e);
-        }
-    }
+
 
     /**
      * 예외를 처리합니다.
