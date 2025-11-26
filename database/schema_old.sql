@@ -1,5 +1,5 @@
 -- Database Schema Export
--- Generated: 2025-11-27 07:16:55
+-- Generated: 2025-11-27 06:56:47
 -- Database: erp
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -14,6 +14,57 @@ SET time_zone = "+00:00";
 --
 -- Database: `erp`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `backup_vehicle_consumable_stock_20251125`
+--
+
+CREATE TABLE `backup_vehicle_consumable_stock_20251125` (
+  `id` int(11) NOT NULL DEFAULT 0 COMMENT '고유 ID',
+  `consumable_id` int(11) NOT NULL COMMENT '소모품 분류 ID',
+  `quantity` int(11) NOT NULL COMMENT '입고 수량',
+  `unit_price` decimal(10,2) DEFAULT NULL COMMENT '입고 단가',
+  `purchase_date` date DEFAULT NULL COMMENT '구매일',
+  `registered_by` int(11) DEFAULT NULL COMMENT '등록자 employee_id',
+  `note` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '비고',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `backup_vehicle_consumable_usage_20251125`
+--
+
+CREATE TABLE `backup_vehicle_consumable_usage_20251125` (
+  `id` int(11) NOT NULL DEFAULT 0 COMMENT '고유 ID',
+  `consumable_id` int(11) NOT NULL COMMENT '소모품 분류 ID',
+  `maintenance_id` int(11) DEFAULT NULL COMMENT '정비 작업 ID (vehicle_maintenance)',
+  `vehicle_id` int(11) DEFAULT NULL COMMENT '차량 ID',
+  `quantity` int(11) NOT NULL COMMENT '사용 수량',
+  `used_by` int(11) DEFAULT NULL COMMENT '사용자 employee_id',
+  `used_at` datetime DEFAULT current_timestamp() COMMENT '사용일시',
+  `note` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '비고',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `backup_vehicle_consumables_categories_20251125`
+--
+
+CREATE TABLE `backup_vehicle_consumables_categories_20251125` (
+  `id` int(11) NOT NULL DEFAULT 0 COMMENT '고유 ID',
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '소모품명',
+  `category` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '카테고리 (엔진오일, 타이어, 브레이크, 필터 등)',
+  `unit` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '개' COMMENT '단위',
+  `note` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '비고',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -441,6 +492,7 @@ CREATE TABLE `supply_items` (
   UNIQUE KEY `item_code` (`item_code`),
   KEY `idx_category` (`category_id`),
   KEY `idx_active` (`is_active`),
+  KEY `idx_item_code` (`item_code`),
   CONSTRAINT `supply_items_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `supply_categories` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='지급품 마스터';
 
@@ -515,6 +567,7 @@ CREATE TABLE `supply_stocks` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `item_id` (`item_id`),
   KEY `idx_current_stock` (`current_stock`),
+  KEY `idx_item_id` (`item_id`),
   CONSTRAINT `supply_stocks_ibfk_1` FOREIGN KEY (`item_id`) REFERENCES `supply_items` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='지급품 재고 관리';
 
