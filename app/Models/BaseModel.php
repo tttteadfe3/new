@@ -58,6 +58,14 @@ abstract class BaseModel implements \JsonSerializable
     public function toArray(): array
     {
         $attributes = $this->attributes;
+
+        // Public 속성 가져오기 (Reflection 사용)
+        $reflection = new \ReflectionClass($this);
+        $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC);
+        
+        foreach ($properties as $property) {
+            $attributes[$property->getName()] = $property->getValue($this);
+        }
         
         // 숨겨진 속성 제거
         foreach ($this->hidden as $hidden) {

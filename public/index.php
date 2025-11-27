@@ -36,7 +36,7 @@ $container->register(\App\Services\PolicyEngine::class, fn($c) => new \App\Servi
 ));
 $container->register(\App\Services\KakaoAuthService::class, fn($c) => new \App\Services\KakaoAuthService($c->resolve(SessionManager::class)));
 
-// 2. Repositories - some now depend on DataScopeService.
+// 2. Repositories - now depend on PolicyEngine for data scoping.
 $container->register(\App\Repositories\DepartmentRepository::class, fn($c) => new \App\Repositories\DepartmentRepository(
     $c->resolve(Database::class),
     $c->resolve(\App\Services\PolicyEngine::class),
@@ -68,7 +68,7 @@ $container->register(\App\Repositories\VehicleRepository::class, fn($c) => new \
     $c->resolve(SessionManager::class)
 ));
 
-// Repositories with no DataScopeService dependency
+
 $container->register(\App\Repositories\BreakdownRepository::class, fn($c) => new \App\Repositories\BreakdownRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\MaintenanceRepository::class, fn($c) => new \App\Repositories\MaintenanceRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\ConsumableRepository::class, fn($c) => new \App\Repositories\ConsumableRepository($c->resolve(Database::class)));
@@ -282,7 +282,8 @@ $container->register(\App\Controllers\Api\EmployeeApiController::class, fn($c) =
     $c->resolve(JsonResponse::class),
     $c->resolve(\App\Services\EmployeeService::class),
     $c->resolve(\App\Repositories\DepartmentRepository::class),
-    $c->resolve(\App\Repositories\PositionRepository::class)
+    $c->resolve(\App\Repositories\PositionRepository::class),
+    $c->resolve(\App\Services\PolicyEngine::class)
 ));
 $container->register(\App\Controllers\Api\LeaveController::class, fn($c) => new \App\Controllers\Api\LeaveController(
     $c->resolve(Request::class),

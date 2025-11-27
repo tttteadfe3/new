@@ -42,7 +42,7 @@ class VehicleApiController extends BaseApiController
                 return $value !== null && $value !== '';
             });
 
-            // DataScope는 Repository에서 자동 적용됨
+            // PBAC 권한은 Repository에서 자동 적용됨
             $vehicles = $this->vehicleService->getAllVehicles($filters);
             $this->apiSuccess($vehicles);
         } catch (Exception $e) {

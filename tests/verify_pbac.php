@@ -11,7 +11,7 @@ use App\Repositories\EmployeeRepository;
 use App\Repositories\VehicleRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\DepartmentRepository;
-use App\Services\DataScopeService;
+
 
 // Mock SessionManager
 class MockSessionManager extends SessionManager {
@@ -31,14 +31,13 @@ try {
     $sessionManager = new MockSessionManager();
     $deptService = new DepartmentHierarchyService($db);
     $policyEngine = new PolicyEngine($db, $sessionManager, $deptService);
-    $dataScopeService = new DataScopeService($sessionManager, $db); // Deprecated but needed for constructor
-
+    
     // Repositories
-    $leaveRepo = new LeaveRepository($db, $policyEngine, $dataScopeService, $sessionManager);
-    $employeeRepo = new EmployeeRepository($db, $policyEngine, $dataScopeService, $sessionManager);
-    $vehicleRepo = new VehicleRepository($db, $policyEngine, $dataScopeService, $sessionManager);
-    $userRepo = new UserRepository($db, $policyEngine, $dataScopeService, $sessionManager);
-    $deptRepo = new DepartmentRepository($db, $policyEngine, $dataScopeService, $sessionManager);
+    $leaveRepo = new LeaveRepository($db, $policyEngine, $sessionManager);
+    $employeeRepo = new EmployeeRepository($db, $policyEngine, $sessionManager);
+    $vehicleRepo = new VehicleRepository($db, $policyEngine, $sessionManager);
+    $userRepo = new UserRepository($db, $policyEngine, $sessionManager);
+    $deptRepo = new DepartmentRepository($db, $policyEngine, $sessionManager);
 
     echo "--- PBAC Verification Start ---\n";
 

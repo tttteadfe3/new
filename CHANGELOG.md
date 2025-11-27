@@ -3,6 +3,17 @@
 이 문서는 프로젝트의 주요 변경 사항, 특히 기존 코드베이스에 영향을 줄 수 있는 중요한 수정 내역을 기록합니다. 모든 개발 에이전트는 코드 변경 시 이 문서를 참조하고, 자신의 변경 사항을 아래 형식에 맞게 기록해야 합니다.
 
 ---
+## [1.4.8 - 2025-11-27]
+
+### ♻️ 리팩토링 (Refactoring)
+- **DataScopeService 제거 및 PolicyEngine 완전 전환**:
+  - **변경 이유**: 데이터 접근 제어 로직이 `PolicyEngine`으로 통합됨에 따라, 더 이상 사용되지 않는 `DataScopeService`를 제거하여 코드베이스를 정리했습니다.
+  - **변경 내용**:
+    - `app/Services/DataScopeService.php` 파일을 삭제했습니다.
+    - `public/index.php` 및 관련 테스트 파일에서 `DataScopeService` 의존성 및 참조를 제거했습니다.
+    - `SupplyPurchaseRepository`, `VehicleApiController` 등의 주석을 최신화했습니다.
+  - **영향 범위**: `app/Services/DataScopeService.php`, `public/index.php`, `tests/verify_pbac.php`, `tests/VehicleManagementTest.php`
+
 ## [1.4.7 - 2025-10-28]
 
 ### ✨ 새로운 기능 (Features)

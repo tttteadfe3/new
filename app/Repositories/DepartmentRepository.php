@@ -50,9 +50,7 @@ class DepartmentRepository {
 
         $results = $this->db->fetchAllAs(Department::class, $queryParts['sql'], $queryParts['params']);
 
-        return array_map(function($department) {
-            return (array)$department;
-        }, $results);
+        return $results;
     }
 
     /**

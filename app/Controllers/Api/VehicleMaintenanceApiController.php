@@ -50,7 +50,7 @@ class VehicleMaintenanceApiController extends BaseApiController
                 return $value !== null && $value !== '';
             });
 
-            // DataScope는 Repository에서 자동 적용됨
+            // PBAC 권한은 Repository에서 자동 적용됨
             $works = $this->workService->getAllWorks($filters);
             $this->apiSuccess($works);
         } catch (Exception $e) {
