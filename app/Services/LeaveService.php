@@ -6,7 +6,6 @@ use App\Repositories\LeaveRepository;
 use App\Repositories\EmployeeRepository;
 use App\Repositories\DepartmentRepository;
 use App\Services\HolidayService;
-use App\Services\DataScopeService;
 use DateTime;
 use DatePeriod;
 use DateInterval;
@@ -27,20 +26,17 @@ class LeaveService {
     private EmployeeRepository $employeeRepository;
     private DepartmentRepository $departmentRepository;
     private HolidayService $holidayService;
-    private DataScopeService $dataScopeService;
 
     public function __construct(
         LeaveRepository $leaveRepository,
         EmployeeRepository $employeeRepository,
         DepartmentRepository $departmentRepository,
-        HolidayService $holidayService,
-        DataScopeService $dataScopeService
+        HolidayService $holidayService
     ) {
         $this->leaveRepository = $leaveRepository;
         $this->employeeRepository = $employeeRepository;
         $this->departmentRepository = $departmentRepository;
         $this->holidayService = $holidayService;
-        $this->dataScopeService = $dataScopeService;
     }
 
     // ===================================================================

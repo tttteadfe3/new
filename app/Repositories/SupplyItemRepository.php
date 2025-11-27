@@ -4,17 +4,14 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\SupplyItem;
-use App\Services\DataScopeService;
 
 class SupplyItemRepository
 {
     private Database $db;
-    private DataScopeService $dataScopeService;
 
-    public function __construct(Database $db, DataScopeService $dataScopeService)
+    public function __construct(Database $db)
     {
         $this->db = $db;
-        $this->dataScopeService = $dataScopeService;
     }
 
     /**

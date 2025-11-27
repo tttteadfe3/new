@@ -6,7 +6,8 @@ use App\Repositories\LeaveRepository;
 use App\Repositories\LeaveAdminRepository;
 use App\Repositories\EmployeeRepository;
 use App\Repositories\DepartmentRepository;
-use App\Services\DataScopeService;
+use App\Core\SessionManager;
+use App\Services\PolicyEngine;
 use DateTime;
 use Exception;
 
@@ -26,7 +27,6 @@ class LeaveAdminService {
     private LeaveAdminRepository $leaveAdminRepository;
     private EmployeeRepository $employeeRepository;
     private DepartmentRepository $departmentRepository;
-    private DataScopeService $dataScopeService;
     private LeaveService $leaveService;
 
     public function __construct(
@@ -34,14 +34,12 @@ class LeaveAdminService {
         LeaveAdminRepository $leaveAdminRepository,
         EmployeeRepository $employeeRepository,
         DepartmentRepository $departmentRepository,
-        DataScopeService $dataScopeService,
         LeaveService $leaveService
     ) {
         $this->leaveRepository = $leaveRepository;
         $this->leaveAdminRepository = $leaveAdminRepository;
         $this->employeeRepository = $employeeRepository;
         $this->departmentRepository = $departmentRepository;
-        $this->dataScopeService = $dataScopeService;
         $this->leaveService = $leaveService;
     }
 

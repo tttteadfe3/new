@@ -3,15 +3,18 @@
 namespace App\Repositories;
 
 use App\Core\Database;
-use App\Services\DataScopeService;
+use App\Core\SessionManager;
+use App\Services\PolicyEngine;
 
 class HolidayRepository {
     private Database $db;
-    private DataScopeService $dataScopeService;
+    private PolicyEngine $policyEngine;
+    private SessionManager $sessionManager;
 
-    public function __construct(Database $db, DataScopeService $dataScopeService) {
+    public function __construct(Database $db, PolicyEngine $policyEngine, SessionManager $sessionManager) {
         $this->db = $db;
-        $this->dataScopeService = $dataScopeService;
+        $this->policyEngine = $policyEngine;
+        $this->sessionManager = $sessionManager;
     }
 
     /**
@@ -26,7 +29,20 @@ class HolidayRepository {
             'where' => []
         ];
 
-        $queryParts = $this->dataScopeService->applyHolidayScope($queryParts, 'h');
+        // PolicyEngine을 사용한 데이터 스코프 적용
+        $user = $this->sessionManager->get('user');
+        if ($user) {
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'holiday', 'view');
+            if ($scopeIds !== null) {
+                if (empty($scopeIds)) {
+                    $queryParts['where'][] = "1=0";
+                } else {
+                    $inClause = implode(',', array_map('intval', $scopeIds));
+                    // h.department_id IS NULL은 전체 공용 휴일을 의미하므로 항상 포함
+                    $queryParts['where'][] = "(h.department_id IN ($inClause) OR h.department_id IS NULL)";
+                }
+            }
+        }
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);

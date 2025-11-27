@@ -11,16 +11,13 @@ class HolidayService
 {
     private HolidayRepository $holidayRepository;
     private DepartmentRepository $departmentRepository;
-    private DataScopeService $dataScopeService;
 
     public function __construct(
         HolidayRepository $holidayRepository,
-        DepartmentRepository $departmentRepository,
-        DataScopeService $dataScopeService
+        DepartmentRepository $departmentRepository
     ) {
         $this->holidayRepository = $holidayRepository;
         $this->departmentRepository = $departmentRepository;
-        $this->dataScopeService = $dataScopeService;
     }
 
     /**

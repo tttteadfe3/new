@@ -2,7 +2,9 @@
 // app/Repositories/LeaveRepository.php
 namespace App\Repositories;
 use App\Core\Database;
-use App\Services\DataScopeService;
+use App\Core\SessionManager;
+use App\Services\PolicyEngine;
+
 /**
  * 연차 관리 시스템의 데이터 접근 계층
  * 로그 기반 연차 변동 추적, 연차 신청/승인, 취소 신청 등의 데이터 처리를 담당합니다.
@@ -10,10 +12,12 @@ use App\Services\DataScopeService;
  */
 class LeaveRepository {
     private Database $db;
-    private DataScopeService $dataScopeService;
-    public function __construct(Database $db, DataScopeService $dataScopeService) {
+    private PolicyEngine $policyEngine;
+    private SessionManager $sessionManager;
+    public function __construct(Database $db, PolicyEngine $policyEngine, SessionManager $sessionManager) {
         $this->db = $db;
-        $this->dataScopeService = $dataScopeService;
+        $this->policyEngine = $policyEngine;
+        $this->sessionManager = $sessionManager;
     }
     // =================================================================
     // 연차 로그 (Leave Logs) 관련 메소드

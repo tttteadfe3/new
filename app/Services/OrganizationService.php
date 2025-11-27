@@ -8,16 +8,13 @@ use App\Repositories\EmployeeRepository;
 class OrganizationService
 {
     private DepartmentRepository $departmentRepository;
-    private DataScopeService $dataScopeService;
     private EmployeeRepository $employeeRepository;
 
     public function __construct(
         DepartmentRepository $departmentRepository,
-        DataScopeService $dataScopeService,
         \App\Repositories\EmployeeRepository $employeeRepository
     ) {
         $this->departmentRepository = $departmentRepository;
-        $this->dataScopeService = $dataScopeService;
         $this->employeeRepository = $employeeRepository;
     }
 

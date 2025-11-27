@@ -28,10 +28,6 @@ $container->singleton(JsonResponse::class, fn() => new JsonResponse());
 // The order of registration is critical to avoid circular dependencies.
 
 // 1. Core services with no repository dependencies, or only DB/Session.
-$container->register(\App\Services\DataScopeService::class, fn($c) => new \App\Services\DataScopeService(
-    $c->resolve(SessionManager::class),
-    $c->resolve(Database::class)
-));
 $container->register(\App\Services\DepartmentHierarchyService::class, fn($c) => new \App\Services\DepartmentHierarchyService($c->resolve(Database::class)));
 $container->register(\App\Services\PolicyEngine::class, fn($c) => new \App\Services\PolicyEngine(
     $c->resolve(Database::class),
@@ -51,7 +47,11 @@ $container->register(\App\Repositories\EmployeeRepository::class, fn($c) => new 
     $c->resolve(\App\Services\PolicyEngine::class),
     $c->resolve(SessionManager::class)
 ));
-$container->register(\App\Repositories\HolidayRepository::class, fn($c) => new \App\Repositories\HolidayRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\HolidayRepository::class, fn($c) => new \App\Repositories\HolidayRepository(
+    $c->resolve(Database::class),
+    $c->resolve(\App\Services\PolicyEngine::class),
+    $c->resolve(SessionManager::class)
+));
 $container->register(\App\Repositories\LeaveRepository::class, fn($c) => new \App\Repositories\LeaveRepository(
     $c->resolve(Database::class),
     $c->resolve(\App\Services\PolicyEngine::class),
@@ -69,13 +69,13 @@ $container->register(\App\Repositories\VehicleRepository::class, fn($c) => new \
 ));
 
 // Repositories with no DataScopeService dependency
-$container->register(\App\Repositories\BreakdownRepository::class, fn($c) => new \App\Repositories\BreakdownRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\MaintenanceRepository::class, fn($c) => new \App\Repositories\MaintenanceRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\BreakdownRepository::class, fn($c) => new \App\Repositories\BreakdownRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\MaintenanceRepository::class, fn($c) => new \App\Repositories\MaintenanceRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\ConsumableRepository::class, fn($c) => new \App\Repositories\ConsumableRepository($c->resolve(Database::class)));
-$container->register(\App\Repositories\ConsumableLogRepository::class, fn($c) => new \App\Repositories\ConsumableLogRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\InsuranceRepository::class, fn($c) => new \App\Repositories\InsuranceRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\InspectionRepository::class, fn($c) => new \App\Repositories\InspectionRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\TaxRepository::class, fn($c) => new \App\Repositories\TaxRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\ConsumableLogRepository::class, fn($c) => new \App\Repositories\ConsumableLogRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\InsuranceRepository::class, fn($c) => new \App\Repositories\InsuranceRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\InspectionRepository::class, fn($c) => new \App\Repositories\InspectionRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\TaxRepository::class, fn($c) => new \App\Repositories\TaxRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\EmployeeChangeLogRepository::class, fn($c) => new \App\Repositories\EmployeeChangeLogRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\LitteringRepository::class, fn($c) => new \App\Repositories\LitteringRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\LogRepository::class, fn($c) => new \App\Repositories\LogRepository($c->resolve(Database::class)));
@@ -84,11 +84,17 @@ $container->register(\App\Repositories\PositionRepository::class, fn($c) => new 
 $container->register(\App\Repositories\RoleRepository::class, fn($c) => new \App\Repositories\RoleRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\WasteCollectionRepository::class, fn($c) => new \App\Repositories\WasteCollectionRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\VehicleInspectionRepository::class, fn($c) => new \App\Repositories\VehicleInspectionRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\LeaveAdminRepository::class, fn($c) => new \App\Repositories\LeaveAdminRepository(
+    $c->resolve(Database::class),
+    $c->resolve(\App\Services\PolicyEngine::class),
+    $c->resolve(SessionManager::class)
+));
 
 // Supply Management Repositories
-$container->register(\App\Repositories\SupplyCategoryRepository::class, fn($c) => new \App\Repositories\SupplyCategoryRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\SupplyItemRepository::class, fn($c) => new \App\Repositories\SupplyItemRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\SupplyPlanRepository::class, fn($c) => new \App\Repositories\SupplyPlanRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\SupplyCategoryRepository::class, fn($c) => new \App\Repositories\SupplyCategoryRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\SupplyItemRepository::class, fn($c) => new \App\Repositories\SupplyItemRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\SupplyPlanRepository::class, fn($c) => new \App\Repositories\SupplyPlanRepository($c->resolve(Database::class)));
+$container->register(\App\Repositories\SupplyPurchaseRepository::class, fn($c) => new \App\Repositories\SupplyPurchaseRepository($c->resolve(Database::class)));
 $container->register(\App\Repositories\VehicleDocumentRepository::class, fn($c) => new \App\Repositories\VehicleDocumentRepository($c->resolve(Database::class)));
 
 
@@ -107,27 +113,23 @@ $container->register(\App\Services\EmployeeService::class, fn($c) => new \App\Se
     $c->resolve(\App\Repositories\DepartmentRepository::class),
     $c->resolve(\App\Repositories\PositionRepository::class),
     $c->resolve(\App\Repositories\LogRepository::class),
-    $c->resolve(SessionManager::class),
-    $c->resolve(\App\Services\DataScopeService::class)
+    $c->resolve(SessionManager::class)
 ));
 $container->register(\App\Services\HolidayService::class, fn($c) => new \App\Services\HolidayService(
     $c->resolve(\App\Repositories\HolidayRepository::class),
-    $c->resolve(\App\Repositories\DepartmentRepository::class),
-    $c->resolve(\App\Services\DataScopeService::class)
+    $c->resolve(\App\Repositories\DepartmentRepository::class)
 ));
 $container->register(\App\Services\LeaveService::class, fn($c) => new \App\Services\LeaveService(
     $c->resolve(\App\Repositories\LeaveRepository::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class),
     $c->resolve(\App\Repositories\DepartmentRepository::class),
-    $c->resolve(\App\Services\HolidayService::class),
-    $c->resolve(\App\Services\DataScopeService::class)
+    $c->resolve(\App\Services\HolidayService::class)
 ));
 $container->register(\App\Services\LitteringService::class, fn($c) => new \App\Services\LitteringService($c->resolve(\App\Repositories\LitteringRepository::class), $c->resolve(Database::class)));
 $container->register(\App\Services\LogService::class, fn($c) => new \App\Services\LogService($c->resolve(\App\Repositories\LogRepository::class)));
 $container->register(\App\Services\MenuManagementService::class, fn($c) => new \App\Services\MenuManagementService($c->resolve(\App\Repositories\MenuRepository::class), $c->resolve(Database::class)));
 $container->register(\App\Services\OrganizationService::class, fn($c) => new \App\Services\OrganizationService(
     $c->resolve(\App\Repositories\DepartmentRepository::class),
-    $c->resolve(\App\Services\DataScopeService::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class)
 ));
 $container->register(\App\Services\PositionService::class, fn($c) => new \App\Services\PositionService($c->resolve(\App\Repositories\PositionRepository::class)));
@@ -135,8 +137,7 @@ $container->register(\App\Services\ProfileService::class, fn($c) => new \App\Ser
 $container->register(\App\Services\RolePermissionService::class, fn($c) => new \App\Services\RolePermissionService($c->resolve(\App\Repositories\RoleRepository::class)));
 $container->register(\App\Services\UserService::class, fn($c) => new \App\Services\UserService(
     $c->resolve(\App\Repositories\UserRepository::class),
-    $c->resolve(\App\Repositories\RoleRepository::class),
-    $c->resolve(\App\Services\DataScopeService::class)
+    $c->resolve(\App\Repositories\RoleRepository::class)
 ));
 $container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Services\ViewDataService(
     $c->resolve(\App\Services\AuthService::class),
@@ -145,6 +146,13 @@ $container->register(\App\Services\ViewDataService::class, fn($c) => new \App\Se
     $c->resolve(\App\Services\ActivityLogger::class)
 ));
 $container->register(\App\Services\WasteCollectionService::class, fn($c) => new \App\Services\WasteCollectionService($c->resolve(\App\Repositories\WasteCollectionRepository::class), $c->resolve(Database::class)));
+$container->register(\App\Services\LeaveAdminService::class, fn($c) => new \App\Services\LeaveAdminService(
+    $c->resolve(\App\Repositories\LeaveRepository::class),
+    $c->resolve(\App\Repositories\LeaveAdminRepository::class),
+    $c->resolve(\App\Repositories\EmployeeRepository::class),
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(\App\Services\LeaveService::class)
+));
 
 // Supply Management Services
 $container->register(\App\Services\VehicleService::class, fn($c) => new \App\Services\VehicleService($c->resolve(\App\Repositories\VehicleRepository::class)));
@@ -254,7 +262,6 @@ $container->register(\App\Controllers\Api\OrganizationApiController::class, fn($
     $c->resolve(JsonResponse::class),
     $c->resolve(\App\Services\OrganizationService::class),
     $c->resolve(\App\Repositories\PositionRepository::class),
-    $c->resolve(\App\Services\DataScopeService::class),
     $c->resolve(\App\Repositories\DepartmentRepository::class)
 ));
 $container->register(\App\Controllers\Api\PositionApiController::class, fn($c) => new \App\Controllers\Api\PositionApiController(
@@ -275,8 +282,7 @@ $container->register(\App\Controllers\Api\EmployeeApiController::class, fn($c) =
     $c->resolve(JsonResponse::class),
     $c->resolve(\App\Services\EmployeeService::class),
     $c->resolve(\App\Repositories\DepartmentRepository::class),
-    $c->resolve(\App\Repositories\PositionRepository::class),
-    $c->resolve(\App\Services\DataScopeService::class)
+    $c->resolve(\App\Repositories\PositionRepository::class)
 ));
 $container->register(\App\Controllers\Api\LeaveController::class, fn($c) => new \App\Controllers\Api\LeaveController(
     $c->resolve(Request::class),
@@ -302,8 +308,7 @@ $container->register(\App\Controllers\Api\VehicleMaintenanceApiController::class
     $c->resolve(\App\Services\ActivityLogger::class),
     $c->resolve(\App\Repositories\EmployeeRepository::class),
     $c->resolve(JsonResponse::class),
-    $c->resolve(\App\Services\VehicleMaintenanceService::class),
-    $c->resolve(\App\Services\DataScopeService::class)
+    $c->resolve(\App\Services\VehicleMaintenanceService::class)
 ));
 $container->register(\App\Controllers\Api\VehicleInspectionApiController::class, fn($c) => new \App\Controllers\Api\VehicleInspectionApiController(
     $c->resolve(Request::class),
