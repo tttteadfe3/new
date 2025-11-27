@@ -1,6 +1,7 @@
 <?php
 // app/Repositories/LeaveRepository.php
 namespace App\Repositories;
+
 use App\Core\Database;
 use App\Core\SessionManager;
 use App\Services\PolicyEngine;
@@ -14,14 +15,17 @@ class LeaveRepository {
     private Database $db;
     private PolicyEngine $policyEngine;
     private SessionManager $sessionManager;
+
     public function __construct(Database $db, PolicyEngine $policyEngine, SessionManager $sessionManager) {
         $this->db = $db;
         $this->policyEngine = $policyEngine;
         $this->sessionManager = $sessionManager;
     }
+
     // =================================================================
     // 연차 로그 (Leave Logs) 관련 메소드
     // =================================================================
+
     /**
      * 연차/월차 변동 로그 생성 (생성만 허용, 수정/삭제 금지)
      * 
@@ -32,7 +36,7 @@ class LeaveRepository {
         $sql = "INSERT INTO hr_leave_logs (employee_id, leave_type, grant_year, log_type, transaction_type, amount, balance_after, reason, reference_id, created_by)
                 VALUES (:employee_id, :leave_type, :grant_year, :log_type, :transaction_type, :amount, :balance_after, :reason, :reference_id, :created_by)";
         
-$params = [
+        $params = [
             ':employee_id' => $logData['employee_id'],
             ':leave_type' => $logData['leave_type'] ?? '연차',
             ':grant_year' => $logData['grant_year'] ?? null,
@@ -113,6 +117,45 @@ $params = [
     /**
      * 잔여량 계산용 로그 집계
      * 
+     * @param int $employeeId 직원 ID
+     * @param string $leaveType 연차 구분 (annual, monthly, all)
+     * @return array 로그 목록
+     */
+    public function getBalanceLogs(int $employeeId, string $leaveType = 'all'): array {
+        $sql = "SELECT log_type, transaction_type, leave_type, amount FROM hr_leave_logs
+                WHERE employee_id = :employee_id";
+
+        $params = [':employee_id' => $employeeId];
+
+        // leave_type 필터링
+        if ($leaveType !== 'all') {
+            $sql .= " AND leave_type = :leave_type";
+            $params[':leave_type'] = $leaveType === 'annual' ? '연차' : ($leaveType === 'monthly' ? '월차' : $leaveType);
+        }
+
+        $sql .= " ORDER BY created_at ASC";
+
+        return $this->db->query($sql, $params);
+    }
+
+    // =================================================================
+    // 연차 신청 (Leave Applications) 관련 메소드
+    // =================================================================
+
+    /**
+     * 연차 신청 저장
+     *
+     * @param array $applicationData 신청 데이터
+     * @return string 생성된 신청 ID
+     */
+    public function saveApplication(array $applicationData): string {
+        $sql = "INSERT INTO hr_leave_applications (employee_id, start_date, end_date, days, leave_type, day_type, status, reason)
+                VALUES (:employee_id, :start_date, :end_date, :days, :leave_type, :day_type, :status, :reason)";
+
+        $params = [
+            ':employee_id' => $applicationData['employee_id'],
+            ':start_date' => $applicationData['start_date'],
+            ':end_date' => $applicationData['end_date'],
             ':days' => $applicationData['days'],
             ':leave_type' => $applicationData['leave_type'],
             ':day_type' => $applicationData['day_type'] ?? '전일',
@@ -188,13 +231,13 @@ $params = [
             ':end_date' => $endDate
         ];
 
-        if ($excludeId) {
+        if ($excludeId !== null) {
             $sql .= " AND id != :exclude_id";
             $params[':exclude_id'] = $excludeId;
         }
 
         $result = $this->db->fetchOne($sql, $params);
-        return ($result['count'] ?? 0) > 0;
+        return $result['count'] > 0;
     }
 
     /**
@@ -257,17 +300,16 @@ $params = [
      * @return float 대기 중인 총 일수
      */
     public function getPendingApplicationDays(int $employeeId): float {
-        $sql = "SELECT SUM(days) as total_days
+        $sql = "SELECT COALESCE(SUM(days), 0) as total_days
                 FROM hr_leave_applications
-                WHERE employee_id = :employee_id
-                  AND status = '대기'";
+                WHERE employee_id = :employee_id AND status = '대기'";
         
         $result = $this->db->fetchOne($sql, [':employee_id' => $employeeId]);
-        return (float)($result['total_days'] ?? 0);
+        return (float)$result['total_days'];
     }
 
     // =================================================================
-    // 취소 신청 (Cancellation Requests) 관련 메소드
+    // 연차 취소 신청 (Leave Cancellations) 관련 메소드
     // =================================================================
 
     /**
@@ -277,13 +319,14 @@ $params = [
      * @return string 생성된 취소 신청 ID
      */
     public function saveCancellationRequest(array $cancellationData): string {
-        $sql = "INSERT INTO hr_leave_cancellations (application_id, reason, status)
-                VALUES (:application_id, :reason, :status)";
+        $sql = "INSERT INTO hr_leave_cancellations (application_id, employee_id, reason, status)
+                VALUES (:application_id, :employee_id, :reason, :status)";
         
         $params = [
             ':application_id' => $cancellationData['application_id'],
+            ':employee_id' => $cancellationData['employee_id'],
             ':reason' => $cancellationData['reason'],
-            ':status' => '대기'
+            ':status' => $cancellationData['status'] ?? '대기'
         ];
         
         $this->db->execute($sql, $params);
@@ -297,9 +340,10 @@ $params = [
      * @return array|false 취소 신청 정보
      */
     public function getCancellationById(int $cancellationId) {
-        $sql = "SELECT lc.*, la.employee_id, la.start_date, la.end_date, la.days, la.leave_type
+        $sql = "SELECT lc.*, la.start_date, la.end_date, la.days, e.name as employee_name
                 FROM hr_leave_cancellations lc
                 JOIN hr_leave_applications la ON lc.application_id = la.id
+                JOIN hr_employees e ON lc.employee_id = e.id
                 WHERE lc.id = :id";
         
         return $this->db->fetchOne($sql, [':id' => $cancellationId]);
@@ -331,8 +375,14 @@ $params = [
     }
 
     // =================================================================
-    // 연차 부여/소진 현황 (Entitlements) 관련 메소드
+    // 관리자 기능은 LeaveAdminRepository로 이동됨
     // =================================================================
+
+    // =================================================================
+    // 유틸리티 메서드 (Utility Methods)
+    // =================================================================
+
+
 
     /**
      * 특정 연도 월차 부여 개수 조회
@@ -342,19 +392,19 @@ $params = [
      * @return int 부여된 월차 개수
      */
     public function getMonthlyGrantedCount(int $employeeId, int $year): int {
-        $sql = "SELECT COUNT(*) as count 
-                FROM hr_leave_logs 
+        $sql = "SELECT COALESCE(SUM(amount), 0) as total_granted
+                FROM hr_leave_logs
                 WHERE employee_id = :employee_id 
-                  AND leave_type = '월차' 
-                  AND log_type = '부여' 
-                  AND grant_year = :year";
+                  AND log_type = '부여'
+                  AND (reason LIKE '%월차%' OR transaction_type = '월차부여')
+                  AND YEAR(created_at) = :year";
         
         $result = $this->db->fetchOne($sql, [
             ':employee_id' => $employeeId,
             ':year' => $year
         ]);
         
-        return (int)($result['count'] ?? 0);
+        return (int)$result['total_granted'];
     }
 
     /**
@@ -365,15 +415,16 @@ $params = [
      * @return array|false 부여 내역 (없으면 false)
      */
     public function findEntitlement(int $employeeId, int $year) {
-        // hr_leave_entitlements 테이블이 없으므로, hr_leave_logs에서 '연차부여' 로그를 기준으로 판단
-        // 또는 별도의 entitlements 테이블을 만들었다면 그것을 사용
-        
-        $sql = "SELECT * FROM hr_leave_logs 
+        $sql = "SELECT *
+                FROM hr_leave_logs
                 WHERE employee_id = :employee_id 
-                  AND grant_year = :year 
-                  AND transaction_type = '연차부여'
+                  AND log_type = '부여'
+                  AND (transaction_type IN ('연차부여', '초기부여', '근속연차부여', '월차부여')
+                       OR reason LIKE '%부여%')
+                  AND YEAR(created_at) = :year
+                ORDER BY created_at DESC
                 LIMIT 1";
-                
+
         return $this->db->fetchOne($sql, [
             ':employee_id' => $employeeId,
             ':year' => $year
@@ -381,22 +432,23 @@ $params = [
     }
 
     /**
-     * 직원별 신청 목록 조회 (관리자/팀장용)
+     * 직원별 연차 신청 내역 조회
      * 
      * @param int $employeeId 직원 ID
-     * @param array $filters 필터 조건
-     * @return array 신청 목록
+     * @param string $status 상태 필터 ('ALL', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED')
+     * @param int $year 대상 연도
+     * @return array 신청 내역
      */
-    public function getApplicationsByEmployee(int $employeeId, array $filters = []): array {
+    public function getApplicationsByEmployee(int $employeeId, string $status = 'ALL', int $year = null): array {
         $queryParts = [
-            'sql' => "SELECT la.*, approver.name as approver_name, e.name as employee_name, d.name as department_name
+            'sql' => "SELECT la.*, e.name as employee_name, d.name as department_name,
+                             approver.name as approver_name
                       FROM hr_leave_applications la
-                      LEFT JOIN hr_employees approver ON la.approver_id = approver.id
-                      JOIN hr_employees e ON la.employee_id = e.id
+                      LEFT JOIN hr_employees e ON la.employee_id = e.id
                       LEFT JOIN hr_departments d ON e.department_id = d.id
-                      WHERE la.employee_id = :employee_id",
-            'params' => [':employee_id' => $employeeId],
-            'where' => []
+                      LEFT JOIN hr_employees approver ON la.approver_id = approver.id",
+            'where' => ['la.employee_id = :employee_id'],
+            'params' => [':employee_id' => $employeeId]
         ];
 
         // 데이터 스코프 적용 (PolicyEngine 사용)
@@ -414,21 +466,18 @@ $params = [
             }
         }
 
-        if (!empty($filters['year'])) {
-            $queryParts['where'][] = "YEAR(la.start_date) = :year";
-            $queryParts['params'][':year'] = $filters['year'];
+        if ($status !== 'ALL') {
+            $queryParts['where'][] = 'la.status = :status';
+            $queryParts['params'][':status'] = $status;
         }
 
-        if (!empty($filters['status'])) {
-            $queryParts['where'][] = "la.status = :status";
-            $queryParts['params'][':status'] = $filters['status'];
+        if ($year) {
+            $queryParts['where'][] = 'YEAR(la.start_date) = :year';
+            $queryParts['params'][':year'] = $year;
         }
 
-        if (!empty($queryParts['where'])) {
-            $queryParts['sql'] .= " AND " . implode(" AND ", $queryParts['where']);
-        }
-
-        $queryParts['sql'] .= " ORDER BY la.start_date DESC";
+        $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
+        $queryParts['sql'] .= " ORDER BY la.created_at DESC";
 
         return $this->db->query($queryParts['sql'], $queryParts['params']);
     }
