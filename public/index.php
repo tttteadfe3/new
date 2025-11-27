@@ -32,15 +32,41 @@ $container->register(\App\Services\DataScopeService::class, fn($c) => new \App\S
     $c->resolve(SessionManager::class),
     $c->resolve(Database::class)
 ));
+$container->register(\App\Services\DepartmentHierarchyService::class, fn($c) => new \App\Services\DepartmentHierarchyService($c->resolve(Database::class)));
+$container->register(\App\Services\PolicyEngine::class, fn($c) => new \App\Services\PolicyEngine(
+    $c->resolve(Database::class),
+    $c->resolve(SessionManager::class),
+    $c->resolve(\App\Services\DepartmentHierarchyService::class)
+));
 $container->register(\App\Services\KakaoAuthService::class, fn($c) => new \App\Services\KakaoAuthService($c->resolve(SessionManager::class)));
 
 // 2. Repositories - some now depend on DataScopeService.
-$container->register(\App\Repositories\DepartmentRepository::class, fn($c) => new \App\Repositories\DepartmentRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\EmployeeRepository::class, fn($c) => new \App\Repositories\EmployeeRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\DepartmentRepository::class, fn($c) => new \App\Repositories\DepartmentRepository(
+    $c->resolve(Database::class),
+    $c->resolve(\App\Services\PolicyEngine::class),
+    $c->resolve(SessionManager::class)
+));
+$container->register(\App\Repositories\EmployeeRepository::class, fn($c) => new \App\Repositories\EmployeeRepository(
+    $c->resolve(Database::class),
+    $c->resolve(\App\Services\PolicyEngine::class),
+    $c->resolve(SessionManager::class)
+));
 $container->register(\App\Repositories\HolidayRepository::class, fn($c) => new \App\Repositories\HolidayRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\LeaveRepository::class, fn($c) => new \App\Repositories\LeaveRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\UserRepository::class, fn($c) => new \App\Repositories\UserRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
-$container->register(\App\Repositories\VehicleRepository::class, fn($c) => new \App\Repositories\VehicleRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));
+$container->register(\App\Repositories\LeaveRepository::class, fn($c) => new \App\Repositories\LeaveRepository(
+    $c->resolve(Database::class),
+    $c->resolve(\App\Services\PolicyEngine::class),
+    $c->resolve(SessionManager::class)
+));
+$container->register(\App\Repositories\UserRepository::class, fn($c) => new \App\Repositories\UserRepository(
+    $c->resolve(Database::class),
+    $c->resolve(\App\Services\PolicyEngine::class),
+    $c->resolve(SessionManager::class)
+));
+$container->register(\App\Repositories\VehicleRepository::class, fn($c) => new \App\Repositories\VehicleRepository(
+    $c->resolve(Database::class),
+    $c->resolve(\App\Services\PolicyEngine::class),
+    $c->resolve(SessionManager::class)
+));
 
 // Repositories with no DataScopeService dependency
 $container->register(\App\Repositories\BreakdownRepository::class, fn($c) => new \App\Repositories\BreakdownRepository($c->resolve(Database::class), $c->resolve(\App\Services\DataScopeService::class)));

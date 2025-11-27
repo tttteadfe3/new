@@ -12,14 +12,14 @@ use App\Services\ViewDataService;
 use App\Services\ActivityLogger;
 use App\Repositories\EmployeeRepository;
 use App\Core\JsonResponse;
-use App\Services\DataScopeService;
+use App\Services\PolicyEngine;
 
 class EmployeeApiController extends BaseApiController
 {
     private EmployeeService $employeeService;
     private DepartmentRepository $departmentRepository;
     private PositionRepository $positionRepository;
-    private DataScopeService $dataScopeService;
+    private PolicyEngine $policyEngine;
 
     public function __construct(
         Request $request,
@@ -31,13 +31,13 @@ class EmployeeApiController extends BaseApiController
         EmployeeService $employeeService,
         DepartmentRepository $departmentRepository,
         PositionRepository $positionRepository,
-        DataScopeService $dataScopeService
+        PolicyEngine $policyEngine
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->employeeService = $employeeService;
         $this->departmentRepository = $departmentRepository;
         $this->positionRepository = $positionRepository;
-        $this->dataScopeService = $dataScopeService;
+        $this->policyEngine = $policyEngine;
     }
 
     /**
@@ -76,7 +76,7 @@ class EmployeeApiController extends BaseApiController
      */
     public function show(int $id): void
     {
-        if (!$this->dataScopeService->canManageEmployee($id)) {
+        if (!$this->canAccessEmployee($id, 'view')) {
             $this->apiForbidden('해당 직원의 정보를 조회할 권한이 없습니다.');
             return;
         }
@@ -98,7 +98,7 @@ class EmployeeApiController extends BaseApiController
      */
     public function update(int $id): void
     {
-        if (!$this->dataScopeService->canManageEmployee($id)) {
+        if (!$this->canAccessEmployee($id, 'update')) {
             $this->apiForbidden('해당 직원의 정보를 수정할 권한이 없습니다.');
             return;
         }
@@ -117,7 +117,7 @@ class EmployeeApiController extends BaseApiController
      */
     public function destroy(int $id): void
     {
-        if (!$this->dataScopeService->canManageEmployee($id)) {
+        if (!$this->canAccessEmployee($id, 'delete')) {
             $this->apiForbidden('해당 직원을 삭제할 권한이 없습니다.');
             return;
         }
@@ -178,7 +178,7 @@ class EmployeeApiController extends BaseApiController
      */
     public function getChangeHistory(int $id): void
     {
-        if (!$this->dataScopeService->canManageEmployee($id)) {
+        if (!$this->canAccessEmployee($id, 'view')) {
             $this->apiForbidden('해당 직원의 변경 이력을 조회할 권한이 없습니다.');
             return;
         }
@@ -269,5 +269,40 @@ class EmployeeApiController extends BaseApiController
         } catch (Exception $e) {
             $this->handleException($e);
         }
+    }
+
+    /**
+     * Check if current user can access employee resource
+     * @param int $employeeId
+     * @param string $action
+     * @return bool
+     */
+    private function canAccessEmployee(int $employeeId, string $action): bool
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return false;
+        }
+
+        // Get allowed department IDs from PolicyEngine  
+        $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'employee', $action);
+        
+        // null means global access
+        if ($scopeIds === null) {
+            return true;
+        }
+
+        // Empty array means no access
+        if (empty($scopeIds)) {
+            return false;
+        }
+
+        // Check if employee's department is in allowed scope
+        $employee = $this->employeeRepository->findById($employeeId);
+        if (!$employee || empty($employee['department_id'])) {
+            return false;
+        }
+
+        return in_array($employee['department_id'], $scopeIds);
     }
 }

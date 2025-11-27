@@ -3,15 +3,18 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\Department;
-use App\Services\DataScopeService;
+use App\Services\PolicyEngine;
+use App\Core\SessionManager;
 
 class DepartmentRepository {
     private Database $db;
-    private DataScopeService $dataScopeService;
+    private PolicyEngine $policyEngine;
+    private SessionManager $sessionManager;
 
-    public function __construct(Database $db, DataScopeService $dataScopeService) {
+    public function __construct(Database $db, PolicyEngine $policyEngine, SessionManager $sessionManager) {
         $this->db = $db;
-        $this->dataScopeService = $dataScopeService;
+        $this->policyEngine = $policyEngine;
+        $this->sessionManager = $sessionManager;
     }
 
     /**
@@ -24,7 +27,20 @@ class DepartmentRepository {
             'where' => []
         ];
 
-        $queryParts = $this->dataScopeService->applyDepartmentScope($queryParts, 'd');
+        // 데이터 스코프 적용 (PolicyEngine 사용)
+        $user = $this->sessionManager->get('user');
+        if ($user) {
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'department', 'view');
+            
+            if ($scopeIds === null) {
+                // 전체 조회 가능
+            } elseif (empty($scopeIds)) {
+                $queryParts['where'][] = "1=0";
+            } else {
+                $inClause = implode(',', array_map('intval', $scopeIds));
+                $queryParts['where'][] = "d.id IN ($inClause)";
+            }
+        }
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -50,7 +66,20 @@ class DepartmentRepository {
             'where' => []
         ];
 
-        $queryParts = $this->dataScopeService->applyDepartmentScope($queryParts, 'd');
+        // 데이터 스코프 적용 (PolicyEngine 사용)
+        $user = $this->sessionManager->get('user');
+        if ($user) {
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'department', 'view');
+            
+            if ($scopeIds === null) {
+                // 전체 조회 가능
+            } elseif (empty($scopeIds)) {
+                $queryParts['where'][] = "1=0";
+            } else {
+                $inClause = implode(',', array_map('intval', $scopeIds));
+                $queryParts['where'][] = "d.id IN ($inClause)";
+            }
+        }
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -184,7 +213,7 @@ class DepartmentRepository {
                     (SELECT GROUP_CONCAT(m.name SEPARATOR ', ') FROM hr_department_managers dm JOIN hr_employees m ON dm.employee_id = m.id WHERE dm.department_id = d.id) as viewer_employee_names,
                     (SELECT GROUP_CONCAT(dm.employee_id SEPARATOR ',') FROM hr_department_managers dm WHERE dm.department_id = d.id) as viewer_employee_ids
                 FROM
-                    hr_departments d
+                hr_departments d
                 LEFT JOIN
                     hr_employees e ON d.id = e.department_id AND e.termination_date IS NULL
                 LEFT JOIN
@@ -193,7 +222,20 @@ class DepartmentRepository {
             'where' => []
         ];
 
-        $queryParts = $this->dataScopeService->applyDepartmentScope($queryParts, 'd');
+        // 데이터 스코프 적용 (PolicyEngine 사용)
+        $user = $this->sessionManager->get('user');
+        if ($user) {
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'department', 'view');
+            
+            if ($scopeIds === null) {
+                // 전체 조회 가능
+            } elseif (empty($scopeIds)) {
+                $queryParts['where'][] = "1=0";
+            } else {
+                $inClause = implode(',', array_map('intval', $scopeIds));
+                $queryParts['where'][] = "d.id IN ($inClause)";
+            }
+        }
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);

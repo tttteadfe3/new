@@ -3,15 +3,21 @@
 namespace App\Repositories;
 
 use App\Core\Database;
-use App\Services\DataScopeService;
+
+use App\Services\PolicyEngine;
+use App\Core\SessionManager;
 
 class UserRepository {
     private Database $db;
-    private DataScopeService $dataScopeService;
+    private PolicyEngine $policyEngine;
 
-    public function __construct(Database $db, DataScopeService $dataScopeService) {
+    private SessionManager $sessionManager;
+
+    public function __construct(Database $db, PolicyEngine $policyEngine, SessionManager $sessionManager) {
         $this->db = $db;
-        $this->dataScopeService = $dataScopeService;
+        $this->policyEngine = $policyEngine;
+
+        $this->sessionManager = $sessionManager;
     }
 
     /**
@@ -119,7 +125,20 @@ class UserRepository {
             'where' => []
         ];
 
-        $queryParts = $this->dataScopeService->applyUserScope($queryParts, 'u', 'e');
+        // 데이터 스코프 적용 (PolicyEngine 사용)
+        $user = $this->sessionManager->get('user');
+        if ($user) {
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'user', 'view');
+            
+            if ($scopeIds === null) {
+                // 전체 조회 가능
+            } elseif (empty($scopeIds)) {
+                $queryParts['where'][] = "u.employee_id IS NULL"; // 권한 없으면 연결되지 않은 사용자만? 혹은 아예 조회 불가? 기존 로직 참고
+            } else {
+                $inClause = implode(',', array_map('intval', $scopeIds));
+                $queryParts['where'][] = "(e.department_id IN ($inClause) OR u.employee_id IS NULL)";
+            }
+        }
 
         if (!empty($filters['status'])) {
             $queryParts['where'][] = "u.status = :status";
@@ -220,7 +239,20 @@ class UserRepository {
             'where' => []
         ];
 
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        // 데이터 스코프 적용 (PolicyEngine 사용) - getUnlinkedEmployees는 보통 관리자가 사용하므로 스코프 적용 필요
+        $user = $this->sessionManager->get('user');
+        if ($user) {
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'employee', 'view');
+            
+            if ($scopeIds === null) {
+                // 전체 조회 가능
+            } elseif (empty($scopeIds)) {
+                $queryParts['where'][] = "1=0";
+            } else {
+                $inClause = implode(',', array_map('intval', $scopeIds));
+                $queryParts['where'][] = "e.department_id IN ($inClause)";
+            }
+        }
 
         if (!empty($queryParts['where'])) {
             // 이미 WHERE 절이 있으므로 AND로 연결

@@ -3,15 +3,21 @@
 namespace App\Repositories;
 
 use App\Core\Database;
-use App\Services\DataScopeService;
+
+use App\Services\PolicyEngine;
+use App\Core\SessionManager;
 
 class EmployeeRepository {
     private Database $db;
-    private DataScopeService $dataScopeService;
+    private PolicyEngine $policyEngine;
 
-    public function __construct(Database $db, DataScopeService $dataScopeService) {
+    private SessionManager $sessionManager;
+
+    public function __construct(Database $db, PolicyEngine $policyEngine, SessionManager $sessionManager) {
         $this->db = $db;
-        $this->dataScopeService = $dataScopeService;
+        $this->policyEngine = $policyEngine;
+
+        $this->sessionManager = $sessionManager;
     }
 
     /**
@@ -115,8 +121,20 @@ class EmployeeRepository {
             'where' => []
         ];
 
-        // 데이터 스코프 적용
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        // 데이터 스코프 적용 (PolicyEngine 사용)
+        $user = $this->sessionManager->get('user');
+        if ($user) {
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'employee', 'view');
+            
+            if ($scopeIds === null) {
+                // 전체 조회 가능
+            } elseif (empty($scopeIds)) {
+                $queryParts['where'][] = "1=0";
+            } else {
+                $inClause = implode(',', array_map('intval', $scopeIds));
+                $queryParts['where'][] = "e.department_id IN ($inClause)";
+            }
+        }
 
         if (!empty($filters['department_id'])) {
             $queryParts['where'][] = "e.department_id = :department_id";
@@ -175,8 +193,20 @@ class EmployeeRepository {
             'where' => ['e.termination_date IS NULL']
         ];
 
-        // 데이터 스코프 적용
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        // 데이터 스코프 적용 (PolicyEngine 사용)
+        $user = $this->sessionManager->get('user');
+        if ($user) {
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'employee', 'view');
+            
+            if ($scopeIds === null) {
+                // 전체 조회 가능
+            } elseif (empty($scopeIds)) {
+                $queryParts['where'][] = "1=0";
+            } else {
+                $inClause = implode(',', array_map('intval', $scopeIds));
+                $queryParts['where'][] = "e.department_id IN ($inClause)";
+            }
+        }
 
         if ($departmentId) {
             $queryParts['where'][] = "e.department_id = :department_id";

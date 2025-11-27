@@ -11,14 +11,14 @@ use App\Services\ViewDataService;
 use App\Services\ActivityLogger;
 use App\Repositories\EmployeeRepository;
 use App\Core\JsonResponse;
-use App\Services\DataScopeService;
+
 use App\Repositories\DepartmentRepository;
 
 class OrganizationApiController extends BaseApiController
 {
     private OrganizationService $organizationService;
     private PositionRepository $positionRepository;
-    private DataScopeService $dataScopeService;
+
     private DepartmentRepository $departmentRepository;
 
     public function __construct(
@@ -30,13 +30,13 @@ class OrganizationApiController extends BaseApiController
         JsonResponse $jsonResponse,
         OrganizationService $organizationService,
         PositionRepository $positionRepository,
-        DataScopeService $dataScopeService,
+
         DepartmentRepository $departmentRepository
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->organizationService = $organizationService;
         $this->positionRepository = $positionRepository;
-        $this->dataScopeService = $dataScopeService;
+
         $this->departmentRepository = $departmentRepository;
     }
 

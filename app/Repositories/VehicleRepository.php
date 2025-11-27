@@ -4,17 +4,20 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Models\Vehicle;
-use App\Services\DataScopeService;
+use App\Services\PolicyEngine;
+use App\Core\SessionManager;
 
 class VehicleRepository
 {
     private Database $db;
-    private DataScopeService $dataScopeService;
+    private PolicyEngine $policyEngine;
+    private SessionManager $sessionManager;
 
-    public function __construct(Database $db, DataScopeService $dataScopeService)
+    public function __construct(Database $db, PolicyEngine $policyEngine, SessionManager $sessionManager)
     {
         $this->db = $db;
-        $this->dataScopeService = $dataScopeService;
+        $this->policyEngine = $policyEngine;
+        $this->sessionManager = $sessionManager;
     }
 
     public function findAll(array $filters = []): array
@@ -28,8 +31,20 @@ class VehicleRepository
             'where' => []
         ];
 
-        // 데이터 스코프 적용 (부서 권한 + 운전자 본인 차량)
-        $queryParts = $this->dataScopeService->applyVehicleScope($queryParts, 'v');
+        // 데이터 스코프 적용 (PolicyEngine 사용)
+        $user = $this->sessionManager->get('user');
+        if ($user) {
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'vehicle', 'view');
+            
+            if ($scopeIds === null) {
+                // 전체 조회 가능
+            } elseif (empty($scopeIds)) {
+                $queryParts['where'][] = "1=0";
+            } else {
+                $inClause = implode(',', array_map('intval', $scopeIds));
+                $queryParts['where'][] = "v.department_id IN ($inClause)";
+            }
+        }
 
         // 추가 필터 적용
         if (!empty($filters['department_id'])) {

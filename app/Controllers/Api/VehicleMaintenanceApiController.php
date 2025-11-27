@@ -3,7 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Services\VehicleMaintenanceService;
-use App\Services\DataScopeService;
+
 use App\Core\Request;
 use App\Services\AuthService;
 use App\Services\ViewDataService;
@@ -16,7 +16,7 @@ use Exception;
 class VehicleMaintenanceApiController extends BaseApiController
 {
     private VehicleMaintenanceService $workService;
-    private DataScopeService $dataScopeService;
+
 
     public function __construct(
         Request $request,
@@ -26,11 +26,11 @@ class VehicleMaintenanceApiController extends BaseApiController
         EmployeeRepository $employeeRepository,
         JsonResponse $jsonResponse,
         VehicleMaintenanceService $workService,
-        DataScopeService $dataScopeService
+
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->workService = $workService;
-        $this->dataScopeService = $dataScopeService;
+
     }
 
     /**
