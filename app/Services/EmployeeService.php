@@ -18,7 +18,6 @@ class EmployeeService
     private PositionRepository $positionRepository;
     private LogRepository $logRepository;
     private SessionManager $sessionManager;
-    private DataScopeService $dataScopeService;
 
     public function __construct(
         EmployeeRepository $employeeRepository,
@@ -26,8 +25,7 @@ class EmployeeService
         DepartmentRepository $departmentRepository,
         PositionRepository $positionRepository,
         LogRepository $logRepository,
-        SessionManager $sessionManager,
-        DataScopeService $dataScopeService
+        SessionManager $sessionManager
     ) {
         $this->employeeRepository = $employeeRepository;
         $this->employeeChangeLogRepository = $employeeChangeLogRepository;
@@ -35,7 +33,6 @@ class EmployeeService
         $this->positionRepository = $positionRepository;
         $this->logRepository = $logRepository;
         $this->sessionManager = $sessionManager;
-        $this->dataScopeService = $dataScopeService;
     }
 
     /**

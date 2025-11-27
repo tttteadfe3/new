@@ -3,7 +3,8 @@
 namespace App\Repositories;
 
 use App\Core\Database;
-use App\Services\DataScopeService;
+use App\Core\SessionManager;
+use App\Services\PolicyEngine;
 
 /**
  * 연차 관리 시스템의 관리자 전용 데이터 접근 계층
@@ -11,11 +12,13 @@ use App\Services\DataScopeService;
  */
 class LeaveAdminRepository {
     private Database $db;
-    private DataScopeService $dataScopeService;
+    private PolicyEngine $policyEngine;
+    private SessionManager $sessionManager;
 
-    public function __construct(Database $db, DataScopeService $dataScopeService) {
+    public function __construct(Database $db, PolicyEngine $policyEngine, SessionManager $sessionManager) {
         $this->db = $db;
-        $this->dataScopeService = $dataScopeService;
+        $this->policyEngine = $policyEngine;
+        $this->sessionManager = $sessionManager;
     }
 
     // =================================================================
@@ -55,7 +58,7 @@ class LeaveAdminRepository {
         }
 
         // 데이터 스코프 적용
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -137,7 +140,7 @@ class LeaveAdminRepository {
         }
 
         // 데이터 스코프 적용
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -177,7 +180,7 @@ class LeaveAdminRepository {
         }
 
         // 데이터 스코프 적용
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -218,7 +221,7 @@ class LeaveAdminRepository {
         }
 
         // 데이터 스코프 적용
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -270,7 +273,7 @@ class LeaveAdminRepository {
         }
 
         // 데이터 스코프 적용
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -344,7 +347,7 @@ class LeaveAdminRepository {
         }
         
         // 데이터 스코프 적용
-        $leaveQueryParts = $this->dataScopeService->applyEmployeeScope($leaveQueryParts, 'e');
+        $leaveQueryParts = $this->applyEmployeeScope($leaveQueryParts, 'e');
 
         if (!empty($leaveQueryParts['where'])) {
             $leaveQueryParts['sql'] .= " WHERE " . implode(" AND ", $leaveQueryParts['where']);
@@ -408,7 +411,7 @@ class LeaveAdminRepository {
         }
 
         // 데이터 스코프 적용
-        $cancellationQueryParts = $this->dataScopeService->applyEmployeeScope($cancellationQueryParts, 'e');
+        $cancellationQueryParts = $this->applyEmployeeScope($cancellationQueryParts, 'e');
 
         if (!empty($cancellationQueryParts['where'])) {
             $cancellationQueryParts['sql'] .= " WHERE " . implode(" AND ", $cancellationQueryParts['where']);
@@ -451,7 +454,7 @@ class LeaveAdminRepository {
         ];
 
         // 데이터 스코프 적용
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -489,7 +492,7 @@ class LeaveAdminRepository {
         ];
 
         // 데이터 스코프 적용
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if ($departmentId) {
             $queryParts['where'][] = 'e.department_id = :department_id';
@@ -534,7 +537,7 @@ class LeaveAdminRepository {
             $totalLeavesQuery['params'][':department_id'] = $departmentId;
         }
 
-        $totalLeavesQuery = $this->dataScopeService->applyEmployeeScope($totalLeavesQuery, 'e');
+        $totalLeavesQuery = $this->applyEmployeeScope($totalLeavesQuery, 'e');
         $totalLeavesQuery['sql'] .= " WHERE " . implode(" AND ", $totalLeavesQuery['where']);
         $totalLeavesResult = $this->db->fetchOne($totalLeavesQuery['sql'], $totalLeavesQuery['params']);
 
@@ -586,7 +589,7 @@ class LeaveAdminRepository {
             $queryParts['params'][':department_id'] = $departmentId;
         }
 
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -629,7 +632,7 @@ class LeaveAdminRepository {
             $queryParts['params'][':department_id'] = $departmentId;
         }
 
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -674,7 +677,7 @@ class LeaveAdminRepository {
             $queryParts['params'][':department_id'] = $departmentId;
         }
 
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -725,7 +728,8 @@ class LeaveAdminRepository {
             $queryParts['params'][':department_id'] = $departmentId;
         }
 
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        // 데이터 스코프 적용
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -774,7 +778,8 @@ class LeaveAdminRepository {
             $queryParts['params'][':department_id'] = $departmentId;
         }
 
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        // 데이터 스코프 적용
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -823,7 +828,8 @@ class LeaveAdminRepository {
             $queryParts['params'][':department_id'] = $departmentId;
         }
 
-        $queryParts = $this->dataScopeService->applyEmployeeScope($queryParts, 'e');
+        // 데이터 스코프 적용
+        $queryParts = $this->applyEmployeeScope($queryParts, 'e');
 
         if (!empty($queryParts['where'])) {
             $queryParts['sql'] .= " WHERE " . implode(" AND ", $queryParts['where']);
@@ -832,5 +838,30 @@ class LeaveAdminRepository {
         $queryParts['sql'] .= " ORDER BY ll.created_at DESC, e.name";
 
         return $this->db->query($queryParts['sql'], $queryParts['params']);
+    }
+
+    /**
+     * PolicyEngine을 사용하여 직원 데이터에 대한 데이터 스코프를 적용합니다.
+     *
+     * @param array $queryParts 쿼리 부분 배열
+     * @param string $employeeTableAlias 직원 테이블의 별칭
+     * @return array 수정된 쿼리 부분 배열
+     */
+    private function applyEmployeeScope(array $queryParts, string $employeeTableAlias = 'e'): array
+    {
+        $user = $this->sessionManager->get('user');
+        if ($user) {
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'employee', 'view');
+            if ($scopeIds !== null) { // null은 전체 조회 가능을 의미
+                if (empty($scopeIds)) {
+                    // 조회 가능한 부서가 없으면 아무것도 반환하지 않음
+                    $queryParts['where'][] = "1=0";
+                } else {
+                    $inClause = implode(',', array_map('intval', $scopeIds));
+                    $queryParts['where'][] = "{$employeeTableAlias}.department_id IN ($inClause)";
+                }
+            }
+        }
+        return $queryParts;
     }
 }

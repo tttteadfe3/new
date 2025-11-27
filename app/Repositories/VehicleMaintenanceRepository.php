@@ -3,18 +3,21 @@
 namespace App\Repositories;
 
 use App\Core\Database;
-use App\Services\DataScopeService;
+use App\Core\SessionManager;
+use App\Services\PolicyEngine;
 use PDO;
 
 class VehicleMaintenanceRepository
 {
     private Database $db;
-    private DataScopeService $dataScopeService;
+    private PolicyEngine $policyEngine;
+    private SessionManager $sessionManager;
 
-    public function __construct(Database $db, DataScopeService $dataScopeService)
+    public function __construct(Database $db, PolicyEngine $policyEngine, SessionManager $sessionManager)
     {
         $this->db = $db;
-        $this->dataScopeService = $dataScopeService;
+        $this->policyEngine = $policyEngine;
+        $this->sessionManager = $sessionManager;
     }
 
     /**
@@ -36,8 +39,30 @@ class VehicleMaintenanceRepository
             'where' => []
         ];
         
-        // DataScope 적용 (부서 권한 + 운전자 본인 차량)
-        $queryParts = $this->dataScopeService->applyVehicleScope($queryParts, 'v');
+        // PolicyEngine을 사용한 데이터 스코프 적용
+        $user = $this->sessionManager->get('user');
+        if ($user && isset($user['employee_id'])) {
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'vehicle', 'view');
+
+            $scopeConditions = [];
+            if ($scopeIds === null) {
+                // null이면 전체 조회 가능하므로 별도 조건 없음
+            } elseif (empty($scopeIds)) {
+                // 빈 배열이면 아무것도 조회할 수 없지만, 자신의 차량은 봐야 함
+                $scopeConditions[] = "1=0";
+            } else {
+                $inClause = implode(',', array_map('intval', $scopeIds));
+                $scopeConditions[] = "v.department_id IN ($inClause)";
+            }
+
+            // 운전자 본인 차량 조회 조건 추가
+            $scopeConditions[] = "v.driver_employee_id = :current_employee_id";
+            $queryParts['params'][':current_employee_id'] = $user['employee_id'];
+
+            if (!empty($scopeConditions)) {
+                $queryParts['where'][] = "(" . implode(" OR ", $scopeConditions) . ")";
+            }
+        }
         
         // type 필터
         if (!empty($filters['type'])) {

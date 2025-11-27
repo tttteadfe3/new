@@ -13,16 +13,13 @@ class UserService
 {
     private UserRepository $userRepository;
     private RoleRepository $roleRepository;
-    private DataScopeService $dataScopeService;
 
     public function __construct(
         UserRepository $userRepository,
-        RoleRepository $roleRepository,
-        DataScopeService $dataScopeService
+        RoleRepository $roleRepository
     ) {
         $this->userRepository = $userRepository;
         $this->roleRepository = $roleRepository;
-        $this->dataScopeService = $dataScopeService;
     }
 
     /**
