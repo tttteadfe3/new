@@ -24,16 +24,6 @@ database/
   - 모든 인덱스, 외래 키, 제약 조건
   - AUTO_INCREMENT 설정
 
-### migrations/
-마이그레이션 파일들:
-- `2025_11_22_000000_create_vehicle_management_tables.php` - 차량 관리 테이블 생성
-- `2025_11_24_000000_add_photo_columns_to_vehicle_works.php` - 차량 작업 사진 컬럼 추가
-- `2025_11_24_000001_add_details_to_vehicles.php` - 차량 상세 정보 추가
-- `2025_11_24_000002_add_more_photos_to_vehicle_works.php` - 추가 사진 컬럼
-- `add_category_tree_structure.sql` - 카테고리 트리 구조 추가
-- `create_vehicle_consumables.sql` - 차량 소모품 테이블 생성
-- `rename_vehicle_works_to_maintenance.sql` - 테이블명 변경
-
 ### seeds/
 초기 데이터 시드 파일들:
 - `01_departments.sql` - 부서 기본 데이터
