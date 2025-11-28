@@ -3,6 +3,7 @@
 namespace App\Core;
 
 use App\Core\Container;
+use App\Core\JsonResponse;
 
 /**
  * Class Router
@@ -17,10 +18,20 @@ class Router
     protected array $namedRoutes = [];
     protected ?array $currentRoute = null;
     protected array $middlewares = [];
+    protected ?JsonResponse $jsonResponse = null;
 
     public function __construct(Container $container)
     {
         $this->container = $container;
+    }
+
+    /**
+     * JsonResponse 인스턴스를 설정합니다.
+     * @param JsonResponse $jsonResponse
+     */
+    public function setJsonResponse(JsonResponse $jsonResponse): void
+    {
+        $this->jsonResponse = $jsonResponse;
     }
 
     /**
@@ -206,20 +217,34 @@ class Router
      */
     public function handleError(int $statusCode, string $message): void
     {
-        http_response_code($statusCode);
         $isApiRequest = str_starts_with(strtok($_SERVER['REQUEST_URI'], '?'), '/api/');
 
         if ($isApiRequest) {
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['error' => $message], JSON_UNESCAPED_UNICODE);
+            if ($this->jsonResponse) {
+                // JsonResponse를 사용하여 표준화된 에러 응답 반환
+                $errorCode = match ($statusCode) {
+                    404 => 'NOT_FOUND',
+                    403 => 'FORBIDDEN',
+                    400 => 'BAD_REQUEST',
+                    default => 'SERVER_ERROR'
+                };
+                $this->jsonResponse->error($message, $errorCode, $statusCode);
+            } else {
+                // JsonResponse가 없는 경우 (fallback)
+                http_response_code($statusCode);
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => false, 'message' => $message, 'error_code' => 'SERVER_ERROR', 'data' => null], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
         } else {
+            http_response_code($statusCode);
             $viewPath = defined('BASE_PATH') ? BASE_PATH . "/errors/{$statusCode}.php" : __DIR__ . "/../../errors/{$statusCode}.php";
             if (file_exists($viewPath)) {
                 require $viewPath;
             } else {
                 echo "<h1>오류 {$statusCode}</h1><p>{$message}</p>";
             }
+            exit();
         }
-        exit();
     }
 }

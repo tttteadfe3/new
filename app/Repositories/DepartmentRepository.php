@@ -54,6 +54,15 @@ class DepartmentRepository {
     }
 
     /**
+     * 스코프 제한 없이 모든 부서를 조회합니다.
+     * @return Department[]
+     */
+    public function getAllUnscoped(): array {
+        $sql = "SELECT d.* FROM hr_departments d ORDER BY d.name";
+        return $this->db->fetchAllAs(Department::class, $sql);
+    }
+
+    /**
      * 배열 형태로 모든 부서를 조회합니다.
      * @return array
      */

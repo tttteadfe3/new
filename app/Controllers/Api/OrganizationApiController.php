@@ -13,6 +13,7 @@ use App\Repositories\EmployeeRepository;
 use App\Core\JsonResponse;
 
 use App\Repositories\DepartmentRepository;
+use App\Services\PolicyEngine;
 
 class OrganizationApiController extends BaseApiController
 {
@@ -20,6 +21,7 @@ class OrganizationApiController extends BaseApiController
     private PositionRepository $positionRepository;
 
     private DepartmentRepository $departmentRepository;
+    private PolicyEngine $policyEngine;
 
     public function __construct(
         Request $request,
@@ -31,13 +33,15 @@ class OrganizationApiController extends BaseApiController
         OrganizationService $organizationService,
         PositionRepository $positionRepository,
 
-        DepartmentRepository $departmentRepository
+        DepartmentRepository $departmentRepository,
+        PolicyEngine $policyEngine
     ) {
         parent::__construct($request, $authService, $viewDataService, $activityLogger, $employeeRepository, $jsonResponse);
         $this->organizationService = $organizationService;
         $this->positionRepository = $positionRepository;
 
         $this->departmentRepository = $departmentRepository;
+        $this->policyEngine = $policyEngine;
     }
 
     /**
@@ -77,7 +81,25 @@ class OrganizationApiController extends BaseApiController
     public function getManagableDepartments(): void
     {
         try {
-            $departments = $this->departmentRepository->getAll();
+            $user = $this->authService->user();
+            if (!$user) {
+                $this->apiSuccess([]);
+                return;
+            }
+
+            // 부서 관리 목록은 'employee' 리소스의 'view' 권한 범위를 따릅니다.
+            $scopeIds = $this->policyEngine->getScopeIds($user['id'], 'employee', 'view');
+            error_log("OrganizationApiController::getManagableDepartments - Scope IDs: " . json_encode($scopeIds));
+
+            if ($scopeIds === null) {
+                // 전체 조회 가능 (Global)
+                $departments = $this->departmentRepository->getAllUnscoped();
+            } else {
+                // 제한된 부서만 조회
+                $departments = $this->departmentRepository->findByIds($scopeIds);
+            }
+            
+            error_log("OrganizationApiController::getManagableDepartments - Department count: " . count($departments));
             $this->apiSuccess($departments);
         } catch (Exception $e) {
             $this->handleException($e);

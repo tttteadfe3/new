@@ -44,6 +44,7 @@ class PolicyEngine
 
         // 전체 관리 권한 체크 (employee.manage 등)
         if ($this->hasGlobalPermission($user, $resourceType, $action)) {
+            error_log("PolicyEngine::getScopeIds - Global permission granted for User {$userId}, Resource {$resourceType}");
             return null;  // 전체 조회 가능
         }
 
@@ -58,10 +59,18 @@ class PolicyEngine
         
         foreach ($policies as $policy) {
             $deptIds = $this->evaluatePolicy($policy, $user);
+            
+            if ($deptIds === null) {
+                error_log("PolicyEngine::getScopeIds - Global scope policy found for User {$userId}, Resource {$resourceType}");
+                return null; // Global policy found
+            }
+
             $allDeptIds = array_merge($allDeptIds, $deptIds);
         }
 
-        return empty($allDeptIds) ? [] : array_values(array_unique($allDeptIds));
+        $result = empty($allDeptIds) ? [] : array_values(array_unique($allDeptIds));
+        error_log("PolicyEngine::getScopeIds - User {$userId}, Resource {$resourceType}, Result: " . json_encode($result));
+        return $result;
     }
 
     /**
@@ -88,6 +97,12 @@ class PolicyEngine
      */
     private function hasGlobalPermission(array $user, string $resourceType, string $action): bool
     {
+        // employee와 department 리소스에 대해서는 manage 권한이 있더라도 
+        // 자동으로 전체 접근 권한을 부여하지 않고, 정책(Policy)을 통해 제어하도록 함.
+        if (in_array($resourceType, ['employee', 'department'])) {
+            return false;
+        }
+
         $permissions = $user['permissions'] ?? [];
         
         // employee.manage, leave.manage 등의 권한이 있으면 전체 조회 가능
@@ -142,7 +157,7 @@ class PolicyEngine
     /**
      * 정책 평가 - 정책에 따른 부서 ID 목록 반환
      */
-    private function evaluatePolicy(array $policy, array $user): array
+    private function evaluatePolicy(array $policy, array $user): ?array
     {
         $employee = $user['employee'] ?? null;
         
@@ -161,7 +176,7 @@ class PolicyEngine
             
             case 'global':
                 // 전체 접근 (null 반환)
-                return []; // Will be handled specially by caller
+                return null;
 
             case 'managed_departments':
                 // 관리하는 부서 + 하위 부서

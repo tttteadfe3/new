@@ -262,7 +262,8 @@ $container->register(\App\Controllers\Api\OrganizationApiController::class, fn($
     $c->resolve(JsonResponse::class),
     $c->resolve(\App\Services\OrganizationService::class),
     $c->resolve(\App\Repositories\PositionRepository::class),
-    $c->resolve(\App\Repositories\DepartmentRepository::class)
+    $c->resolve(\App\Repositories\DepartmentRepository::class),
+    $c->resolve(\App\Services\PolicyEngine::class)
 ));
 $container->register(\App\Controllers\Api\PositionApiController::class, fn($c) => new \App\Controllers\Api\PositionApiController(
     $c->resolve(Request::class),
@@ -352,6 +353,7 @@ require_once __DIR__ . '/../config/config.php';
 
 // Instantiate the router with the container
 $router = new Router($container);
+$router->setJsonResponse($container->resolve(JsonResponse::class));
 
 // Register Middlewares
 $router->addMiddleware('auth', \App\Middleware\AuthMiddleware::class);
@@ -362,4 +364,23 @@ require_once __DIR__ . '/../routes/web.php';
 require_once __DIR__ . '/../routes/api.php';
 
 // Dispatch the request
-$router->dispatch();
+try {
+    $router->dispatch();
+} catch (\Throwable $e) {
+    $isApiRequest = str_starts_with(strtok($_SERVER['REQUEST_URI'], '?'), '/api/');
+    
+    if ($isApiRequest) {
+        $jsonResponse = $container->resolve(JsonResponse::class);
+        $statusCode = is_int($e->getCode()) && $e->getCode() >= 400 ? $e->getCode() : 500;
+        
+        // 디버깅을 위해 로그에 기록
+        error_log("Uncaught Exception: " . $e->getMessage());
+        error_log($e->getTraceAsString());
+        
+        $jsonResponse->error($e->getMessage(), 'SERVER_ERROR', $statusCode);
+    } else {
+        // 웹 요청의 경우 기존 방식대로 처리하거나 에러 페이지 표시
+        // 개발 환경에서는 에러 표시, 운영 환경에서는 사용자 친화적 메시지 표시 권장
+        throw $e;
+    }
+}
